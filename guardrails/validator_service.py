@@ -20,7 +20,8 @@ from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk, ReAsk
-from guardrails.utils.telemetry_utils import trace_validation_result, trace_validator
+from guardrails.telemetry.legacy_validator_tracing import trace_validation_result
+from guardrails.telemetry import trace_validator
 from guardrails.validator_base import Validator
 
 ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
@@ -48,15 +49,16 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Optional[Dict],
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidatorResult:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
             obj_id=id(validator),
-            # TODO - re-enable once we have namespace support
-            # namespace=validator.namespace,
             on_fail_descriptor=validator.on_fail_descriptor,
+            validation_session_id=validation_session_id,
             **validator._kwargs,
         )(validate_func)
         if stream:
@@ -191,9 +193,18 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: Dict,
         validator_logs: ValidatorLogs,
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidationResult:
-        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
+        result = self.execute_validator(
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=validation_session_id,
+            **kwargs,
+        )
         if asyncio.iscoroutine(result):
             raise UserFacingException(
                 ValueError(
@@ -220,7 +231,13 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         result = self.run_validator_sync(
-            validator, value, metadata, validator_logs, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            validator_logs,
+            stream,
+            validation_session_id=iteration.id,
+            **kwargs,
         )
 
         return self.after_run_validator(validator, validator_logs, result)
@@ -427,10 +444,17 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: Dict,
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidationResult:
         result: ValidatorResult = self.execute_validator(
-            validator, value, metadata, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=validation_session_id,
+            **kwargs,
         )
         if asyncio.iscoroutine(result):
             result = await result
@@ -456,7 +480,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         )
 
         result = await self.run_validator_async(
-            validator, value, metadata, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=iteration.id,
+            **kwargs,
         )
 
         return self.after_run_validator(validator, validator_logs, result)
@@ -554,6 +583,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         fixed_value,
                         fail_results[0].metadata or {},
                         stream,
+                        validation_session_id=iteration.id,
                         **kwargs,
                     )
                 value = self.perform_correction(

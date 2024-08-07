@@ -30,7 +30,6 @@ python-dateutil = "^2.8.2"
 tiktoken = ">=0.5.1"
 nltk = "^3.8.1"
 litellm = "^1.37.14"
-
 sqlvalidator = {version = "^0.0.20", optional = true}
 sqlalchemy = {version = ">=2.0.9", optional = true}
 sqlglot = {version = "^19.0.3", optional = true}
@@ -112,3 +111,16 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "E501"]
 ignore = ["E731", "E203", "E741"]
+
+[tool.pytest.ini_options]
+python_classes = ["Test"]
+python_functions = ["test_"]
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+markers = [
+    "no_hub_telemetry_mock"
+]
+
+[pytest]
+log_cli = "True"
+log_cli_level = "DEBUG"

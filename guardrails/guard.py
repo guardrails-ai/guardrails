@@ -60,6 +60,7 @@ from guardrails.stores.context import (
     get_call_kwarg,
     get_tracer_context,
     set_call_kwargs,
+    set_guard_name,
     set_tracer,
     set_tracer_context,
 )
@@ -68,7 +69,10 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.telemetry_utils import wrap_with_otel_context
+from guardrails.telemetry import (
+    trace_guard_execution,
+    wrap_with_otel_context,
+)
 from guardrails.utils.validator_utils import (
     get_validator,
     parse_validator_reference,
@@ -231,12 +235,23 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         allow_metrics_collection: Optional[bool] = None,
     ):
-        """Configure the Guard."""
+        """Configure the Guard.
+
+        Args:
+            num_reasks (int, optional): The max times to re-ask the LLM
+                if validation fails. Defaults to None.
+            tracer (Tracer, optional): An OpenTelemetry tracer to use for
+                sending traces to your OpenTelemetry sink. Defaults to None.
+            allow_metrics_collection (bool, optional): Whether to allow
+                Guardrails to collect anonymous metrics.
+                Defaults to None, and falls back to waht is
+                    set via the `guardrails configure` command.
+        """
         if num_reasks:
             self._set_num_reasks(num_reasks)
         if tracer:
             self._set_tracer(tracer)
-        self._configure_telemtry(allow_metrics_collection)
+        self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
         # Configure may check if num_reasks is none, but this method still needs to be
@@ -249,12 +264,20 @@ class Guard(IGuard, Generic[OT]):
             self._num_reasks = num_reasks
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
+        if tracer is not None:
+            warnings.warn(
+                "Setting tracer during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "Configure a TracerProvider instead and we will"
+                " obtain a tracer from it via the Tracer API.",
+                DeprecationWarning,
+            )
         self._tracer = tracer
         set_tracer(tracer)
         set_tracer_context()
         self._tracer_context = get_tracer_context()
 
-    def _configure_telemtry(
+    def _configure_hub_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
         credentials = None
@@ -743,6 +766,7 @@ class Guard(IGuard, Generic[OT]):
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
             set_tracer_context(self._tracer_context)
+            set_guard_name(self.name)
 
             self._set_num_reasks(num_reasks=num_reasks)
             if self._num_reasks is None:
@@ -776,9 +800,6 @@ class Guard(IGuard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
                     *args,
                     **kwargs,
                 )
@@ -932,8 +953,11 @@ class Guard(IGuard, Generic[OT]):
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
-
-        return self._execute(
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -990,7 +1014,11 @@ class Guard(IGuard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return self._execute(  # type: ignore # streams are supported for parse
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,  # type: ignore # streams are supported for parse
+            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,

@@ -26,7 +26,7 @@ This guide will show how to set up your Python project to log traces to Grafana 
 
 ## Configure Guardrails to talk to an OTLP collector
 
-To talk to an OTLP collector, you need only add a few environment variables and set the `tracer` attribute of your Guard to the default OTLP tracer provided by Guardrails.
+To talk to an OTLP collector, you need only add a few environment variables and create a TracerProvider.  To streamline development, Guardrails provides a default OTLP tracer and provider.
 
 First, set these environment variables
 
@@ -36,16 +36,15 @@ OTEL_EXPORTER_OTLP_ENDPOINT
 OTEL_EXPORTER_OTLP_HEADERS
 ```
 
-Then, add the tracer provider to your guard:
+Then, create the tracer provider and you guard:
 
 ```python
-from guardrails.utils.telemetry_utils import default_otlp_tracer
+from guardrails.telemetry import default_otlp_tracer
+
+default_otlp_tracer("my_guard")
 
 # define your guard
-guard = Guard()
-
-guard.configure(tracer=default_otlp_tracer("my_guard"))
-
+guard = Guard(name="my_guard")
 ```
 
 ## Configure OTEL for a self-hosted OpenTelemetry Collector
@@ -55,15 +54,14 @@ Standard [open telemetry environment variables](https://opentelemetry.io/docs/la
 
 ```python
 from guardrails import Guard, OnFailAction
-from guardrails.utils.telemetry_utils import default_otel_collector_tracer
+from guardrails.telemetry import default_otel_collector_tracer
 from guardrails.hub import ValidLength
 
-guard = Guard().use(
+# use a descriptive name that will differentiate where your metrics are stored
+default_otel_collector_tracer("petname_guard")
+
+guard = Guard(name="petname_guard").use(
   validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
-)
-guard.configure(
-  # use a descriptive name that will differentiate where your metrics are stored
-  tracer=default_otel_collector_tracer("petname_guard")
 )
 
 guard(

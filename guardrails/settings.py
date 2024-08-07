@@ -7,6 +7,12 @@ class Settings:
     _lock = threading.Lock()
     """Whether to use a local server for running Guardrails."""
     use_server: Optional[bool]
+    """Whether to disable tracing.
+
+    Traces are only ever sent to a telemetry sink you specify via
+    environment variables or by instantiating a TracerProvider.
+    """
+    disable_tracing: Optional[bool]
 
     def __new__(cls) -> "Settings":
         if cls._instance is None:
@@ -18,6 +24,7 @@ class Settings:
 
     def _initialize(self):
         self.use_server = None
+        self.disable_tracing = None
 
 
 settings = Settings()

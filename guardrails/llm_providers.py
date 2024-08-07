@@ -20,6 +20,10 @@ from pydantic import BaseModel
 
 from guardrails.errors import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.llm.prompt_callable import (
+    PromptCallableBase,
+    PromptCallableException,
+)
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,
@@ -30,56 +34,12 @@ from guardrails.utils.openai_utils import (
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.telemetry_utils import trace_llm_call, trace_operation
-
-
-class PromptCallableException(Exception):
-    pass
+from guardrails.telemetry import trace_llm_call, trace_operation
 
 
 ###
 # Synchronous wrappers
 ###
-
-
-class PromptCallableBase:
-    """A wrapper around a callable that takes in a prompt.
-
-    Catches exceptions to let the user know clearly if the callable
-    failed, and how to fix it.
-    """
-
-    supports_base_model = False
-
-    def __init__(self, *args, **kwargs):
-        self.init_args = args
-        self.init_kwargs = kwargs
-
-    def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
-        raise NotImplementedError
-
-    def __call__(self, *args, **kwargs) -> LLMResponse:
-        try:
-            result = self._invoke_llm(
-                *self.init_args, *args, **self.init_kwargs, **kwargs
-            )
-        except Exception as e:
-            raise PromptCallableException(
-                "The callable `fn` passed to `Guard(fn, ...)` failed"
-                f" with the following error: `{e}`. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
-            )
-        if not isinstance(result, LLMResponse):
-            raise PromptCallableException(
-                "The callable `fn` passed to `Guard(fn, ...)` returned"
-                f" a non-string value: {result}. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
-            )
-        return result
 
 
 def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:

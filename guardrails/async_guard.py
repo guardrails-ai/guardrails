@@ -39,7 +39,7 @@ from guardrails.stores.context import (
 )
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
-from guardrails.utils.telemetry_utils import wrap_with_otel_context
+from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 
@@ -484,7 +484,11 @@ class AsyncGuard(Guard, Generic[OT]):
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
 
-        return await self._execute(
+        return await trace_async_guard_execution(
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -543,7 +547,11 @@ class AsyncGuard(Guard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return await self._execute(  # type: ignore
+        return await trace_async_guard_execution(  # type: ignore
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
