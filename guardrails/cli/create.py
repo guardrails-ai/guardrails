@@ -11,8 +11,6 @@ from rich.syntax import Syntax
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.cli.hub.template import get_template
 
-from guardrails.hub.install import install
-
 console = Console()
 
 
@@ -56,8 +54,10 @@ def create_command(
             for validator in guard["validators"]:
                 validators_map[f"hub://{validator['id']}"] = True
         validators = ",".join(validators_map.keys())
-        installed_validators = split_and_install_validators(
-            validators, local_models, dry_run
+        installed_validators = split_and_install_validators(  # type: ignore
+            validators,
+            local_models,
+            dry_run,  # type: ignore
         )  # type: ignore
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
@@ -69,8 +69,10 @@ def create_command(
         )
         sys.exit(1)
     else:
-        installed_validators = split_and_install_validators(
-            validators, local_models, dry_run
+        installed_validators = split_and_install_validators(  # type: ignore
+            validators,
+            local_models,
+            dry_run,  # type: ignore
         )  # type: ignore
         if name is None and validators:
             name = "Guard"
@@ -149,6 +151,8 @@ def split_and_install_validators(
 
     If validators is empty, returns an empty list.
     """
+    from guardrails.hub.install import install
+
     if not validators:
         return []
 
