@@ -4,8 +4,6 @@ from guardrails.cli.hub.install import hub_command
 
 import pytest
 
-from guardrails.cli.server.module_manifest import ModuleManifest
-
 
 class TestInstall:
     def test_exits_early_if_uri_is_not_valid(self, mocker):
@@ -87,17 +85,17 @@ class TestInstall:
 
 class TestPipProcess:
     def test_no_package_string_format(self, mocker):
-        mocker.patch("guardrails.cli.hub.install.os.environ", return_value={})
+        mocker.patch("guardrails.cli.hub.utils.os.environ", return_value={})
         mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
 
-        mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
+        mock_sys_executable = mocker.patch("guardrails.cli.hub.utils.sys.executable")
 
         mock_subprocess_check_output = mocker.patch(
-            "guardrails.cli.hub.install.subprocess.check_output"
+            "guardrails.cli.hub.utils.subprocess.check_output"
         )
         mock_subprocess_check_output.return_value = str.encode("string output")
 
-        from guardrails.cli.hub.install import pip_process
+        from guardrails.cli.hub.utils import pip_process
 
         response = pip_process("inspect", flags=["--path=./install-here"])
 
@@ -116,13 +114,13 @@ class TestPipProcess:
         assert response == "string output"
 
     def test_json_format(self, mocker):
-        mocker.patch("guardrails.cli.hub.install.os.environ", return_value={})
-        mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
+        mocker.patch("guardrails.cli.hub.utils.os.environ", return_value={})
+        mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
 
-        mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
+        mock_sys_executable = mocker.patch("guardrails.cli.hub.utils.sys.executable")
 
         mock_subprocess_check_output = mocker.patch(
-            "guardrails.cli.hub.install.subprocess.check_output"
+            "guardrails.cli.hub.utils.subprocess.check_output"
         )
         mock_subprocess_check_output.return_value = str.encode("json output")
 
@@ -134,7 +132,7 @@ class TestPipProcess:
         mock_bytes_header_parser = MockBytesHeaderParser()
         mock_bytes_parser.return_value = mock_bytes_header_parser
 
-        from guardrails.cli.hub.install import pip_process
+        from guardrails.cli.hub.utils import pip_process
 
         response = pip_process("show", "pip", format="json")
 
@@ -155,18 +153,18 @@ class TestPipProcess:
         assert response == {"output": "json"}
 
     def test_called_process_error(self, mocker):
-        mock_logger_error = mocker.patch("guardrails.cli.hub.install.logger.error")
-        mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
-        mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
+        mock_logger_error = mocker.patch("guardrails.cli.hub.utils.logger.error")
+        mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
+        mock_sys_executable = mocker.patch("guardrails.cli.hub.utils.sys.executable")
         mock_subprocess_check_output = mocker.patch(
-            "guardrails.cli.hub.install.subprocess.check_output"
+            "guardrails.cli.hub.utils.subprocess.check_output"
         )
 
         from subprocess import CalledProcessError
 
         mock_subprocess_check_output.side_effect = CalledProcessError(1, "something")
 
-        from guardrails.cli.hub.install import pip_process, sys
+        from guardrails.cli.hub.utils import pip_process, sys
 
         sys_exit_spy = mocker.spy(sys, "exit")
 
@@ -187,12 +185,12 @@ class TestPipProcess:
 
     def test_other_exception(self, mocker):
         error = ValueError("something went wrong")
-        mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
+        mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
         mock_logger_debug.side_effect = error
 
-        mock_logger_error = mocker.patch("guardrails.cli.hub.install.logger.error")
+        mock_logger_error = mocker.patch("guardrails.cli.hub.utils.logger.error")
 
-        from guardrails.cli.hub.install import pip_process, sys
+        from guardrails.cli.hub.utils import pip_process, sys
 
         sys_exit_spy = mocker.spy(sys, "exit")
 
@@ -219,79 +217,3 @@ def test_get_site_packages_location(mocker):
     mock_pip_process.assert_called_once_with("show", "pip", format="json")
 
     assert response == "/site-pacakges"
-
-
-def test_quiet_install(mocker):
-    mock_get_install_url = mocker.patch("guardrails.cli.hub.install.get_install_url")
-    mock_get_install_url.return_value = "mock-install-url"
-
-    mock_get_hub_directory = mocker.patch(
-        "guardrails.cli.hub.install.get_hub_directory"
-    )
-    mock_get_hub_directory.return_value = "mock/install/directory"
-
-    mock_pip_process = mocker.patch("guardrails.cli.hub.install.pip_process")
-    inspect_report = {
-        "installed": [
-            {
-                "metadata": {
-                    "requires_dist": [
-                        "rstr",
-                        "openai <2",
-                        "pydash (>=7.0.6,<8.0.0)",
-                        'faiss-cpu (>=1.7.4,<2.0.0) ; extra == "vectordb"',
-                    ]
-                }
-            }
-        ]
-    }
-    mock_pip_process.side_effect = [
-        "Sucessfully installed test-validator",
-        inspect_report,
-        "Sucessfully installed rstr",
-        "Sucessfully installed openai<2",
-        "Sucessfully installed pydash>=7.0.6,<8.0.0",
-    ]
-
-    from guardrails.cli.hub.install import install_hub_module
-
-    manifest = ModuleManifest.from_dict(
-        {
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me", "email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails-ai",
-            "package_name": "test-validator",
-            "module_name": "validator",
-            "exports": ["TestValidator"],
-            "tags": {},
-        }
-    )
-    site_packages = "./site-packages"
-    install_hub_module(manifest, site_packages, quiet=True)
-
-    mock_get_install_url.assert_called_once_with(manifest)
-    mock_get_hub_directory.assert_called_once_with(manifest, site_packages)
-
-    assert mock_pip_process.call_count == 5
-    pip_calls = [
-        call(
-            "install",
-            "mock-install-url",
-            ["--target=mock/install/directory", "--no-deps", "-q"],
-            quiet=True,
-        ),
-        call(
-            "inspect",
-            flags=["--path=mock/install/directory"],
-            format="json",
-            quiet=True,
-            no_color=True,
-        ),
-        call("install", "rstr", quiet=True),
-        call("install", "openai<2", quiet=True),
-        call("install", "pydash>=7.0.6,<8.0.0", quiet=True),
-    ]
-    mock_pip_process.assert_has_calls(pip_calls)

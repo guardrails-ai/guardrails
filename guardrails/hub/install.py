@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from string import Template
-from types import ModuleType, List
-from typing import Callable
+from types import ModuleType
+from typing import Callable, List
 
 from guardrails.hub.validator_package_service import ValidatorPackageService
 from guardrails.classes.credentials import Credentials
