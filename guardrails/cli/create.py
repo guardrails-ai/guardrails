@@ -9,14 +9,9 @@ from rich.console import Console
 from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
-from guardrails.cli.hub.install import (  # JC: I don't like this import. Move fns?
-    install_hub_module,
-    add_to_hub_inits,
-    run_post_install,
-)
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.hub.template import get_template
+
+from guardrails.hub.install import install
 
 console = Console()
 
@@ -29,6 +24,11 @@ def create_command(
     ),
     name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
+    ),
+    local_models: Optional[bool] = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
     ),
     filepath: str = typer.Option(
         default="config.py",
@@ -56,7 +56,9 @@ def create_command(
             for validator in guard["validators"]:
                 validators_map[f"hub://{validator['id']}"] = True
         validators = ",".join(validators_map.keys())
-        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
+        installed_validators = split_and_install_validators(
+            validators, local_models, dry_run
+        )  # type: ignore
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
         )
@@ -67,7 +69,9 @@ def create_command(
         )
         sys.exit(1)
     else:
-        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
+        installed_validators = split_and_install_validators(
+            validators, local_models, dry_run
+        )  # type: ignore
         if name is None and validators:
             name = "Guard"
             if len(installed_validators) > 0:
@@ -137,7 +141,9 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
     return filename  # type: ignore
 
 
-def split_and_install_validators(validators: str, dry_run: bool = False):
+def split_and_install_validators(
+    validators: str, local_models: Union[bool, None], dry_run: bool = False
+):
     """Given a comma-separated list of validators, check the hub to make sure
     all of them exist, install them, and return a list of 'imports'.
 
@@ -146,44 +152,30 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
     if not validators:
         return []
 
-    stripped_validators = list()
-    manifests = list()
-    site_packages = get_site_packages_location()
+    manifest_exports = list()
 
     # Split by comma, strip start and end spaces, then make sure there's a hub prefix.
     # If all that passes, download the manifest file so we know where to install.
     # hub://blah -> blah, then download the manifest.
-    console.print("Checking validators...")
-    with console.status("Checking validator manifests") as status:
-        for v in validators.split(","):
-            v = v.strip()
-            status.update(f"Prefetching {v}")
-            if not v.startswith("hub://"):
-                console.print(
-                    f"WARNING: Validator {v} does not appear to be a valid URI."
-                )
-                sys.exit(-1)
-            stripped_validator = v.lstrip("hub://")
-            stripped_validators.append(stripped_validator)
-            manifests.append(get_validator_manifest(stripped_validator))
-    console.print("Success!")
-
-    # We should make sure they exist.
     console.print("Installing...")
     with console.status("Installing validators") as status:
-        for manifest, validator in zip(manifests, stripped_validators):
-            status.update(f"Installing {validator}")
+        for v in validators.split(","):
+            validator_hub_uri = v.strip()
+            status.update(f"Installing {v}")
             if not dry_run:
-                install_hub_module(manifest, site_packages, quiet=True)
-                run_post_install(manifest, site_packages)
-                add_to_hub_inits(manifest, site_packages)
+                manifest_export = install(
+                    package_uri=validator_hub_uri,
+                    install_local_models=local_models,
+                    quiet=True,
+                )
+                manifest_exports.append(manifest_export)
             else:
-                console.print(f"Fake installing {validator}")
+                console.print(f"Fake installing {validator_hub_uri}")
                 time.sleep(1)
     console.print("Success!")
 
     # Pull the hub information from each of the installed validators and return it.
-    return [manifest.exports[0] for manifest in manifests]
+    return manifest_exports
 
 
 def generate_config_file(validators: List[str], name: Optional[str] = None) -> str:
