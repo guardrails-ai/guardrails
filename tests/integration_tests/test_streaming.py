@@ -581,52 +581,52 @@ Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
 
-# def test_fix_behavior_three_validators_overlap(mocker):
-#     mocker.patch(
-#         "openai.resources.chat.completions.Completions.create",
-#         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
-#     )
+def test_fix_behavior_three_validators_overlap(mocker):
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
+    )
 
-#     guard = gd.Guard().use_many(
-#         MockDetectPII(
-#             on_fail=OnFailAction.FIX,
-#             pii_entities="pii",
-#             replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
-#         ),
-#         LowerCase(on_fail=OnFailAction.FIX),
-#         # UpperCase(on_fail=OnFailAction.FIX),
-#         MockDetectPII(
-#             on_fail=OnFailAction.FIX,
-#             pii_entities="pii",
-#             replace_map={"John, under GOLDEN":"REDACTED!!", "SAN Francisco's hills":"REDACTED!!", "GOLDEN bridges":"gold!!!!"}
-#         )
-#     )
-#     gen = guard(
-#         llm_api=openai.chat.completions.create,
-#         prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
-#         model="gpt-4",
-#         stream=True,
-#     )
-#     text = ""
-#     original = ""
-#     for res in gen:
-#         original = original + res.raw_llm_output
-#         text = text + res.validated_output
-#     print('TEXT', text)
-#     assert (
-#         text
-#         == """"REDACTED!!, under gold!!!! bridges, roams,
-# <LOCATION> hills, his home.
-# dreams of fog, and salty air,
-# in his heart, he's always there."""
-#     )
-#     assert (
-#         original
-#         == """"John, under GOLDEN bridges, roams,
-# SAN Francisco's hills, his HOME.
-# Dreams of FOG, and salty AIR,
-# In his HEART, he's always THERE."""
-#     )
+    guard = gd.Guard().use_many(
+        MockDetectPII(
+            on_fail=OnFailAction.FIX,
+            pii_entities="pii",
+            replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
+        ),
+        LowerCase(on_fail=OnFailAction.FIX),
+        # UpperCase(on_fail=OnFailAction.FIX),
+        MockDetectPII(
+            on_fail=OnFailAction.FIX,
+            pii_entities="pii",
+            replace_map={"John, under GOLDEN":"REDACTED!!", "SAN Francisco's hills":"REDACTED!!", "GOLDEN bridges":"gold!!!!"}
+        )
+    )
+    gen = guard(
+        llm_api=openai.chat.completions.create,
+        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        model="gpt-4",
+        stream=True,
+    )
+    text = ""
+    original = ""
+    for res in gen:
+        original = original + res.raw_llm_output
+        text = text + res.validated_output
+    print('TEXT', text)
+    assert (
+        text
+        == """"REDACTED!!, under gold!!!! bridges, roams,
+<LOCATION> hills, his home.
+dreams of fog, and salty air,
+in his heart, he's always there."""
+    )
+    assert (
+        original
+        == """"John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+Dreams of FOG, and salty AIR,
+In his HEART, he's always THERE."""
+    )
 
 
     mocker.patch(
