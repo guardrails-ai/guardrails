@@ -198,7 +198,7 @@ Example: hub://guardrails/regex_match."
         False,
         "-v",
         "--verbose",
-        help="Run the command in quiet mode to reduce output verbosity.",
+        help="Run the command in verbose mode to increase output verbosity.",
     ),
 ):
     try:
