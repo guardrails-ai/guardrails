@@ -1,21 +1,30 @@
 from pydoc_markdown.interfaces import Context
-from pydoc_markdown.contrib.renderers.markdown import MarkdownRenderer, MarkdownReferenceResolver
+from pydoc_markdown.contrib.renderers.markdown import (
+    MarkdownRenderer,
+    MarkdownReferenceResolver,
+)
 from pydoc_markdown.contrib.processors.filter import FilterProcessor
 from pydoc_markdown.contrib.processors.google import GoogleProcessor
+# from pydoc_markdown.contrib.processors.crossref import CrossrefProcessor
 
-def render_loader(loader, processor = None, renderer = None, context = None):
+
+def render_loader(loader, processor=None, renderer=None, context=None):
     if not context:
-        context = Context(directory='guardrails')
+        context = Context(directory="guardrails")
 
     if not renderer:
-        renderer = MarkdownRenderer(
+        new_renderer = MarkdownRenderer(
             render_module_header=False,
             insert_header_anchors=False,
             descriptive_class_title=False,
-            signature_in_header=True,
-            classdef_code_block=False,
-            classdef_with_decorators=False,
+            signature_in_header=False,
+            classdef_code_block=True,
+            classdef_with_decorators=True,
+            signature_code_block=True,
+            signature_with_decorators=True,
+            render_typehint_in_data_header=True,
         )
+        renderer = new_renderer
 
     if not processor:
         processor = FilterProcessor(
@@ -24,10 +33,12 @@ def render_loader(loader, processor = None, renderer = None, context = None):
 
     google_processor = GoogleProcessor()
 
+    # TODO: Add this for api reference
+    # cross_ref_processor = CrossrefProcessor()
+
     loader.init(context)
     renderer.init(context)
     processor.init(context)
-
 
     modules = list(loader.load())
 

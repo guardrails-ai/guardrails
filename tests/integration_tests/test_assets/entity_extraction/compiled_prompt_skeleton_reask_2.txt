@@ -63,7 +63,7 @@ I was given the following JSON response, which had problems due to incorrect val
     }
   },
   "error_messages": [
-    "JSON does not match schema"
+    "JSON does not match schema:\n{\n  \"$.fees[0]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[1]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[2]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[3]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[4]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[5]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[6]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[7]\": [\n    \"'explanation' is a required property\"\n  ],\n  \"$.fees[8]\": [\n    \"'explanation' is a required property\"\n  ]\n}"
   ]
 }
 
@@ -73,16 +73,15 @@ Help me correct the incorrect values based on the given error messages.
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <list name="fees" description="What fees and charges are associated with my account?">
-        <object>
-            <string name="name" format="lower-case; two-words"/>
-            <string name="explanation" format="one-line"/>
-            <float name="value" format="percentage"/>
-        </object>
-    </list>
-    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"/>
+  <list description="What fees and charges are associated with my account?" name="fees" required="true">
+    <object required="true">
+      <string format="lower-case; two-words" name="name" required="true"></string>
+      <string format="one-line" name="explanation" required="true"></string>
+      <float format="percentage" name="value" required="true"></float>
+    </object>
+  </list>
+  <object description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" name="interest_rates" required="true"></object>
 </output>
-
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
@@ -90,9 +89,10 @@ Here's an example of the structure:
 {
   "fees": [
     {
-      "name": "string",
-      "explanation": "string",
-      "value": 1.5
+      "index": 1,
+      "name": "annual membership",
+      "explanation": "Annual Membership Fee",
+      "value": 0
     }
   ],
   "interest_rates": {}

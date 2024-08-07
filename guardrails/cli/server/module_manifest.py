@@ -26,6 +26,7 @@ class ModuleTags(Serializeable):
     content_type: Optional[List[str]] = field(default_factory=list)
     validation_category: Optional[List[str]] = field(default_factory=list)
     process_requirements: Optional[List[str]] = field(default_factory=list)
+    has_guardrails_endpoint: Optional[bool] = field(default_factory=bool)
 
 
 @dataclass

@@ -1,13 +1,16 @@
 import datetime
-import math
 
 import pytest
-from jwt import JWT, jwk_from_dict
+import jwt
+from datetime import timezone
+
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.server.hub_client import (
     TOKEN_EXPIRED_MESSAGE,
     TOKEN_INVALID_MESSAGE,
+    InvalidTokenError,
+    ExpiredTokenError,
     get_jwt_token,
 )
 
@@ -43,39 +46,27 @@ def test_get_auth():
 
 
 def test_get_jwt_token():
-    expiration = math.floor(datetime.datetime.now().timestamp() + 1000)
+    # Create a JWT that expires in the future
+    secret_key = "secret"
+    timedelta = datetime.timedelta(seconds=1000)
+    expiration = datetime.datetime.now(tz=timezone.utc) + timedelta
+    valid_jwt = jwt.encode({"exp": expiration}, secret_key, algorithm="HS256")
+    creds = Credentials.from_dict({"token": valid_jwt})
 
-    jwk = jwk_from_dict(
-        {
-            "alg": "HS256",
-            "kty": "oct",
-            "kid": "050bf691-4348-4891-940f-99af8354e82b",
-            "k": "eCE35cBrbRsO1GhrbxLXnGrVATgUFZDrPyyuOar4crw",
-        }
-    )
+    # Test valid token
+    assert get_jwt_token(creds) == valid_jwt
 
-    valid_jwt = JWT().encode(
-        {
-            "exp": expiration,
-        },
-        jwk,
-        "HS256",
-    )
-    creds = {"token": valid_jwt}
-    assert get_jwt_token(Credentials.from_dict(creds)) == valid_jwt
-
-    with pytest.raises(Exception) as e:
-        expiration = math.floor(datetime.datetime.now().timestamp() - 1000)
-        expired_jwt = JWT().encode(
-            {
-                "exp": expiration,
-            },
-            jwk,
-            "HS256",
-        )
+    # Test with an expired JWT
+    with pytest.raises(ExpiredTokenError) as e:
+        expired = datetime.datetime.now(tz=timezone.utc) - timedelta
+        expired_jwt = jwt.encode({"exp": expired}, secret_key, algorithm="HS256")
         get_jwt_token(Credentials.from_dict({"token": expired_jwt}))
+
     assert str(e.value) == TOKEN_EXPIRED_MESSAGE
 
-    with pytest.raises(Exception) as e:
-        get_jwt_token(Credentials.from_dict({"token": "invalid_token"}))
+    # Test with an invalid token format
+    with pytest.raises(InvalidTokenError) as e:
+        invalid_jwt = "invalid"
+        get_jwt_token(Credentials.from_dict({"token": invalid_jwt}))
+
     assert str(e.value) == TOKEN_INVALID_MESSAGE

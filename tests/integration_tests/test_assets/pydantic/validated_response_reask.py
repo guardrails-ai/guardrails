@@ -3,24 +3,22 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
-from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (
+from guardrails import Validator, register_validator
+from guardrails.actions.reask import FieldReAsk
+from guardrails.types import OnFailAction
+from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
     ValidationResult,
-    Validator,
-    register_validator,
 )
 
 prompt = """Generate data for possible users in accordance with the specification below.
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.complete_json_suffix_v2}"""
+${gr.complete_xml_suffix_v2}"""
 
 
 @register_validator(name="zip_code_must_be_numeric", data_type="string")
@@ -61,33 +59,22 @@ class Person(BaseModel):
     """
 
     name: str
-    if PYDANTIC_VERSION.startswith("1"):
-        age: int = Field(
-            ..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-        )
-        zip_code: str = Field(
-            ...,
-            validators=[
+
+    age: int = Field(
+        ...,
+        json_schema_extra={
+            "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
+        },
+    )
+    zip_code: str = Field(
+        ...,
+        json_schema_extra={
+            "validators": [
                 ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
                 ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
             ],
-        )
-    else:
-        age: int = Field(
-            ...,
-            json_schema_extra={
-                "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-            },
-        )
-        zip_code: str = Field(
-            ...,
-            json_schema_extra={
-                "validators": [
-                    ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
-                    ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
-                ],
-            },
-        )
+        },
+    )
 
 
 class ListOfPeople(BaseModel):

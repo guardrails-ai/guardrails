@@ -1,24 +1,20 @@
-from contextlib import contextmanager
 import os
 import subprocess
 import sys
-from string import Template
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 import typer
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
-from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import get_validator_manifest
+
+from guardrails.cli.hub.utils import (
+    get_hub_directory,
+    get_org_and_package_dirs,
+    pip_process,
+)
+from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
-
-from guardrails.cli.hub.utils import pip_process
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.hub.utils import get_org_and_package_dirs
-from guardrails.cli.hub.utils import get_hub_directory
-
-from .console import console
 
 
 def removesuffix(string: str, suffix: str) -> str:
@@ -84,7 +80,6 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
 def run_post_install(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
-
     if not post_install_script:
         return
 
@@ -194,78 +189,34 @@ def install(
         help="URI to the package to install.\
 Example: hub://guardrails/regex_match."
     ),
+    local_models: Optional[bool] = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
+    ),
     quiet: bool = typer.Option(
         False,
+        "-q",
         "--quiet",
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
 ):
-    verbose_printer = console.print
-    quiet_printer = console.print if not quiet else lambda x: None
-    """Install a validator from the Hub."""
-    if not package_uri.startswith("hub://"):
-        logger.error("Invalid URI!")
+    try:
+        from guardrails.hub.install import install
+
+        def confirm():
+            return typer.confirm(
+                "This validator has a Guardrails AI inference endpoint available. "
+                "Would you still like to install the"
+                " local models for local inference?",
+            )
+
+        install(
+            package_uri,
+            install_local_models=local_models,
+            quiet=quiet,
+            install_local_models_confirm=confirm,
+        )
+    except Exception as e:
+        logger.error(str(e))
         sys.exit(1)
-
-    installing_msg = f"Installing {package_uri}..."
-    logger.log(
-        level=LEVELS.get("SPAM"),  # type: ignore
-        msg=installing_msg,
-    )
-    verbose_printer(installing_msg)
-
-    # Validation
-    module_name = package_uri.replace("hub://", "")
-
-    @contextmanager
-    def do_nothing_context(*args, **kwargs):
-        try:
-            yield
-        finally:
-            pass
-
-    loader = console.status if not quiet else do_nothing_context
-
-    # Prep
-    fetch_manifest_msg = "Fetching manifest"
-    with loader(fetch_manifest_msg, spinner="bouncingBar"):
-        module_manifest = get_validator_manifest(module_name)
-        site_packages = get_site_packages_location()
-
-    # Install
-    dl_deps_msg = "Downloading dependencies"
-    with loader(dl_deps_msg, spinner="bouncingBar"):
-        install_hub_module(module_manifest, site_packages, quiet=quiet)
-
-    # Post-install
-    post_msg = "Running post-install setup"
-    with loader(post_msg, spinner="bouncingBar"):
-        run_post_install(module_manifest, site_packages)
-        add_to_hub_inits(module_manifest, site_packages)
-
-    logger.info("Installation complete")
-
-    verbose_printer(f"✅Successfully installed {module_name}!\n\n")
-    success_message_cli = Template(
-        "[bold]Import validator:[/bold]\n"
-        "from guardrails.hub import ${export}\n\n"
-        "[bold]Get more info:[/bold]\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
-    ).safe_substitute(
-        module_name=package_uri,
-        id=module_manifest.id,
-        export=module_manifest.exports[0],
-    )
-    success_message_logger = Template(
-        "✅Successfully installed ${module_name}!\n\n"
-        "Import validator:\n"
-        "from guardrails.hub import ${export}\n\n"
-        "Get more info:\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
-    ).safe_substitute(
-        module_name=package_uri,
-        id=module_manifest.id,
-        export=module_manifest.exports[0],
-    )
-    quiet_printer(success_message_cli)  # type: ignore
-    logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
