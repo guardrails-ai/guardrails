@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 from typing import List, Literal
+from types import ModuleType
 from pydash.strings import snake_case
 
 from guardrails.classes.generic.stack import Stack
@@ -75,7 +76,7 @@ class ValidatorPackageService:
             raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):
+    def get_validator_from_manifest(manifest: ModuleManifest) -> ModuleType:
         """
         Get Validator class from the installed module based on the manifest.
         Note: manifest.exports yields a list of exported Validator classes.

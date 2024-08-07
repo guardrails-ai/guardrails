@@ -168,9 +168,8 @@ def split_and_install_validators(
                     install_local_models=local_models,
                     quiet=True,
                 )
-                exports = [name for name in dir(module) if not name.startswith("__")]
-                print("Extracted exports: ", exports)
-                manifest_exports.append(exports)
+                exports = module.__validator_exports__
+                manifest_exports.append(exports[0])
             else:
                 console.print(f"Fake installing {validator_hub_uri}")
                 time.sleep(1)
