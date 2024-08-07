@@ -117,6 +117,9 @@ python_classes = ["Test"]
 python_functions = ["test_"]
 python_files = ["test_*.py"]
 testpaths = ["tests"]
+markers = [
+    "no_hub_telemetry_mock"
+]
 
 [pytest]
 log_cli = "True"

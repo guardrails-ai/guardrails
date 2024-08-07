@@ -1,7 +1,6 @@
 import os
-from unittest.mock import patch, MagicMock
-
 import pytest
+from unittest.mock import patch, MagicMock
 
 
 os.environ["OPENAI_API_KEY"] = "mocked"
@@ -21,8 +20,38 @@ def mock_span():
         yield mock_get_span
 
 
-@pytest.fixture(scope="session", autouse=True)
-def mock_hub_telemetry():
-    with patch("guardrails.utils.hub_telemetry_utils.HubTelemetry") as MockHubTelemetry:
-        MockHubTelemetry.return_value = MagicMock
+@pytest.fixture(autouse=True)
+def mock_guard_hub_telemetry():
+    with patch("guardrails.guard.HubTelemetry") as MockHubTelemetry:
+        MockHubTelemetry.return_value = MagicMock()
         yield MockHubTelemetry
+
+
+@pytest.fixture(autouse=True)
+def mock_validator_base_hub_telemetry():
+    with patch("guardrails.validator_base.HubTelemetry") as MockHubTelemetry:
+        MockHubTelemetry.return_value = MagicMock()
+        yield MockHubTelemetry
+
+
+@pytest.fixture(autouse=True)
+def mock_validator_service_hub_telemetry():
+    with patch("guardrails.validator_service.HubTelemetry") as MockHubTelemetry:
+        MockHubTelemetry.return_value = MagicMock()
+        yield MockHubTelemetry
+
+
+@pytest.fixture(autouse=True)
+def mock_runner_hub_telemetry():
+    with patch("guardrails.run.runner.HubTelemetry") as MockHubTelemetry:
+        MockHubTelemetry.return_value = MagicMock()
+        yield MockHubTelemetry
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "no_hub_telemetry_mock" in item.keywords:
+            item.fixturenames.remove("mock_guard_hub_telemetry")
+            item.fixturenames.remove("mock_validator_base_hub_telemetry")
+            item.fixturenames.remove("mock_validator_service_hub_telemetry")
+            item.fixturenames.remove("mock_runner_hub_telemetry")

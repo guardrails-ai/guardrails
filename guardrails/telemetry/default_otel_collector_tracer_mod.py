@@ -34,7 +34,7 @@ class DefaultOtelCollectorTracer:
         traceProvider.add_span_processor(processor)
         trace.set_tracer_provider(traceProvider)
 
-        self.tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+        self.tracer = traceProvider.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
 
 def default_otel_collector_tracer(resource_name: str = "guardrails") -> Tracer:
