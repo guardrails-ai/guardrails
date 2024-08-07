@@ -49,6 +49,9 @@ def install(
 
     Examples:
         >>> RegexMatch = install("hub://guardrails/regex_match").RegexMatch
+
+        >>> install("hub://guardrails/regex_match);
+        >>> import guardrails.hub.regex_match as regex_match
     """
 
     verbose_printer = console.print
