@@ -155,6 +155,13 @@ def split_and_install_validators(
     """
     from guardrails.hub.install import install
 
+    def install_local_models_confirm():
+        return typer.confirm(
+            "This validator has a Guardrails AI inference endpoint available. "
+            "Would you still like to install the"
+            " local models for local inference?",
+        )
+
     if not validators:
         return []
 
@@ -173,6 +180,7 @@ def split_and_install_validators(
                     package_uri=validator_hub_uri,
                     install_local_models=local_models,
                     quiet=True,
+                    install_local_models_confirm=install_local_models_confirm,
                 )
                 exports = module.__validator_exports__
                 manifest_exports.append(exports[0])
