@@ -30,7 +30,7 @@ class TestInstall:
         mock_install.assert_called_once_with(
             "hub://guardrails/test-validator",
             install_local_models=False,
-            quiet=False,
+            quiet=True,
             install_local_models_confirm=ANY,
         )
 
@@ -46,7 +46,7 @@ class TestInstall:
         mock_install.assert_called_once_with(
             "hub://guardrails/test-validator",
             install_local_models=True,
-            quiet=False,
+            quiet=True,
             install_local_models_confirm=ANY,
         )
 
@@ -62,23 +62,23 @@ class TestInstall:
         mock_install.assert_called_once_with(
             "hub://guardrails/test-validator",
             install_local_models=None,
-            quiet=False,
+            quiet=True,
             install_local_models_confirm=ANY,
         )
 
         assert result.exit_code == 0
 
-    def test_install_quiet(self, mocker):
+    def test_install_verbose(self, mocker):
         mock_install = mocker.patch("guardrails.hub.install.install")
         runner = CliRunner()
         result = runner.invoke(
-            hub_command, ["install", "hub://guardrails/test-validator", "--quiet"]
+            hub_command, ["install", "hub://guardrails/test-validator", "--verbose"]
         )
 
         mock_install.assert_called_once_with(
             "hub://guardrails/test-validator",
             install_local_models=None,
-            quiet=True,
+            quiet=False,
             install_local_models_confirm=ANY,
         )
 

@@ -131,7 +131,7 @@ def get_install_url(manifest: ModuleManifest) -> str:
 
 
 def install_hub_module(
-    module_manifest: ModuleManifest, site_packages: str, quiet: bool = True
+    module_manifest: ModuleManifest, site_packages: str, quiet: bool = False
 ):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
@@ -194,10 +194,10 @@ Example: hub://guardrails/regex_match."
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
-    quiet: bool = typer.Option(
+    verbose: bool = typer.Option(
         False,
-        "-q",
-        "--quiet",
+        "-v",
+        "--verbose",
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
 ):
@@ -211,10 +211,11 @@ Example: hub://guardrails/regex_match."
                 " local models for local inference?",
             )
 
+        is_quiet = not verbose
         install(
             package_uri,
             install_local_models=local_models,
-            quiet=quiet,
+            quiet=is_quiet,
             install_local_models_confirm=confirm,
         )
     except Exception as e:
