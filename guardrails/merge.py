@@ -31,8 +31,8 @@ def merge(source: str, target: str, base: str) -> str:
     while source is not None and target is not None:
         source_status, source_text = source
         target_status, target_text = target
-        # print('source', source)
-        # print('target', target)
+        print("source", source)
+        print("target", target)
         if source_status == PRESERVED and target_status == PRESERVED:
             # Base is preserved for both source and target
             if len(source_text) > len(target_text):
@@ -81,7 +81,7 @@ def merge(source: str, target: str, base: str) -> str:
                 if advance:
                     prev_source_text = source[1]
                     source = next(diff1, None)
-            elif len(source_text) < len(target_text):
+            elif len(source_text) <= len(target_text):
                 # Addition performed by source
                 advance = True
                 composed_text.append(source_text)
@@ -153,7 +153,7 @@ def merge(source: str, target: str, base: str) -> str:
                 target = (target_status, target_text)
                 prev_source_text = source[1]
                 source = next(diff1, None)
-            elif len(target_text) < len(source_text):
+            elif len(target_text) <= len(source_text):
                 source_text = source_text[len(target_text) :]
                 source = (source_status, source_text)
                 prev_target_text = target[1]
@@ -165,7 +165,7 @@ def merge(source: str, target: str, base: str) -> str:
                 source = (source_status, source_text)
                 prev_target_text = target[1]
                 target = next(diff2, None)
-            elif len(source_text) < len(target_text):
+            elif len(source_text) <= len(target_text):
                 # Advance to next source
                 target_text = target_text[len(source_text) :]
                 target = (target_status, target_text)
