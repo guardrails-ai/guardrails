@@ -21,8 +21,8 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
+from guardrails.validator_service import SequentialValidatorService
 from tests.integration_tests.test_assets.validators import LowerCase, MockDetectPII
-from tests.integration_tests.test_assets.validators.upper_case import UpperCase
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
@@ -419,6 +419,7 @@ POETRY_CHUNKS = [
     ", he's always THERE.",
 ]
 
+
 def test_noop_behavior_two_validators(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -433,9 +434,11 @@ def test_noop_behavior_two_validators(mocker):
         ),
         LowerCase(on_fail=OnFailAction.NOOP),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -459,6 +462,7 @@ Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
 
+
 def test_fix_behavior_one_validator(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -468,9 +472,11 @@ def test_fix_behavior_one_validator(mocker):
     guard = gd.Guard().use_many(
         LowerCase(on_fail=OnFailAction.FIX),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -494,6 +500,7 @@ Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
 
+
 def test_fix_behavior_two_validators(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -508,9 +515,11 @@ def test_fix_behavior_two_validators(mocker):
         ),
         LowerCase(on_fail=OnFailAction.FIX),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -534,6 +543,7 @@ Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
 
+
 def test_fix_behavior_three_validators(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -551,12 +561,18 @@ def test_fix_behavior_three_validators(mocker):
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
-            replace_map={"John":"REDACTED!!", "SAN Francisco's":"REDACTED!!", "GOLDEN":"purple!!"}
-        )
+            replace_map={
+                "John": "REDACTED!!",
+                "SAN Francisco's": "REDACTED!!",
+                "GOLDEN": "purple!!",
+            },
+        ),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -565,7 +581,7 @@ def test_fix_behavior_three_validators(mocker):
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print('FINAL TEXT', text)
+    print("FINAL TEXT", text)
     assert (
         text
         == """"REDACTED!!, under purple!! bridges, roams,
@@ -581,12 +597,17 @@ Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
 
+
 def test_fix_behavior_three_validators_overlap(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
+    val_service = SequentialValidatorService()
+    res = val_service.multi_merge("hello world", ["", "hello world"])
+    print("MERGE TEST", res)
+
     guard = gd.Guard().use_many(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
@@ -598,12 +619,18 @@ def test_fix_behavior_three_validators_overlap(mocker):
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
-            replace_map={"John, under GOLDEN":"REDACTED!!", "SAN Francisco's hills":"REDACTED!!", "GOLDEN bridges":"gold!!!!"}
-        )
+            replace_map={
+                "John, under GOLDEN": "REDACTED!!",
+                "SAN Francisco's hills": "REDACTED!!",
+                "GOLDEN bridges": "gold!!!!",
+            },
+        ),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -612,7 +639,7 @@ def test_fix_behavior_three_validators_overlap(mocker):
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print('TEXT', text)
+    print("TEXT", text)
     assert (
         text
         == """"REDACTED!!, under gold!!!! bridges, roams,
@@ -627,7 +654,6 @@ SAN Francisco's hills, his HOME.
 Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
-
 
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -645,12 +671,18 @@ In his HEART, he's always THERE."""
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
-            replace_map={"John":"REDACTED!!", "SAN Francisco's":"REDACTED!!", "GOLDEN":"gold!!!!"}
-        )
+            replace_map={
+                "John": "REDACTED!!",
+                "SAN Francisco's": "REDACTED!!",
+                "GOLDEN": "gold!!!!",
+            },
+        ),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -659,7 +691,7 @@ In his HEART, he's always THERE."""
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print('TEXT', text)
+    print("TEXT", text)
     assert (
         text
         == """"REDACTED!!, under gold!!!! bridges, roams,
@@ -674,6 +706,7 @@ SAN Francisco's hills, his HOME.
 Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
+
 
 def test_refrain_behavior(mocker):
     mocker.patch(
@@ -689,9 +722,12 @@ def test_refrain_behavior(mocker):
         ),
         LowerCase(on_fail=OnFailAction.FIX),
     )
+
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )
@@ -723,9 +759,11 @@ def test_filter_behavior(mocker):
         ),
         LowerCase(on_fail=OnFailAction.FILTER),
     )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        prompt=prompt,
         model="gpt-4",
         stream=True,
     )

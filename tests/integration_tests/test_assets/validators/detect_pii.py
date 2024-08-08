@@ -16,9 +16,10 @@ from guardrails.validator_base import ErrorSpan
 class MockDetectPII(Validator):
     """Validates that any text does not contain any PII.
 
-    Instead of using Microsoft Presidio, it accepts a map of PII text to their replacements,
-    and performs a simple string replacement. For example, if the map is {"John Doe": "REDACTED"},
-    then the text "John Doe is a person" will be replaced with "REDACTED is a person".
+    Instead of using Microsoft Presidio, it accepts a map of PII
+    text to their replacements, and performs a simple string replacement.
+    For example, if the map is {"John Doe": "REDACTED"}, then the text "John
+    Doe is a person" will be replaced with "REDACTED is a person".
 
     **Key Properties**
 

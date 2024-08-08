@@ -4,6 +4,7 @@ from diff_match_patch import diff_match_patch
 # Constants
 DIFFER = diff_match_patch()
 DIFFER.Diff_Timeout = 0.1
+DIFFER.Diff_EditCost = 4
 PRESERVED = 0
 DELETION = -1
 ADDITION = 1
@@ -81,18 +82,18 @@ def merge(source: str, target: str, base: str) -> str:
                 if advance:
                     prev_source_text = source[1]
                     source = next(diff1, None)
-            elif len(source_text) <= len(target_text):
+            elif len(source_text) < len(target_text):
                 # Addition performed by source
                 advance = True
                 composed_text.append(source_text)
                 tempdiff = DIFFER.diff_main(target_text, source_text)
-                print("tempdiff", tempdiff)
+                print("tempdiff", tempdiff, target_text, source_text)
                 _, invariant = tempdiff[1]
                 print("_ invariant", _, invariant)
                 # _, (_, invariant) = DIFFER.diff_main(source_text, target_text)
                 prev_source_text = source[1]
                 source = next(diff1, None)
-                while invariant != "" and target is not None:
+                while invariant != "" and target is not None and source is not None:
                     # Apply source changes until invariant is preserved
                     source_status, source_text = source
                     if source_status == DELETION:

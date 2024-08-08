@@ -146,13 +146,10 @@ class StreamRunner(Runner):
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
         if self.output_type == OutputTypes.STRING:
-            stream_finished = False
-            last_chunk_text = ""
 
             def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
                 for chunk in stream:
                     chunk_text = self.get_chunk_text(chunk, api)
-                    last_chunk_text = chunk_text
                     finished = self.is_last_chunk(chunk, api)
                     # 2. Parse the chunk
                     parsed_chunk, move_to_next = self.parse(
@@ -177,7 +174,6 @@ class StreamRunner(Runner):
             for res in gen:
                 chunk = res.chunk
                 original_text = res.original_text
-                metadata = res.metadata
                 if isinstance(chunk, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -202,36 +198,6 @@ class StreamRunner(Runner):
                     validation_passed=passed,
                 )
 
-            # TODO: handle this!
-            # handle case where generator doesn't give finished status
-            # if not stream_finished:
-            #     last_result = self.validate(
-            #         iteration,
-            #         index,
-            #         "",
-            #         output_schema,
-            #         True,
-            #         validate_subschema=True,
-            #         remainder=True,
-            #     )
-            #     if last_result:
-            #         passed = call_log.status == pass_status
-
-            #         validated_output = None
-            #         if passed is True:
-            #             validated_output = cast(OT, last_result)
-
-            #         reask = None
-            #         if isinstance(last_result, ReAsk):
-            #             reask = last_result
-
-            #         yield ValidationOutcome(
-            #             call_id=call_log.id,  # type: ignore
-            #             raw_llm_output=last_chunk_text,
-            #             validated_output=validated_output,
-            #             reask=reask,
-            #             validation_passed=passed,
-            #         )
         # handle non string schema
         else:
             fragment = ""

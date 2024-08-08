@@ -262,12 +262,11 @@ class SequentialValidatorService(ValidatorServiceBase):
     # requires at least 2 validators
     def multi_merge(self, original: str, new_values: list[str]) -> str:
         current = new_values.pop()
+        print("Fmerging these:", new_values)
         while len(new_values) > 0:
             nextval = new_values.pop()
-            print('\n\n\nmerging current:', current)
-            print('merging nextval:', nextval)
             current = merge(current, nextval, original)
-            print('\nmerge result:',current)
+        print("\nFmerge result:", current)
         return current
 
     def run_validators_stream_fix(
@@ -358,9 +357,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     last_chunk_validated = True
                     values_to_merge = []
                     for validator in validators:
-                        values_to_merge.append(
-                            validator_partial_acc[id(validator)]
-                        )
+                        values_to_merge.append(validator_partial_acc[id(validator)])
                     merged_value = self.multi_merge(acc_output, values_to_merge)
                     # merged_value = self.multi_merge(acc_output, values_to_merge)
                     # reset validator_partial_acc
