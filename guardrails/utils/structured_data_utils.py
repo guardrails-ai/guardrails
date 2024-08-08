@@ -1,5 +1,5 @@
 from typing import List, Optional
-
+from guardrails.logger import logger
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 
 
@@ -28,10 +28,15 @@ def set_additional_properties_false_iteratively(schema):
                     current["properties"].keys()
                 )  # this has to be set
             if "maximum" in current:
+                logger.warn("Property maximum is not supported." " Dropping")
                 current.pop("maximum")  # the api does not like these set
             if "minimum" in current:
+                logger.warn("Property maximum is not supported." " Dropping")
                 current.pop("minimum")  # the api does not like these set
             if "default" in current:
+                logger.warn(
+                    "Property default is not supported. " "Marking field Required"
+                )
                 current.pop("default")  # the api does not like these set
             for prop in current.values():
                 stack.append(prop)
@@ -57,7 +62,6 @@ def json_function_calling_tool(
 
 
 def output_format_json_schema(schema: ProcessedSchema) -> dict:
-    print("====schema", schema)
     schema = schema.model_json_schema()  # this is a pydantic model
 
     set_additional_properties_false_iteratively(schema)
