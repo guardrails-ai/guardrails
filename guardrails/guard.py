@@ -86,10 +86,13 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import (
+from guardrails.utils.structured_data_utils import (
     # Prevent duplicate declaration in the docs
     json_function_calling_tool as json_function_calling_tool_util,
+    output_format_json_schema as output_format_json_schema,
 )
+from guardrails.decorators.experimental import experimental
+
 from guardrails.settings import settings
 
 
@@ -1330,6 +1333,10 @@ class Guard(IGuard, Generic[OT]):
         )
 
         return i_guard.to_dict()
+
+    @experimental
+    def response_format_json_schema(self) -> Dict[str, Any]:
+        return output_format_json_schema(schema=self._base_model)  # type: ignore
 
     def json_function_calling_tool(
         self,
