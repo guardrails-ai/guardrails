@@ -34,9 +34,7 @@ def set_additional_properties_false_iteratively(schema):
                 logger.warn("Property maximum is not supported." " Dropping")
                 current.pop("minimum")  # the api does not like these set
             if "default" in current:
-                logger.warn(
-                    "Property default is not supported. " "Marking field Required"
-                )
+                logger.warn("Property default is not supported. Marking field Required")
                 current.pop("default")  # the api does not like these set
             for prop in current.values():
                 stack.append(prop)
