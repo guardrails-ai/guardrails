@@ -7,7 +7,6 @@ from guardrails_api_client import (
     ErrorSpan as IErrorSpan,
 )
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
-from guardrails.logger import logger
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
@@ -116,19 +115,6 @@ class FailResult(ValidationResult, IFailResult):
     May not exist for non-streamed output.
     """
     error_spans: Optional[List["ErrorSpan"]] = None
-
-    def __init__(self, **kwargs) -> None:
-        # Prevent a footgun: message is not an expected parameter, error_message is.
-        # We accept kwargs, but that means a user can pass message by accident and not
-        # know that it's wrong until they get an exception.
-        if "error_message" not in kwargs and "message" in kwargs:
-            logger.warning(
-                "Parameter missing: FailResult was passed 'message' instead "
-                "of 'error_message' and 'error_messge' is unspecified."
-            )
-            kwargs["error_message"] = kwargs["message"]
-            del kwargs["message"]
-        super().__init__(**kwargs)
 
     @classmethod
     def from_interface(cls, i_fail_result: IFailResult) -> "FailResult":
