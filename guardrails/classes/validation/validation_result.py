@@ -117,10 +117,10 @@ class FailResult(ValidationResult, IFailResult):
     error_spans: Optional[List["ErrorSpan"]] = None
 
     def __init__(self, error_message: str, **kwargs) -> None:
-        super().__init__(error_message=error_message, **kwargs)
         # This is a silly thing to force a friendly error message and to give type hints
         # to IDEs who have a hard time figuring out the constructor parameters.
-        self.error_message = error_message
+        kwargs["error_message"] = error_message
+        super().__init__(**kwargs)
 
     @classmethod
     def from_interface(cls, i_fail_result: IFailResult) -> "FailResult":
