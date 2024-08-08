@@ -116,9 +116,14 @@ class HubTelemetry:
             span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
             context=self.extract_current_context() if has_parent else None,
         ) as span:
-            if is_parent:
-                # Inject the current context
-                self.inject_current_context()
+            try:
+                if is_parent:
+                    # Inject the current context
+                    self.inject_current_context()
+                for attribute in attributes:
+                    span.set_attribute(attribute[0], attribute[1])
 
-            for attribute in attributes:
-                span.set_attribute(attribute[0], attribute[1])
+                span.set_status(trace.Status(trace.StatusCode.OK))
+            except Exception as e:
+                logging.error("An error occured during sopan creation: " + str(e))
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
