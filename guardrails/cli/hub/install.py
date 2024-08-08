@@ -194,11 +194,11 @@ Example: hub://guardrails/regex_match."
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
-    quiet: bool = typer.Option(
+    verbose: bool = typer.Option(
         False,
-        "-q",
-        "--quiet",
-        help="Run the command in quiet mode to reduce output verbosity.",
+        "-v",
+        "--verbose",
+        help="Run the command in verbose mode to increase output verbosity.",
     ),
 ):
     try:
@@ -211,10 +211,11 @@ Example: hub://guardrails/regex_match."
                 " local models for local inference?",
             )
 
+        is_quiet = not verbose
         install(
             package_uri,
             install_local_models=local_models,
-            quiet=quiet,
+            quiet=is_quiet,
             install_local_models_confirm=confirm,
         )
     except Exception as e:
