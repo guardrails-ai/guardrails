@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 from typing import List, Literal
+from types import ModuleType
 from pydash.strings import snake_case
 
 from guardrails.classes.generic.stack import Stack
@@ -18,6 +19,10 @@ from guardrails.cli.server.hub_client import get_validator_manifest
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
+
+class ValidatorModuleType(ModuleType):
+    __validator_exports__: List[str]
 
 
 class FailedPackageInspection(Exception):
@@ -55,7 +60,7 @@ class ValidatorPackageService:
         return site_packages_path
 
     @staticmethod
-    def reload_module(module_path):
+    def reload_module(module_path) -> ModuleType:
         try:
             reloaded_module = None
             # Dynamically import the module based on its path
@@ -75,7 +80,7 @@ class ValidatorPackageService:
             raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):
+    def get_validator_from_manifest(manifest: ModuleManifest) -> ModuleType:
         """
         Get Validator class from the installed module based on the manifest.
         Note: manifest.exports yields a list of exported Validator classes.
