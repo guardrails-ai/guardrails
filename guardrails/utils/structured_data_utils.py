@@ -1,6 +1,7 @@
 from typing import List, Optional
 from guardrails.logger import logger
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.types.pydantic import ModelOrListOfModels
 
 
 # takes processed schema and converts it to a openai tool object
@@ -59,12 +60,16 @@ def json_function_calling_tool(
     return tools
 
 
-def output_format_json_schema(schema: ProcessedSchema) -> dict:
-    schema = schema.model_json_schema()  # this is a pydantic model
+def output_format_json_schema(schema: ModelOrListOfModels) -> dict:
+    parsed_schema = schema.model_json_schema()  # type: ignore
 
-    set_additional_properties_false_iteratively(schema)
+    set_additional_properties_false_iteratively(parsed_schema)
 
     return {
         "type": "json_schema",
-        "json_schema": {"name": schema["title"], "schema": schema, "strict": True},
+        "json_schema": {
+            "name": parsed_schema["title"],
+            "schema": parsed_schema,
+            "strict": True,
+        },  # type: ignore
     }

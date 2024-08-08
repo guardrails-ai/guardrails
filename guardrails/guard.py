@@ -1335,7 +1335,7 @@ class Guard(IGuard, Generic[OT]):
 
     @experimental
     def response_format_json_schema(self) -> Dict[str, Any]:
-        return output_format_json_schema(self._base_model)
+        return output_format_json_schema(schema=self._base_model)
 
     def json_function_calling_tool(
         self,
