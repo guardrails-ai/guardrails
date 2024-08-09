@@ -19,9 +19,10 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
+from guardrails.utils.prompt_utils import prompt_uses_xml
+from guardrails.run.utils import preprocess_prompt
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
-from guardrails.utils.telemetry_utils import async_trace
+from guardrails.telemetry import trace_async_call, trace_async_step
 
 
 class AsyncRunner(Runner):
@@ -149,7 +150,7 @@ class AsyncRunner(Runner):
         return call_log
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="step")
+    @trace_async_step
     async def async_step(
         self,
         index: int,
@@ -246,7 +247,7 @@ class AsyncRunner(Runner):
         return iteration
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="call")
+    @trace_async_call
     async def async_call(
         self,
         instructions: Optional[Instructions],
@@ -339,8 +340,6 @@ class AsyncRunner(Runner):
             The instructions, prompt, and message history.
         """
         prompt_params = prompt_params or {}
-        if api is None:
-            raise UserFacingException(ValueError("API must be provided."))
 
         has_prompt_validation = "prompt" in self.validation_map
         has_instructions_validation = "instructions" in self.validation_map
@@ -416,7 +415,7 @@ class AsyncRunner(Runner):
                 instructions = instructions.format(**prompt_params)
 
             instructions, prompt = preprocess_prompt(
-                prompt_callable=api,
+                prompt_callable=api,  # type: ignore
                 instructions=instructions,
                 prompt=prompt,
                 output_type=self.output_type,

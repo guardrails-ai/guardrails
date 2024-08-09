@@ -1,4 +1,4 @@
-# CLI
+# Guardrails CLI
 
 **Usage**:
 

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 
+from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
@@ -18,6 +19,7 @@ from guardrails.utils.parsing_utils import (
 )
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
+from guardrails.telemetry import trace_stream_step
 
 
 class StreamRunner(Runner):
@@ -72,6 +74,7 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
+    @trace_stream_step
     def step(
         self,
         index: int,
@@ -143,13 +146,10 @@ class StreamRunner(Runner):
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
         if self.output_type == OutputTypes.STRING:
-            stream_finished = False
-            last_chunk_text = ""
 
             def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
                 for chunk in stream:
                     chunk_text = self.get_chunk_text(chunk, api)
-                    last_chunk_text = chunk_text
                     finished = self.is_last_chunk(chunk, api)
                     # 2. Parse the chunk
                     parsed_chunk, move_to_next = self.parse(
@@ -161,71 +161,45 @@ class StreamRunner(Runner):
                     yield parsed_chunk, finished
 
             prepped_stream = prepare_chunk_generator(stream)
-            gen = self.validate_stream(
-                iteration,
-                index,
+            gen = validator_service.validate_stream(
                 prepped_stream,
-                output_schema,
+                self.metadata,
+                self.validation_map,
+                iteration,
+                self._disable_tracer,
+                "$",
                 validate_subschema=True,
             )
 
-            for validated_text, original_text, metadata, validation_results in gen:
-                if isinstance(validated_text, SkeletonReAsk):
+            for res in gen:
+                chunk = res.chunk
+                original_text = res.original_text
+                if isinstance(chunk, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
                         "of the expected output JSON schema."
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(validated_text)
+                reasks, valid_op = self.introspect(chunk)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
-                validation_response += cast(str, validated_text)
+                validation_response += cast(str, chunk)
                 passed = call_log.status == pass_status
                 print("validation_results", validation_results)
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
                     raw_llm_output=original_text,
-                    validated_output=validated_text,
+                    validated_output=chunk,
                     validation_passed=passed,
                     validation_results=validation_results,
                 )
 
-            # TODO: handle this!
-            # handle case where generator doesn't give finished status
-            # if not stream_finished:
-            #     last_result = self.validate(
-            #         iteration,
-            #         index,
-            #         "",
-            #         output_schema,
-            #         True,
-            #         validate_subschema=True,
-            #         remainder=True,
-            #     )
-            #     if last_result:
-            #         passed = call_log.status == pass_status
-
-            #         validated_output = None
-            #         if passed is True:
-            #             validated_output = cast(OT, last_result)
-
-            #         reask = None
-            #         if isinstance(last_result, ReAsk):
-            #             reask = last_result
-
-            #         yield ValidationOutcome(
-            #             call_id=call_log.id,  # type: ignore
-            #             raw_llm_output=last_chunk_text,
-            #             validated_output=validated_output,
-            #             reask=reask,
-            #             validation_passed=passed,
-            #         )
         # handle non string schema
         else:
             fragment = ""

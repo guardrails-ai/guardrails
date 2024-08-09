@@ -1,3 +1,4 @@
+import os
 from guardrails.classes.credentials import Credentials
 import jwt
 from jwt import ExpiredSignatureError, DecodeError
@@ -30,7 +31,9 @@ class HttpError(Exception):
     message: str
 
 
-VALIDATOR_HUB_SERVICE = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+VALIDATOR_HUB_SERVICE = os.getenv(
+    "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
+)
 
 
 def get_jwt_token(creds: Credentials) -> Optional[str]:

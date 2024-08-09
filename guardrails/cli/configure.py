@@ -103,11 +103,8 @@ def configure(
     try:
         save_configuration_file(token, enable_metrics, remote_inferencing)
         logger.info("Configuration saved.")
-
-        if not token:
-            logger.info("No token provided. Skipping authentication.")
     except Exception as e:
-        logger.error("An unexpected error occured!")
+        logger.error("An unexpected error occured saving configuration!")
         logger.error(e)
         sys.exit(1)
 
@@ -132,3 +129,5 @@ def configure(
             logger.error(e)
             # We do not want to exit the program if the user fails to authenticate
             # instead, save the token and other configuration options
+    else:
+        logger.info("No token provided. Skipping authentication.")

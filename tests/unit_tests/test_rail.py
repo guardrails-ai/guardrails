@@ -189,3 +189,36 @@ def test_format_not_read_as_validators():
     #   as stated in the previous DeprecationWarning.
     processed_schema = rail_string_to_schema(rail_spec)
     assert len(processed_schema.validators) == 0
+
+
+def test_rail_with_messages():
+    rail_spec = """
+<rail version="0.1">
+<output>
+  <string name="string_name" />
+</output>
+<messages>
+    <message role="system">You are a helpful assistant.</message>
+    <message role="user">Tell me a joke.</message>
+    <message role="system">Be brief and concise. 
+    It should not be longer than 1-2 sentences.</message>
+</messages>
+</rail>
+"""
+    schema = rail_string_to_schema(rail_spec)
+    assert len(schema.exec_opts.messages) == 3
+    assert schema.exec_opts.messages == [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant.",
+        },
+        {
+            "role": "user",
+            "content": "Tell me a joke.",
+        },
+        {
+            "role": "system",
+            "content": "Be brief and concise. \n"
+            "    It should not be longer than 1-2 sentences.",
+        },
+    ]

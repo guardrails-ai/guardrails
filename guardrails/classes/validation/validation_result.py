@@ -6,7 +6,12 @@ from guardrails_api_client import (
     FailResult as IFailResult,
     ErrorSpan as IErrorSpan,
 )
+<<<<<<< HEAD
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel, BaseModel
+=======
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from pydantic import BaseModel
+>>>>>>> nichwch/onfix-streaming
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
@@ -116,6 +121,12 @@ class FailResult(ValidationResult, IFailResult):
     """
     error_spans: Optional[List["ErrorSpan"]] = None
 
+    def __init__(self, error_message: str, **kwargs) -> None:
+        # This is a silly thing to force a friendly error message and to give type hints
+        # to IDEs who have a hard time figuring out the constructor parameters.
+        kwargs["error_message"] = error_message
+        super().__init__(**kwargs)
+
     @classmethod
     def from_interface(cls, i_fail_result: IFailResult) -> "FailResult":
         error_spans = None
@@ -181,6 +192,7 @@ class ErrorSpan(IErrorSpan, ArbitraryModel):
     reason: str
 
 
+<<<<<<< HEAD
 class ProcessedErrorSpan(ErrorSpan):
     fragment: str
 
@@ -190,3 +202,9 @@ class ValidationFragment(BaseModel):
     validator_status: Union[Literal["pass"], Literal["fail"]]
     failure_reason: str
     error_spans: List[ProcessedErrorSpan]
+=======
+class StreamValidationResult(BaseModel):
+    chunk: Any
+    original_text: str
+    metadata: Dict[str, Any]
+>>>>>>> nichwch/onfix-streaming

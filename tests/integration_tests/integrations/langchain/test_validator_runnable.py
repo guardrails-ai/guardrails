@@ -1,6 +1,12 @@
 from typing import Optional
+import io
+import sys
+
 
 import pytest
+
+from guardrails.errors import ValidationError
+from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
 
 @pytest.mark.parametrize(
@@ -15,15 +21,12 @@ import pytest
         ("This response isn't relevant.", True, "Result must match Ice cream"),
     ],
 )
-def test_guard_as_runnable(output: str, throws: bool, expected_error: Optional[str]):
+def test_validator_runnable(output: str, throws: bool, expected_error: Optional[str]):
     from langchain_core.language_models import LanguageModelInput
     from langchain_core.messages import AIMessage, BaseMessage
     from langchain_core.output_parsers import StrOutputParser
     from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.runnables import Runnable, RunnableConfig
-
-    from guardrails.errors import ValidationError
-    from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
     class MockModel(Runnable):
         def invoke(
@@ -55,3 +58,35 @@ def test_guard_as_runnable(output: str, throws: bool, expected_error: Optional[s
         result = chain.invoke({"topic": topic})
 
         assert result == output
+
+
+def test_validator_runnable_with_callback_config():
+    from langchain_core.callbacks import CallbackManager
+    from langchain_core.tracers import ConsoleCallbackHandler
+    from langchain_core.runnables import RunnableConfig
+
+    console_handler = ConsoleCallbackHandler()
+    callback_manager = CallbackManager([console_handler])
+    config_with_callbacks = RunnableConfig(callbacks=callback_manager)
+
+    regex_match = RegexMatch(
+        "Ice cream", match_type="search", on_fail="exception"
+    ).to_runnable()
+
+    captured_output = io.StringIO()
+    sys.stdout = captured_output
+
+    result = regex_match.invoke("Ice cream is delicious.", config=config_with_callbacks)
+    assert result == "Ice cream is delicious."
+
+    with pytest.raises(ValidationError) as exc_info:
+        regex_match.invoke("Chocolate is delicious.", config=config_with_callbacks)
+
+    assert "The response from the LLM failed validation!" in str(exc_info.value)
+    assert "Result must match Ice cream" in str(exc_info.value)
+
+    sys.stdout = sys.__stdout__
+
+    console_output = captured_output.getvalue()
+    assert "Ice cream is delicious." in console_output
+    assert "Chocolate is delicious." in console_output

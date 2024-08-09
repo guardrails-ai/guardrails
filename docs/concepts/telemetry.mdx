@@ -1,0 +1,82 @@
+# Telemetry
+
+## Our approach to telemetry
+
+Telemetry is a crucial part of the LLM toolcahin in production. LLMs are nondeterministic and work with relatively high latency compared to more traditional APIs. This makes it important to monitor production systems that use LLMs, as well as the LLMs themselves. 
+
+Basic LLM telemetry like token count and latency is important.
+
+It's as important to monitor the performance of the Guards that protect your LLMs.
+By integrating telemetry, we can find how effective our guards are and how much latency they add to the system.
+
+
+## Metrics you can capture using OTEL
+
+This package is instrumented using the OpenTelemetry Python SDK. By viewing the captured traces and derived metrics, we're able to get useful insights into how our Guards, and our LLM apps in general perform. Among other things, we're able to find:
+
+1. Latency of Guards
+2. Latency of LLMs
+3. Success rates of Guards
+4. The rate at which validators Pass and Fail, within a Guard and across Guards
+5. Deep dives into singular guard and validator calls
+
+Since we are using OpenTelemetry, traces and metrics can be written to any OpenTelemetry-enabled service or OTLP endpoint. This includes all major metrics providers like Grafana, New Relic, Prometheus, and Splunk. 
+
+This guide will show how to set up your Python project to log traces to Grafana and to a self-hosted OTEL collector. For other OTEL endpoints, consult your metrics provider's documentation on OTEL support.
+
+## Configure Guardrails to talk to an OTLP collector
+
+To talk to an OTLP collector, you need only add a few environment variables and create a TracerProvider.  To streamline development, Guardrails provides a default OTLP tracer and provider.
+
+First, set these environment variables
+
+```bash
+OTEL_EXPORTER_OTLP_PROTOCOL
+OTEL_EXPORTER_OTLP_ENDPOINT
+OTEL_EXPORTER_OTLP_HEADERS
+```
+
+Then, create the tracer provider and you guard:
+
+```python
+from guardrails.telemetry import default_otlp_tracer
+
+default_otlp_tracer("my_guard")
+
+# define your guard
+guard = Guard(name="my_guard")
+```
+
+## Configure OTEL for a self-hosted OpenTelemetry Collector
+
+For advanced use cases (like if you have a metrics provider in a VPC), you can use a self-hosted OpenTelemetry Collector to receive traces and metrics from your Guard.
+Standard [open telemetry environment variables](https://opentelemetry.io/docs/languages/python/exporters/) are used to configure the collector. Use the `default_otel_collector_tracer` when configuring your guard.
+
+```python
+from guardrails import Guard, OnFailAction
+from guardrails.telemetry import default_otel_collector_tracer
+from guardrails.hub import ValidLength
+
+# use a descriptive name that will differentiate where your metrics are stored
+default_otel_collector_tracer("petname_guard")
+
+guard = Guard(name="petname_guard").use(
+  validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
+)
+
+guard(
+  messages[{
+    "role": "user",
+    "content": "Suggest a name for my cat."
+  }],
+  model="gpt-4",
+  max_tokens=1024,
+  temperature=0.5,
+)
+```
+
+## Learn more
+Check out one of our partner integrations to see how you can use Guardrails with your favorite metrics provider.
+
+- [Arize](https://docs.arize.com/arize/large-language-models/guardrails)
+- [Grafana](../integrations/telemetry/grafana)

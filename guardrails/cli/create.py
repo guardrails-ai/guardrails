@@ -1,9 +1,10 @@
 import os
 import sys
 import time
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import typer
+import json
 from rich.console import Console
 from rich.syntax import Syntax
 
@@ -15,14 +16,14 @@ from guardrails.cli.hub.install import (  # JC: I don't like this import. Move f
 )
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.server.hub_client import get_validator_manifest
-
+from guardrails.cli.hub.template import get_template
 
 console = Console()
 
 
 @gr_cli.command(name="create")
 def create_command(
-    validators: str = typer.Option(
+    validators: Optional[str] = typer.Option(
         default="",
         help="A comma-separated list of validator hub URIs.",
     ),
@@ -33,6 +34,13 @@ def create_command(
         default="config.py",
         help="The path to which the configuration file should be saved.",
     ),
+    template: Optional[str] = typer.Option(
+        default=None,
+        help="Then hub uri to template to base the configuration file on."
+        " For example hub:template://guardrails/chatbot or hub:template://guardrails/summarizer."
+        " Files paths ending in .json are also accepted."
+        " If this option is set, validators should not be provided.",
+    ),
     dry_run: bool = typer.Option(
         default=False,
         is_flag=True,
@@ -40,8 +48,34 @@ def create_command(
     ),
 ):
     filepath = check_filename(filepath)
-    installed_validators = split_and_install_validators(validators, dry_run)
-    new_config_file = generate_config_file(installed_validators, name)
+
+    if not validators and template is not None:
+        template_dict, template_file_name = get_template(template)
+        validators_map: Dict[str, bool] = {}
+        for guard in template_dict["guards"]:
+            for validator in guard["validators"]:
+                validators_map[f"hub://{validator['id']}"] = True
+        validators = ",".join(validators_map.keys())
+        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
+        new_config_file = generate_template_config(
+            template_dict, installed_validators, template_file_name
+        )
+    elif not validators and template is None:
+        console.print(
+            "No validators or template provided. Please run `guardrails create --help`"
+            " for options and details."
+        )
+        sys.exit(1)
+    else:
+        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
+        if name is None and validators:
+            name = "Guard"
+            if len(installed_validators) > 0:
+                name = installed_validators[0] + "Guard"
+
+            console.print(f"No name provided for guard. Defaulting to {name}")
+        new_config_file = generate_config_file(installed_validators, name)
+
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
         console.print("The following would have been written:\n")
@@ -58,9 +92,39 @@ def create_command(
     )
 
 
+def generate_template_config(
+    template: dict, installed_validators, template_file_name
+) -> str:
+    # Read the template file
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    config_template_path = os.path.join(
+        script_dir, "hub", "template_config.py.template"
+    )
+
+    with open(config_template_path, "r") as file:
+        template_content = file.read()
+    guard_instantiations = []
+
+    for i, guard in enumerate(template["guards"]):
+        guard_instantiations.append(f"guard{i} = Guard.from_dict(guards[{i}])")
+    guard_instantiations = "\n".join(guard_instantiations)
+    # Interpolate variables
+    output_content = template_content.format(
+        TEMPLATE_FILE_NAME=template_file_name,
+        GUARDS=json.dumps(template["guards"], indent=4),
+        VALIDATOR_IMPORTS=", ".join(installed_validators),
+        GUARD_INSTANTIATIONS=guard_instantiations,
+    )
+
+    return output_content
+
+
 def check_filename(filename: Union[str, os.PathLike]) -> str:
-    """If a filename is specified and already exists, will prompt the user to confirm
-    overwriting.  Aborts if the user declines."""
+    """If a filename is specified and already exists, will prompt the user to
+    confirm overwriting.
+
+    Aborts if the user declines.
+    """
     if os.path.exists(filename):
         # Alert the user and get confirmation of overwrite.
         overwrite = typer.confirm(
@@ -74,9 +138,11 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
 
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
-    """Given a comma-separated list of validators, check the hub to make sure all of
-    them exist, install them, and return a list of 'imports'.  If validators is empty,
-    returns an empty list."""
+    """Given a comma-separated list of validators, check the hub to make sure
+    all of them exist, install them, and return a list of 'imports'.
+
+    If validators is empty, returns an empty list.
+    """
     if not validators:
         return []
 
@@ -138,16 +204,22 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     if name is not None:
         config_lines.append(f"guard.name = {name.__repr__()}")
 
+    # Warn the user that they need to update their config file.
+    config_lines.append(
+        'print("GUARD PARAMETERS UNFILLED! UPDATE THIS FILE!")'
+        "  # TODO: Remove this when parameters are filled."
+    )
+
     # Append validators:
     if len(validators) == 1:
-        config_lines.append(f"guard.use({validators[0]}( TODO Fill these parameters ))")
+        config_lines.append(f"guard.use({validators[0]}())  # TODO: Add parameters.")
     elif len(validators) > 1:
-        multi_use = ",\n".join(
+        multi_use = "".join(
             [
-                "\t" + validator + "( TODO fill these parameters )"
+                "\t" + validator + "(),  # TODO: Add parameters.\n"
                 for validator in validators
             ]
         )
-        config_lines.append(f"guard.use_many(\n{multi_use}\n)")
+        config_lines.append(f"guard.use_many(\n{multi_use})")
 
     return "\n".join(config_lines)

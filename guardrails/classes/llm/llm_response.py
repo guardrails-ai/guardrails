@@ -1,4 +1,5 @@
 import asyncio
+from itertools import tee
 from typing import Any, Dict, Iterable, Optional, AsyncIterable
 
 from guardrails_api_client import LLMResponse as ILLMResponse
@@ -40,11 +41,22 @@ class LLMResponse(ILLMResponse):
     def to_interface(self) -> ILLMResponse:
         stream_output = None
         if self.stream_output:
-            stream_output = [str(so) for so in self.stream_output]
+            # Keep an eye on this, I don't trust it to not explode memory
+            copy_1, copy_2 = tee(self.stream_output)
+            self.stream_output = copy_1
+            stream_output = [str(so) for so in copy_2]
 
         async_stream_output = None
         if self.async_stream_output:
-            async_stream_output = [str(async_to_sync(so)) for so in self.stream_output]  # type: ignore - we just established it isn't None
+            # tee doesn't work with async iterators
+            # This may be destructive
+            async_stream_output = []
+            awaited_stream_output = []
+            for so in self.async_stream_output:  # type: ignore - we just established it isn't None
+                async_stream_output.append(so)
+                awaited_stream_output.append(str(async_to_sync(so)))
+
+            self.async_stream_output = aiter(async_stream_output)  # type: ignore
 
         return ILLMResponse(
             prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases
