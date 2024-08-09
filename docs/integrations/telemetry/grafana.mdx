@@ -40,19 +40,20 @@ OTEL_EXPORTER_OTLP_HEADERS
 
 ```guardrails hub install hub://guardrails/valid_length```
 
-2. Next, set up your Guard the default tracer provided in the guardrails library. You can still use your desired validators:
+2. Next, set up your Guard and the default tracer provided in the guardrails library. You can still use your desired validators:
 
 <h5 a><strong><code>main.py</code></strong></h5>
 ```python
 from guardrails import Guard, OnFailAction
-from guardrails.utils.telemetry_utils import default_otlp_tracer
+from guardrails.telemetry import default_otlp_tracer
 from guardrails.hub import ValidLength
 import openai
 
+# use a descriptive name that will differentiate where your metrics are stored
+default_otlp_tracer("petname_guard")
+
 guard = Guard.from_string(
   validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
-  # use a descriptive name that will differentiate where your metrics are stored
-  tracer=default_otlp_tracer("petname_guard")
 )
 
 guard(
@@ -115,17 +116,15 @@ Standard [open telemetry environment variables](https://opentelemetry.io/docs/la
 
 ```python
 from guardrails import Guard, OnFailAction
-from guardrails.utils.telemetry_utils import default_otel_collector_tracer
+from guardrails.telemetry import default_otel_collector_tracer
 from guardrails.hub import ValidLength
 import openai
 
+# use a descriptive name that will differentiate where your metrics are stored
+default_otel_collector_tracer("petname_guard")
+
 guard = Guard().use(
   validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
-)
-
-guard.configure(
-  # use a descriptive name that will differentiate where your metrics are stored
-  tracer=default_otel_collector_tracer("petname_guard")
 )
 
 guard(

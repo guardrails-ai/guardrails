@@ -9,7 +9,7 @@ from guardrails.utils.openai_utils.streaming_utils import (
     num_tokens_from_string,
 )
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.telemetry_utils import trace_llm_call, trace_operation
+from guardrails.telemetry import trace_llm_call, trace_operation
 
 
 def get_static_openai_create_func():

@@ -1,0 +1,15 @@
+import json
+import os
+from guardrails import Guard
+from guardrails.hub import {VALIDATOR_IMPORTS}
+
+try:
+    file_path = os.path.join(os.getcwd(), "{TEMPLATE_FILE_NAME}")
+    with open(file_path, "r") as fin:
+        guards = json.load(fin)["guards"] or []
+except json.JSONDecodeError:
+    print("Error parsing guards from JSON")
+    SystemExit(1)
+
+# instantiate guards
+{GUARD_INSTANTIATIONS}

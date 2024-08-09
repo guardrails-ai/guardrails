@@ -28,13 +28,13 @@ from guardrails.utils.parsing_utils import (
     parse_llm_output,
     prune_extra_keys,
 )
+from guardrails.run.utils import preprocess_prompt
 from guardrails.utils.prompt_utils import (
-    preprocess_prompt,
     prompt_content_for_schema,
     prompt_uses_xml,
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
-from guardrails.utils.telemetry_utils import trace
+from guardrails.telemetry import trace_call, trace_step
 
 
 class Runner:
@@ -211,18 +211,15 @@ class Runner:
                     break
 
                 # Get new prompt and output schema.
-                (
-                    prompt,
-                    instructions,
-                    output_schema,
-                    msg_history,
-                ) = self.prepare_to_loop(
-                    iteration.reasks,
-                    output_schema,
-                    parsed_output=iteration.outputs.parsed_output,
-                    validated_output=call_log.validation_response,
-                    prompt_params=prompt_params,
-                    include_instructions=include_instructions,
+                (prompt, instructions, output_schema, msg_history) = (
+                    self.prepare_to_loop(
+                        iteration.reasks,
+                        output_schema,
+                        parsed_output=iteration.outputs.parsed_output,
+                        validated_output=call_log.validation_response,
+                        prompt_params=prompt_params,
+                        include_instructions=include_instructions,
+                    )
                 )
 
             # Log how many times we reasked
@@ -245,7 +242,7 @@ class Runner:
             raise e
         return call_log
 
-    @trace(name="step")
+    @trace_step
     def step(
         self,
         index: int,
@@ -530,7 +527,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
-    @trace(name="call")
+    @trace_call
     def call(
         self,
         instructions: Optional[Instructions],
@@ -639,7 +636,12 @@ class Runner:
         validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
         include_instructions: bool = False,
-    ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:
+    ) -> Tuple[
+        Prompt,
+        Optional[Instructions],
+        Dict[str, Any],
+        Optional[List[Dict]],
+    ]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
         output_schema, prompt, instructions = get_reask_setup(
@@ -655,5 +657,6 @@ class Runner:
         )
         if not include_instructions:
             instructions = None
-        msg_history = None  # clear msg history for reasking
+        # todo add messages support
+        msg_history = None
         return prompt, instructions, output_schema, msg_history

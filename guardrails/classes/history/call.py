@@ -17,6 +17,7 @@ from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.messages import Messages
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import (
     ReAsk,
@@ -131,6 +132,25 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         if instructions is not None:
             return instructions.format(**prompt_params).source
+
+    @property
+    def reask_messages(self) -> Stack[Messages]:
+        """The compiled messages used during reasks.
+
+        Does not include the initial messages.
+        """
+        if self.iterations.length > 0:
+            reasks = self.iterations.copy()
+            initial_messages = reasks.first
+            reasks.remove(initial_messages)  # type: ignore
+            return Stack(
+                *[
+                    r.inputs.messages if r.inputs.messages is not None else None
+                    for r in reasks
+                ]
+            )
+
+        return Stack()
 
     @property
     def reask_instructions(self) -> Stack[str]:
