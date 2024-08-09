@@ -33,6 +33,15 @@ validator_service = SequentialValidatorService()
             ],
             """<PERSON> is funny and lives in <LOCATION>""",
         ),
+        # broken!
+        # (
+        #     """JOHN lives IN SAN francisco""",
+        #     [
+        #         """<PERSON> lives in <LOCATION>""",
+        #         """john lives in san francisco""",
+        #     ],
+        #     """<PERSON> lives in <LOCATION>""",
+        # )
         #   (broken) test behavior with a word close to PERSON
         # ("""Perry is FUNNY and LIVES in NEW york""",
         #  ["""<PERSON> is FUNNY and lives in <LOCATION>""",
