@@ -198,7 +198,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         *,
         validation_session_id: str,
         **kwargs,
-    ) -> ValidationResult:
+    ) -> ValidationResult | None:
         result = self.execute_validator(
             validator,
             value,
@@ -298,7 +298,7 @@ class SequentialValidatorService(ValidatorServiceBase):
     ) -> Iterable[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
-        validator_partial_acc: dict[str, str] = {}
+        validator_partial_acc: dict[int, str] = {}
         for validator in validators:
             validator_partial_acc[id(validator)] = ""
         last_chunk = None
@@ -346,7 +346,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         rechecked_value=rechecked_value,
                     )
                     fixed_values.append(chunk)
-                    validator_partial_acc[id(validator)] += chunk
+                    validator_partial_acc[id(validator)] += chunk  # type: ignore
                 elif isinstance(result, PassResult):
                     if (
                         validator.override_value_on_pass
@@ -356,7 +356,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     else:
                         chunk = result.validated_chunk
                     fixed_values.append(chunk)
-                    validator_partial_acc[id(validator)] += chunk
+                    validator_partial_acc[id(validator)] += chunk  # type: ignore
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
@@ -413,7 +413,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         validator.on_fail_descriptor,
                         rechecked_value=rechecked_value,
                     )
-                    validator_partial_acc[id(validator)] += last_chunk
+                    validator_partial_acc[id(validator)] += last_chunk  # type: ignore
                 elif isinstance(result, PassResult):
                     if (
                         validator.override_value_on_pass
@@ -422,7 +422,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         last_chunk = result.value_override
                     else:
                         last_chunk = result.validated_chunk
-                    validator_partial_acc[id(validator)] += last_chunk
+                    validator_partial_acc[id(validator)] += last_chunk  # type: ignore
                 last_log.value_after_validation = last_chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
@@ -431,7 +431,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 values_to_merge.append(validator_partial_acc[id(validator)])
             merged_value = self.multi_merge(acc_output, values_to_merge)
             yield StreamValidationResult(
-                chunk=merged_value, original_text=original_text, metadata=metadata
+                chunk=merged_value,
+                original_text=original_text,
+                metadata=metadata,  # type: ignore
             )
             # yield merged value
 

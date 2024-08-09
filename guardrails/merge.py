@@ -23,8 +23,9 @@ def merge(source: str, target: str, base: str) -> str:
     print(diff2_l)
 
     composed_text = []
-    source = next(diff1, None)
-    target = next(diff2, None)
+
+    source = next(diff1, None)  # type: ignore
+    target = next(diff2, None)  # type: ignore
 
     prev_source_text = ""
     prev_target_text = ""
@@ -46,7 +47,7 @@ def merge(source: str, target: str, base: str) -> str:
                 print("_ invariant", _, invariant)
                 # _, (_, invariant) = DIFFER.diff_main(target_text, source_text)
                 prev_target_text = target[1]
-                target = next(diff2, None)
+                target = next(diff2, None)  # type: ignore
                 while invariant != "" and target is not None:
                     # Apply target changes until invariant is preserved
                     # target = next(diff2, None)
@@ -55,33 +56,33 @@ def merge(source: str, target: str, base: str) -> str:
                         if len(target_text) > len(invariant):
                             target_text = target_text[len(invariant) :]
                             invariant = ""
-                            target = (target_status, target_text)
+                            target = (target_status, target_text)  # type: ignore
                         else:
                             invariant = invariant[len(target_text) :]
                             prev_target_text = target[1]
-                            target = next(diff2, None)
+                            target = next(diff2, None)  # type: ignore
                     elif target_status == ADDITION:
                         composed_text.append(target_text)
                         prev_target_text = target[1]
-                        target = next(diff2, None)
+                        target = next(diff2, None)  # type: ignore
                     else:
                         # Recompute invariant and advance source
                         if len(invariant) > len(target_text):
                             assert invariant[: len(target_text)] == target_text
-                            source = (source_status, invariant[len(target_text) :])
+                            source = (source_status, invariant[len(target_text) :])  # type: ignore
                             composed_text.append(target_text)
                             invariant = ""
                             advance = False
                             prev_target_text = target[1]
-                            target = next(diff2, None)
+                            target = next(diff2, None)  # type: ignore
                         else:
                             target_text = target_text[len(invariant) :]
                             composed_text.append(invariant)
                             invariant = ""
-                            target = (target_status, target_text)
+                            target = (target_status, target_text)  # type: ignore
                 if advance:
                     prev_source_text = source[1]
-                    source = next(diff1, None)
+                    source = next(diff1, None)  # type: ignore
             elif len(source_text) < len(target_text):
                 # Addition performed by source
                 advance = True
@@ -92,7 +93,7 @@ def merge(source: str, target: str, base: str) -> str:
                 print("_ invariant", _, invariant)
                 # _, (_, invariant) = DIFFER.diff_main(source_text, target_text)
                 prev_source_text = source[1]
-                source = next(diff1, None)
+                source = next(diff1, None)  # type: ignore
                 while invariant != "" and target is not None and source is not None:
                     # Apply source changes until invariant is preserved
                     source_status, source_text = source
@@ -100,78 +101,78 @@ def merge(source: str, target: str, base: str) -> str:
                         if len(source_text) > len(invariant):
                             source_text = source_text[len(invariant) :]
                             invariant = ""
-                            source = (source_status, source_text)
+                            source = (source_status, source_text)  # type: ignore
                         else:
                             invariant = invariant[len(source_text) :]
                             prev_source_text = source[1]
-                            source = next(diff1, None)
+                            source = next(diff1, None)  # type: ignore
                     elif source_status == ADDITION:
                         composed_text.append(source_text)
                         prev_source_text = source[1]
-                        source = next(diff1, None)
+                        source = next(diff1, None)  # type: ignore
                     else:
                         # Recompute invariant and advance source
                         # invariant = invariant[:len(source_text)]
                         if len(invariant) > len(source_text):
                             assert invariant[: len(source_text)] == source_text
-                            target = (target_status, invariant[len(source_text) :])
+                            target = (target_status, invariant[len(source_text) :])  # type: ignore
                             composed_text.append(source_text)
                             invariant = ""
                             advance = False
                             prev_source_text = source[1]
-                            source = next(diff1, None)
+                            source = next(diff1, None)  # type: ignore
                         else:
                             source_text = source_text[len(invariant) :]
                             composed_text.append(invariant)
                             invariant = ""
-                            source = (source_status, source_text)
+                            source = (source_status, source_text)  # type: ignore
                 if advance:
                     prev_target_text = target[1]
-                    target = next(diff2, None)
+                    target = next(diff2, None)  # type: ignore
             else:
                 # Source and target are equal
                 composed_text.append(source_text)
                 prev_source_text = source[1]
                 prev_target_text = target[1]
-                source = next(diff1, None)
-                target = next(diff2, None)
+                source = next(diff1, None)  # type: ignore
+                target = next(diff2, None)  # type: ignore
         elif source_status == ADDITION and target_status == PRESERVED:
             # Source is adding text
             composed_text.append(source_text)
             prev_source_text = source[1]
-            source = next(diff1, None)
+            source = next(diff1, None)  # type: ignore
         elif source_status == PRESERVED and target_status == ADDITION:
             # Target is adding text
             composed_text.append(target_text)
             prev_target_text = target[1]
-            target = next(diff2, None)
+            target = next(diff2, None)  # type: ignore
         elif source_status == DELETION and target_status == PRESERVED:
             if len(target_text) > len(source_text):
                 # Take target text, remove the corresponding part from source
                 target_text = target_text[len(source_text) :]
                 # composed_text.append(target_text)
                 # source = diff1.pop(0)
-                target = (target_status, target_text)
+                target = (target_status, target_text)  # type: ignore
                 prev_source_text = source[1]
-                source = next(diff1, None)
+                source = next(diff1, None)  # type: ignore
             elif len(target_text) <= len(source_text):
                 source_text = source_text[len(target_text) :]
-                source = (source_status, source_text)
+                source = (source_status, source_text)  # type: ignore
                 prev_target_text = target[1]
-                target = next(diff2, None)
+                target = next(diff2, None)  # type: ignore
         elif source_status == PRESERVED and target_status == DELETION:
             if len(source_text) > len(target_text):
                 # Take source text, remove the corresponding part from target
                 source_text = source_text[len(target_text) :]
-                source = (source_status, source_text)
+                source = (source_status, source_text)  # type: ignore
                 prev_target_text = target[1]
-                target = next(diff2, None)
+                target = next(diff2, None)  # type: ignore
             elif len(source_text) <= len(target_text):
                 # Advance to next source
                 target_text = target_text[len(source_text) :]
-                target = (target_status, target_text)
+                target = (target_status, target_text)  # type: ignore
                 prev_source_text = source[1]
-                source = next(diff1, None)
+                source = next(diff1, None)  # type: ignore
         elif source_status == DELETION and target_status == ADDITION:
             # Merge conflict
             # Err on the side of deletion. Do not add anything
@@ -180,13 +181,13 @@ def merge(source: str, target: str, base: str) -> str:
             # composed_text.append(">>>>>>>")
             prev_source_text = source[1]
             prev_target_text = target[1]
-            source = next(diff1, None)
-            target = next(diff2, None)
+            source = next(diff1, None)  # type: ignore
+            target = next(diff2, None)  # type: ignore
             if target is not None:
                 target_status, target_text = target
                 if target_text.startswith(source_text):
                     target_text = target_text[len(source_text) :]
-                    target = (target_status, target_text)
+                    target = (target_status, target_text)  # type: ignore
         elif source_status == ADDITION and target_status == DELETION:
             # Merge conflict
             # Err on the side of deletion. Do not add anything
@@ -195,13 +196,13 @@ def merge(source: str, target: str, base: str) -> str:
             # composed_text.append(">>>>>>>")
             prev_source_text = source[1]
             prev_target_text = target[1]
-            source = next(diff1, None)
-            target = next(diff2, None)
+            source = next(diff1, None)  # type: ignore
+            target = next(diff2, None)  # type: ignore
             if source is not None:
                 source_status, source_text = source
                 if source_text.startswith(target_text):
                     source_text = source_text[len(target_text) :]
-                    source = (source_status, source_text)
+                    source = (source_status, source_text)  # type: ignore
         elif source_status == ADDITION and target_status == ADDITION:
             # Possible merge conflict
             if len(source_text) >= len(target_text):
@@ -251,8 +252,8 @@ def merge(source: str, target: str, base: str) -> str:
                         composed_text.append(target_text)
             prev_source_text = source[1]
             prev_target_text = target[1]
-            source = next(diff1, None)
-            target = next(diff2, None)
+            source = next(diff1, None)  # type: ignore
+            target = next(diff2, None)  # type: ignore
         elif source_status == DELETION and target_status == DELETION:
             # Possible merge conflict
             merge_conflict = False
@@ -260,17 +261,17 @@ def merge(source: str, target: str, base: str) -> str:
                 if source_text.startswith(target_text):
                     # Peek target to delete preserved text
                     source_text = source_text[len(target_text) :]
-                    source = (source_status, source_text)
+                    source = (source_status, source_text)  # type: ignore
                     prev_target_text = target[1]
-                    target = next(diff2, None)
+                    target = next(diff2, None)  # type: ignore
                 else:
                     merge_conflict = True
             elif len(target_text) > len(source_text):
                 if target_text.startswith(source_text):
                     target_text = target_text[len(source_text) :]
-                    target = (target_status, target_text)
+                    target = (target_status, target_text)  # type: ignore
                     prev_source_text = source[1]
-                    source = next(diff1, None)
+                    source = next(diff1, None)  # type: ignore
                 else:
                     merge_conflict = True
             else:
@@ -278,15 +279,15 @@ def merge(source: str, target: str, base: str) -> str:
                     # Both source and target remove the same text
                     prev_source_text = source[1]
                     prev_target_text = target[1]
-                    source = next(diff1, None)
-                    target = next(diff2, None)
+                    source = next(diff1, None)  # type: ignore
+                    target = next(diff2, None)  # type: ignore
                 else:
                     merge_conflict = True
 
             # Don't handle double deletion scenario
             if merge_conflict:
-                source = next(diff1, None)
-                target = next(diff2, None)
+                source = next(diff1, None)  # type: ignore
+                target = next(diff2, None)  # type: ignore
             # composed_text.append("<<<<<<< -- {0} ".format(source_text))
             # composed_text.append("======= -- {0} ".format(target_text))
             # composed_text.append(">>>>>>>")
@@ -298,7 +299,7 @@ def merge(source: str, target: str, base: str) -> str:
         if source_status == ADDITION:
             composed_text.append(source_text)
         prev_source_text = source[1]
-        source = next(diff1, None)
+        source = next(diff1, None)  # type: ignore
 
     while target is not None:
         print("target", target)
@@ -307,6 +308,6 @@ def merge(source: str, target: str, base: str) -> str:
         if target_status == ADDITION:
             composed_text.append(target_text)
         prev_target_text = target[1]
-        target = next(diff2, None)
+        target = next(diff2, None)  # type: ignore
 
     return "".join(composed_text)
