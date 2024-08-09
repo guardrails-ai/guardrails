@@ -6,12 +6,9 @@ from guardrails_api_client import (
     FailResult as IFailResult,
     ErrorSpan as IErrorSpan,
 )
-<<<<<<< HEAD
-from guardrails.classes.generic.arbitrary_model import ArbitraryModel, BaseModel
-=======
+
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from pydantic import BaseModel
->>>>>>> nichwch/onfix-streaming
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
@@ -192,7 +189,6 @@ class ErrorSpan(IErrorSpan, ArbitraryModel):
     reason: str
 
 
-<<<<<<< HEAD
 class ProcessedErrorSpan(ErrorSpan):
     fragment: str
 
@@ -202,9 +198,10 @@ class ValidationFragment(BaseModel):
     validator_status: Union[Literal["pass"], Literal["fail"]]
     failure_reason: str
     error_spans: List[ProcessedErrorSpan]
-=======
+
+
 class StreamValidationResult(BaseModel):
     chunk: Any
     original_text: str
     metadata: Dict[str, Any]
->>>>>>> nichwch/onfix-streaming
+    validation_results: List[ValidationFragment]

@@ -172,8 +172,10 @@ class StreamRunner(Runner):
             )
 
             for res in gen:
+                print("res in stream runner:", res)
                 chunk = res.chunk
                 original_text = res.original_text
+                validation_results = res.validation_results
                 if isinstance(chunk, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "

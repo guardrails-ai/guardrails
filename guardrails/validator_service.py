@@ -394,7 +394,10 @@ class SequentialValidatorService(ValidatorServiceBase):
             if refrain_triggered:
                 # if we have a failresult from a refrain/filter validator, yield empty
                 yield StreamValidationResult(
-                    chunk="", original_text=acc_output, metadata=metadata
+                    chunk="",
+                    original_text=acc_output,
+                    metadata=metadata,
+                    validation_results=validation_results,
                 )
             else:
                 # if every validator has yielded a concrete value, merge and yield
@@ -411,7 +414,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                     for validator in validators:
                         validator_partial_acc[id(validator)] = ""
                     yield StreamValidationResult(
-                        chunk=merged_value, original_text=acc_output, metadata=metadata
+                        chunk=merged_value,
+                        original_text=acc_output,
+                        metadata=metadata,
+                        validation_results=validation_results,
                     )
                     acc_output = ""
                 else:
@@ -490,6 +496,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 chunk=merged_value,
                 original_text=original_text,
                 metadata=metadata,  # type: ignore
+                validation_results=validation_results,
             )
             # yield merged value
 
@@ -573,14 +580,16 @@ class SequentialValidatorService(ValidatorServiceBase):
                     metadata = result.metadata
                 if isinstance(chunk, (Refrain, Filter, ReAsk)):
                     yield StreamValidationResult(
-                        chunk="", original_text=original_text, metadata=metadata
+                        chunk="",
+                        original_text=original_text,
+                        metadata=metadata,
+                        validation_results=validation_results,
                     )
-            yield chunk, original_text, metadata, validation_results
-            # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
-            # if isinstance(chunk, (Refrain, Filter, ReAsk)):
-            #     yield chunk, metadata
             yield StreamValidationResult(
-                chunk=chunk, original_text=original_text, metadata=metadata
+                chunk=chunk,
+                original_text=original_text,
+                metadata=metadata,
+                validation_results=validation_results,
             )
 
     def run_validators(

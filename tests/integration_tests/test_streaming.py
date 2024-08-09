@@ -446,6 +446,7 @@ def test_noop_behavior_two_validators(mocker):
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
+        print("res", res)
     assert (
         text
         == """"John, under GOLDEN bridges, roams,
