@@ -1802,13 +1802,13 @@ dev = ["pyright", "pytest", "pytest-cov", "ruff"]
 
 [[package]]
 name = "guardrails-hub-types"
-version = "0.0.3"
+version = "0.0.4"
 description = "Guardrails Hub Types."
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_hub_types-0.0.3-py3-none-any.whl", hash = "sha256:6c720ae095d0e99f518654c4f3fa7abd39414387aa87189123ce5933d020bbcd"},
-    {file = "guardrails_hub_types-0.0.3.tar.gz", hash = "sha256:e5ecf4dd80b7ad8349772b9bbcce001acf3a82ee7c41d63924452b00f68202f7"},
+    {file = "guardrails_hub_types-0.0.4-py3-none-any.whl", hash = "sha256:ad86faecc142e853d6c6fa24ecb50723c86f834fbe1f2e6b932f2921a08b60b3"},
+    {file = "guardrails_hub_types-0.0.4.tar.gz", hash = "sha256:a5ad863fd6b354e41c3d83d8c1e835f7243a0ae0ec944b6601d1e3ee5d806a51"},
 ]
 
 [package.extras]
@@ -7402,4 +7402,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "181fb9d5afe93bceb1f9694c201d0c0c530bbf36c3be2ee64e203b09735b075a"
+content-hash = "58d494dd8cbf45e29603a2b3c444fce480216832216a8f63b60e35fac0f55266"
