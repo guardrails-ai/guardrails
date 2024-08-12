@@ -285,7 +285,7 @@ class TestReloadModule:
 
         with pytest.raises(ModuleNotFoundError):
             ValidatorPackageService.reload_module(
-                "guardrails.hub.guardrails.contains_string.validator"
+                "guardrails.hub.guardrails.some_random_validator.validator"
             )
 
     @patch("guardrails.hub.validator_package_service.importlib")
@@ -295,7 +295,7 @@ class TestReloadModule:
 
         with pytest.raises(Exception):
             ValidatorPackageService.reload_module(
-                "guardrails.hub.guardrails.contains_string.validator"
+                "guardrails.hub.guardrails.some_random_validator.validator"
             )
 
     @patch("guardrails.hub.validator_package_service.importlib")
