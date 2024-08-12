@@ -19,8 +19,6 @@ def merge(source: str, target: str, base: str) -> str:
 
     diff1 = iter(diff1_l)
     diff2 = iter(diff2_l)
-    print(diff1_l)
-    print(diff2_l)
 
     composed_text = []
 
@@ -33,8 +31,6 @@ def merge(source: str, target: str, base: str) -> str:
     while source is not None and target is not None:
         source_status, source_text = source
         target_status, target_text = target
-        print("source", source)
-        print("target", target)
         if source_status == PRESERVED and target_status == PRESERVED:
             # Base is preserved for both source and target
             if len(source_text) > len(target_text):
@@ -42,9 +38,7 @@ def merge(source: str, target: str, base: str) -> str:
                 advance = True
                 composed_text.append(target_text)
                 tempdiff = DIFFER.diff_main(target_text, source_text)
-                print("tempdiff", tempdiff)
                 _, invariant = tempdiff[1]
-                print("_ invariant", _, invariant)
                 # _, (_, invariant) = DIFFER.diff_main(target_text, source_text)
                 prev_target_text = target[1]
                 target = next(diff2, None)  # type: ignore
@@ -88,9 +82,7 @@ def merge(source: str, target: str, base: str) -> str:
                 advance = True
                 composed_text.append(source_text)
                 tempdiff = DIFFER.diff_main(target_text, source_text)
-                print("tempdiff", tempdiff, target_text, source_text)
                 _, invariant = tempdiff[1]
-                print("_ invariant", _, invariant)
                 # _, (_, invariant) = DIFFER.diff_main(source_text, target_text)
                 prev_source_text = source[1]
                 source = next(diff1, None)  # type: ignore
@@ -218,12 +210,6 @@ def merge(source: str, target: str, base: str) -> str:
                     target_dist = DIFFER.diff_levenshtein(
                         DIFFER.diff_main(target_text, prev_target_text)
                     )
-                    print(
-                        "prev_source_text", prev_source_text, source_text, source_dist
-                    )
-                    print(
-                        "prev_target_text", prev_target_text, target_text, target_dist
-                    )
                     if source_dist > target_dist:
                         composed_text.append(source_text)
                     else:
@@ -239,12 +225,6 @@ def merge(source: str, target: str, base: str) -> str:
                     )
                     target_dist = DIFFER.diff_levenshtein(
                         DIFFER.diff_main(target_text, prev_target_text)
-                    )
-                    print(
-                        "prev_source_text", prev_source_text, source_text, source_dist
-                    )
-                    print(
-                        "prev_target_text", prev_target_text, target_text, target_dist
                     )
                     if source_dist > target_dist:
                         composed_text.append(source_text)
@@ -293,7 +273,6 @@ def merge(source: str, target: str, base: str) -> str:
             # composed_text.append(">>>>>>>")
 
     while source is not None:
-        print("source", source)
         source_status, source_text = source
         # assert source_status == ADDITION or source_status == PRESERVED
         if source_status == ADDITION:
@@ -302,7 +281,6 @@ def merge(source: str, target: str, base: str) -> str:
         source = next(diff1, None)  # type: ignore
 
     while target is not None:
-        print("target", target)
         target_status, target_text = target
         # assert target_status == ADDITION or source_status == PRESERVED
         if target_status == ADDITION:
