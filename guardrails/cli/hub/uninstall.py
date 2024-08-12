@@ -8,7 +8,7 @@ import typer
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.hub.utils import get_org_and_package_dirs
@@ -30,7 +30,7 @@ def remove_line(file_path: str, line_content: str):
         return lines
 
 
-def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
+def remove_from_hub_inits(manifest: Manifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     exports: List[str] = manifest.exports or []
     sorted_exports = sorted(exports, reverse=True)
@@ -62,7 +62,7 @@ def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
             sys.exit(1)
 
 
-def uninstall_hub_module(manifest: ModuleManifest, site_packages: str):
+def uninstall_hub_module(manifest: Manifest, site_packages: str):
     uninstall_directory = get_hub_directory(manifest, site_packages)
     logger.info(f"Removing directory {uninstall_directory}")
     try:

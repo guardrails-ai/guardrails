@@ -3,7 +3,7 @@ import pytest
 import sys
 from unittest.mock import call, patch, MagicMock
 
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
@@ -45,7 +45,7 @@ class TestGetModulePath:
 
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -110,7 +110,7 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_appends_import_line_if_not_present(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -194,7 +194,7 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_creates_namespace_init_if_not_exists(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -330,7 +330,7 @@ class TestRunPostInstall:
     @pytest.mark.parametrize(
         "manifest",
         [
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
                     "id": "id",
                     "name": "name",
@@ -344,7 +344,7 @@ class TestRunPostInstall:
                     "tags": {},
                 }
             ),
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
                     "id": "id",
                     "name": "name",
@@ -384,7 +384,7 @@ class TestRunPostInstall:
         mock_isfile.return_value = True
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -413,7 +413,7 @@ class TestRunPostInstall:
 
 class TestValidatorPackageService:
     def setup_method(self):
-        self.manifest = ModuleManifest.from_dict(
+        self.manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -483,7 +483,7 @@ class TestValidatorPackageService:
         "manifest,expected",
         [
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -500,7 +500,7 @@ class TestValidatorPackageService:
                 ["guardrails_ai", "test_validator"],
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -536,7 +536,7 @@ class TestValidatorPackageService:
         "manifest,expected",
         [
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -553,7 +553,7 @@ class TestValidatorPackageService:
                 "git+some-repo",
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -571,7 +571,7 @@ class TestValidatorPackageService:
                 "git+some-repo",
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -639,7 +639,7 @@ class TestValidatorPackageService:
             "Sucessfully installed pydash>=7.0.6,<8.0.0",
         ]
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",

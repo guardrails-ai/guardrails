@@ -12,7 +12,7 @@ from guardrails.logger import logger as guardrails_logger
 
 
 from guardrails.cli.hub.utils import pip_process
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
 
 
@@ -42,7 +42,7 @@ class InvalidHubInstallURL(Exception):
 
 class ValidatorPackageService:
     @staticmethod
-    def get_manifest_and_site_packages(module_name: str) -> tuple[ModuleManifest, str]:
+    def get_manifest_and_site_packages(module_name: str) -> tuple[Manifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
         return (module_manifest, site_packages)
@@ -75,13 +75,13 @@ class ValidatorPackageService:
             raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):
+    def get_validator_from_manifest(manifest: Manifest):
         """
         Get Validator class from the installed module based on the manifest.
         Note: manifest.exports yields a list of exported Validator classes.
 
         Args:
-            manifest (ModuleManifest): The manifest of the installed module
+            manifest (Manifest): The manifest of the installed module
 
         Returns:
             Any: The Validator class from the installed module
@@ -97,7 +97,7 @@ class ValidatorPackageService:
 
     @staticmethod
     def get_org_and_package_dirs(
-        manifest: ModuleManifest,
+        manifest: Manifest,
     ) -> List[str]:
         org_name = manifest.namespace
         package_name = manifest.package_name
@@ -106,7 +106,7 @@ class ValidatorPackageService:
         return list(filter(None, [org, package]))
 
     @staticmethod
-    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
+    def add_to_hub_inits(manifest: Manifest, site_packages: str):
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         exports: List[str] = manifest.exports or []
         sorted_exports = sorted(exports, reverse=True)
@@ -184,7 +184,7 @@ class ValidatorPackageService:
         return module_name
 
     @staticmethod
-    def get_install_url(manifest: ModuleManifest) -> str:
+    def get_install_url(manifest: Manifest) -> str:
         repo = manifest.repository
         repo_url = repo.url
         branch = repo.branch
@@ -200,7 +200,7 @@ class ValidatorPackageService:
 
     @staticmethod
     def run_post_install(
-        manifest: ModuleManifest, site_packages: str, logger=guardrails_logger
+        manifest: Manifest, site_packages: str, logger=guardrails_logger
     ):
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         post_install_script = manifest.post_install
@@ -246,13 +246,13 @@ class ValidatorPackageService:
                 )
 
     @staticmethod
-    def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
+    def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
     @staticmethod
     def install_hub_module(
-        module_manifest: ModuleManifest,
+        module_manifest: Manifest,
         site_packages: str,
         quiet: bool = False,
         logger=guardrails_logger,

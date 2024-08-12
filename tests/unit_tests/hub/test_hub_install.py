@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import ANY, call, MagicMock
 
 from guardrails.classes.credentials import Credentials
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.hub.validator_package_service import (
     InvalidHubInstallURL,
 )
@@ -16,7 +16,7 @@ from guardrails.hub.install import LocalModelFlagNotSet, install
 )
 class TestInstall:
     def setup_method(self):
-        self.manifest = ModuleManifest.from_dict(
+        self.manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -301,7 +301,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
 
-        manifest_with_endpoint = ModuleManifest.from_dict(
+        manifest_with_endpoint = Manifest.from_dict(
             {
                 "id": "test-id",
                 "name": "test-name",
@@ -351,7 +351,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
 
-        manifest_with_endpoint = ModuleManifest.from_dict(
+        manifest_with_endpoint = Manifest.from_dict(
             {
                 "id": "test-id",
                 "name": "test-name",
@@ -403,7 +403,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
