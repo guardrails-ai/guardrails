@@ -200,7 +200,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         *,
         validation_session_id: str,
         **kwargs,
-    ) -> ValidationResult | None:
+    ) -> Optional[ValidationResult]:
         result = self.execute_validator(
             validator,
             value,
@@ -494,7 +494,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             merged_value = self.multi_merge(acc_output, values_to_merge)
             yield StreamValidationResult(
                 chunk=merged_value,
-                original_text=original_text,
+                original_text=original_text,  # type: ignore
                 metadata=metadata,  # type: ignore
                 validation_results=validation_results,
             )
