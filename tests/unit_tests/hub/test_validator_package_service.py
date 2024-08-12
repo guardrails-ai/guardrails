@@ -402,7 +402,7 @@ class TestRunPostInstall:
                 "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
-                "post_install": "post_install.py",
+                "postInstall": "post_install.py",
             }
         )
 
