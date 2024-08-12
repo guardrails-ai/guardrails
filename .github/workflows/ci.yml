@@ -102,7 +102,7 @@ jobs:
           python3 -m venv ./.venv
           source .venv/bin/activate
           
-          make ${{ matrix.dependencies }}
+          make full
           if [ "${{ matrix.python-version }}" == "3.12" ]; then
             echo "Installing latest langchain-core and langsmith from PyPI"
             pip install "langchain-core>=0.2" "langsmith<0.2.0,>=0.1.75"
