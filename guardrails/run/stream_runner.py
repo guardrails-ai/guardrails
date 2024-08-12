@@ -139,9 +139,10 @@ class StreamRunner(Runner):
                 "the API is returning a generator."
             )
 
-        parsed_fragment, validated_fragment, valid_op = None, None, None
+        parsed_fragment, validated_fragment, valid_op = "", None, None
         verified = set()
         validation_response = ""
+        fragment = ""
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
@@ -150,11 +151,15 @@ class StreamRunner(Runner):
             def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
                 for chunk in stream:
                     chunk_text = self.get_chunk_text(chunk, api)
+                    nonlocal fragment
+                    fragment += chunk_text
                     finished = self.is_last_chunk(chunk, api)
                     # 2. Parse the chunk
                     parsed_chunk, move_to_next = self.parse(
                         chunk_text, output_schema, verified=verified
                     )
+                    nonlocal parsed_fragment
+                    parsed_fragment += parsed_chunk
                     if move_to_next:
                         # Continue to next chunk
                         continue
@@ -172,7 +177,6 @@ class StreamRunner(Runner):
             )
 
             for res in gen:
-                print("res in stream runner:", res)
                 chunk = res.chunk
                 original_text = res.original_text
                 validation_results = res.validation_results
@@ -192,7 +196,6 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 validation_response += cast(str, chunk)
                 passed = call_log.status == pass_status
-                print("validation_results", validation_results)
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
@@ -204,14 +207,13 @@ class StreamRunner(Runner):
 
         # handle non string schema
         else:
-            fragment = ""
             for chunk in stream:
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
 
                 # 2. Parse the fragment
-                parsed_fragment, move_to_next = self.parse(
+                parsed_chunk, move_to_next = self.parse(
                     fragment, output_schema, verified=verified
                 )
                 if move_to_next:
@@ -222,7 +224,7 @@ class StreamRunner(Runner):
                 validated_fragment = self.validate(
                     iteration,
                     index,
-                    parsed_fragment,
+                    parsed_chunk,
                     output_schema,
                     validate_subschema=True,
                 )
@@ -252,14 +254,11 @@ class StreamRunner(Runner):
                     validation_passed=validated_fragment is not None,
                 )
 
-        # TODO: FIX THIS!
         # # Finally, add to logs
-        # iteration.outputs.raw_output = fragment
-        # # Do we need to care about the type here?
-        # # What happens if parsing continuously fails?
-        # iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
-        # iteration.outputs.validation_response = validation_response
-        # iteration.outputs.guarded_output = valid_op
+        iteration.outputs.raw_output = fragment
+        iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
+        iteration.outputs.validation_response = validation_response
+        iteration.outputs.guarded_output = valid_op
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
