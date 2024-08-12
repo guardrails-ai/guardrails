@@ -432,7 +432,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             merged_value = self.multi_merge(acc_output, values_to_merge)
             yield StreamValidationResult(
                 chunk=merged_value,
-                original_text=original_text,
+                original_text=original_text,  # type: ignore
                 metadata=metadata,  # type: ignore
             )
             # yield merged value
