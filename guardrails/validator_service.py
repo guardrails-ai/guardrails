@@ -198,7 +198,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         *,
         validation_session_id: str,
         **kwargs,
-    ) -> ValidationResult | None:
+    ) -> Optional[ValidationResult]:
         result = self.execute_validator(
             validator,
             value,
