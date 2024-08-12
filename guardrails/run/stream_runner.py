@@ -159,7 +159,8 @@ class StreamRunner(Runner):
                         chunk_text, output_schema, verified=verified
                     )
                     nonlocal parsed_fragment
-                    parsed_fragment += parsed_chunk
+                    # ignore types because output schema guarantees a string
+                    parsed_fragment += parsed_chunk  # type: ignore
                     if move_to_next:
                         # Continue to next chunk
                         continue
