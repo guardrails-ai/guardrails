@@ -28,7 +28,7 @@ class TestInstall:
                 "moduleName": "test_validator",
                 "description": "test-description",
                 "exports": ["TestValidator"],
-                "tags": {"has_guardrails_endpoint": False},
+                "tags": {"hasGuardrailsEndpoint": False},
             }
         )
         self.site_packages = "./.venv/lib/python3.X/site-packages"
@@ -314,7 +314,7 @@ class TestInstall:
                 "moduleName": "test_module",
                 "description": "test-description",
                 "exports": ["TestValidator"],
-                "tags": {"has_guardrails_endpoint": True},
+                "tags": {"hasGuardrailsEndpoint": True},
             }
         )
 
@@ -365,7 +365,7 @@ class TestInstall:
                 "moduleName": "test_module",
                 "description": "test-description",
                 "exports": ["TestValidator"],
-                "tags": {"has_guardrails_endpoint": True},
+                "tags": {"hasGuardrailsEndpoint": True},
             }
         )
 
@@ -418,7 +418,7 @@ class TestInstall:
                 "moduleName": "test_validator",
                 "description": "test-description",
                 "exports": ["TestValidator"],
-                "tags": {"has_guardrails_endpoint": True},
+                "tags": {"hasGuardrailsEndpoint": True},
             }
         )
         get_manifest_and_site_packages_mock.return_value = manifest, self.site_packages
