@@ -7,6 +7,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/guardrails-ai)
+[![Downloads](https://static.pepy.tech/badge/guardrails-ai/month)](https://pepy.tech/project/guardrails-ai)
 [![CI](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/guardrails-ai/guardrails/graph/badge.svg?token=CPkjw91Ngo)](https://codecov.io/gh/guardrails-ai/guardrails)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
@@ -98,7 +99,7 @@ pip install guardrails-ai
 
     guard = Guard().use_many(
         CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
-        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION),),
+        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION)
     )
 
     guard.validate(
@@ -148,7 +149,7 @@ prompt = """
 """
 guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
 
-validated_output, *rest = guard(
+raw_output, validated_output, *rest = guard(
     llm_api=openai.completions.create,
     engine="gpt-3.5-turbo-instruct"
 )

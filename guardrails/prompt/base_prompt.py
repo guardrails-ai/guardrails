@@ -2,28 +2,39 @@
 
 import re
 from string import Template
-from typing import Optional
+from typing import List, Optional
 
 import regex
 
-from guardrails.namespace_template import NamespaceTemplate
+from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
-from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.templating_utils import get_template_variables
 
 
 class BasePrompt:
     """Base class for representing an LLM prompt."""
 
-    def __init__(self, source: str, output_schema: Optional[str] = None):
+    def __init__(
+        self,
+        source: str,
+        output_schema: Optional[str] = None,
+        *,
+        xml_output_schema: Optional[str] = None,
+    ):
+        """Initialize and substitute constants in the prompt."""
         self._source = source
         self.format_instructions_start = self.get_format_instructions_idx(source)
 
+        # FIXME: Why is this happening on init instead of on format?
         # Substitute constants in the prompt.
         source = self.substitute_constants(source)
 
+        # FIXME: Why is this happening on init instead of on format?
         # If an output schema is provided, substitute it in the prompt.
-        if output_schema:
-            self.source = Template(source).safe_substitute(output_schema=output_schema)
+        if output_schema or xml_output_schema:
+            self.source = Template(source).safe_substitute(
+                output_schema=output_schema, xml_output_schema=xml_output_schema
+            )
         else:
             self.source = source
 
@@ -45,7 +56,7 @@ class BasePrompt:
     def format_instructions(self):
         return self.source[self.format_instructions_start :]
 
-    def substitute_constants(self, text):
+    def substitute_constants(self, text: str) -> str:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
@@ -60,10 +71,10 @@ class BasePrompt:
 
         return text
 
-    def get_prompt_variables(self):
+    def get_prompt_variables(self) -> List[str]:
         return self.variable_names
 
-    def format(self, **kwargs):
+    def format(self, **kwargs) -> "BasePrompt":
         raise NotImplementedError("Subclasses must implement this method.")
 
     def make_vars_optional(self):

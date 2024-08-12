@@ -1,12 +1,5 @@
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
-# Extract major package versions for OpenAI and Pydantic
-OPENAI_VERSION_MAJOR := $(shell poetry run python -c 'import openai; print(openai.__version__.split(".")[0])')
-PYDANTIC_VERSION_MAJOR := $(shell poetry run python -c 'import pydantic; print(pydantic.__version__.split(".")[0])')
-
-# Construct the typing command using only major versions
-TYPING_CMD := type-pydantic-v$(PYDANTIC_VERSION_MAJOR)-openai-v$(OPENAI_VERSION_MAJOR)
-
 autoformat:
 	poetry run ruff check guardrails/ tests/ --fix
 	poetry run ruff format guardrails/ tests/
@@ -14,27 +7,7 @@ autoformat:
 
 .PHONY: type
 type:
-	@make $(TYPING_CMD)
-
-type-pydantic-v1-openai-v0:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
-	rm pyrightconfig.json
-
-type-pydantic-v1-openai-v1:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
-	poetry run pyright guardrails/
-	rm pyrightconfig.json
-
-type-pydantic-v2-openai-v0:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
-	poetry run pyright guardrails/
-	rm pyrightconfig.json
-
-type-pydantic-v2-openai-v1:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
-	poetry run pyright guardrails/
-	rm pyrightconfig.json
 
 lint:
 	poetry run ruff check guardrails/ tests/
@@ -84,4 +57,16 @@ precommit:
 	# pytest -x -q --no-summary
 	pyright guardrails/
 	make lint
-	./github/workflows/scripts/update_notebook_matrix.sh
+	./.github/workflows/scripts/update_notebook_matrix.sh
+
+refresh:
+	echo "Removing old virtual environment"
+	rm -rf ./.venv;
+	echo "Creating new virtual environment"
+	python3 -m venv ./.venv;
+	echo "Sourcing and installing"
+	source ./.venv/bin/activate && make full;
+
+update-lock:
+	poetry lock --no-update
+

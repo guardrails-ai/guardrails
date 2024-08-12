@@ -2,14 +2,14 @@ import pytest
 
 import guardrails.validator_service as vs
 from guardrails.classes.history.iteration import Iteration
-from guardrails.datatypes import FieldValidation
 
 from .mocks import MockAsyncValidatorService, MockLoop, MockSequentialValidatorService
 
-empty_field_validation = FieldValidation(
-    key="mock-key", value="mock-value", validators=[], children=[]
+
+iteration = Iteration(
+    call_id="mock-call",
+    index=0,
 )
-iteration = Iteration()
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ async def test_async_validate(mocker):
     validated_value, validated_metadata = await vs.async_validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -44,7 +44,7 @@ def test_validate_with_running_loop(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -66,7 +66,7 @@ def test_validate_without_running_loop(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -89,7 +89,7 @@ def test_validate_loop_runtime_error(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 

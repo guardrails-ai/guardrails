@@ -1,21 +1,20 @@
-import json
 import os
 import subprocess
 import sys
-from email.parser import BytesHeaderParser
-from string import Template
-from typing import List, Literal, Union
+from typing import List, Literal, Optional
 
 import typer
-from guardrails_hub_types import Manifest
-from pydash.strings import snake_case
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
-from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import get_validator_manifest
 
-from .console import console
+from guardrails.cli.hub.utils import (
+    get_hub_directory,
+    get_org_and_package_dirs,
+    pip_process,
+)
+from guardrails.cli.logger import logger
+from guardrails_hub_types import Manifest
 
 
 def removesuffix(string: str, suffix: str) -> str:
@@ -29,69 +28,6 @@ def removesuffix(string: str, suffix: str) -> str:
 
 string_format: Literal["string"] = "string"
 json_format: Literal["json"] = "json"
-
-
-def pip_process(
-    action: str,
-    package: str = "",
-    flags: List[str] = [],
-    format: Union[Literal["string"], Literal["json"]] = string_format,
-) -> Union[str, dict]:
-    try:
-        logger.debug(f"running pip {action} {' '.join(flags)} {package}")
-        command = [sys.executable, "-m", "pip", action]
-        command.extend(flags)
-        if package:
-            command.append(package)
-        output = subprocess.check_output(command)
-        logger.debug(f"decoding output from pip {action} {package}")
-        if format == json_format:
-            parsed = BytesHeaderParser().parsebytes(output)
-            try:
-                return json.loads(str(parsed))
-            except Exception:
-                logger.debug(
-                    f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
-                )
-            accumulator = {}
-            for key, value in parsed.items():
-                accumulator[key] = value
-            return accumulator
-        return str(output.decode())
-    except subprocess.CalledProcessError as exc:
-        logger.error(
-            (
-                f"Failed to {action} {package}\n"
-                f"Exit code: {exc.returncode}\n"
-                f"stdout: {exc.output}"
-            )
-        )
-        sys.exit(1)
-    except Exception as e:
-        logger.error(
-            f"An unexpected exception occurred while try to {action} {package}!",
-            e,
-        )
-        sys.exit(1)
-
-
-def get_site_packages_location():
-    output = pip_process("show", "pip", format=json_format)
-    pip_location = output["Location"]  # type: ignore
-    return pip_location
-
-
-def get_org_and_package_dirs(manifest: Manifest) -> List[str]:
-    org_name = manifest.namespace
-    package_name = manifest.package_name
-    org = snake_case(org_name if len(org_name) > 1 else "")
-    package = snake_case(package_name if len(package_name) > 1 else package_name)
-    return list(filter(None, [org, package]))
-
-
-def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
-    org_package = get_org_and_package_dirs(manifest)
-    return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
 
 # NOTE: I don't like this but don't see another way without
@@ -144,7 +80,6 @@ def add_to_hub_inits(manifest: Manifest, site_packages: str):
 def run_post_install(manifest: Manifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
-
     if not post_install_script:
         return
 
@@ -195,19 +130,28 @@ def get_install_url(manifest: Manifest) -> str:
     return git_url
 
 
-def install_hub_module(module_manifest: Manifest, site_packages: str):
+def install_hub_module(
+    module_manifest: Manifest, site_packages: str, quiet: bool = False
+):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
 
+    pip_flags = [f"--target={install_directory}", "--no-deps"]
+    if quiet:
+        pip_flags.append("-q")
+
     # Install validator module in namespaced directory under guardrails.hub
-    download_output = pip_process(
-        "install", install_url, [f"--target={install_directory}", "--no-deps", "-q"]
-    )
-    logger.info(download_output)
+    download_output = pip_process("install", install_url, pip_flags, quiet=quiet)
+    if not quiet:
+        logger.info(download_output)
 
     # Install validator module's dependencies in normal site-packages directory
     inspect_output = pip_process(
-        "inspect", flags=[f"--path={install_directory}"], format=json_format
+        "inspect",
+        flags=[f"--path={install_directory}"],
+        format=json_format,
+        quiet=quiet,
+        no_color=True,
     )
 
     # throw if inspect_output is a string. Mostly for pyright
@@ -221,78 +165,58 @@ def install_hub_module(module_manifest: Manifest, site_packages: str):
         .get("metadata", {})  # type: ignore
         .get("requires_dist", [])  # type: ignore
     )
-    requirements = filter(lambda dep: "extra" not in dep, dependencies)
+    requirements = list(filter(lambda dep: "extra" not in dep, dependencies))
     for req in requirements:
-        req_info = Stack(*req.split(" "))
-        name = req_info.at(0, "").strip()  # type: ignore
-        versions = req_info.at(1, "").strip("()")  # type: ignore
-        if name:
-            install_spec = name if not versions else f"{name}{versions}"
-            dep_install_output = pip_process("install", install_spec)
-            logger.info(dep_install_output)
+        if "git+" in req:
+            install_spec = req.replace(" ", "")
+            dep_install_output = pip_process("install", install_spec, quiet=quiet)
+            if not quiet:
+                logger.info(dep_install_output)
+        else:
+            req_info = Stack(*req.split(" "))
+            name = req_info.at(0, "").strip()  # type: ignore
+            versions = req_info.at(1, "").strip("()")  # type: ignore
+            if name:
+                install_spec = name if not versions else f"{name}{versions}"
+                dep_install_output = pip_process("install", install_spec, quiet=quiet)
+                if not quiet:
+                    logger.info(dep_install_output)
 
 
 @hub_command.command()
 def install(
     package_uri: str = typer.Argument(
-        help="URI to the package to install. Example: hub://guardrails/regex_match."
+        help="URI to the package to install.\
+Example: hub://guardrails/regex_match."
+    ),
+    local_models: Optional[bool] = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "-q",
+        "--quiet",
+        help="Run the command in quiet mode to reduce output verbosity.",
     ),
 ):
-    """Install a validator from the Hub."""
-    if not package_uri.startswith("hub://"):
-        logger.error("Invalid URI!")
+    try:
+        from guardrails.hub.install import install
+
+        def confirm():
+            return typer.confirm(
+                "This validator has a Guardrails AI inference endpoint available. "
+                "Would you still like to install the"
+                " local models for local inference?",
+            )
+
+        install(
+            package_uri,
+            install_local_models=local_models,
+            quiet=quiet,
+            install_local_models_confirm=confirm,
+        )
+    except Exception as e:
+        logger.error(str(e))
         sys.exit(1)
-
-    console.print(f"\nInstalling {package_uri}...\n")
-    logger.log(
-        level=LEVELS.get("SPAM"),  # type: ignore
-        msg=f"Installing {package_uri}...",
-    )
-
-    # Validation
-    module_name = package_uri.replace("hub://", "")
-
-    # Prep
-    with console.status("Fetching manifest", spinner="bouncingBar"):
-        module_manifest = get_validator_manifest(module_name)
-        site_packages = get_site_packages_location()
-
-    # Install
-    with console.status("Downloading dependencies", spinner="bouncingBar"):
-        install_hub_module(module_manifest, site_packages)
-
-    # Post-install
-    with console.status("Running post-install setup", spinner="bouncingBar"):
-        run_post_install(module_manifest, site_packages)
-        add_to_hub_inits(module_manifest, site_packages)
-
-    success_message_cli = Template(
-        """✅Successfully installed ${module_name}!
-
-[bold]Import validator:[/bold]
-from guardrails.hub import ${export}
-
-[bold]Get more info:[/bold]
-https://hub.guardrailsai.com/validator/${id}
-"""
-    ).safe_substitute(
-        module_name=package_uri,
-        id=module_manifest.id,
-        export=module_manifest.exports[0],
-    )
-    success_message_logger = Template(
-        """✅Successfully installed ${module_name}!
-
-Import validator:
-from guardrails.hub import ${export}
-
-Get more info:
-https://hub.guardrailsai.com/validator/${id}
-"""
-    ).safe_substitute(
-        module_name=package_uri,
-        id=module_manifest.id,
-        export=module_manifest.exports[0],
-    )
-    console.print(success_message_cli)  # type: ignore
-    logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore

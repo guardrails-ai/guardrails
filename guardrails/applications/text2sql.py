@@ -140,7 +140,7 @@ class Text2Sql:
             rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
 
         guard = Guard.from_rail_string(rail_spec_str)
-        guard.reask_prompt = reask_prompt
+        guard._exec_opts.reask_prompt = reask_prompt
 
         return guard
 

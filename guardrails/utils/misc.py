@@ -5,9 +5,9 @@ from typing import List
 from lxml.etree import Element as E
 from rich.pretty import pretty_repr
 
-from guardrails import datatypes as dt
 from guardrails.classes.history.call import Call
-from guardrails.utils.reask_utils import gather_reasks
+from guardrails.actions.reask import gather_reasks
+from guardrails.types import RailTypes
 
 
 def generate_test_artifacts(
@@ -72,7 +72,7 @@ def generate_test_artifacts(
 
             reasks, _ = gather_reasks(validated_output)
             if len(reasks):
-                f.write("from guardrails.utils.reask_utils import ReAsk\n")
+                f.write("from guardrails.actions.reask import ReAsk\n")
 
             validated_output_repr = pretty_repr(validated_output, max_string=None)
             f.write(f"\nVALIDATED_OUTPUT = {validated_output_repr}")
@@ -89,15 +89,15 @@ def generate_random_schemas(n: int, depth: int = 4, width: int = 10) -> List[str
     def random_scalar_datatype():
         selected_datatype = random.choice(
             [
-                dt.String,
-                dt.Integer,
-                dt.Float,
-                dt.Boolean,
-                dt.Date,
-                dt.Time,
+                RailTypes.STRING,
+                RailTypes.INTEGER,
+                RailTypes.FLOAT,
+                RailTypes.BOOL,
+                RailTypes.DATE,
+                RailTypes.TIME,
             ]
         )
-        return selected_datatype(None, None, None).rail_alias  # type: ignore
+        return selected_datatype
 
     def generate_schema(curr_depth):
         if curr_depth < depth:

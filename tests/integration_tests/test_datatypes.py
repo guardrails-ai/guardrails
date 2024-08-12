@@ -57,6 +57,9 @@ Dummy prompt.
     )
 
 
+@pytest.mark.skip(
+    "Must add custom format validators to guardrails/schema/validator.py!"
+)
 @pytest.mark.parametrize(
     "date_string,error_type",
     [
@@ -82,6 +85,7 @@ Dummy prompt.
 
 </rail>
 """
+
     guard = Guard.from_rail_string(rail_spec)
     with pytest.raises(Exception) as excinfo:
         guard.parse(

@@ -1,17 +1,20 @@
 # Set up __init__.py so that users can do from guardrails import Response, Schema, etc.
 
 from guardrails.guard import Guard
+from guardrails.async_guard import AsyncGuard
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.logging_utils import configure_logging
 from guardrails.prompt import Instructions, Prompt
-from guardrails.rail import Rail
 from guardrails.utils import constants, docs_utils
-from guardrails.validator_base import OnFailAction, Validator, register_validator
+from guardrails.types.on_fail import OnFailAction
+from guardrails.validator_base import Validator, register_validator
+from guardrails.settings import settings
+from guardrails.hub.install import install
 
 __all__ = [
     "Guard",
-    "PromptCallableBase",
-    "Rail",
+    "AsyncGuard",
+    "PromptCallableBase",  # FIXME: Why is this being exported?
     "Validator",
     "OnFailAction",
     "register_validator",
@@ -20,4 +23,6 @@ __all__ = [
     "configure_logging",
     "Prompt",
     "Instructions",
+    "settings",
+    "install",
 ]

@@ -1,63 +1,63 @@
-from unittest.mock import call
+from unittest.mock import call, patch
 
 import pytest
-
 from tests.unit_tests.mocks.mock_file import MockFile
 
 
 @pytest.mark.parametrize(
-    "token,no_metrics",
+    "expected_token, enable_metrics, clear_token",
     [
-        # Note: typer defaults only work through the cli
-        # ("mock_client_id", "mock_client_secret", None),
-        ("mock_token", True),
-        ("mock_token", False),
+        ("mock_token", True, False),
+        ("mock_token", False, False),
+        ("", True, True),
+        ("", False, True),
     ],
 )
-def test_configure(mocker, token, no_metrics):
+def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
     mock_save_configuration_file = mocker.patch(
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
     mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
-    from guardrails.cli.configure import configure
+    CLI_COMMAND = ["configure"]
+    CLI_COMMAND_ARGS = []
+    CLI_COMMAND_INPUTS = ["mock_token", "mock_input"]
 
-    configure(token, no_metrics)
+    # Patch sys.stdin with a StringIO object
+    from guardrails.cli.guardrails import guardrails
+
+    if enable_metrics:
+        CLI_COMMAND_ARGS.append("y")
+    else:
+        CLI_COMMAND_ARGS.append("n")
+
+    if clear_token:
+        CLI_COMMAND.append("--clear-token")
+
+    with patch("typer.prompt", side_effect=CLI_COMMAND_INPUTS):
+        result = runner.invoke(
+            guardrails,
+            CLI_COMMAND,
+            input="".join([f"{arg}\n" for arg in CLI_COMMAND_ARGS]),
+        )
+
+    assert result.exit_code == 0
+
+    expected_calls = [call("Configuration saved.")]
+
+    if clear_token:
+        expected_calls.append(call("No token provided. Skipping authentication."))
+        assert mock_get_auth.call_count == 0
+    else:
+        expected_calls.append(call("Validating credentials..."))
+        assert mock_get_auth.call_count == 1
 
     assert mock_logger_info.call_count == 2
-    expected_calls = [call("Configuring..."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
-
-    mock_save_configuration_file.assert_called_once_with(token, no_metrics)
-
-    assert mock_get_auth.call_count == 1
-
-
-def test_configure_prompting(mocker):
-    mock_typer_prompt = mocker.patch("typer.prompt")
-    mock_typer_prompt.side_effect = ["token"]
-    mock_save_configuration_file = mocker.patch(
-        "guardrails.cli.configure.save_configuration_file"
+    mock_save_configuration_file.assert_called_once_with(
+        expected_token, enable_metrics, True
     )
-    mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
-    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
-
-    from guardrails.cli.configure import configure
-
-    configure(None, False)
-
-    assert mock_typer_prompt.call_count == 1
-    expected_calls = [call("Token", hide_input=True)]
-    mock_typer_prompt.assert_has_calls(expected_calls)
-
-    assert mock_logger_info.call_count == 2
-    expected_calls = [call("Configuring..."), call("Validating credentials...")]
-    mock_logger_info.assert_has_calls(expected_calls)
-
-    mock_save_configuration_file.assert_called_once_with("token", False)
-
-    assert mock_get_auth.call_count == 1
 
 
 def test_save_configuration_file(mocker):
@@ -95,7 +95,8 @@ def test_save_configuration_file(mocker):
         [
             f"id=f49354e0-80c7-4591-81db-cc2f945e5f1e{os.linesep}",
             f"token=token{os.linesep}",
-            "no_metrics=true",
+            "enable_metrics=true\n",
+            "use_remote_inferencing=true",
         ]
     )
     assert close_spy.call_count == 1
