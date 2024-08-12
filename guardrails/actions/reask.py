@@ -251,21 +251,14 @@ def get_reask_setup_for_string(
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 
+    original_prompt = get_original_prompt(exec_options)
+
     schema_prompt_content = prompt_content_for_schema(
         output_type, output_schema, validation_map
     )
     xml_output_schema = json_schema_to_rail_output(
         json_schema=output_schema, validator_map=validation_map
     )
-
-    reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
-    else:
-        reask_prompt_template = Prompt(
-            constants["high_level_string_reask_prompt"]
-            + constants["complete_string_suffix"]
-        )
 
     error_messages = "\n".join(
         [
@@ -275,7 +268,7 @@ def get_reask_setup_for_string(
         ]
     )
 
-    prompt = reask_prompt_template.format(
+    prompt = Prompt(original_prompt).format(
         # FIXME: How do we properly type this?
         # Solution will have to come from Runner all the way down to here
         previous_response=validation_response.incorrect_value,  # type: ignore
@@ -350,42 +343,13 @@ def get_reask_setup_for_json(
     original_prompt = get_original_prompt(exec_options)
     use_xml = prompt_uses_xml(original_prompt)
 
-    reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
-
     if is_nonparseable_reask:
-        if reask_prompt_template is None:
-            suffix = (
-                constants["xml_suffix_without_examples"]
-                if use_xml
-                else constants["json_suffix_without_examples"]
-            )
-            reask_prompt_template = Prompt(
-                constants["high_level_json_parsing_reask_prompt"] + suffix
-            )
         np_reask: NonParseableReAsk = next(
             r for r in reasks if isinstance(r, NonParseableReAsk)
         )
         # Give the LLM what it gave us that couldn't be parsed as JSON
         reask_value = np_reask.incorrect_value
     elif is_skeleton_reask:
-        if reask_prompt_template is None:
-            reask_prompt = constants["high_level_skeleton_reask_prompt"]
-
-            if use_xml:
-                reask_prompt = (
-                    reask_prompt + constants["xml_suffix_with_structure_example"]
-                )
-            else:
-                reask_prompt = (
-                    reask_prompt
-                    + constants["error_messages"]
-                    + constants["json_suffix_with_structure_example"]
-                )
-
-            reask_prompt_template = Prompt(reask_prompt)
-
         # Validation hasn't happend yet
         #   and the problem is with the json the LLM gave us.
         # Give it this same json and tell it to fix it.
@@ -408,16 +372,6 @@ def get_reask_setup_for_json(
             # Generate a subschema that matches the specific fields we're reasking for.
             field_reasks = [r for r in reasks if isinstance(r, FieldReAsk)]
             reask_schema = get_reask_subschema(output_schema, field_reasks)
-
-        if reask_prompt_template is None:
-            suffix = (
-                constants["xml_suffix_without_examples"]
-                if use_xml
-                else constants["json_suffix_without_examples"]
-            )
-            reask_prompt_template = Prompt(
-                constants["high_level_json_reask_prompt"] + suffix
-            )
 
         error_messages = {
             ".".join(str(p) for p in r.path): "; ".join(  # type: ignore
@@ -450,7 +404,8 @@ def get_reask_setup_for_json(
             decoded[k] = v
         return decoded
 
-    prompt = reask_prompt_template.format(
+    print(f"Prompt params: {prompt_params}")
+    prompt = Prompt(original_prompt).format(
         previous_response=json.dumps(
             reask_value, indent=2, default=reask_decoder, ensure_ascii=False
         ),
@@ -503,8 +458,10 @@ def get_reask_setup(
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 
+    reask_setup = None
+
     if output_type == OutputTypes.STRING:
-        return get_reask_setup_for_string(
+        reask_setup = get_reask_setup_for_string(
             output_type=output_type,
             output_schema=output_schema,
             validation_map=validation_map,
@@ -513,17 +470,20 @@ def get_reask_setup(
             prompt_params=prompt_params,
             exec_options=exec_options,
         )
-    return get_reask_setup_for_json(
-        output_type=output_type,
-        output_schema=output_schema,
-        validation_map=validation_map,
-        reasks=reasks,
-        parsing_response=parsing_response,
-        validation_response=validation_response,
-        use_full_schema=use_full_schema,
-        prompt_params=prompt_params,
-        exec_options=exec_options,
-    )
+    else:
+        reask_setup = get_reask_setup_for_json(
+            output_type=output_type,
+            output_schema=output_schema,
+            validation_map=validation_map,
+            reasks=reasks,
+            parsing_response=parsing_response,
+            validation_response=validation_response,
+            use_full_schema=use_full_schema,
+            prompt_params=prompt_params,
+            exec_options=exec_options,
+        )
+
+    return reask_setup
 
 
 ### Post-Processing Methods ###
