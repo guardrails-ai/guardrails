@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Awaitable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 from guardrails.actions.filter import Filter, apply_filters
 from guardrails.actions.refrain import Refrain, apply_refrain
@@ -12,9 +12,11 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
+    StreamValidationResult,
     ValidationResult,
 )
 from guardrails.errors import ValidationError
+from guardrails.merge import merge
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -144,7 +146,7 @@ class ValidatorServiceBase:
         self,
         validator: Validator,
         validator_logs: ValidatorLogs,
-        result: ValidationResult,
+        result: Optional[ValidationResult],
     ):
         end_time = datetime.now()
         validator_logs.validation_result = result
@@ -196,7 +198,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         *,
         validation_session_id: str,
         **kwargs,
-    ) -> ValidationResult:
+    ) -> Optional[ValidationResult]:
         result = self.execute_validator(
             validator,
             value,
@@ -212,8 +214,8 @@ class SequentialValidatorService(ValidatorServiceBase):
                     f"Either use AsyncGuard or remove {validator_logs.validator_name}."
                 )
             )
-        elif result is None:
-            result = PassResult()
+        if result is None:
+            return result
         return cast(ValidationResult, result)
 
     def run_validator(
@@ -241,6 +243,256 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         return self.after_run_validator(validator, validator_logs, result)
+
+    def run_validators_stream(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Tuple[Any, bool]],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        **kwargs,
+    ) -> Iterable[StreamValidationResult]:
+        validators = validator_map.get(reference_property_path, [])
+        for validator in validators:
+            if validator.on_fail_descriptor == OnFailAction.FIX:
+                return self.run_validators_stream_fix(
+                    iteration,
+                    validator_map,
+                    value_stream,
+                    metadata,
+                    absolute_property_path,
+                    reference_property_path,
+                    **kwargs,
+                )
+        return self.run_validators_stream_noop(
+            iteration,
+            validator_map,
+            value_stream,
+            metadata,
+            absolute_property_path,
+            reference_property_path,
+            **kwargs,
+        )
+
+    # requires at least 2 validators
+    def multi_merge(self, original: str, new_values: list[str]) -> str:
+        current = new_values.pop()
+        print("Fmerging these:", new_values)
+        while len(new_values) > 0:
+            nextval = new_values.pop()
+            current = merge(current, nextval, original)
+        print("\nFmerge result:", current)
+        return current
+
+    def run_validators_stream_fix(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Tuple[Any, bool]],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        **kwargs,
+    ) -> Iterable[StreamValidationResult]:
+        validators = validator_map.get(reference_property_path, [])
+        acc_output = ""
+        validator_partial_acc: dict[int, str] = {}
+        for validator in validators:
+            validator_partial_acc[id(validator)] = ""
+        last_chunk = None
+        last_chunk_validated = False
+        last_chunk_missing_validators = []
+        refrain_triggered = False
+        for chunk, finished in value_stream:
+            original_text = chunk
+            acc_output += chunk
+            fixed_values = []
+            last_chunk = chunk
+            last_chunk_missing_validators = []
+            if refrain_triggered:
+                break
+            for validator in validators:
+                # reset chunk to original text
+                chunk = original_text
+                validator_logs = self.run_validator(
+                    iteration,
+                    validator,
+                    chunk,
+                    metadata,
+                    absolute_property_path,
+                    True,
+                    remainder=finished,
+                    **kwargs,
+                )
+                result = validator_logs.validation_result
+                if result is None:
+                    last_chunk_missing_validators.append(validator)
+                result = cast(ValidationResult, result)
+                # if we have a concrete result, log it in the validation map
+                if isinstance(result, FailResult):
+                    is_filter = validator.on_fail_descriptor is OnFailAction.FILTER
+                    is_refrain = validator.on_fail_descriptor is OnFailAction.REFRAIN
+                    if is_filter or is_refrain:
+                        refrain_triggered = True
+                        break
+                    rechecked_value = None
+                    chunk = self.perform_correction(
+                        [result],
+                        chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                    fixed_values.append(chunk)
+                    validator_partial_acc[id(validator)] += chunk  # type: ignore
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        chunk = result.value_override
+                    else:
+                        chunk = result.validated_chunk
+                    fixed_values.append(chunk)
+                    validator_partial_acc[id(validator)] += chunk  # type: ignore
+                validator_logs.value_after_validation = chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+
+            if refrain_triggered:
+                # if we have a failresult from a refrain/filter validator, yield empty
+                yield StreamValidationResult(
+                    chunk="", original_text=acc_output, metadata=metadata
+                )
+            else:
+                # if every validator has yielded a concrete value, merge and yield
+                # only merge and yield if all validators have run
+                # TODO: check if only 1 validator - then skip merging
+                if len(fixed_values) == len(validators):
+                    last_chunk_validated = True
+                    values_to_merge = []
+                    for validator in validators:
+                        values_to_merge.append(validator_partial_acc[id(validator)])
+                    merged_value = self.multi_merge(acc_output, values_to_merge)
+                    # merged_value = self.multi_merge(acc_output, values_to_merge)
+                    # reset validator_partial_acc
+                    for validator in validators:
+                        validator_partial_acc[id(validator)] = ""
+                    yield StreamValidationResult(
+                        chunk=merged_value, original_text=acc_output, metadata=metadata
+                    )
+                    acc_output = ""
+                else:
+                    last_chunk_validated = False
+        # handle case where LLM doesn't yield finished flag
+        # we need to validate remainder of accumulated chunks
+        if not last_chunk_validated and not refrain_triggered:
+            original_text = last_chunk
+            for validator in last_chunk_missing_validators:
+                last_log = self.run_validator(
+                    iteration,
+                    validator,
+                    # use empty chunk
+                    # validator has already accumulated the chunk from the first loop
+                    "",
+                    metadata,
+                    absolute_property_path,
+                    True,
+                    remainder=True,
+                    **kwargs,
+                )
+                result = last_log.validation_result
+                if isinstance(result, FailResult):
+                    rechecked_value = None
+                    last_chunk = self.perform_correction(
+                        [result],
+                        last_chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                    validator_partial_acc[id(validator)] += last_chunk  # type: ignore
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        last_chunk = result.value_override
+                    else:
+                        last_chunk = result.validated_chunk
+                    validator_partial_acc[id(validator)] += last_chunk  # type: ignore
+                last_log.value_after_validation = last_chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+            values_to_merge = []
+            for validator in validators:
+                values_to_merge.append(validator_partial_acc[id(validator)])
+            merged_value = self.multi_merge(acc_output, values_to_merge)
+            yield StreamValidationResult(
+                chunk=merged_value,
+                original_text=original_text,  # type: ignore
+                metadata=metadata,  # type: ignore
+            )
+            # yield merged value
+
+    def run_validators_stream_noop(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Tuple[Any, bool]],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        **kwargs,
+    ) -> Iterable[StreamValidationResult]:
+        validators = validator_map.get(reference_property_path, [])
+        # Validate the field
+        # TODO: Under what conditions do we yield?
+        # When we have at least one non-None value?
+        # When we have all non-None values?
+        # Does this depend on whether we are fix or not?
+        for chunk, finished in value_stream:
+            original_text = chunk
+            for validator in validators:
+                validator_logs = self.run_validator(
+                    iteration,
+                    validator,
+                    chunk,
+                    metadata,
+                    absolute_property_path,
+                    True,
+                    **kwargs,
+                )
+                result = validator_logs.validation_result
+                result = cast(ValidationResult, result)
+
+                if isinstance(result, FailResult):
+                    rechecked_value = None
+                    chunk = self.perform_correction(
+                        [result],
+                        chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        chunk = result.value_override
+
+                validator_logs.value_after_validation = chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+                # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
+                # if isinstance(chunk, (Refrain, Filter, ReAsk)):
+                #     yield chunk, metadata
+            yield StreamValidationResult(
+                chunk=chunk, original_text=original_text, metadata=metadata
+            )
 
     def run_validators(
         self,
@@ -292,6 +544,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 **kwargs,
             )
             result = validator_logs.validation_result
+
             result = cast(ValidationResult, result)
             if isinstance(result, FailResult):
                 rechecked_value = None
@@ -400,30 +653,28 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_stream(
         self,
-        value: Any,
+        value_stream: Iterable[Tuple[Any, bool]],
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Tuple[Any, dict]:
+    ) -> Iterable[StreamValidationResult]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
         # Validate the field
-        value, metadata = self.run_validators(
+        gen = self.run_validators_stream(
             iteration,
             validator_map,
-            value,
+            value_stream,
             metadata,
             absolute_path,
             reference_path,
-            True,
             **kwargs,
         )
-
-        return value, metadata
+        return gen
 
 
 class MultiprocMixin:
@@ -742,18 +993,12 @@ def validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
-    stream: Optional[bool] = False,
     **kwargs,
 ):
     if path is None:
         path = "$"
 
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-    if stream:
-        sequential_validator_service = SequentialValidatorService(disable_tracer)
-        return sequential_validator_service.validate_stream(
-            value, metadata, validator_map, iteration, path, path, **kwargs
-        )
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
@@ -769,6 +1014,24 @@ def validate(
     return validator_service.validate(
         value, metadata, validator_map, iteration, path, path, **kwargs
     )
+
+
+def validate_stream(
+    value_stream: Iterable[Tuple[Any, bool]],
+    metadata: dict,
+    validator_map: ValidatorMap,
+    iteration: Iteration,
+    disable_tracer: Optional[bool] = True,
+    path: Optional[str] = None,
+    **kwargs,
+) -> Iterable[StreamValidationResult]:
+    if path is None:
+        path = "$"
+    sequential_validator_service = SequentialValidatorService(disable_tracer)
+    gen = sequential_validator_service.validate_stream(
+        value_stream, metadata, validator_map, iteration, path, path, **kwargs
+    )
+    return gen
 
 
 async def async_validate(

@@ -233,8 +233,9 @@ class Validator:
         remainder = kwargs.get("remainder", False)
         if remainder:
             split_contents = [accumulated_text, ""]
+        # if no chunks are returned, we haven't accumulated enough
         if len(split_contents) == 0:
-            return PassResult()
+            return None
         [chunk_to_validate, new_accumulated_chunks] = split_contents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk

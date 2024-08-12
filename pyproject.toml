@@ -57,6 +57,7 @@ opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
 guardrails-hub-types = "^0.0.3"
 guardrails-api-client = ">=0.3.8"
+diff-match-patch = "^20230430"
 guardrails-api = ">=0.0.1"
 
 [tool.poetry.extras]

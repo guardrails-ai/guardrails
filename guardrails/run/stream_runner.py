@@ -1,5 +1,6 @@
-from typing import Any, Dict, Generator, List, Optional, Union, cast
+from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 
+from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
@@ -138,95 +139,71 @@ class StreamRunner(Runner):
                 "the API is returning a generator."
             )
 
-        fragment = ""
-        parsed_fragment, validated_fragment, valid_op = None, None, None
+        parsed_fragment, validated_fragment, valid_op = "", None, None
         verified = set()
         validation_response = ""
+        fragment = ""
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
-
         if self.output_type == OutputTypes.STRING:
-            stream_finished = False
-            last_chunk_text = ""
-            for chunk in stream:
-                # 1. Get the text from the chunk and append to fragment
-                chunk_text = self.get_chunk_text(chunk, api)
-                last_chunk_text = chunk_text
-                finished = self.is_last_chunk(chunk, api)
-                if finished:
-                    stream_finished = True
-                fragment += chunk_text
 
-                # 2. Parse the chunk
-                parsed_chunk, move_to_next = self.parse(
-                    chunk_text, output_schema, verified=verified
-                )
-                if move_to_next:
-                    # Continue to next chunk
-                    continue
-                validated_text = self.validate(
-                    iteration,
-                    index,
-                    parsed_chunk,
-                    output_schema,
-                    True,
-                    validate_subschema=True,
-                    # if it is the last chunk, validate everything that's left
-                    remainder=finished,
-                )
-                if isinstance(validated_text, SkeletonReAsk):
+            def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
+                for chunk in stream:
+                    chunk_text = self.get_chunk_text(chunk, api)
+                    nonlocal fragment
+                    fragment += chunk_text
+                    finished = self.is_last_chunk(chunk, api)
+                    # 2. Parse the chunk
+                    parsed_chunk, move_to_next = self.parse(
+                        chunk_text, output_schema, verified=verified
+                    )
+                    nonlocal parsed_fragment
+                    # ignore types because output schema guarantees a string
+                    parsed_fragment += parsed_chunk  # type: ignore
+                    if move_to_next:
+                        # Continue to next chunk
+                        continue
+                    yield parsed_chunk, finished
+
+            prepped_stream = prepare_chunk_generator(stream)
+            gen = validator_service.validate_stream(
+                prepped_stream,
+                self.metadata,
+                self.validation_map,
+                iteration,
+                self._disable_tracer,
+                "$",
+                validate_subschema=True,
+            )
+
+            for res in gen:
+                chunk = res.chunk
+                original_text = res.original_text
+                if isinstance(chunk, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
                         "of the expected output JSON schema."
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(validated_text)
+                reasks, valid_op = self.introspect(chunk)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
-                validation_response += cast(str, validated_text)
+                validation_response += cast(str, chunk)
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
-                    raw_llm_output=chunk_text,
-                    validated_output=validated_text,
+                    raw_llm_output=original_text,
+                    validated_output=chunk,
                     validation_passed=passed,
                 )
-            # handle case where generator doesn't give finished status
-            if not stream_finished:
-                last_result = self.validate(
-                    iteration,
-                    index,
-                    "",
-                    output_schema,
-                    True,
-                    validate_subschema=True,
-                    remainder=True,
-                )
-                if last_result:
-                    passed = call_log.status == pass_status
 
-                    validated_output = None
-                    if passed is True:
-                        validated_output = cast(OT, last_result)
-
-                    reask = None
-                    if isinstance(last_result, ReAsk):
-                        reask = last_result
-
-                    yield ValidationOutcome(
-                        call_id=call_log.id,  # type: ignore
-                        raw_llm_output=last_chunk_text,
-                        validated_output=validated_output,
-                        reask=reask,
-                        validation_passed=passed,
-                    )
         # handle non string schema
         else:
             for chunk in stream:
@@ -276,10 +253,8 @@ class StreamRunner(Runner):
                     validation_passed=validated_fragment is not None,
                 )
 
-        # Finally, add to logs
+        # # Finally, add to logs
         iteration.outputs.raw_output = fragment
-        # Do we need to care about the type here?
-        # What happens if parsing continuously fails?
         iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
         iteration.outputs.validation_response = validation_response
         iteration.outputs.guarded_output = valid_op
