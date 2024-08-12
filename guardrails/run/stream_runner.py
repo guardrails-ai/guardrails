@@ -211,7 +211,7 @@ class StreamRunner(Runner):
                 fragment += chunk_text
 
                 # 2. Parse the fragment
-                parsed_chunk, move_to_next = self.parse(
+                parsed_fragment, move_to_next = self.parse(
                     fragment, output_schema, verified=verified
                 )
                 if move_to_next:
@@ -222,7 +222,7 @@ class StreamRunner(Runner):
                 validated_fragment = self.validate(
                     iteration,
                     index,
-                    parsed_chunk,
+                    parsed_fragment,
                     output_schema,
                     validate_subschema=True,
                 )
