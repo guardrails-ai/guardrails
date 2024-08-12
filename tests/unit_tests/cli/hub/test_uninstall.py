@@ -14,6 +14,7 @@ manifest_mock = Manifest(
     repository={"url": "https://github.com/example/repo"},
     namespace="guardrails",
     package_name="test_package",
+    description="Test module",
     module_name="test_module",
     exports=["Validator", "Helper"],
 )

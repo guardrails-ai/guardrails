@@ -55,6 +55,7 @@ class TestAddToHubInits:
                 "namespace": "guardrails-ai",
                 "package_name": "test-validator",
                 "module_name": "validator",
+                "description": "description",
                 "exports": ["TestValidator", "helper"],
                 "tags": {},
             }
@@ -120,6 +121,7 @@ class TestAddToHubInits:
                 "namespace": "guardrails-ai",
                 "package_name": "test-validator",
                 "module_name": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -204,6 +206,7 @@ class TestAddToHubInits:
                 "namespace": "guardrails-ai",
                 "package_name": "test-validator",
                 "module_name": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -340,6 +343,7 @@ class TestRunPostInstall:
                     "namespace": "guardrails-ai",
                     "package_name": "test-validator",
                     "module_name": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                 }
@@ -354,6 +358,7 @@ class TestRunPostInstall:
                     "namespace": "guardrails-ai",
                     "package_name": "test-validator",
                     "module_name": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                     "post_install": "",
@@ -394,6 +399,7 @@ class TestRunPostInstall:
                 "namespace": "guardrails-ai",
                 "package_name": "test-validator",
                 "module_name": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
                 "post_install": "post_install.py",
@@ -423,6 +429,7 @@ class TestValidatorPackageService:
                 "namespace": "guardrails",
                 "package_name": "test-validator",
                 "module_name": "test_validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {"has_guardrails_endpoint": False},
             }
@@ -493,6 +500,7 @@ class TestValidatorPackageService:
                         "namespace": "guardrails-ai",
                         "package_name": "test-validator",
                         "module_name": "test_validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -510,6 +518,7 @@ class TestValidatorPackageService:
                         "namespace": "",
                         "package_name": "test-validator",
                         "module_name": "test_validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -546,6 +555,7 @@ class TestValidatorPackageService:
                         "namespace": "guardrails-ai",
                         "package_name": "test-validator",
                         "module_name": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -563,6 +573,7 @@ class TestValidatorPackageService:
                         "namespace": "guardrails-ai",
                         "package_name": "test-validator",
                         "module_name": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                         "post_install": "",
@@ -581,6 +592,7 @@ class TestValidatorPackageService:
                         "namespace": "guardrails-ai",
                         "package_name": "test-validator",
                         "module_name": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                         "post_install": "",
@@ -649,6 +661,7 @@ class TestValidatorPackageService:
                 "namespace": "guardrails-ai",
                 "package_name": "test-validator",
                 "module_name": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }

@@ -263,8 +263,8 @@ def test_quiet_install(mocker):
             "maintainers": [],
             "repository": {"url": "some-repo"},
             "namespace": "guardrails-ai",
-            "packageName": "test-validator",
-            "moduleName": "validator",
+            "package_name": "test-validator",
+            "module_name": "validator",
             "exports": ["TestValidator"],
         }
     )
