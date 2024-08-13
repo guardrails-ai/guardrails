@@ -193,4 +193,4 @@ guard.validate("My landlord is an asshole!")
 ```
 
 
-> Note: Invoking the `install` SDK  always installs the validator module so it's recommended for the install to be in a seperate code block when using Notebooks.
+> Note: Invoking the `install` SDK  always installs the validator module so it's recommended for the install to be in a separate code block when using Notebooks.
