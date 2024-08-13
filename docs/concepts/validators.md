@@ -129,9 +129,9 @@ guardrails hub install hub://guardrails/toxic_language
 
 > This will not download local models if you opted into remote inferencing during `guardrails configure`
 
-If you want to control if associated models are downloaded or not you can use the `--install-local-models` or `--no-install-local-models` flags respectively during `guardrails hub install`
+> If you want to control if associated models are downloaded or not you can use the `--install-local-models` or `--no-install-local-models` flags respectively during `guardrails hub install`
 
-At which point you can start to use the Validator:
+After installing the validator with the CLI you can start to use the validator in your guards:
 
 ```python
 from guardrails.hub import ToxicLanguage
