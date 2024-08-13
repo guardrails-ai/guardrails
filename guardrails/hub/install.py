@@ -1,8 +1,11 @@
 from contextlib import contextmanager
 from string import Template
-from typing import Callable
+from typing import Callable, cast
 
-from guardrails.hub.validator_package_service import ValidatorPackageService
+from guardrails.hub.validator_package_service import (
+    ValidatorPackageService,
+    ValidatorModuleType,
+)
 from guardrails.classes.credentials import Credentials
 
 from guardrails.cli.hub.console import console
@@ -33,8 +36,9 @@ def install(
     install_local_models=None,
     quiet: bool = True,
     install_local_models_confirm: Callable = default_local_models_confirm,
-):
-    """Install a validator package from a hub URI.
+) -> ValidatorModuleType:
+    """
+    Install a validator package from a hub URI.
 
     Args:
         package_uri (str): The URI of the package to install.
@@ -48,6 +52,9 @@ def install(
 
     Examples:
         >>> RegexMatch = install("hub://guardrails/regex_match").RegexMatch
+
+        >>> install("hub://guardrails/regex_match);
+        >>> import guardrails.hub.regex_match as regex_match
     """
 
     verbose_printer = console.print
@@ -121,7 +128,10 @@ def install(
     ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
 
     # 5. Get Validator Class for the installed module
-    validators = ValidatorPackageService.get_validator_from_manifest(module_manifest)
+    installed_module = ValidatorPackageService.get_validator_from_manifest(
+        module_manifest
+    )
+    installed_module = cast(ValidatorModuleType, installed_module)
 
     # Print success messages
     cli_logger.info("Installation complete")
@@ -151,4 +161,7 @@ def install(
     quiet_printer(success_message_cli)  # type: ignore
     cli_logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
 
-    return validators
+    # Not a fan of this but allows the installation to be used in create command as is
+    installed_module.__validator_exports__ = module_manifest.exports
+
+    return installed_module
