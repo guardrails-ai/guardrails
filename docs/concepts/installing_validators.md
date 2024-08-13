@@ -11,7 +11,7 @@ Validators can be combined together into Input and Output Guards that intercept 
 
 ## Installing
 
-Once you have found a Validator on the hub, you can click on the Validator REAMDE to find the install link.
+Once you have found a Validator on the hub, you can click on the Validator `README` to find the install link.
 
 ### Using CLI
 
@@ -20,6 +20,10 @@ You can install a validator using the Guardrails CLI. For example the [Toxic Lan
 ```bash
 guardrails hub install hub://guardrails/toxic_language
 ```
+
+> This will not download local models if you opted into remote inferencing during `guardrails configure`
+
+If you want to control if associated models are downloaded or not you can use the `--install-local-models` or `--no-install-local-models` flags respectively during `guardrails hub install`
 
 At which point you can start to use the Validator:
 
@@ -34,9 +38,23 @@ guard = Guard().use(
 guard.validate("My landlord is an asshole!") 
 ```
 
+### In Code Installs
+
+You can also install validators using the Guardrails SDK which simplifies development particularly when using Jupyter Notebooks.
+
+```python
+from guardrails import install
+
+install(
+    "hub://guardrails/toxic_language",
+    install_local_models=True, # defaults to `None` - which will not download local models if you opted into remote inferencing.
+    quiet=False # defaults to `True`
+)
+```
+
 ### In Code Installs - Pattern A
 
-You can also install validators using the Guardrails SDK which simplifies development particularly when using Jupyter Notebooks:
+After an `install` invocation you can import a validator as you typically would: 
 
 ```python
 from guardrails import install
@@ -51,7 +69,6 @@ guard = Guard().use(
 
 guard.validate("My landlord is an asshole!") 
 ```
-> Note: Invoking `install` always installs the validator module so it's recommended for the install to be in a seperate code block when using Notebooks.
 
 ### In Code Installs - Pattern B
 
@@ -69,4 +86,5 @@ guard = Guard().use(
 guard.validate("My landlord is an asshole!") 
 ```
 
-> Note: Invoking `install` always installs the validator module so it's recommended for the install to be in a seperate code block when using Notebooks.
+
+> Note: Invoking the `install` SDK  always installs the validator module so it's recommended for the install to be in a seperate code block when using Notebooks.
