@@ -51,7 +51,6 @@ const sidebars = {
   concepts: [
     "concepts/guard",
     "concepts/validators",
-    "concepts/installing_validators",
     // "concepts/guardrails",
     "concepts/hub",
     "concepts/deploying",
