@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
@@ -513,17 +511,6 @@ def test_get_reask_prompt(
     expected_reask_json,
 ):
     """Test that get_reask_prompt function returns the correct prompt."""
-    expected_prompt_template = """
-I was given the following JSON response, which had problems due to incorrect values.
-
-%s
-
-Help me correct the incorrect values based on the given error messages.
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-%s
-ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
-"""  # noqa: E501
     expected_instructions = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
@@ -536,6 +523,17 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 """  # noqa: E501
 
     mocker.patch("guardrails.actions.reask.generate_example", return_value=json_example)
+
+    expected_reask_prompt = """
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+%s
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, try your best guess.
+
+Here are examples of simple (XML, JSON) pairs that show the expected behavior:
+- `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`
+- `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
+- `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
+"""  # noqa: E501
 
     output_type = OutputTypes.DICT
     processed_schema = rail_string_to_schema(example_rail)
@@ -562,12 +560,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
     # NOTE: This changes once we reimplement Field Level Reasks
     assert reask_schema == output_schema
 
-    expected_prompt = expected_prompt_template % (
-        json.dumps(expected_reask_json, indent=2),
-        expected_rail,
-        # Examples are only included for SkeletonReAsk's
-        # json.dumps(json_example, indent=2),
-    )
+    expected_prompt = expected_reask_prompt % expected_rail
 
     assert reask_prompt.source == expected_prompt
 
