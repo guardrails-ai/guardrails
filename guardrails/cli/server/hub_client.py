@@ -26,7 +26,7 @@ VALIDATOR_HUB_SERVICE = os.getenv(
     "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 validator_manifest_endpoint = Template(
-    "validator-manifests/${namespace}/${validator_name}"
+    "validator/${namespace}/${validator_name}/manifest"
 )
 
 
@@ -139,7 +139,7 @@ def get_guard_template(template_address: str):
         sys.exit(1)
 
 
-# GET /validator-manifests/{namespace}/{validatorName}
+# GET /validator/{namespace}/{validatorName}/manifest
 def get_validator_manifest(module_name: str):
     try:
         module_manifest = fetch_module(module_name)
