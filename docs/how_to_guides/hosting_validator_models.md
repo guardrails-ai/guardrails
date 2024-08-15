@@ -34,11 +34,8 @@ As we can see, the ToxicLanguage validator currently uses the [Detoxify model](h
 # Install FastAPI server dependencies
 pip install fastapi uvicorn
 
-# Option 1 - Install required validator dependencies(General approach - Requires Guardrails)
+# Install required validator dependencies(General approach - Requires Guardrails)
 guardrails hub install hub://guardrails/toxic_language --install-local-models
-
-# Option 2 - Install only required dependencies (Validator Specific - From README)
-pip install detoxify torch
 ```
 
 ## Step 3: Wrap the model with FastAPI and run the server
@@ -103,6 +100,13 @@ We first load in the Detoxify model and create a `validate` endpoint where we do
 2. Call the detoxify model on the text and return the output in the format described above
 
 To run our FastAPI server, we just run `uvicorn app:app –reload` and now our server is running on `https://127.0.0.1:8000`: 
+
+```bash
+curl https://raw.githubusercontent.com/guardrails-ai/toxic_language/main/app.py -o app.py
+
+uvicorn app:app --reload
+```
+
 
 ![alt_text](./assets/api_running.png "image_tooltip")
 
