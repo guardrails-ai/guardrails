@@ -1,6 +1,6 @@
 # Hosting Validator Models
 
-Validation using machine learning models is a highly effective way of detecting LLM hallucinations that are not easily or possibly detected using traditional coding techniques. We’ve selected and tuned some ML models to run different validations. These models are wrapped within model validators. This makes the access pattern straightforward — you can use model-based validators the same as any other [validator](https://www.guardrailsai.com/docs/concepts/validators).
+Validation using machine learning models is a highly effective way of detecting LLM hallucinations that are not easily or possibly detected using traditional coding techniques. We’ve selected and tuned some ML models to run different validations. These models are wrapped within model validators. This makes the access pattern straightforward — you can use model-based validators the same as any other [validator](/docs/concepts/validators).
 
 The default access pattern is to use these validators locally for development, but this causes a few issues in production. These models have a large memory footprint, and if they’re run in on-process environments without the correct infrastructure (GPUs, memory, etc.), they can run slowly and suboptimally, adding a huge amount of latency to your application.
 
@@ -47,7 +47,7 @@ Guardrails AI recommends using a similar schema for inputs and outputs across al
 
 The standard inference request can be found [here](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/validator_base.py#L258). 
 
-The standard input definition looks like this: 
+For the input, let's make the model take in:
 
 ```json
 {
@@ -70,7 +70,7 @@ The standard input definition looks like this:
 
 Here, `“text”` contains the text we want to check for toxic language and `“threshold”` contains the confidence threshold for determining toxicity. If the model predicts a toxic level higher than the threshold, then the text is considered toxic. 
 
-The standard output definition looks like this:
+For the output, let's make it look like:
 
 ```json
 {
@@ -87,76 +87,11 @@ The standard output definition looks like this:
 }
 ```
 
-Now it’s time to write our `app.py` to set up the FastAPI server:
+Now it’s time to write our `app.py` to set up the FastAPI server. You can find the FastAPI setup for ToxicLanguage [here](https://github.com/guardrails-ai/toxic_language/blob/main/app.py) and we've also provided the FastAPI code for [CompetitorCheck](https://github.com/guardrails-ai/competitor_check/blob/main/app.py), [DetectPII](https://github.com/guardrails-ai/detect_pii/blob/main/app.py), and [RestrictToTopic](https://github.com/guardrails-ai/restricttotopic) in each respective validator repository.
 
-```python
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Union
-import detoxify
-import torch
-import json
+In general, our code for the server is pretty simple. The server setup is quite similar for any validator we choose to use, but for the purpose of this doc, let's go through the FastAPI setup for `ToxicLanguage`:
 
-app = FastAPI()
-# Initialize the detoxify model once
-device = "cpu"
-model = detoxify.Detoxify('unbiased-small', device=torch.device(device))
-
-class InputData(BaseModel):
-    name: str
-    shape: List[int]
-    data: Union[List[str], List[float]]
-    datatype: str
-
-class InputRequest(BaseModel):
-    inputs: List[InputData]
-
-class OutputData(BaseModel):
-    name: str
-    datatype: str
-    shape: List[int]
-    data: List[Union[str, List[str]]]
-
-class OutputResponse(BaseModel):
-    modelname: str
-    modelversion: str
-    outputs: List[OutputData]
-
-@app.post("/validate", response_model=OutputResponse)
-async def check_toxicity(input_request: InputRequest):
-    text = None
-    threshold = None
-    
-    for inp in input_request.inputs:
-        if inp.name == "text":
-            text = inp.data[0]
-        elif inp.name == "threshold":
-            threshold = float(inp.data[0])
-    
-    if text is None or threshold is None:
-        raise HTTPException(status_code=400, detail="Invalid input format")
-    results = model.predict(text)
-    pred_labels = [label for label, score in results.items() if score > threshold]
-    output_data = OutputResponse(
-        modelname="unbiased-small",
-        modelversion="1",
-        outputs=[
-            OutputData(
-                name="result",
-                datatype="BYTES",
-                shape=[len(pred_labels)],
-                data=[pred_labels]
-            )
-        ]
-    )
-    
-    print(f"Output data: {output_data}")
-    return output_data
-# Run the app with uvicorn
-# Save this script as app.py and run with: uvicorn app:app --reload
-```
-
-Our code for the server is pretty simple – we load in the Detoxify model and create a `validate` endpoint where we do two main things: 
+We first load in the Detoxify model and create a `validate` endpoint where we do two main things: 
 
 1. Extract the text that we want to validate as well as the threshold that we need to figure out the toxicity of our text 
 
@@ -200,7 +135,9 @@ Exception: Validation failed for field with errors: The following sentences in y
 - Stop being such a dumb piece of shit.
 ```
 
-## Step 5: Conclusion
+We can do follow these same steps, no matter which validator we are using. If the validator you are trying to use is not `ToxicLanguage`, `CompetitorCheck`, `DetectPII`, or `RestrictToTopic` and does not have an `app.py` in the respository, you can simply write the FastAPI code using one of the given `app.py`'s as reference. And then when invoking a guard, you can pass in whatever validator you are using into the `Guard().use()` line, similar to how we did above.
+
+## Conclusion
 
 You’ve learned how to host the ToxicLanguage model using FastAPI and integrate it directly with Guardrails. This setup can be used for various types of validators and ML models.
 
