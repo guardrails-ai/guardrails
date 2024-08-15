@@ -18,7 +18,7 @@ First, choose a validator that you want to use. You can browse a list of all the
 We suggest picking the “ML” filter on the left side of the page in the “Infrastructure Requirements” section to find validators that use models.
 :::
 
-![alt_text](./assets/infrastructure_requirements.png "image_tooltip")
+![infrastructure requirements hub](./assets/infrastructure_requirements.png "image_tooltip")
 
 For the purpose of this guide, let’s use the [ToxicLanguage validator](https://hub.guardrailsai.com/validator/guardrails/toxic_language).
 
@@ -26,7 +26,7 @@ For the purpose of this guide, let’s use the [ToxicLanguage validator](https:/
 
 The validator model is referenced in the validator implementation, as well as in the README.
 
-![alt_text](./assets/validator_in_readme.png "image_tooltip")
+![github location in readme](./assets/validator_in_readme.png "image_tooltip")
 
 As we can see, the ToxicLanguage validator currently uses the [Detoxify model](https://github.com/unitaryai/detoxify). In order to use this, we need to install the necessary libraries:
 
@@ -108,7 +108,7 @@ uvicorn app:app --reload
 ```
 
 
-![alt_text](./assets/api_running.png "image_tooltip")
+![api running](./assets/api_running.png)
 
 ## Step 4: Configure our Guard
 
@@ -116,9 +116,10 @@ Now that we have our server up and running, we have to write a guard that calls 
 
 With Guardrails, this is really simple: 
 
-python
+```python
 import guardrails as gd
 from guardrails.hub import ToxicLanguage
+
 
 # Create a Guard class
 guard = gd.Guard().use(
@@ -132,6 +133,7 @@ try:
     guard.validate("Stop being such a dumb piece of shit. Why can't you comprehend this?")
 except Exception as e:
     print(f"Exception: {e}")
+```
 
 We simply initialize a new `Guard` and pass in the `ToxicLanguage` validator with the following parameters:
 
@@ -141,9 +143,11 @@ We simply initialize a new `Guard` and pass in the `ToxicLanguage` validator wit
 
 When we run the above code and invoke the guard, we see that our guard successfully detected toxic language in our text!
 
+```python
 Exception: Validation failed for field with errors: The following sentences in your response were found to be toxic:
 
 - Stop being such a dumb piece of shit.
+```
 
 We can do follow these same steps, no matter which validator we are using. If the validator you are trying to use does not have an `app.py` in the respository, you can simply write the FastAPI or Flask code using one of the given `app.py`'s as reference.
 
