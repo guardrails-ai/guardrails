@@ -1,6 +1,10 @@
-# Hosting Validator Models
+# Host Remote Validator Models
 
 Validation using machine learning models is a highly effective way of detecting LLM hallucinations that are not easily or possibly detected using traditional coding techniques. We’ve selected and tuned some ML models to run different validations. These models are wrapped within model validators. This makes the access pattern straightforward — you can use model-based validators the same as any other [validator](/docs/concepts/validators).
+
+:::note
+Learn more about the need for remote validators in our [concepts doc](/docs/concepts/remote_validation_inference).
+:::
 
 The default access pattern is to use these validators locally for development, but this causes a few issues in production. These models have a large memory footprint, and if they’re run in on-process environments without the correct infrastructure (GPUs, memory, etc.), they can run slowly and suboptimally, adding a huge amount of latency to your application.
 
@@ -87,15 +91,16 @@ For the output, let's make it look like:
 }
 ```
 
-Now it’s time to write our `app.py` to set up the FastAPI server. You can find the FastAPI setup for ToxicLanguage [here](https://github.com/guardrails-ai/toxic_language/blob/main/app.py) and we've also provided the FastAPI code for [CompetitorCheck](https://github.com/guardrails-ai/competitor_check/blob/main/app.py), [DetectPII](https://github.com/guardrails-ai/detect_pii/blob/main/app.py), and [RestrictToTopic](https://github.com/guardrails-ai/restricttotopic) in each respective validator repository.
+### Implementing the Model
+Now it's time to write our `app.py` to set up the FastAPI server. You can find the FastAPI setup for ToxicLanguage [here](https://github.com/guardrails-ai/toxic_language/blob/main/app.py). 
 
-In general, our code for the server is pretty simple. The server setup is quite similar for any validator we choose to use, but for the purpose of this doc, let's go through the FastAPI setup for `ToxicLanguage`:
+In general, our code for the server is pretty simple. The server setup is quite similar for any validator we choose to use.
 
-We first load in the Detoxify model and create a `validate` endpoint where we do two main things: 
+We first load in the Detoxify model and create a `validate` endpoint where we do two main things:
 
 1. Extract the text that we want to validate as well as the threshold that we need to figure out the toxicity of our text 
 
-2. Call the detoxify model on the text and return the output in the format described above 
+2. Call the detoxify model on the text and return the output in the format described above
 
 To run our FastAPI server, we just run `uvicorn app:app –reload` and now our server is running on `https://127.0.0.1:8000`: 
 
@@ -107,19 +112,22 @@ Now that we have our server up and running, we have to write a guard that calls 
 
 With Guardrails, this is really simple: 
 
-```python
+python
 import guardrails as gd
 from guardrails.hub import ToxicLanguage
 
 # Create a Guard class
 guard = gd.Guard().use(
-    ToxicLanguage(use_local=False, on_fail="exception", validation_endpoint="http://127.0.0.1:8000/validate"),
+    ToxicLanguage(
+      use_local=False,
+      on_fail="exception",
+      validation_endpoint="http://127.0.0.1:8000/validate"
+    ),
 )
 try:
     guard.validate("Stop being such a dumb piece of shit. Why can't you comprehend this?")
 except Exception as e:
     print(f"Exception: {e}")
-```
 
 We simply initialize a new `Guard` and pass in the `ToxicLanguage` validator with the following parameters:
 
@@ -129,19 +137,16 @@ We simply initialize a new `Guard` and pass in the `ToxicLanguage` validator wit
 
 When we run the above code and invoke the guard, we see that our guard successfully detected toxic language in our text!
 
-```
 Exception: Validation failed for field with errors: The following sentences in your response were found to be toxic:
 
 - Stop being such a dumb piece of shit.
-```
 
-We can do follow these same steps, no matter which validator we are using. If the validator you are trying to use is not `ToxicLanguage`, `CompetitorCheck`, `DetectPII`, or `RestrictToTopic` and does not have an `app.py` in the respository, you can simply write the FastAPI code using one of the given `app.py`'s as reference. And then when invoking a guard, you can pass in whatever validator you are using into the `Guard().use()` line, similar to how we did above.
+We can do follow these same steps, no matter which validator we are using. If the validator you are trying to use does not have an `app.py` in the respository, you can simply write the FastAPI or Flask code using one of the given `app.py`'s as reference.
 
 ## Conclusion
 
 You’ve learned how to host the ToxicLanguage model using FastAPI and integrate it directly with Guardrails. This setup can be used for various types of validators and ML models.
 
 ### Production Considerations
-- Make sure to wrap the application in a WSGI server (like Gunicorn).
+- Make sure to wrap the application in a WSGI or ASGI server (like uvicorn or Gunicorn).
 - Deploy on GPUs to accelerate model inference and increase performance.
-
