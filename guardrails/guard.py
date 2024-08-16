@@ -216,6 +216,11 @@ class Guard(IGuard, Generic[OT]):
                     )
                     self.output_schema = loaded_output_schema
                     _loaded = True
+                else:
+                    logger.warning(
+                        f"use_server is True and Guard '{self.name}' "
+                        "not found on the server. Creating a new empty Guard."
+                    )
             if not _loaded:
                 self._save()
 
