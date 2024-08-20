@@ -256,7 +256,7 @@ class Validator:
         return validation_result
 
     def _hub_inference_request(
-        self, request_body: dict, validation_endpoint: str
+        self, request_body: Union[dict, str], validation_endpoint: str
     ) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation
         model. This request is authed through the hub and rerouted to a hosted
