@@ -94,6 +94,7 @@ from guardrails.utils.structured_data_utils import (
 from guardrails.decorators.experimental import experimental
 
 from guardrails.settings import settings
+from guardrails.errors import ValidationError
 
 
 class Guard(IGuard, Generic[OT]):
@@ -1174,11 +1175,16 @@ class Guard(IGuard, Generic[OT]):
 
     def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
         if settings.use_server and self._api_client:
-            validation_output: IValidationOutcome = self._api_client.validate(
-                guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),  # type: ignore
-                openai_api_key=get_call_kwarg("api_key"),
-            )
+            try:
+                validation_output: IValidationOutcome = self._api_client.validate(
+                    guard=self,  # type: ignore
+                    payload=ValidatePayload.from_dict(payload),  # type: ignore
+                    openai_api_key=get_call_kwarg("api_key"),
+                )
+            except Exception as e:
+                if e.status and e.status == 400:
+                    raise ValidationError(f"{e.body}")
+                raise e
             if not validation_output:
                 return ValidationOutcome[OT](
                     call_id="0",  # type: ignore
