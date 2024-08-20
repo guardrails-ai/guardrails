@@ -45,8 +45,8 @@ const sidebars = {
         "migration_guides/0-4-migration",
         "migration_guides/0-3-migration",
         "migration_guides/0-2-migration",
-      ]
-    }
+      ],
+    },
   ],
   concepts: [
     "concepts/guard",
@@ -83,20 +83,19 @@ const sidebars = {
         "how_to_guides/hosting_validator_models",
         "how_to_guides/hosting_with_docker",
         "how_to_guides/deploying_aws",
-      ]
-    }, {
+      ],
+    },
+    {
       type: "category",
       label: "Sample Apps",
       collapsed: false,
-      items: [
-        "examples/chatbot",
-        "examples/summarizer",
-      ]
-    }, {
+      items: ["examples/chatbot", "examples/summarizer"],
+    },
+    {
       type: "link",
       label: "More Examples",
       href: "https://github.com/guardrails-ai/guardrails/tree/main/docs/examples",
-    }
+    },
   ],
   integrations: [
     // "integrations/azure_openai",
@@ -110,6 +109,19 @@ const sidebars = {
           type: "link",
           label: "Arize AI",
           href: "https://docs.arize.com/arize/large-language-models/guardrails",
+        },
+        "integrations/telemetry/grafana",
+      ],
+    },
+    {
+      type: "category",
+      label: "Telemetry",
+      collapsed: false,
+      items: [
+        {
+          type: "link",
+          label: "Iudex",
+          href: "https://docs.iudex.ai/integrations/guardrails-integration",
         },
         "integrations/telemetry/grafana",
       ],
@@ -130,8 +142,8 @@ const sidebars = {
       ],
     },
     "guardrails_server_api",
-    "cli"
-  ]
+    "cli",
+  ],
 };
 
 module.exports = sidebars;
