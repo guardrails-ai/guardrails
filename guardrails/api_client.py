@@ -13,6 +13,9 @@ from guardrails_api_client.models import (
     ValidationOutcome as IValidationOutcome,
 )
 
+from guardrails_api_client.exceptions import BadRequestException
+from guardrails.errors import ValidationError
+
 from guardrails.logger import logger
 
 
@@ -58,16 +61,19 @@ class GuardrailsApiClient:
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
     ):
-        _openai_api_key = (
-            openai_api_key
-            if openai_api_key is not None
-            else os.environ.get("OPENAI_API_KEY")
-        )
-        return self._validate_api.validate(
-            guard_name=guard.name,
-            validate_payload=payload,
-            x_openai_api_key=_openai_api_key,
-        )
+        try:
+            _openai_api_key = (
+                openai_api_key
+                if openai_api_key is not None
+                else os.environ.get("OPENAI_API_KEY")
+            )
+            return self._validate_api.validate(
+                guard_name=guard.name,
+                validate_payload=payload,
+                x_openai_api_key=_openai_api_key,
+            )
+        except BadRequestException as e:
+            raise ValidationError(f"{e.body}")
 
     def stream_validate(
         self,
