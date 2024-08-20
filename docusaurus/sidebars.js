@@ -111,22 +111,13 @@ const sidebars = {
           href: "https://docs.arize.com/arize/large-language-models/guardrails",
         },
         "integrations/telemetry/grafana",
-      ],
-    },
-    {
-      type: "category",
-      label: "Telemetry",
-      collapsed: false,
-      items: [
         {
           type: "link",
           label: "Iudex",
           href: "https://docs.iudex.ai/integrations/guardrails-integration",
         },
-        "integrations/telemetry/grafana",
       ],
     },
-
     // "integrations/openai_functions",
   ],
   apiReference: [
