@@ -82,7 +82,7 @@ const sidebars = {
         "how_to_guides/custom_validators",
         "how_to_guides/hosting_validator_models",
         "how_to_guides/hosting_with_docker",
-        "how_to_guides/deploying_aws",
+        "how_to_guides/continuous_integration_continuous_deployment",
       ],
     },
     {
