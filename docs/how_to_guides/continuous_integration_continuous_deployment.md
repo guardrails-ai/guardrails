@@ -123,10 +123,10 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout=5", "--threads=3", "guardr
 
 The container above can be built and run locally with the following commands
 
-```yaml
-docker build -t chatbot:latest --no-cache --progress=plain --build-arg GUARDRAILS_TOKEN=[YOUR GUARDRAILS TOKEN] .
+```bash
+docker build -t gr-backend-images:latest --no-cache --progress=plain --build-arg GUARDRAILS_TOKEN=[YOUR GUARDRAILS TOKEN] .
 # if running into issues on m based Apple Macs try forcing the build platform with --platform linux/amd64 
-docker run -d -p 8000:8000 -e OPENAI_API_KEY=[YOUR OPENAI KEY] chatbot:latest
+docker run -d -p 8000:8000 -e OPENAI_API_KEY=[YOUR OPENAI KEY] gr-backend-images:latest
 ```
 
 ## Step 2: Verification
@@ -269,7 +269,7 @@ Run the following to build your container and push up to ECR:
 
 ```bash
 # Build Container
-docker build --platform linux/amd64 --build-arg GUARDRAILS_TOKEN=$GUARDRAILS_TOKEN -t guardrails-api:latest .
+docker build --platform linux/amd64 --build-arg GUARDRAILS_TOKEN=$GUARDRAILS_TOKEN -t gr-backend-images:latest .
 
 # Push to ECR
 aws ecr get-login-password --region ${YOUR_AWS_REGION} | docker login --username AWS --password-stdin ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com
@@ -319,14 +319,14 @@ jobs:
                 file: guard/Dockerfile
                 platforms: linux/amd64
                 push: false
-                tags: guardrails-api:${{ github.sha }}
+                tags: gr-backend-images:${{ github.sha }}
                 load: true
                 build-args: |
                   GUARDRAILS_TOKEN=${{ secrets.GUARDRAILS_API_KEY }}
             
             - name: Save Docker image as artifact
               run: |
-                docker save guardrails-api:${{ github.sha }} -o guardrails_image.tar
+                docker save gr-backend-images:${{ github.sha }} -o guardrails_image.tar
 
             - name: Upload Docker image artifact
               uses: actions/upload-artifact@v2
@@ -360,7 +360,7 @@ jobs:
 
             - name: Start Docker container
               run: |
-                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} guardrails-api:${{ github.sha }}
+                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} gr-backend-images:${{ github.sha }}
         
             - name: Wait for Docker container to be ready
               run: |
@@ -402,17 +402,15 @@ jobs:
     
             - name: Retag and push Docker image
               run: |
-                docker tag guardrails-api:${{ github.sha }} guardrails-api:latest
-            
+                docker tag gr-backend-images:${{ github.sha }} gr-backend-images:latest
+                echo "something like docker push ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com/gr-backend-images:latest"
             - name: Deploy to production
               run: |
-	              echo "Deploying to production. This is typically a ecs update for aws."
-	              echo "along the lines of `aws ecs update-service --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} --service ${{ env.AWS_ECS_SERVICE_NAME }} --desired-count ${{ env.AWS_ECS_DESIRED_TASK_COUNT }} --force-new-deployment`"
-			        env:
-			          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+                echo "Deploying to production. This is typically a ecs update for aws."
+                echo "like `aws ecs update-service --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} --service ${{ env.AWS_ECS_SERVICE_NAME }} --desired-count ${{ env.AWS_ECS_DESIRED_TASK_COUNT }} --force-new-deployment`"
+              env:
+                AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 ```
-
-See more general information about deployment here.
 
 ## Deployment/Update Frequency
 
@@ -443,6 +441,10 @@ echo "http://$GUARDRAILS_BASE_URL"
 ```
 
 By setting the above environment variable `GUARDRAILS_BASE_URL` the SDK will be able to use this as a backend for running validations.
+
+## Quick Start Repository Template
+
+We've conveniently packaged all the artifacts from this document in a github repository that can be used as a template for your own verification and deployment [here](https://github.com/guardrails-ai/continuous_integration_and_deployment_aws_template). 
 
 ## Terraform
 
