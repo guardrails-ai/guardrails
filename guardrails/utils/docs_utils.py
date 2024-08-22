@@ -145,6 +145,8 @@ def get_chunks_from_text(
             raise ImportError(tiktoken_error)
         # FIXME is this the correct way to use tiktoken?
         atomic_chunks = tiktoken(text)  # type: ignore
+    elif chunk_strategy == "full":
+        atomic_chunks = [text]
     else:
         raise ValueError(
             "chunk_strategy must be 'sentence', 'word', 'char', or 'token'."
