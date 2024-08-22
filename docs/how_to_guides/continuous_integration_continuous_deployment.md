@@ -1,4 +1,4 @@
-# Continuous Integration and Deployment
+# Continuous Integration and Deployment - AWS
 Guardrails allows you to deploy a dedicated server to run guard executions while continuing to use the Guardrails SDK as you do today.
 
 In this guide we show an example of deploying a containerized version of Guardrails API into AWS leveraging AWS ECS. 
