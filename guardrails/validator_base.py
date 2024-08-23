@@ -338,12 +338,17 @@ class Validator:
             # Use SigV4 for AWS calls
             from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
+            auth_scheme_sigv4_host = cast(str, settings.auth_scheme_sigv4_host)
+            auth_scheme_sigv4_region = settings.auth_scheme_sigv4_region
+            auth_scheme_sigv4_service = settings.auth_scheme_sigv4_service
+
+            auth_scheme_sigv4_host = auth_scheme_sigv4_host.format(
+                region=auth_scheme_sigv4_region
+            )
             request_options["auth"] = BotoAWSRequestsAuth(
-                aws_host=settings.auth_scheme_sigv4_host.format(
-                    region=settings.auth_scheme_sigv4_region
-                ),
-                aws_region=settings.auth_scheme_sigv4_region,
-                aws_service=settings.auth_scheme_sigv4_service,
+                aws_host=auth_scheme_sigv4_host,
+                aws_region=auth_scheme_sigv4_region,
+                aws_service=auth_scheme_sigv4_service,
             )
 
         req = requests.post(validation_endpoint, **request_options)
