@@ -1,5 +1,5 @@
-from guardrails.integrations.llama_index.guardrails_query_engine import (
-    GuardrailsQueryEngine,
+from guardrails.integrations.llama_index.guardrails_engine import (
+    GuardrailsEngine,
 )
 
-__all__ = ["GuardrailsQueryEngine"]
+__all__ = ["GuardrailsEngine"]
