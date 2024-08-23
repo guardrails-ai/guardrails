@@ -7,6 +7,7 @@ import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+import os
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from warnings import warn
@@ -15,6 +16,7 @@ import nltk
 import requests
 from langchain_core.runnables import Runnable
 
+from guardrails import settings
 from guardrails.classes import ErrorSpan  # noqa
 from guardrails.classes import PassResult  # noqa
 from guardrails.classes import FailResult, ValidationResult
@@ -97,11 +99,8 @@ class Validator:
             self.use_local = not remote_inference.get_use_remote_inference(self.creds)
 
         if not self.validation_endpoint:
-            validator_id = self.rail_alias.split("/")[-1]
-            submission_url = (
-                f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
-            )
-            self.validation_endpoint = submission_url
+            self.validation_endpoint = self._get_validation_endpoint()
+
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
 
         # chunking function returns empty list or list of 2 chunks
@@ -162,6 +161,45 @@ class Validator:
         the hub.
         """
         raise NotImplementedError
+
+    def _get_validation_endpoint(self) -> str:
+        """
+        Resolves the validation endpoint for the validator. If the endpoint is not set,
+        it will attempt to get the endpoint from env vars if it is to be overridden.
+        Otherwise, it will default to the endpoint provided by the validator hub.
+
+        Returns:
+            str: The validation endpoint to be used by the validator.
+        """
+
+        validation_endpoint = self.validation_endpoint
+
+        if not validation_endpoint:
+            validator_id = self.rail_alias.split("/")[-1]
+            if os.getenv(f"GR_VALIDATION_ENDPOINT__{validator_id}"):
+                is_sigv4 = (
+                    settings.remote_inferencing_auth_scheme
+                    == settings.AuthSchemeRemoteInferencing.SIGV4.value
+                )
+                # if override set and using sigv4 auth scheme
+                # check if region and host are set
+                if (is_sigv4 and not settings.auth_scheme_sigv4_region) or (
+                    is_sigv4 and not settings.auth_scheme_sigv4_host
+                ):
+                    raise ValueError(
+                        "Sigv4 region & host must be set if using AWS sigv4 ."
+                        "auth scheme These can be set using env vars AWS_REGION"
+                        " & GR_AUTH_SCHEME_SIGV4_HOST respectively."
+                    )
+                validation_endpoint = os.getenv(
+                    f"GR_VALIDATION_ENDPOINT__{validator_id}"
+                )
+            else:
+                validation_endpoint = (
+                    f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
+                )
+
+        return validation_endpoint
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Do not override this function, instead implement _validate().
@@ -256,7 +294,10 @@ class Validator:
         return validation_result
 
     def _hub_inference_request(
-        self, request_body: Union[dict, str], validation_endpoint: str
+        self,
+        request_body: Union[dict, str],
+        validation_endpoint: str,
+        return_body: bool = True,
     ) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation
         model. This request is authed through the hub and rerouted to a hosted
@@ -267,6 +308,7 @@ class Validator:
             request_body (dict): A dictionary containing the required info for the final
             validation_endpoint (str): The url to request as an endpoint
             inference endpoint to run.
+            return_body (bool): Whether to return the body of the response or req object
 
         Raises:
             HttpError: If the recieved reply was not ok.
@@ -274,15 +316,40 @@ class Validator:
         Returns:
             Any: Post request response from the ML based validation model.
         """
-        headers = {
-            "Authorization": f"Bearer {self.hub_jwt_token}",
-            "Content-Type": "application/json",
+
+        request_options = {
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "data": request_body,
         }
-        req = requests.post(validation_endpoint, data=request_body, headers=headers)
+
+        if (
+            settings.remote_inferencing_auth_scheme
+            == settings.AuthSchemeRemoteInferencing.HUB.value
+        ):
+            # Use API Key (JWT) for Hub calls
+            request_options["headers"]["Authorization"] = f"Bearer {self.hub_jwt_token}"
+        elif (
+            settings.remote_inferencing_auth_scheme
+            == settings.AuthSchemeRemoteInferencing.SIGV4.value
+        ):
+            # Use SigV4 for AWS calls
+            from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
+
+            request_options["auth"] = BotoAWSRequestsAuth(
+                aws_host=settings.auth_scheme_sigv4_host,
+                aws_region=settings.auth_scheme_sigv4_region,
+                aws_service=settings.auth_scheme_sigv4_host.format(
+                    region=settings.auth_scheme_sigv4_region
+                ),
+            )
+
+        req = requests.post(validation_endpoint, **request_options)
         if not req.ok:
             logging.error(req.status_code)
 
-        return req.json()
+        return req.json() if return_body else req
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
