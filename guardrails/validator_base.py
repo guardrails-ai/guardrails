@@ -9,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 import os
 from string import Template
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, cast
 from warnings import warn
 
 import nltk
@@ -194,6 +194,7 @@ class Validator:
                 validation_endpoint = os.getenv(
                     f"GR_VALIDATION_ENDPOINT__{validator_id}"
                 )
+                validation_endpoint = cast(str, validation_endpoint)
             else:
                 validation_endpoint = (
                     f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
@@ -338,11 +339,11 @@ class Validator:
             from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
             request_options["auth"] = BotoAWSRequestsAuth(
-                aws_host=settings.auth_scheme_sigv4_host,
-                aws_region=settings.auth_scheme_sigv4_region,
-                aws_service=settings.auth_scheme_sigv4_host.format(
+                aws_host=settings.auth_scheme_sigv4_host.format(
                     region=settings.auth_scheme_sigv4_region
                 ),
+                aws_region=settings.auth_scheme_sigv4_region,
+                aws_service=settings.auth_scheme_sigv4_service,
             )
 
         req = requests.post(validation_endpoint, **request_options)

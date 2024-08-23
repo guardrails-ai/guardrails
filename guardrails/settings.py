@@ -29,9 +29,16 @@ class Settings:
         "GR_AUTH_SCHEME_SIGV4_HOST", "runtime.sagemaker.{region}.amazonaws.com"
     )
 
+    """The aws service to specify for sigv4 request signing."""
+    auth_scheme_sigv4_service: Optional[str] = os.getenv(
+        "GR_AUTH_SCHEME_SIGV4_SERVICE", "sagemaker"
+    )
+
     """The aws region to specify for sigv4 request signing."""
-    auth_scheme_sigv4_region: Optional[str] = os.getenv("AWS_REGION") or os.getenv(
-        "AWS_DEFAULT_REGION"
+    auth_scheme_sigv4_region: Optional[str] = (
+        os.getenv("GR_AUTH_SCHEME_SIGV4_REGION")
+        or os.getenv("AWS_REGION")
+        or os.getenv("AWS_DEFAULT_REGION")
     )
 
     """Whether to disable tracing.
