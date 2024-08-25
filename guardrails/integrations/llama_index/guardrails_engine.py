@@ -1,22 +1,19 @@
-from typing import Any, Optional, Dict, List, Union
+from typing import Any, Optional, Dict, List, Union, TYPE_CHECKING
 from guardrails import Guard
 from guardrails.errors import ValidationError
 
-try:
+if TYPE_CHECKING:
     from llama_index.core.query_engine import BaseQueryEngine
+    from llama_index.core.chat_engine.types import BaseChatEngine
     from llama_index.core.schema import QueryBundle
     from llama_index.core.callbacks import CallbackManager
     from llama_index.core.base.response.schema import RESPONSE_TYPE
-    from llama_index.core.chat_engine.types import BaseChatEngine
     from llama_index.core.base.llms.types import ChatMessage, ChatResponse
     from llama_index.core.prompts.mixin import PromptMixinType
-
-    LLAMA_INDEX_AVAILABLE = True
-except ImportError:
-    BaseQueryEngine = BaseChatEngine = object
-    QueryBundle = CallbackManager = RESPONSE_TYPE = ChatResponse = ChatMessage = Any
-    PromptMixinType = Any
-    LLAMA_INDEX_AVAILABLE = False
+else:
+    BaseQueryEngine = BaseChatEngine = QueryBundle = CallbackManager = RESPONSE_TYPE = (
+        ChatMessage
+    ) = ChatResponse = PromptMixinType = Any
 
 
 class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
@@ -55,7 +52,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
             raise ValueError("Unsupported engine type")
 
         self._engine_response = response
-        return response.response
+        return str(response)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         if not isinstance(self._engine, BaseQueryEngine):
@@ -118,13 +115,15 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         else:
             content = "I'm sorry, but I couldn't generate a valid response."
 
-        response = ChatResponse(message=ChatMessage(role="assistant", content=content))
-        response.metadata = {
-            "validation_passed": validated_output.validation_passed,
-            "validated_output": validated_output.validated_output,
-            "error": validated_output.error,
-            "raw_llm_output": validated_output.raw_llm_output,
-        }
+        response = ChatResponse(
+            message=ChatMessage(role="assistant", content=content),
+            additional_kwargs={
+                "validation_passed": validated_output.validation_passed,
+                "validated_output": validated_output.validated_output,
+                "error": validated_output.error,
+                "raw_llm_output": validated_output.raw_llm_output,
+            },
+        )
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -133,9 +132,9 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> ChatResponse:
+    ):
         """Async version of chat."""
-        return self.chat(message, chat_history)
+        raise NotImplementedError("Async chat is not supported with guardrails.")
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -163,4 +162,6 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
-        return self._engine._get_prompt_modules()
+        if isinstance(self._engine, BaseQueryEngine):
+            return self._engine._get_prompt_modules()
+        return {}
