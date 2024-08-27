@@ -4,8 +4,12 @@ from typing import Any, Optional, Dict, List, Union, TYPE_CHECKING, cast
 from guardrails import Guard
 from guardrails.errors import ValidationError
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.decorators.experimental import experimental
+import importlib.util
 
-if TYPE_CHECKING:
+LLAMA_INDEX_AVAILABLE = importlib.util.find_spec("llama_index") is not None
+
+if TYPE_CHECKING or LLAMA_INDEX_AVAILABLE:
     from llama_index.core.query_engine import BaseQueryEngine
     from llama_index.core.chat_engine.types import (
         BaseChatEngine,
@@ -64,6 +68,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         self._engine_response = response
         return str(response)
 
+    @experimental
     def _query(self, query_bundle: "QueryBundle") -> "RESPONSE_TYPE":
         if not isinstance(self._engine, BaseQueryEngine):
             raise ValueError(
@@ -112,6 +117,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
             raise RuntimeError(f"An error occurred during query processing: {str(e)}")
         return self._engine_response
 
+    @experimental
     def chat(
         self, message: str, chat_history: Optional[List["ChatMessage"]] = None
     ) -> "AGENT_CHAT_RESPONSE_TYPE":
