@@ -63,6 +63,7 @@ const sidebars = {
         "concepts/streaming",
         "concepts/async_streaming",
         "concepts/streaming_structured_data",
+        "concepts/streaming_fixes",
       ],
     },
     "concepts/parallelization",

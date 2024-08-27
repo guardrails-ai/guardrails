@@ -13,18 +13,6 @@ from guardrails.types import UseManyValidatorTuple, PydanticValidatorTuple
 from guardrails.constants import hub
 from guardrails.logger import logger
 
-PROVENANCE_V1_PROMPT = """Instruction:
-As an Attribution Validator, you task is to verify whether the following contexts support the claim:
-
-Claim:
-{}
-
-Contexts:
-{}
-
-Just respond with a "Yes" or "No" to indicate whether the given contexts support the claim.
-Response:"""
-
 
 def parse_rail_arguments(arg_tokens: List[str]) -> List[Any]:
     """Legacy parsing logic for the Validator aruguments specified in a RAIL
