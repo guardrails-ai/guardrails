@@ -165,6 +165,16 @@ This prints:
 }
 ```
 
+### Guardrails Server
+
+Guardrails can be set up as a standalone service served by Flask with `guardrails start`, allowing you to interact with it via a REST API. This approach simplifies development and deployment of Guardrails-powered applications.
+
+To get started, install Guardrails, configure it with your token, and create a config file with your desired Guards. 
+
+For production deployments, we recommend using Docker with Gunicorn as the WSGI server for improved performance and scalability. 
+
+The server supports integration with various LLM APIs, including OpenAI, and can be easily customized to fit your specific needs.
+
 ## FAQ
 
 #### I'm running into issues with Guardrails. Where can I get help?
