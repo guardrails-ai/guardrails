@@ -29,8 +29,6 @@ from guardrails.utils.openai_utils import (
     OpenAIClient,
     get_static_openai_acreate_func,
     get_static_openai_chat_acreate_func,
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 from guardrails.utils.safe_get import safe_get
@@ -40,6 +38,22 @@ from guardrails.telemetry import trace_llm_call, trace_operation
 ###
 # Synchronous wrappers
 ###
+
+
+def is_openai_completion(func):
+    return (
+        getattr(func, "__module__", "").startswith("openai")
+        and func.__name__ == "create"
+        and "completions" in getattr(func, "__qualname__", "").lower()
+    )
+
+
+def is_openai_chat_completion(func):
+    return (
+        getattr(func, "__module__", "").startswith("openai")
+        and func.__name__ == "create"
+        and "chat" in getattr(func, "__qualname__", "").lower()
+    )
 
 
 def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
@@ -784,9 +798,9 @@ def get_llm_ask(
     except ImportError:
         pass
 
-    if llm_api == get_static_openai_create_func():
+    if is_openai_completion(llm_api):
         return OpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_create_func():
+    if is_openai_chat_completion(llm_api):
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -1293,9 +1307,9 @@ def get_llm_api_enum(
 ) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
-    if llm_api == get_static_openai_create_func():
+    if is_openai_completion(llm_api):
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
-    elif llm_api == get_static_openai_chat_create_func():
+    elif is_openai_chat_completion(llm_api):
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_acreate_func():
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
