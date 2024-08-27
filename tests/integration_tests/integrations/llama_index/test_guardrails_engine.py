@@ -1,6 +1,5 @@
 import pytest
 from guardrails import Guard
-from guardrails.integrations.llama_index.guardrails_engine import GuardrailsEngine
 from guardrails.errors import ValidationError
 from typing import List, Optional
 from tests.integration_tests.test_assets.validators import RegexMatch
@@ -13,6 +12,7 @@ try:
     from llama_index.core.base.llms.types import ChatMessage
     from llama_index.core.prompts.mixin import PromptMixinType
     from llama_index.core.callbacks import CallbackManager
+    from guardrails.integrations.llama_index.guardrails_engine import GuardrailsEngine
 
     class MockQueryEngine(BaseQueryEngine):
         def __init__(self, callback_manager: Optional[CallbackManager] = None):

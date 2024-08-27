@@ -3,9 +3,14 @@ from guardrails import Guard
 from guardrails.errors import ValidationError
 from guardrails.classes.validation_outcome import ValidationOutcome
 
-try:
+if TYPE_CHECKING:
     from llama_index.core.query_engine import BaseQueryEngine
-    from llama_index.core.chat_engine.types import BaseChatEngine
+    from llama_index.core.chat_engine.types import (
+        BaseChatEngine,
+        AGENT_CHAT_RESPONSE_TYPE,
+        AgentChatResponse,
+        StreamingAgentChatResponse,
+    )
     from llama_index.core.schema import QueryBundle
     from llama_index.core.callbacks import CallbackManager
     from llama_index.core.base.response.schema import (
@@ -17,35 +22,6 @@ try:
     )
     from llama_index.core.base.llms.types import ChatMessage
     from llama_index.core.prompts.mixin import PromptMixinType
-    from llama_index.core.chat_engine.types import (
-        AGENT_CHAT_RESPONSE_TYPE,
-        AgentChatResponse,
-        StreamingAgentChatResponse,
-    )
-except ImportError:
-    if TYPE_CHECKING:
-        from llama_index.core.query_engine import BaseQueryEngine
-        from llama_index.core.chat_engine.types import (
-            BaseChatEngine,
-            AGENT_CHAT_RESPONSE_TYPE,
-            AgentChatResponse,
-            StreamingAgentChatResponse,
-        )
-        from llama_index.core.schema import QueryBundle
-        from llama_index.core.callbacks import CallbackManager
-        from llama_index.core.base.response.schema import (
-            RESPONSE_TYPE,
-            Response,
-            StreamingResponse,
-            AsyncStreamingResponse,
-            PydanticResponse,
-        )
-        from llama_index.core.base.llms.types import ChatMessage
-        from llama_index.core.prompts.mixin import PromptMixinType
-    else:
-        BaseQueryEngine = BaseChatEngine = CallbackManager = Any
-        RESPONSE_TYPE = Response = AGENT_CHAT_RESPONSE_TYPE = PydanticResponse = Any
-        QueryBundle = ChatMessage = PromptMixinType = Any
 
 
 class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
@@ -86,7 +62,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         self._engine_response = response
         return str(response)
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: "QueryBundle") -> "RESPONSE_TYPE":
         if not isinstance(self._engine, BaseQueryEngine):
             raise ValueError(
                 "Cannot perform query with a ChatEngine. Use chat() method instead."
@@ -102,7 +78,6 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
 
             validated_output = cast(ValidationOutcome, validated_output)
             self._engine_response = cast(RESPONSE_TYPE, self._engine_response)
-
             if not validated_output.validation_passed:
                 raise ValidationError(f"Validation failed: {validated_output.error}")
             self._update_response_metadata(validated_output)
@@ -136,8 +111,8 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         return self._engine_response
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        self, message: str, chat_history: Optional[List["ChatMessage"]] = None
+    ) -> "AGENT_CHAT_RESPONSE_TYPE":
         if not isinstance(self._engine, BaseChatEngine):
             raise ValueError(
                 "Cannot perform chat with a QueryEngine. Use query() method instead."
@@ -206,12 +181,12 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         self._engine_response.response = content
         return self._engine_response
 
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: "QueryBundle") -> "RESPONSE_TYPE":
         """Async version of _query."""
         return self._query(query_bundle)
 
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List["ChatMessage"]] = None
     ):
         """Async version of chat."""
         raise NotImplementedError(
@@ -219,7 +194,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         )
 
     def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List["ChatMessage"]] = None
     ):
         """Stream chat responses."""
         raise NotImplementedError(
@@ -227,7 +202,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         )
 
     async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List["ChatMessage"]] = None
     ):
         """Async stream chat responses."""
         raise NotImplementedError(
@@ -242,13 +217,13 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
             raise NotImplementedError("Reset is only available for chat engines.")
 
     @property
-    def chat_history(self) -> List[ChatMessage]:
+    def chat_history(self) -> List["ChatMessage"]:
         """Get the chat history."""
         if isinstance(self._engine, BaseChatEngine):
             return self._engine.chat_history
         raise NotImplementedError("Chat history is only available for chat engines.")
 
-    def _get_prompt_modules(self) -> PromptMixinType:
+    def _get_prompt_modules(self) -> "PromptMixinType":
         """Get prompt modules."""
         if isinstance(self._engine, BaseQueryEngine):
             return self._engine._get_prompt_modules()
