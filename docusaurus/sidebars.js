@@ -116,6 +116,11 @@ const sidebars = {
           label: "Iudex",
           href: "https://docs.iudex.ai/integrations/guardrails-integration",
         },
+        {
+          type: "link",
+          label: "OpenLIT",
+          href: "https://docs.openlit.io/latest/integrations/guardrails",
+        },
       ],
     },
     // "integrations/openai_functions",
