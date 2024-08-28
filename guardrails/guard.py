@@ -91,9 +91,9 @@ from guardrails.utils.structured_data_utils import (
     json_function_calling_tool as json_function_calling_tool_util,
     output_format_json_schema as output_format_json_schema,
 )
-from guardrails.decorators.experimental import experimental
 
 from guardrails.settings import settings
+from guardrails.decorators.experimental import experimental
 
 
 class Guard(IGuard, Generic[OT]):
@@ -216,6 +216,11 @@ class Guard(IGuard, Generic[OT]):
                     )
                     self.output_schema = loaded_output_schema
                     _loaded = True
+                else:
+                    logger.warning(
+                        f"use_server is True and Guard '{self.name}' "
+                        "not found on the server. Creating a new empty Guard."
+                    )
             if not _loaded:
                 self._save()
 

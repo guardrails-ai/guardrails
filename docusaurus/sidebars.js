@@ -45,8 +45,8 @@ const sidebars = {
         "migration_guides/0-4-migration",
         "migration_guides/0-3-migration",
         "migration_guides/0-2-migration",
-      ]
-    }
+      ],
+    },
   ],
   concepts: [
     "concepts/guard",
@@ -63,6 +63,7 @@ const sidebars = {
         "concepts/streaming",
         "concepts/async_streaming",
         "concepts/streaming_structured_data",
+        "concepts/streaming_fixes",
       ],
     },
     "concepts/parallelization",
@@ -80,22 +81,22 @@ const sidebars = {
         "how_to_guides/enable_streaming",
         "how_to_guides/generate_structured_data",
         "how_to_guides/custom_validators",
+        "how_to_guides/hosting_validator_models",
         "how_to_guides/hosting_with_docker",
-        "how_to_guides/deploying_aws",
-      ]
-    }, {
+        "how_to_guides/continuous_integration_continuous_deployment",
+      ],
+    },
+    {
       type: "category",
       label: "Sample Apps",
       collapsed: false,
-      items: [
-        "examples/chatbot",
-        "examples/summarizer",
-      ]
-    }, {
+      items: ["examples/chatbot", "examples/summarizer"],
+    },
+    {
       type: "link",
       label: "More Examples",
       href: "https://github.com/guardrails-ai/guardrails/tree/main/docs/examples",
-    }
+    },
   ],
   integrations: [
     // "integrations/azure_openai",
@@ -111,9 +112,18 @@ const sidebars = {
           href: "https://docs.arize.com/arize/large-language-models/guardrails",
         },
         "integrations/telemetry/grafana",
+        {
+          type: "link",
+          label: "Iudex",
+          href: "https://docs.iudex.ai/integrations/guardrails-integration",
+        },
+        {
+          type: "link",
+          label: "OpenLIT",
+          href: "https://docs.openlit.io/latest/integrations/guardrails",
+        },
       ],
     },
-
     // "integrations/openai_functions",
   ],
   apiReference: [
@@ -129,8 +139,8 @@ const sidebars = {
       ],
     },
     "guardrails_server_api",
-    "cli"
-  ]
+    "cli",
+  ],
 };
 
 module.exports = sidebars;
