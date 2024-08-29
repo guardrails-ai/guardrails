@@ -10,6 +10,7 @@ from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.cli.hub.template import get_template
+from guardrails.cli.telemetry import trace_if_enabled
 
 console = Console()
 
@@ -45,6 +46,7 @@ def create_command(
         help="Print out the validators to be installed without making any changes.",
     ),
 ):
+    trace_if_enabled("create")
     # fix pyright typing issue
     validators = cast(str, validators)
     filepath = check_filename(filepath)
