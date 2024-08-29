@@ -8,6 +8,7 @@ from pydash import pascal_case, snake_case
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
+from guardrails.cli.telemetry import trace_if_enabled
 
 validator_template = Template(
     """
@@ -169,7 +170,7 @@ def create_validator(
     The template repository can be found here:\
         https://github.com/guardrails-ai/validator-template
     """
-
+    trace_if_enabled("hub/create-validator")
     logger.log(level=LEVELS.get("NOTICE") or 0, msg=disclaimer)
 
     package_name = snake_case(name)

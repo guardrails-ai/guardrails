@@ -5,6 +5,7 @@ import typer
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import logger
+from guardrails.cli.telemetry import trace_if_enabled
 
 
 @hub_command.command()
@@ -26,6 +27,7 @@ Example: hub://guardrails/regex_match."
     ),
 ):
     try:
+        trace_if_enabled("hub/install")
         from guardrails.hub.install import install
 
         def confirm():

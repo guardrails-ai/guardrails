@@ -3,12 +3,14 @@ import re
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.hub.utils import get_site_packages_location
+from guardrails.cli.telemetry import trace_if_enabled
 from .console import console
 
 
 @hub_command.command(name="list")
 def list():
     """List all installed validators."""
+    trace_if_enabled("hub/list")
     site_packages = get_site_packages_location()
     hub_init_file = os.path.join(site_packages, "guardrails", "hub", "__init__.py")
 

@@ -13,6 +13,7 @@ from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.hub.utils import get_org_and_package_dirs
 from guardrails.cli.hub.utils import get_hub_directory
+from guardrails.cli.telemetry import trace_if_enabled
 
 from .console import console
 
@@ -80,6 +81,7 @@ def uninstall(
     ),
 ):
     """Uninstall a validator from the Hub."""
+    trace_if_enabled("hub/uninstall")
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
