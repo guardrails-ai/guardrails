@@ -1383,3 +1383,25 @@ class Guard(IGuard, Generic[OT]):
         )
         guard.history = Stack(*history)
         return guard
+
+    # attempts to get a guard from the server
+    # if a name is unspecified, the guard will be created on the client
+    # in the future, this may create a guard on the server
+    @experimental
+    @staticmethod
+    def fetch_guard(
+        name: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
+        if not name:
+            raise ValueError("Name must be specified to fetch a guard")
+
+        settings.use_server = True
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        api_client = GuardrailsApiClient(api_key=api_key)
+        guard = api_client.fetch_guard(name)
+        if guard:
+            return Guard(name=name, *args, **kwargs)
+
+        raise ValueError(f"Guard with name {name} not found")
