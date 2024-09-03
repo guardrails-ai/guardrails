@@ -37,8 +37,7 @@ def install(
     quiet: bool = True,
     install_local_models_confirm: Callable = default_local_models_confirm,
 ) -> ValidatorModuleType:
-    """
-    Install a validator package from a hub URI.
+    """Install a validator package from a hub URI.
 
     Args:
         package_uri (str): The URI of the package to install.
