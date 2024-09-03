@@ -4,13 +4,13 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
+from guardrails_hub_types import Manifest
 import jwt
 from jwt import ExpiredSignatureError, DecodeError
 
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
-from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.version import GUARDRAILS_VERSION
 
 FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
@@ -26,7 +26,7 @@ VALIDATOR_HUB_SERVICE = os.getenv(
     "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 validator_manifest_endpoint = Template(
-    "validator-manifests/${namespace}/${validator_name}"
+    "validator/${namespace}/${validator_name}/manifest"
 )
 
 
@@ -100,12 +100,12 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     return token
 
 
-def fetch_module(module_name: str) -> ModuleManifest:
+def fetch_module(module_name: str) -> Optional[Manifest]:
     creds = Credentials.from_rc_file(logger)
     token = get_jwt_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
-    return ModuleManifest.from_dict(module_manifest_json)
+    return Manifest.from_dict(module_manifest_json)
 
 
 def fetch_template(template_address: str) -> Dict[str, Any]:
@@ -139,7 +139,7 @@ def get_guard_template(template_address: str):
         sys.exit(1)
 
 
-# GET /validator-manifests/{namespace}/{validatorName}
+# GET /validator/{namespace}/{validatorName}/manifest
 def get_validator_manifest(module_name: str):
     try:
         module_manifest = fetch_module(module_name)
