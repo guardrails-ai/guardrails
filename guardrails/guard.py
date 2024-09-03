@@ -1383,3 +1383,23 @@ class Guard(IGuard, Generic[OT]):
         )
         guard.history = Stack(*history)
         return guard
+
+
+    # attempts to get a guard from the server
+    # if a name is unspecified, the guard will be created on the client
+    # in the future, this may create a guard on the server
+    @experimental
+    @staticmethod
+    def get_or_create(
+            name: Optional[str] = None,
+            *args,
+            **kwargs,        
+        ):
+            if name:
+                settings.use_server = True
+            
+            return Guard(
+                name=name,
+                *args,
+                **kwargs,
+            )
