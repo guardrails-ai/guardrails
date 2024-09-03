@@ -1390,16 +1390,24 @@ class Guard(IGuard, Generic[OT]):
     # in the future, this may create a guard on the server
     @experimental
     @staticmethod
-    def get_or_create(
+    def fetch_guard(
             name: Optional[str] = None,
             *args,
             **kwargs,        
         ):
             if name:
                 settings.use_server = True
+                api_key = os.environ.get("GUARDRAILS_API_KEY")
+                api_client = GuardrailsApiClient(api_key=api_key)
+                guard = api_client.fetch_guard(name)
+                if guard:
+                    return Guard(
+                        name=name,
+                        *args,
+                        **kwargs
+                    )
+                raise ValueError(f"Guard with name {name} not found") 
+            else:
+                raise ValueError("Name must be specified to fetch a guard")
             
-            return Guard(
-                name=name,
-                *args,
-                **kwargs,
-            )
+            
