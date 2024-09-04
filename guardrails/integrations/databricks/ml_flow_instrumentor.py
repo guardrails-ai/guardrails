@@ -1,5 +1,6 @@
 from functools import wraps
 import inspect
+import sys
 from typing import (
     Any,
     AsyncIterable,
@@ -37,6 +38,10 @@ try:
     from mlflow.entities.span_status import SpanStatusCode
 except ImportError:
     raise ImportError("Please install mlflow to use this instrumentor")
+
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 
 # TODO: Abstract these methods and common logic into a base class
@@ -300,7 +305,7 @@ class MlFlowInstrumentor:
                     next_exists = True
                     while next_exists:
                         try:
-                            res = await anext(gen)  # type: ignore
+                            res = await anext(gen)
                             yield res
                         except StopIteration:
                             next_exists = False
