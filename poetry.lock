@@ -8368,14 +8368,14 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [extras]
 anthropic = ["anthropic"]
 api = ["guardrails-api"]
+databricks = ["mlflow"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
 huggingface = ["jsonformer", "torch", "transformers"]
 manifest = ["manifest-ml"]
-mlflow = []
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
 vectordb = ["faiss-cpu", "numpy"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "3998671ece129c1c285177986dedf15e3d9285b12506963a898351a2ae35211b"
+content-hash = "aec41326aef66af046ce16d49c036fec48698032995f3f49df634b9da411caf7"

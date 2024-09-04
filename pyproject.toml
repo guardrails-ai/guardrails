@@ -69,7 +69,7 @@ anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 huggingface = ["transformers", "torch", "jsonformer"]
 api = ["guardrails-api"]
-mlflow = ["mlfow"]
+databricks = ["mlflow"]
 
 
 [tool.poetry.group.dev.dependencies]

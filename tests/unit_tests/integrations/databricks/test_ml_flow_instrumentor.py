@@ -27,7 +27,7 @@ except ImportError:
 )
 class TestMlFlowInstrumentor:
     def test__init__(self):
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -38,43 +38,45 @@ class TestMlFlowInstrumentor:
 
     def test_instrument(self, mocker):
         mock_is_enabled = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.tracing.provider._is_enabled",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.provider._is_enabled",
             return_value=False,
         )
         mock_enable = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.tracing.enable"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.enable"
         )
         mock_set_experiment = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.set_experiment"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.set_experiment"
         )
 
         from tests.unit_tests.mocks import mock_hub
 
         mocker.patch("guardrails.hub", return_value=mock_hub)
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
         # Prevent real methods from being wrapped and persistint into other tests
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.Guard._execute"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.Guard._execute"
         )
         guard_execute = Guard._execute
         mock_instrument_guard = mocker.patch.object(m, "_instrument_guard")
 
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.AsyncGuard._execute"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.AsyncGuard._execute"
         )
         async_guard_execute = AsyncGuard._execute
         mock_instrument_async_guard = mocker.patch.object(m, "_instrument_async_guard")
 
-        mocker.patch("guardrails.integrations.mlflow.ml_flow_instrumentor.Runner.step")
+        mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.Runner.step"
+        )
         runner_step = Runner.step
         mock_instrument_runner_step = mocker.patch.object(m, "_instrument_runner_step")
 
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.StreamRunner.step"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.StreamRunner.step"
         )
         stream_runner_step = StreamRunner.step
         mock_instrument_stream_runner_step = mocker.patch.object(
@@ -82,7 +84,7 @@ class TestMlFlowInstrumentor:
         )
 
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.AsyncRunner.async_step"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.AsyncRunner.async_step"
         )
         async_runner_step = AsyncRunner.async_step
         mock_instrument_async_runner_step = mocker.patch.object(
@@ -90,19 +92,21 @@ class TestMlFlowInstrumentor:
         )
 
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.AsyncStreamRunner.async_step"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.AsyncStreamRunner.async_step"
         )
         async_stream_runner_step = AsyncStreamRunner.async_step
         mock_instrument_async_stream_runner_step = mocker.patch.object(
             m, "_instrument_async_stream_runner_step"
         )
 
-        mocker.patch("guardrails.integrations.mlflow.ml_flow_instrumentor.Runner.call")
+        mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.Runner.call"
+        )
         runner_call = Runner.call
         mock_instrument_runner_call = mocker.patch.object(m, "_instrument_runner_call")
 
         mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.AsyncRunner.async_call"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.AsyncRunner.async_call"
         )
         async_runner_call = AsyncRunner.async_call
         mock_instrument_async_runner_call = mocker.patch.object(
@@ -129,18 +133,18 @@ class TestMlFlowInstrumentor:
     def test__instrument_guard(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_guard_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_guard_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_guard_attributes"
         )
         mock_trace_stream_guard = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.trace_stream_guard"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.trace_stream_guard"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -175,18 +179,18 @@ class TestMlFlowInstrumentor:
     def test__instrument_guard_stream(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_guard_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_guard_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_guard_attributes"
         )
         mock_trace_stream_guard = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.trace_stream_guard"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.trace_stream_guard"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -224,18 +228,18 @@ class TestMlFlowInstrumentor:
     async def test__instrument_async_guard(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_guard_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_guard_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_guard_attributes"
         )
         mock_trace_async_stream_guard = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.trace_async_stream_guard"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.trace_async_stream_guard"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -278,18 +282,18 @@ class TestMlFlowInstrumentor:
     async def test__instrument_async_guard_stream(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_guard_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_guard_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_guard_attributes"
         )
         mock_trace_async_stream_guard = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.trace_async_stream_guard"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.trace_async_stream_guard"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -328,15 +332,15 @@ class TestMlFlowInstrumentor:
     def test__instrument_runner_step(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_step_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_step_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_step_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -367,15 +371,15 @@ class TestMlFlowInstrumentor:
     def test__instrument_stream_runner_step(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_step_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_step_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_step_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -416,15 +420,15 @@ class TestMlFlowInstrumentor:
     async def test__instrument_async_runner_step(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_step_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_step_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_step_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -459,15 +463,15 @@ class TestMlFlowInstrumentor:
     async def test__instrument_async_stream_runner_step(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_step_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_step_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_step_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -508,15 +512,15 @@ class TestMlFlowInstrumentor:
     def test__instrument_runner_call(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_call_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_call_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_call_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -548,15 +552,15 @@ class TestMlFlowInstrumentor:
     async def test__instrument_async_runner_call(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_call_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_call_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_call_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
 
@@ -590,15 +594,15 @@ class TestMlFlowInstrumentor:
     def test__instrument_validator_validate(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.mlflow.start_span",
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
 
         mock_add_validator_attributes = mocker.patch(
-            "guardrails.integrations.mlflow.ml_flow_instrumentor.add_validator_attributes"
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_validator_attributes"
         )
 
-        from guardrails.integrations.mlflow import MlFlowInstrumentor
+        from guardrails.integrations.databricks import MlFlowInstrumentor
         from tests.unit_tests.mocks.mock_hub import MockValidator
 
         m = MlFlowInstrumentor("mock experiment")
