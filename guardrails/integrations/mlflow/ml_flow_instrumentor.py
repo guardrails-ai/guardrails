@@ -304,6 +304,8 @@ class MlFlowInstrumentor:
                             yield res
                         except StopIteration:
                             next_exists = False
+                        except StopAsyncIteration:
+                            next_exists = False
                 except Exception as e:
                     step_span.set_status(status=SpanStatusCode.ERROR)
                     exception = e
