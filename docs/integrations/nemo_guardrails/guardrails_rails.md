@@ -4,11 +4,14 @@ This guide will teach you how to add guardrails configurations built with NeMo G
 
 The Guardrails AI library provides a Rails integration that allows you to use a Rails application as an LLM callable. This will result in a Rails application that generates completions that are validated using a GuardrailsAI guard configuration.
 
-We start by defining a Guardrails AI Guard and a Rails configuration.
+We start by defining a Guardrails AI Guard and a Rails configuration. We'll also install the [ToxicLanguage validator](https://hub.guardrailsai.com/validator/guardrails/toxic_language) from the [Guardrails AI Hub](https://hub.guardrailsai.com/).
 
 ```python
 from nemoguardrails import LLMRails, RailsConfig
-from guardrails import Guard
+from guardrails import Guard, install
+
+install("hub://guardrails/toxic_language")
+from guardrails.hub import ToxicLanguage
 
 # Load a guardrails configuration from the specified path.
 config = RailsConfig.from_path("PATH/TO/CONFIG")
