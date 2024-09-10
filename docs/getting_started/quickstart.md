@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# In-Application
+# Quickstart: In-Application
 
 ## Introduction
 
