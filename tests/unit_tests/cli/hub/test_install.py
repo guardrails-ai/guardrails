@@ -29,6 +29,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=False,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -45,6 +46,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=True,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -61,6 +63,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=None,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -77,6 +80,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=None,
             quiet=True,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
