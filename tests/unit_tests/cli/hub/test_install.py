@@ -82,6 +82,49 @@ class TestInstall:
 
         assert result.exit_code == 0
 
+    def test_install_multiple_validators(self, mocker):
+        mock_install_multiple = mocker.patch("guardrails.hub.install.install_multiple")
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command,
+            [
+                "install",
+                "hub://guardrails/validator1",
+                "hub://guardrails/validator2",
+                "--no-install-local-models",
+            ],
+        )
+
+        mock_install_multiple.assert_called_once_with(
+            ["hub://guardrails/validator1", "hub://guardrails/validator2"],
+            install_local_models=False,
+            quiet=False,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
+
+    def test_install_multiple_validators_with_quiet(self, mocker):
+        mock_install_multiple = mocker.patch("guardrails.hub.install.install_multiple")
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command,
+            [
+                "install",
+                "hub://guardrails/validator1",
+                "hub://guardrails/validator2",
+                "--quiet",
+            ],
+        )
+
+        mock_install_multiple.assert_called_once_with(
+            ["hub://guardrails/validator1", "hub://guardrails/validator2"],
+            install_local_models=None,
+            quiet=True,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
 
 class TestPipProcess:
     def test_no_package_string_format(self, mocker):
@@ -208,7 +251,7 @@ class TestPipProcess:
 
 def test_get_site_packages_location(mocker):
     mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
-    mock_pip_process.return_value = {"Location": "/site-pacakges"}
+    mock_pip_process.return_value = {"Location": "/site-packages"}
 
     from guardrails.cli.hub.utils import get_site_packages_location
 
@@ -216,4 +259,4 @@ def test_get_site_packages_location(mocker):
 
     mock_pip_process.assert_called_once_with("show", "pip", format="json")
 
-    assert response == "/site-pacakges"
+    assert response == "/site-packages"
