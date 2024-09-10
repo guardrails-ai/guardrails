@@ -206,21 +206,25 @@ class TestPipProcess:
             sys_exit_spy.assert_called_once_with(1)
 
     def test_install_with_upgrade_flag(self, mocker):
-        mock_install = mocker.patch("guardrails.hub.install.install")
+        mock_install_hub_module = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
+        )
+        
         runner = CliRunner()
         result = runner.invoke(
             hub_command, ["install", "--upgrade", "hub://guardrails/test-validator"]
         )
 
-        mock_install.assert_called_once_with(
-            "hub://guardrails/test-validator",
-            install_local_models=None,
+        mock_install_hub_module.assert_called_once_with(
+            ANY,  
+            ANY,  
             quiet=False,
-            install_local_models_confirm=ANY,
             upgrade=True,
+            logger=ANY,
         )
 
         assert result.exit_code == 0
+
 
 
 def test_get_site_packages_location(mocker):
