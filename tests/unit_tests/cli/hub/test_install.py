@@ -217,10 +217,11 @@ class TestPipProcess:
             install_local_models=None,
             quiet=False,
             install_local_models_confirm=ANY,
-            upgrade=True,  
+            upgrade=True,
         )
 
         assert result.exit_code == 0
+
 
 def test_get_site_packages_location(mocker):
     mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
