@@ -31,6 +31,7 @@ def pip_process(
         if package:
             command.append(package)
 
+        print('pip command', command)
         env = dict(os.environ)
         if no_color:
             env["NO_COLOR"] = "true"
