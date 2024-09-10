@@ -28,7 +28,7 @@ class TestInstall:
         mock_install.assert_called_once_with(
             "hub://guardrails/test-validator",
             install_local_models=False,
-            quiet=False,
+            quiet=ANY,
             upgrade=False,
             install_local_models_confirm=ANY,
         )
@@ -103,6 +103,7 @@ class TestInstall:
             ["hub://guardrails/validator1", "hub://guardrails/validator2"],
             install_local_models=False,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -125,6 +126,7 @@ class TestInstall:
             ["hub://guardrails/validator1", "hub://guardrails/validator2"],
             install_local_models=None,
             quiet=True,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 

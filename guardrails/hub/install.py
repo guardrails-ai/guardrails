@@ -175,6 +175,7 @@ def install_multiple(
     package_uris: List[str],
     install_local_models=None,
     quiet: bool = True,
+    upgrade: bool = False,  # Add the upgrade parameter here
     install_local_models_confirm: Callable = default_local_models_confirm,
 ) -> List[ValidatorModuleType]:
     """Install multiple validator packages from hub URIs.
@@ -183,6 +184,7 @@ def install_multiple(
         package_uris (List[str]): List of URIs of the packages to install.
         install_local_models (bool): Whether to install local models or not.
         quiet (bool): Whether to suppress output or not.
+        upgrade (bool): Whether to upgrade to the latest package version.
         install_local_models_confirm (Callable): A function to confirm the
             installation of local models.
 
@@ -196,6 +198,7 @@ def install_multiple(
             package_uri,
             install_local_models=install_local_models,
             quiet=quiet,
+            upgrade=upgrade,  # Pass upgrade here
             install_local_models_confirm=install_local_models_confirm,
         )
         installed_modules.append(installed_module)
