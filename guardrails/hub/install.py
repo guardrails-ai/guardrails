@@ -196,4 +196,3 @@ def install_multiple(
         installed_modules.append(installed_module)
 
     return installed_modules
-
