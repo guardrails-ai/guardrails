@@ -126,6 +126,7 @@ class TestInstall:
 
         assert result.exit_code == 0
 
+
 class TestPipProcess:
     def test_no_package_string_format(self, mocker):
         mocker.patch("guardrails.cli.hub.utils.os.environ", return_value={})

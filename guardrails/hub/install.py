@@ -165,6 +165,7 @@ def install(
 
     return installed_module
 
+
 def install_multiple(
     package_uris: List[str],
     install_local_models=None,
@@ -196,5 +197,5 @@ def install_multiple(
             installed_modules.append(installed_module)
         except Exception as e:
             cli_logger.error(f"Failed to install {package_uri}: {str(e)}")
-    
+
     return installed_modules
