@@ -26,9 +26,7 @@ Example: hub://guardrails/regex_match."
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
     upgrade: bool = typer.Option(
-        False,
-        "--upgrade",
-        help="Upgrade the package to the latest version."
+        False, "--upgrade", help="Upgrade the package to the latest version."
     ),
 ):
     try:
@@ -46,7 +44,7 @@ Example: hub://guardrails/regex_match."
             package_uri,
             install_local_models=local_models,
             quiet=quiet,
-            upgrade = upgrade,
+            upgrade=upgrade,
             install_local_models_confirm=confirm,
         )
     except Exception as e:

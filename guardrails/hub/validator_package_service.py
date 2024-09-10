@@ -260,7 +260,7 @@ class ValidatorPackageService:
         module_manifest: Manifest,
         site_packages: str,
         quiet: bool = False,
-        upgrade: bool=False,
+        upgrade: bool = False,
         logger=guardrails_logger,
     ):
         install_url = ValidatorPackageService.get_install_url(module_manifest)
@@ -270,9 +270,9 @@ class ValidatorPackageService:
 
         pip_flags = [f"--target={install_directory}", "--no-deps"]
 
-        if upgrade: 
+        if upgrade:
             pip_flags.append("--upgrade")
-            
+
         if quiet:
             pip_flags.append("-q")
 

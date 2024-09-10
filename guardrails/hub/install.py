@@ -85,7 +85,11 @@ def install(
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         ValidatorPackageService.install_hub_module(
-            module_manifest, site_packages, quiet=quiet, upgrade=upgrade, logger=cli_logger
+            module_manifest,
+            site_packages,
+            quiet=quiet,
+            upgrade=upgrade,
+            logger=cli_logger,
         )
 
     use_remote_endpoint = False
