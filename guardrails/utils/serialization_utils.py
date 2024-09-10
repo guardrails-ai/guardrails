@@ -11,7 +11,7 @@ def serialize(val: Any) -> Optional[str]:
     try:
         return json.dumps(val, cls=DefaultJSONEncoder)
     except Exception as e:
-        warnings.warn(e)
+        warnings.warn(str(e))
         return None
 
 
@@ -37,5 +37,5 @@ def deserialize(original: Optional[Any], serialized: Optional[str]) -> Any:
                 return original.__class__(loaded_val)
         return loaded_val
     except Exception as e:
-        warnings.warn(e)
+        warnings.warn(str(e))
         return None

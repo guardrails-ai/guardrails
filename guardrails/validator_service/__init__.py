@@ -25,7 +25,7 @@ except ImportError:
 
 
 def should_run_sync():
-    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT"))
+    process_count = os.environ.get("GUARDRAILS_PROCESS_COUNT")
     if process_count is not None:
         warnings.warn(
             "GUARDRAILS_PROCESS_COUNT is deprecated"
@@ -33,6 +33,7 @@ def should_run_sync():
             " To force synchronous validation, please use GUARDRAILS_RUN_SYNC instead.",
             DeprecationWarning,
         )
+        process_count = int(process_count)
     run_sync = os.environ.get("GUARDRAILS_RUN_SYNC", "false")
     bool_values = ["true", "false"]
     if run_sync.lower() not in bool_values:
