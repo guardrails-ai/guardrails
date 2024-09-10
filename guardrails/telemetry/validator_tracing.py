@@ -12,10 +12,11 @@ from opentelemetry.trace import StatusCode, Tracer, Span
 
 from guardrails.settings import settings
 from guardrails.classes.validation.validation_result import ValidationResult
-from guardrails.telemetry.common import get_tracer, serialize
+from guardrails.telemetry.common import get_tracer
 from guardrails.telemetry.open_inference import trace_operation
 from guardrails.utils.casting_utils import to_string
 from guardrails.utils.safe_get import safe_get
+from guardrails.utils.serialization_utils import serialize
 from guardrails.version import GUARDRAILS_VERSION
 
 

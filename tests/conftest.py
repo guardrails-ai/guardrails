@@ -36,7 +36,9 @@ def mock_validator_base_hub_telemetry():
 
 @pytest.fixture(autouse=True)
 def mock_validator_service_hub_telemetry():
-    with patch("guardrails.validator_service.HubTelemetry") as MockHubTelemetry:
+    with patch(
+        "guardrails.validator_service.validator_service_base.HubTelemetry"
+    ) as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
         yield MockHubTelemetry
 
