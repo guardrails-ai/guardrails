@@ -35,6 +35,7 @@ def install(
     package_uri: str,
     install_local_models=None,
     quiet: bool = True,
+    upgrade: bool = False,
     install_local_models_confirm: Callable = default_local_models_confirm,
 ) -> ValidatorModuleType:
     """Install a validator package from a hub URI.
@@ -84,7 +85,11 @@ def install(
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         ValidatorPackageService.install_hub_module(
-            module_manifest, site_packages, quiet=quiet, logger=cli_logger
+            module_manifest,
+            site_packages,
+            quiet=quiet,
+            upgrade=upgrade,
+            logger=cli_logger,
         )
 
     use_remote_endpoint = False

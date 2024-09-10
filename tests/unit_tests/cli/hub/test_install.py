@@ -29,6 +29,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=False,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -45,6 +46,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=True,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -61,6 +63,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=None,
             quiet=False,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -77,6 +80,7 @@ class TestInstall:
             "hub://guardrails/test-validator",
             install_local_models=None,
             quiet=True,
+            upgrade=False,
             install_local_models_confirm=ANY,
         )
 
@@ -204,6 +208,23 @@ class TestPipProcess:
             )
 
             sys_exit_spy.assert_called_once_with(1)
+
+    def test_install_with_upgrade_flag(self, mocker):
+        mock_install = mocker.patch("guardrails.hub.install.install")
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command, ["install", "--upgrade", "hub://guardrails/test-validator"]
+        )
+
+        mock_install.assert_called_once_with(
+            "hub://guardrails/test-validator",
+            install_local_models=None,
+            quiet=False,
+            install_local_models_confirm=ANY,
+            upgrade=True,
+        )
+
+        assert result.exit_code == 0
 
 
 def test_get_site_packages_location(mocker):

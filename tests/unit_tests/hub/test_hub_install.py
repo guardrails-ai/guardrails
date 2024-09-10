@@ -99,7 +99,7 @@ class TestInstall:
         )
 
         mock_pip_install_hub_module.assert_called_once_with(
-            self.manifest, self.site_packages, quiet=ANY, logger=ANY
+            self.manifest, self.site_packages, quiet=ANY, upgrade=ANY, logger=ANY
         )
         mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
@@ -160,7 +160,7 @@ class TestInstall:
         )
 
         mock_pip_install_hub_module.assert_called_once_with(
-            self.manifest, self.site_packages, quiet=ANY, logger=ANY
+            self.manifest, self.site_packages, quiet=ANY, upgrade=ANY, logger=ANY
         )
         mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
@@ -221,7 +221,7 @@ class TestInstall:
         )
 
         mock_pip_install_hub_module.assert_called_once_with(
-            self.manifest, self.site_packages, quiet=ANY, logger=ANY
+            self.manifest, self.site_packages, quiet=ANY, upgrade=ANY, logger=ANY
         )
         mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
@@ -278,7 +278,7 @@ class TestInstall:
         )
 
         mock_pip_install_hub_module.assert_called_once_with(
-            self.manifest, self.site_packages, quiet=ANY, logger=ANY
+            self.manifest, self.site_packages, quiet=ANY, upgrade=ANY, logger=ANY
         )
         mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
