@@ -12,7 +12,7 @@ from guardrails.cli.telemetry import trace_if_enabled
 def install(
     package_uris: List[str] = typer.Argument(
         ...,
-        help="URIs to the packages to install. Example: hub://guardrails/regex_match hub://guardrails/spell_check",
+        help="URIs to the packages to install. Example: hub://guardrails/regex_match hub://guardrails/toxic_language",
     ),
     local_models: Optional[bool] = typer.Option(
         None,
@@ -33,7 +33,8 @@ def install(
         def confirm():
             return typer.confirm(
                 "This validator has a Guardrails AI inference endpoint available. "
-                "Would you still like to install the local models for local inference?",
+                "Would you still like to install the"
+                " local models for local inference?",
             )
 
         install_multiple(
