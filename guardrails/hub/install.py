@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from string import Template
-from typing import Callable, cast
+from typing import Callable, cast, List
 
 from guardrails.hub.validator_package_service import (
     ValidatorPackageService,
@@ -169,3 +169,35 @@ def install(
     installed_module.__validator_exports__ = module_manifest.exports
 
     return installed_module
+
+
+def install_multiple(
+    package_uris: List[str],
+    install_local_models=None,
+    quiet: bool = True,
+    install_local_models_confirm: Callable = default_local_models_confirm,
+) -> List[ValidatorModuleType]:
+    """Install multiple validator packages from hub URIs.
+
+    Args:
+        package_uris (List[str]): List of URIs of the packages to install.
+        install_local_models (bool): Whether to install local models or not.
+        quiet (bool): Whether to suppress output or not.
+        install_local_models_confirm (Callable): A function to confirm the
+            installation of local models.
+
+    Returns:
+        List[ValidatorModuleType]: List of installed validator modules.
+    """
+    installed_modules = []
+
+    for package_uri in package_uris:
+        installed_module = install(
+            package_uri,
+            install_local_models=install_local_models,
+            quiet=quiet,
+            install_local_models_confirm=install_local_models_confirm,
+        )
+        installed_modules.append(installed_module)
+
+    return installed_modules
