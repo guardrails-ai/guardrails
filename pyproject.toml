@@ -59,6 +59,7 @@ guardrails-hub-types = "^0.0.4"
 guardrails-api-client = ">=0.3.8"
 diff-match-patch = "^20230430"
 guardrails-api = ">=0.0.1"
+mlflow = {version = ">=2.0.1", optional = true}
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -68,6 +69,7 @@ anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 huggingface = ["transformers", "torch", "jsonformer"]
 api = ["guardrails-api"]
+databricks = ["mlflow"]
 
 
 [tool.poetry.group.dev.dependencies]

@@ -115,13 +115,14 @@ const sidebars = {
         {
           type: "link",
           label: "Iudex",
-          href: "https://docs.iudex.ai/integrations/guardrails-integration",
+          href: "https://docs.iudex.ai/integrations/guardrails",
         },
         {
           type: "link",
           label: "OpenLIT",
           href: "https://docs.openlit.io/latest/integrations/guardrails",
         },
+        "integrations/telemetry/mlflow-tracing",
       ],
     },
     // "integrations/openai_functions",
