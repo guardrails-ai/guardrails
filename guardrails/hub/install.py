@@ -187,15 +187,13 @@ def install_multiple(
     installed_modules = []
 
     for package_uri in package_uris:
-        try:
-            installed_module = install(
-                package_uri,
-                install_local_models=install_local_models,
-                quiet=quiet,
-                install_local_models_confirm=install_local_models_confirm,
-            )
-            installed_modules.append(installed_module)
-        except Exception as e:
-            cli_logger.error(f"Failed to install {package_uri}: {str(e)}")
+        installed_module = install(
+            package_uri,
+            install_local_models=install_local_models,
+            quiet=quiet,
+            install_local_models_confirm=install_local_models_confirm,
+        )
+        installed_modules.append(installed_module)
 
     return installed_modules
+
