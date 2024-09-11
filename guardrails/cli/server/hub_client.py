@@ -147,7 +147,10 @@ def get_validator_manifest(module_name: str):
             logger.error(f"Failed to install hub://{module_name}")
             sys.exit(1)
         return module_manifest
-    except HttpError:
+    except HttpError as e:
+        if e.message == "Unauthorized":
+            logger.error(TOKEN_INVALID_MESSAGE)
+            raise
         logger.error(f"Failed to install hub://{module_name}")
         sys.exit(1)
     except (ExpiredTokenError, InvalidTokenError) as e:
