@@ -308,6 +308,156 @@ def test_custom_on_fail_handler(
             assert response.validated_output == expected_result
 
 
+class TestCustomOnFailHandler:
+    def test_custom_fix(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+        expected_result = {"pet_type": "dog dog", "name": "Fido"}
+
+        validator: Validator = TwoWords(on_fail=custom_fix_on_fail_handler)
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        response = guard.parse(output, num_reasks=0)
+        assert response.validation_passed is True
+        assert response.validated_output == expected_result
+
+    def test_custom_reask(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+        expected_result = FieldReAsk(
+            incorrect_value="dog",
+            path=["pet_type"],
+            fail_results=[
+                FailResult(
+                    error_message="must be exactly two words",
+                    fix_value="dog dog",
+                )
+            ],
+        )
+
+        validator: Validator = TwoWords(on_fail=custom_reask_on_fail_handler)
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        response = guard.parse(output, num_reasks=0)
+
+        # Why? Because we have a bad habit of applying every fix value
+        #       to the output even if the user doesn't ask us to.
+        assert response.validation_passed is True
+        assert guard.history.first.iterations.first.reasks[0] == expected_result
+
+    def test_custom_exception(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+
+        validator: Validator = TwoWords(on_fail=custom_exception_on_fail_handler)
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        with pytest.raises(ValidationError) as excinfo:
+            guard.parse(output, num_reasks=0)
+        assert str(excinfo.value) == "Something went wrong!"
+
+    def test_custom_filter(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+
+        validator: Validator = TwoWords(on_fail=custom_filter_on_fail_handler)
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        response = guard.parse(output, num_reasks=0)
+
+        # NOTE: This doesn't seem right.
+        #       Shouldn't pass if filtering is successful on the target property?
+        assert response.validation_passed is False
+        assert response.validated_output is None
+
+    def test_custom_refrain(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+
+        validator: Validator = TwoWords(on_fail=custom_refrain_on_fail_handler)
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        response = guard.parse(output, num_reasks=0)
+
+        assert response.validation_passed is False
+        assert response.validated_output is None
+
+
 class Pet(BaseModel):
     name: str = Field(description="a unique pet name")
 

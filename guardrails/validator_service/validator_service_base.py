@@ -27,6 +27,7 @@ ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 class ValidatorRun:
     value: Any
     metadata: Dict
+    on_fail_action: Union[str, OnFailAction]
     validator_logs: ValidatorLogs
 
 
@@ -89,7 +90,7 @@ class ValidatorServiceBase:
                 )
 
             return fixed_value
-        if on_fail_descriptor == "custom":
+        if on_fail_descriptor == OnFailAction.CUSTOM:
             if validator.on_fail_method is None:
                 raise ValueError("on_fail is 'custom' but on_fail_method is None")
             return validator.on_fail_method(value, [result])
@@ -197,6 +198,7 @@ class ValidatorServiceBase:
             current = merge(
                 serialize(current), serialize(nextval), serialize(original_value)
             )
+            current = deserialize(original_value, current)
         deserialized_value = deserialize(original_value, current)
         if deserialized_value is None and current is not None:
             # QUESTION: How do we escape hatch

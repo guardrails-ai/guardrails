@@ -492,56 +492,82 @@ def test_use_many_tuple():
         )
 
 
-def test_validate():
-    guard: Guard = (
-        Guard()
-        .use(OneLine)
-        .use(
-            LowerCase(on_fail=OnFailAction.FIX), on="output"
-        )  # default on="output", still explicitly set
-        .use(TwoWords)
-        .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
-    )
+# TODO: Move to integration tests; these are not unit tests...
+class TestValidate:
+    def test_output_only_success(self):
+        guard: Guard = (
+            Guard()
+            .use(OneLine)
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX), on="output"
+            )  # default on="output", still explicitly set
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        )
 
-    llm_output: str = "Oh Canada"  # bc it meets our criteria
+        llm_output: str = "Oh Canada"  # bc it meets our criteria
 
-    response = guard.validate(llm_output)
+        response = guard.validate(llm_output)
 
-    assert response.validation_passed is True
-    assert response.validated_output == llm_output.lower()
+        assert response.validation_passed is True
+        assert response.validated_output == llm_output.lower()
 
-    llm_output_2 = "Star Spangled Banner"  # to stick with the theme
+    def test_output_only_failure(self):
+        guard: Guard = (
+            Guard()
+            .use(OneLine)
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX), on="output"
+            )  # default on="output", still explicitly set
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        )
 
-    response_2 = guard.validate(llm_output_2)
+        llm_output = "Star Spangled Banner"  # to stick with the theme
 
-    assert response_2.validation_passed is False
-    assert response_2.validated_output is None
+        response = guard.validate(llm_output)
 
-    # Test with a combination of prompt, output, instructions and msg_history validators
-    # Should still only use the output validators to validate the output
-    guard: Guard = (
-        Guard()
-        .use(OneLine, on="prompt")
-        .use(LowerCase, on="instructions")
-        .use(UpperCase, on="msg_history")
-        .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
-        .use(TwoWords, on="output")
-        .use(ValidLength, 0, 12, on="output")
-    )
+        assert response.validation_passed is False
+        assert response.validated_output is None
 
-    llm_output: str = "Oh Canada"  # bc it meets our criteria
+    def test_on_many_success(self):
+        # Test with a combination of prompt, output,
+        #   instructions and msg_history validators
+        # Should still only use the output validators to validate the output
+        guard: Guard = (
+            Guard()
+            .use(OneLine, on="prompt")
+            .use(LowerCase, on="instructions")
+            .use(UpperCase, on="msg_history")
+            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        )
 
-    response = guard.validate(llm_output)
+        llm_output: str = "Oh Canada"  # bc it meets our criteria
 
-    assert response.validation_passed is True
-    assert response.validated_output == llm_output.lower()
+        response = guard.validate(llm_output)
 
-    llm_output_2 = "Star Spangled Banner"  # to stick with the theme
+        assert response.validation_passed is True
+        assert response.validated_output == llm_output.lower()
 
-    response_2 = guard.validate(llm_output_2)
+    def test_on_many_failure(self):
+        guard: Guard = (
+            Guard()
+            .use(OneLine, on="prompt")
+            .use(LowerCase, on="instructions")
+            .use(UpperCase, on="msg_history")
+            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        )
 
-    assert response_2.validation_passed is False
-    assert response_2.validated_output is None
+        llm_output = "Star Spangled Banner"  # to stick with the theme
+
+        response = guard.validate(llm_output)
+
+        assert response.validation_passed is False
+        assert response.validated_output is None
 
 
 def test_use_and_use_many():

@@ -317,6 +317,7 @@ class TestRunValidators:
                 ValidatorRun(
                     value="mock-value",
                     metadata={},
+                    on_fail_action="noop",
                     validator_logs=ValidatorLogs(
                         registered_name="noop_validator",
                         validator_name="noop_validator",
@@ -328,6 +329,7 @@ class TestRunValidators:
                 ValidatorRun(
                     value=Filter(),
                     metadata={},
+                    on_fail_action="filter",
                     validator_logs=ValidatorLogs(
                         registered_name="filter_validator",
                         validator_name="filter_validator",
@@ -374,6 +376,7 @@ class TestRunValidators:
                 ValidatorRun(
                     value="mock-value",
                     metadata={},
+                    on_fail_action="noop",
                     validator_logs=ValidatorLogs(
                         registered_name="noop_validator",
                         validator_name="noop_validator",
@@ -385,6 +388,7 @@ class TestRunValidators:
                 ValidatorRun(
                     value="mock-fix-value",
                     metadata={},
+                    on_fail_action="fix",
                     validator_logs=ValidatorLogs(
                         registered_name="fix_validator",
                         validator_name="fix_validator",
@@ -482,6 +486,7 @@ class TestRunValidator:
             index=0,
         )
         validator = MagicMock(spec=Validator)
+        validator.on_fail_descriptor = "noop"
 
         result = await avs.run_validator(
             iteration=iteration,
@@ -540,6 +545,7 @@ class TestRunValidator:
             index=0,
         )
         validator = MagicMock(spec=Validator)
+        validator.on_fail_descriptor = "noop"
 
         result = await avs.run_validator(
             iteration=iteration,

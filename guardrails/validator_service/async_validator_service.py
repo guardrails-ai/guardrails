@@ -106,6 +106,7 @@ class AsyncValidatorService(ValidatorServiceBase):
         return ValidatorRun(
             value=value,
             metadata=metadata,
+            on_fail_action=validator.on_fail_descriptor,
             validator_logs=validator_logs,
         )
 
@@ -136,17 +137,40 @@ class AsyncValidatorService(ValidatorServiceBase):
             coroutines.append(coroutine)
 
         results = await asyncio.gather(*coroutines)
+        reasks: List[FieldReAsk] = []
         for res in results:
             validators_logs.extend(res.validator_logs)
             # QUESTION: Do we still want to do this here or handle it during the merge?
             # return early if we have a filter, refrain, or reask
-            if isinstance(res.value, (Filter, Refrain, FieldReAsk)):
+            if isinstance(res.value, (Filter, Refrain)):
                 return res.value, metadata
+            elif isinstance(res.value, FieldReAsk):
+                reasks.append(res.value)
+
+        # handle reasks
+        if len(reasks) > 0:
+            first_reask = reasks[0]
+            fail_results = []
+            for reask in reasks:
+                fail_results.extend(reask.fail_results)
+            first_reask.fail_results = fail_results
+            return first_reask, metadata
 
         # merge the results
-        if len(results) > 0:
-            values = [res.value for res in results]
-            value = self.merge_results(value, values)
+        fix_values = [
+            res.value
+            for res in results
+            if (
+                isinstance(res.validator_logs.validation_result, FailResult)
+                and (
+                    res.on_fail_action == OnFailAction.FIX
+                    or res.on_fail_action == OnFailAction.FIX_REASK
+                    or res.on_fail_action == OnFailAction.CUSTOM
+                )
+            )
+        ]
+        if len(fix_values) > 0:
+            value = self.merge_results(value, fix_values)
 
         return value, metadata
 

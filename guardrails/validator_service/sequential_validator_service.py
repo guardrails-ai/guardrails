@@ -171,10 +171,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                         break
                     rechecked_value = None
                     chunk = self.perform_correction(
-                        [result],
+                        result,
                         chunk,
                         validator,
-                        validator.on_fail_descriptor,
                         rechecked_value=rechecked_value,
                     )
                     fixed_values.append(chunk)
@@ -239,10 +238,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 if isinstance(result, FailResult):
                     rechecked_value = None
                     last_chunk = self.perform_correction(
-                        [result],
+                        result,
                         last_chunk,
                         validator,
-                        validator.on_fail_descriptor,
                         rechecked_value=rechecked_value,
                     )
                     validator_partial_acc[id(validator)] += last_chunk  # type: ignore
@@ -303,10 +301,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 if isinstance(result, FailResult):
                     rechecked_value = None
                     chunk = self.perform_correction(
-                        [result],
+                        result,
                         chunk,
                         validator,
-                        validator.on_fail_descriptor,
                         rechecked_value=rechecked_value,
                     )
                 elif isinstance(result, PassResult):
@@ -391,10 +388,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                         **kwargs,
                     )
                 value = self.perform_correction(
-                    [result],
+                    result,
                     value,
                     validator,
-                    validator.on_fail_descriptor,
                     rechecked_value=rechecked_value,
                 )
             elif isinstance(result, PassResult):

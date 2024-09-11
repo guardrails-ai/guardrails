@@ -124,6 +124,7 @@ class Validator:
             )
             self.on_fail_method = None
         else:
+            self.on_fail_descriptor = OnFailAction.CUSTOM
             self.on_fail_method = on_fail
 
         # Store the kwargs for the validator.
@@ -336,11 +337,13 @@ class Validator:
     def __call__(self, value):
         result = self.validate(value, {})
         if isinstance(result, FailResult):
-            from guardrails.validator_service import ValidatorServiceBase
+            from guardrails.validator_service.validator_service_base import (
+                ValidatorServiceBase,
+            )
 
             validator_service = ValidatorServiceBase()
             return validator_service.perform_correction(
-                [result], value, self, self.on_fail_descriptor
+                result, value, self, self.on_fail_descriptor
             )
         return value
 
