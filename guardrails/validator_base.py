@@ -280,7 +280,14 @@ class Validator:
         }
         req = requests.post(validation_endpoint, data=request_body, headers=headers)
         if not req.ok:
-            logging.error(req.status_code)
+            if req.status_code == 401:
+                raise Exception(
+                    "401: Remote Inference Unauthorized. Please run "
+                    "`guardrails configure`. You can find a new"
+                    " token at https://hub.guardrailsai.com/keys"
+                )
+            else:
+                logging.error(req.status_code)
 
         return req.json()
 
