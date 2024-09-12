@@ -13,27 +13,42 @@ iteration = Iteration(
 
 class TestShouldRunSync:
     def test_process_count_of_1(self, mocker):
-        mocker.patch("os.environ.get", side_effect=["1", "false"])
+        mocker.patch(
+            "guardrails.validator_service.os.environ.get", side_effect=["1", "false"]
+        )
         assert vs.should_run_sync() is True
 
     def test_run_sync_set_to_true(self, mocker):
-        mocker.patch("os.environ.get", side_effect=["10", "True"])
+        mocker.patch(
+            "guardrails.validator_service.os.environ.get", side_effect=["10", "True"]
+        )
         assert vs.should_run_sync() is True
 
     def test_should_run_sync_default(self, mocker):
-        mocker.patch("os.environ.get", side_effect=["10", "false"])
+        mocker.patch(
+            "guardrails.validator_service.os.environ.get", side_effect=["10", "false"]
+        )
         assert vs.should_run_sync() is False
 
 
 class TestGetLoop:
     def test_get_loop_with_running_loop(self, mocker):
-        mocker.patch("asyncio.get_running_loop", return_value="running loop")
+        mocker.patch(
+            "guardrails.validator_service.asyncio.get_running_loop",
+            return_value="running loop",
+        )
         with pytest.raises(RuntimeError):
             vs.get_loop()
 
     def test_get_loop_without_running_loop(self, mocker):
-        mocker.patch("asyncio.get_running_loop", side_effect=RuntimeError)
-        mocker.patch("asyncio.get_event_loop", return_value="event loop")
+        mocker.patch(
+            "guardrails.validator_service.asyncio.get_running_loop",
+            side_effect=RuntimeError,
+        )
+        mocker.patch(
+            "guardrails.validator_service.asyncio.get_event_loop",
+            return_value="event loop",
+        )
         assert vs.get_loop() == "event loop"
 
     def test_get_loop_with_uvloop(self, mocker):
@@ -41,8 +56,14 @@ class TestGetLoop:
         mock_event_loop_policy = mocker.patch(
             "guardrails.validator_service.uvloop.EventLoopPolicy"
         )
-        mocker.patch("asyncio.get_running_loop", side_effect=RuntimeError)
-        mocker.patch("asyncio.get_event_loop", return_value="event loop")
+        mocker.patch(
+            "guardrails.validator_service.asyncio.get_running_loop",
+            side_effect=RuntimeError,
+        )
+        mocker.patch(
+            "guardrails.validator_service.asyncio.get_event_loop",
+            return_value="event loop",
+        )
         mock_set_event_loop_policy = mocker.patch("asyncio.set_event_loop_policy")
 
         assert vs.get_loop() == "event loop"

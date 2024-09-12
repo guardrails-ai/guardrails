@@ -752,34 +752,6 @@ class TestRunValidatorAsync:
         )
 
     @pytest.mark.asyncio
-    async def test_result_is_a_coroutine(self, mocker):
-        mock_validator = MagicMock(spec=Validator)
-
-        validation_result = PassResult()
-
-        async def result_coroutine():
-            return validation_result
-
-        mock_execute_validator = mocker.patch.object(
-            avs, "execute_validator", return_value=result_coroutine()
-        )
-
-        result = await avs.run_validator_async(
-            validator=mock_validator,
-            value="value",
-            metadata={},
-            stream=False,
-            validation_session_id="mock-session",
-        )
-
-        assert result == validation_result
-
-        assert mock_execute_validator.call_count == 1
-        mock_execute_validator.assert_called_once_with(
-            mock_validator, "value", {}, False, validation_session_id="mock-session"
-        )
-
-    @pytest.mark.asyncio
     async def test_result_is_none(self, mocker):
         mock_validator = MagicMock(spec=Validator)
 

@@ -3,6 +3,8 @@
 #   - [ ] Maintain validator_base.py for exports but deprecate them
 #   - [ ] Remove validator_base.py in 0.6.x
 
+import asyncio
+from functools import partial
 import inspect
 import logging
 from collections import defaultdict
@@ -175,6 +177,19 @@ class Validator:
         self._log_telemetry()
         return validation_result
 
+    async def async_validate(
+        self, value: Any, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        """Use this function if your validation logic requires asyncio.
+
+        Guaranteed to work with AsyncGuard
+
+        May not work with synchronous Guards if they are used within an
+        async context     due to lack of available event loops.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.validate, value, metadata)
+
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
         validation call.
@@ -255,6 +270,15 @@ class Validator:
                 ]
 
         return validation_result
+
+    async def async_validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Optional[ValidationResult]:
+        loop = asyncio.get_event_loop()
+        validate_stream_partial = partial(
+            self.validate_stream, chunk, metadata, **kwargs
+        )
+        return await loop.run_in_executor(None, validate_stream_partial)
 
     def _hub_inference_request(
         self, request_body: Union[dict, str], validation_endpoint: str
@@ -342,9 +366,7 @@ class Validator:
             )
 
             validator_service = ValidatorServiceBase()
-            return validator_service.perform_correction(
-                result, value, self, self.on_fail_descriptor
-            )
+            return validator_service.perform_correction(result, value, self)
         return value
 
     def __eq__(self, other):

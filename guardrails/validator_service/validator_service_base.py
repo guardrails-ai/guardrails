@@ -52,6 +52,8 @@ class ValidatorServiceBase:
         *,
         validation_session_id: str,
         **kwargs,
+        # TODO: Make this just Optional[ValidationResult]
+        #       Also maybe move to SequentialValidatorService
     ) -> ValidatorResult:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
@@ -189,12 +191,6 @@ class ValidatorServiceBase:
         current = new_values.pop()
         while len(new_values) > 0:
             nextval = new_values.pop()
-            # print("current:", current)
-            # print("serialize(current):", serialize(current))
-            # print("nextval:", nextval)
-            # print("serialize(nextval):", serialize(nextval))
-            # print("original_value:", original_value)
-            # print("serialize(original_value):", serialize(original_value))
             current = merge(
                 serialize(current), serialize(nextval), serialize(original_value)
             )

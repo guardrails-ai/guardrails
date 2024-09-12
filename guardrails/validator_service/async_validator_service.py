@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Awaitable, Coroutine, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Awaitable, Coroutine, Dict, List, Optional, Tuple, Union
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
@@ -9,6 +9,7 @@ from guardrails.classes.validation.validation_result import (
     PassResult,
     ValidationResult,
 )
+from guardrails.telemetry.validator_tracing import trace_async_validator
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk
@@ -22,6 +23,32 @@ ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 
 
 class AsyncValidatorService(ValidatorServiceBase):
+    async def execute_validator(
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Optional[Dict],
+        stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
+        **kwargs,
+    ) -> Optional[ValidationResult]:
+        validate_func = (
+            validator.async_validate_stream if stream else validator.async_validate
+        )
+        traced_validator = trace_async_validator(
+            validator_name=validator.rail_alias,
+            obj_id=id(validator),
+            on_fail_descriptor=validator.on_fail_descriptor,
+            validation_session_id=validation_session_id,
+            **validator._kwargs,
+        )(validate_func)
+        if stream:
+            result = await traced_validator(value, metadata, **kwargs)
+        else:
+            result = await traced_validator(value, metadata)
+        return result
+
     async def run_validator_async(
         self,
         validator: Validator,
@@ -32,7 +59,7 @@ class AsyncValidatorService(ValidatorServiceBase):
         validation_session_id: str,
         **kwargs,
     ) -> ValidationResult:
-        result: ValidatorResult = self.execute_validator(
+        result = await self.execute_validator(
             validator,
             value,
             metadata,
@@ -40,13 +67,9 @@ class AsyncValidatorService(ValidatorServiceBase):
             validation_session_id=validation_session_id,
             **kwargs,
         )
-        if asyncio.iscoroutine(result):
-            result = await result
 
         if result is None:
             result = PassResult()
-        else:
-            result = cast(ValidationResult, result)
         return result
 
     async def run_validator(
@@ -125,21 +148,22 @@ class AsyncValidatorService(ValidatorServiceBase):
         coroutines: List[Coroutine[Any, Any, ValidatorRun]] = []
         validators_logs: List[ValidatorLogs] = []
         for validator in validators:
-            coroutine: Coroutine[Any, Any, ValidatorRun] = self.run_validator(
-                iteration,
-                validator,
-                value,
-                metadata,
-                absolute_property_path,
-                stream=stream,
-                **kwargs,
+            coroutines.append(
+                self.run_validator(
+                    iteration,
+                    validator,
+                    value,
+                    metadata,
+                    absolute_property_path,
+                    stream=stream,
+                    **kwargs,
+                )
             )
-            coroutines.append(coroutine)
 
         results = await asyncio.gather(*coroutines)
         reasks: List[FieldReAsk] = []
         for res in results:
-            validators_logs.extend(res.validator_logs)
+            validators_logs.append(res.validator_logs)
             # QUESTION: Do we still want to do this here or handle it during the merge?
             # return early if we have a filter, refrain, or reask
             if isinstance(res.value, (Filter, Refrain)):

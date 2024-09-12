@@ -86,7 +86,14 @@ def validate(
             validator_service = SequentialValidatorService(disable_tracer)
 
     return validator_service.validate(
-        value, metadata, validator_map, iteration, path, path, loop=loop, **kwargs
+        value,
+        metadata,
+        validator_map,
+        iteration,
+        path,
+        path,
+        loop=loop,  # type: ignore It exists when we need it to.
+        **kwargs,
     )
 
 

@@ -8413,9 +8413,10 @@ docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
 huggingface = ["jsonformer", "torch", "transformers"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
+uv = ["uvloop"]
 vectordb = ["faiss-cpu", "numpy"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "aec41326aef66af046ce16d49c036fec48698032995f3f49df634b9da411caf7"
+content-hash = "6253610141bb5686330057ae658550f9257aabe83ee7b279b783a7f4418a26a6"

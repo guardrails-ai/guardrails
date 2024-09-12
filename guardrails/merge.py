@@ -1,4 +1,5 @@
 # SOURCE: https://github.com/spyder-ide/three-merge/blob/master/three_merge/merge.py
+from typing import Optional
 from diff_match_patch import diff_match_patch
 
 # Constants
@@ -10,7 +11,12 @@ DELETION = -1
 ADDITION = 1
 
 
-def merge(source: str, target: str, base: str) -> str:
+def merge(
+    source: Optional[str], target: Optional[str], base: Optional[str]
+) -> Optional[str]:
+    if source is None or target is None or base is None:
+        return None
+
     diff1_l = DIFFER.diff_main(base, source)
     diff2_l = DIFFER.diff_main(base, target)
 
@@ -75,7 +81,7 @@ def merge(source: str, target: str, base: str) -> str:
                             invariant = ""
                             target = (target_status, target_text)  # type: ignore
                 if advance:
-                    prev_source_text = source[1]
+                    prev_source_text = source[1]  # type: ignore
                     source = next(diff1, None)  # type: ignore
             elif len(source_text) < len(target_text):
                 # Addition performed by source
@@ -119,7 +125,7 @@ def merge(source: str, target: str, base: str) -> str:
                             invariant = ""
                             source = (source_status, source_text)  # type: ignore
                 if advance:
-                    prev_target_text = target[1]
+                    prev_target_text = target[1]  # type: ignore
                     target = next(diff2, None)  # type: ignore
             else:
                 # Source and target are equal

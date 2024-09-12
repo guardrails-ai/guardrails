@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     Optional,
@@ -135,6 +136,68 @@ def trace_validator(
                         raise e
             else:
                 return fn(*args, **kwargs)
+
+        return trace_validator_wrapper
+
+    return trace_validator_decorator
+
+
+def trace_async_validator(
+    validator_name: str,
+    obj_id: int,
+    on_fail_descriptor: Optional[str] = None,
+    tracer: Optional[Tracer] = None,
+    *,
+    validation_session_id: str,
+    **init_kwargs,
+):
+    def trace_validator_decorator(
+        fn: Callable[..., Awaitable[Optional[ValidationResult]]],
+    ):
+        @wraps(fn)
+        async def trace_validator_wrapper(*args, **kwargs):
+            if not settings.disable_tracing:
+                current_otel_context = context.get_current()
+                _tracer = get_tracer(tracer) or trace.get_tracer(
+                    "guardrails-ai", GUARDRAILS_VERSION
+                )
+                validator_span_name = f"{validator_name}.validate"
+                with _tracer.start_as_current_span(
+                    name=validator_span_name,  # type: ignore
+                    context=current_otel_context,  # type: ignore
+                ) as validator_span:
+                    try:
+                        resp = await fn(*args, **kwargs)
+                        add_validator_attributes(
+                            *args,
+                            validator_span=validator_span,
+                            validator_name=validator_name,
+                            obj_id=obj_id,
+                            on_fail_descriptor=on_fail_descriptor,
+                            result=resp,
+                            init_kwargs=init_kwargs,
+                            validation_session_id=validation_session_id,
+                            **kwargs,
+                        )
+                        return resp
+                    except Exception as e:
+                        validator_span.set_status(
+                            status=StatusCode.ERROR, description=str(e)
+                        )
+                        add_validator_attributes(
+                            *args,
+                            validator_span=validator_span,
+                            validator_name=validator_name,
+                            obj_id=obj_id,
+                            on_fail_descriptor=on_fail_descriptor,
+                            result=None,
+                            init_kwargs=init_kwargs,
+                            validation_session_id=validation_session_id,
+                            **kwargs,
+                        )
+                        raise e
+            else:
+                return await fn(*args, **kwargs)
 
         return trace_validator_wrapper
 
