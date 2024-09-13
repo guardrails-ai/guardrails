@@ -66,7 +66,7 @@ const sidebars = {
         "concepts/streaming_fixes",
       ],
     },
-    "concepts/parallelization",
+    "concepts/concurrency",
     "concepts/logs",
     "concepts/telemetry",
     "concepts/error_remediation",
