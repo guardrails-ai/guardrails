@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any, Dict, List
 
 import pytest
@@ -209,106 +210,66 @@ def test_to_xml_attrib(min, max, expected_xml):
     assert xml_validator == expected_xml
 
 
-def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
+def custom_deprecated_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    return value + " deprecated"
+
+
+def custom_fix_on_fail_handler(value: Any, fail_result: FailResult):
     return value + " " + value
 
 
-def custom_reask_on_fail_handler(value: Any, fail_results: List[FailResult]):
-    return FieldReAsk(incorrect_value=value, fail_results=fail_results)
+def custom_reask_on_fail_handler(value: Any, fail_result: FailResult):
+    return FieldReAsk(incorrect_value=value, fail_results=[fail_result])
 
 
-def custom_exception_on_fail_handler(value: Any, fail_results: List[FailResult]):
+def custom_exception_on_fail_handler(value: Any, fail_result: FailResult):
     raise ValidationError("Something went wrong!")
 
 
-def custom_filter_on_fail_handler(value: Any, fail_results: List[FailResult]):
+def custom_filter_on_fail_handler(value: Any, fail_result: FailResult):
     return Filter()
 
 
-def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
+def custom_refrain_on_fail_handler(value: Any, fail_result: FailResult):
     return Refrain()
 
 
-@pytest.mark.parametrize(
-    "custom_reask_func, expected_result",
-    [
-        (
-            custom_fix_on_fail_handler,
-            {"pet_type": "dog dog", "name": "Fido"},
-        ),
-        (
-            custom_reask_on_fail_handler,
-            FieldReAsk(
-                incorrect_value="dog",
-                path=["pet_type"],
-                fail_results=[
-                    FailResult(
-                        error_message="must be exactly two words",
-                        fix_value="dog dog",
-                    )
-                ],
-            ),
-        ),
-        (
-            custom_exception_on_fail_handler,
-            ValidationError,
-        ),
-        (
-            custom_filter_on_fail_handler,
-            None,
-        ),
-        (
-            custom_refrain_on_fail_handler,
-            None,
-        ),
-    ],
-)
-# @pytest.mark.parametrize(
-#     "validator_spec",
-#     [
-#         lambda val_func: TwoWords(on_fail=val_func),
-#         # This was never supported even pre-0.5.x.
-#         # Trying this with function calling will throw.
-#         lambda val_func: ("two-words", val_func),
-#     ],
-# )
-def test_custom_on_fail_handler(
-    custom_reask_func,
-    expected_result,
-):
-    prompt = """
-        What kind of pet should I get and what should I name it?
-
-        ${gr.complete_json_suffix_v2}
-    """
-
-    output = """
-    {
-       "pet_type": "dog",
-       "name": "Fido"
-    }
-    """
-
-    validator: Validator = TwoWords(on_fail=custom_reask_func)
-
-    class Pet(BaseModel):
-        pet_type: str = Field(description="Species of pet", validators=[validator])
-        name: str = Field(description="a unique pet name")
-
-    guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
-    if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(ValidationError) as excinfo:
-            guard.parse(output, num_reasks=0)
-        assert str(excinfo.value) == "Something went wrong!"
-    else:
-        response = guard.parse(output, num_reasks=0)
-        if isinstance(expected_result, FieldReAsk):
-            assert guard.history.first.iterations.first.reasks[0] == expected_result
-        else:
-            assert response.validated_output == expected_result
-
-
 class TestCustomOnFailHandler:
+    def test_deprecated_on_fail_handler(self):
+        prompt = """
+            What kind of pet should I get and what should I name it?
+
+            ${gr.complete_json_suffix_v2}
+        """
+
+        output = """
+        {
+        "pet_type": "dog",
+        "name": "Fido"
+        }
+        """
+        expected_result = {"pet_type": "dog deprecated", "name": "Fido"}
+
+        with pytest.warns(
+            DeprecationWarning,
+            match=re.escape(  # Becuase of square brackets in the message
+                "Specifying a List[FailResult] as the second argument"
+                " for a custom on_fail handler is deprecated. "
+                "Please use FailResult instead."
+            ),
+        ):
+            validator: Validator = TwoWords(on_fail=custom_deprecated_on_fail_handler)  # type: ignore
+
+        class Pet(BaseModel):
+            pet_type: str = Field(description="Species of pet", validators=[validator])
+            name: str = Field(description="a unique pet name")
+
+        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+        response = guard.parse(output, num_reasks=0)
+        assert response.validation_passed is True
+        assert response.validated_output == expected_result
+
     def test_custom_fix(self):
         prompt = """
             What kind of pet should I get and what should I name it?

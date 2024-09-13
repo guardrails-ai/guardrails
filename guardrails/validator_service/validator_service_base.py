@@ -95,7 +95,7 @@ class ValidatorServiceBase:
         if on_fail_descriptor == OnFailAction.CUSTOM:
             if validator.on_fail_method is None:
                 raise ValueError("on_fail is 'custom' but on_fail_method is None")
-            return validator.on_fail_method(value, [result])
+            return validator.on_fail_method(value, result)
         if on_fail_descriptor == OnFailAction.REASK:
             return FieldReAsk(
                 incorrect_value=value,
