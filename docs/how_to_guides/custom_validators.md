@@ -75,6 +75,7 @@ Validators ship with several out of the box `on_fail` policies. The `OnFailActio
 | `OnFailAction.NOOP`    | Do nothing. The failure will still be recorded in the logs, but no corrective action will be taken.                                                                                                    |
 | `OnFailAction.EXCEPTION`  | Raise an exception when validation fails.     |
 | `OnFailAction.FIX_REASK` | First, fix the generated output deterministically, and then rerun validation with the deterministically fixed output. If validation fails, then perform reasking.           |
+| `OnFailAction.CUSTOM` | This action is set internally when the validator is passed a custom function to handle failures.  The function is called with the value that failed validation and the FailResult returned from the Validator.  i.e. the custom on fail handler must implement the method signature `def on_fail(value: Any, fail_result: FailResult) -> Any`           |
 
 In the code below, a `fix_value` will be supplied in the `FailResult`. This value will represent a programmatic fix that can be applied to the output if `on_fail='fix'` is passed during validator initialization.
 ```py
