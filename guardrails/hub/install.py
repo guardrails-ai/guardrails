@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from string import Template
-from typing import Callable, cast
+from typing import Callable, cast, List
 
 from guardrails.hub.validator_package_service import (
     ValidatorPackageService,
@@ -35,10 +35,10 @@ def install(
     package_uri: str,
     install_local_models=None,
     quiet: bool = True,
+    upgrade: bool = False,
     install_local_models_confirm: Callable = default_local_models_confirm,
 ) -> ValidatorModuleType:
-    """
-    Install a validator package from a hub URI.
+    """Install a validator package from a hub URI.
 
     Args:
         package_uri (str): The URI of the package to install.
@@ -85,7 +85,11 @@ def install(
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         ValidatorPackageService.install_hub_module(
-            module_manifest, site_packages, quiet=quiet, logger=cli_logger
+            module_manifest,
+            site_packages,
+            quiet=quiet,
+            upgrade=upgrade,
+            logger=cli_logger,
         )
 
     use_remote_endpoint = False
@@ -165,3 +169,38 @@ def install(
     installed_module.__validator_exports__ = module_manifest.exports
 
     return installed_module
+
+
+def install_multiple(
+    package_uris: List[str],
+    install_local_models=None,
+    quiet: bool = True,
+    upgrade: bool = False,  # Add the upgrade parameter here
+    install_local_models_confirm: Callable = default_local_models_confirm,
+) -> List[ValidatorModuleType]:
+    """Install multiple validator packages from hub URIs.
+
+    Args:
+        package_uris (List[str]): List of URIs of the packages to install.
+        install_local_models (bool): Whether to install local models or not.
+        quiet (bool): Whether to suppress output or not.
+        upgrade (bool): Whether to upgrade to the latest package version.
+        install_local_models_confirm (Callable): A function to confirm the
+            installation of local models.
+
+    Returns:
+        List[ValidatorModuleType]: List of installed validator modules.
+    """
+    installed_modules = []
+
+    for package_uri in package_uris:
+        installed_module = install(
+            package_uri,
+            install_local_models=install_local_models,
+            quiet=quiet,
+            upgrade=upgrade,  # Pass upgrade here
+            install_local_models_confirm=install_local_models_confirm,
+        )
+        installed_modules.append(installed_module)
+
+    return installed_modules

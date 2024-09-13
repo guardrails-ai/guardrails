@@ -3,7 +3,7 @@ import pytest
 import sys
 from unittest.mock import call, patch, MagicMock
 
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
@@ -45,7 +45,7 @@ class TestGetModulePath:
 
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -53,8 +53,9 @@ class TestAddToHubInits:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator", "helper"],
                 "tags": {},
             }
@@ -110,7 +111,7 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_appends_import_line_if_not_present(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -118,8 +119,9 @@ class TestAddToHubInits:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -194,7 +196,7 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_creates_namespace_init_if_not_exists(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -202,8 +204,9 @@ class TestAddToHubInits:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -330,7 +333,7 @@ class TestRunPostInstall:
     @pytest.mark.parametrize(
         "manifest",
         [
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
                     "id": "id",
                     "name": "name",
@@ -338,13 +341,14 @@ class TestRunPostInstall:
                     "maintainers": [],
                     "repository": {"url": "some-repo"},
                     "namespace": "guardrails-ai",
-                    "package_name": "test-validator",
-                    "module_name": "validator",
+                    "packageName": "test-validator",
+                    "moduleName": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                 }
             ),
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
                     "id": "id",
                     "name": "name",
@@ -352,8 +356,9 @@ class TestRunPostInstall:
                     "maintainers": [],
                     "repository": {"url": "some-repo"},
                     "namespace": "guardrails-ai",
-                    "package_name": "test-validator",
-                    "module_name": "validator",
+                    "packageName": "test-validator",
+                    "moduleName": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                     "post_install": "",
@@ -384,7 +389,7 @@ class TestRunPostInstall:
         mock_isfile.return_value = True
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -392,11 +397,12 @@ class TestRunPostInstall:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
-                "post_install": "post_install.py",
+                "postInstall": "post_install.py",
             }
         )
 
@@ -413,7 +419,7 @@ class TestRunPostInstall:
 
 class TestValidatorPackageService:
     def setup_method(self):
-        self.manifest = ModuleManifest.from_dict(
+        self.manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -421,8 +427,9 @@ class TestValidatorPackageService:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails",
-                "package_name": "test-validator",
-                "module_name": "test_validator",
+                "packageName": "test-validator",
+                "moduleName": "test_validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {"has_guardrails_endpoint": False},
             }
@@ -483,7 +490,7 @@ class TestValidatorPackageService:
         "manifest,expected",
         [
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -491,8 +498,9 @@ class TestValidatorPackageService:
                         "maintainers": [],
                         "repository": {"url": "some-repo"},
                         "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "test_validator",
+                        "packageName": "test-validator",
+                        "moduleName": "test_validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -500,7 +508,7 @@ class TestValidatorPackageService:
                 ["guardrails_ai", "test_validator"],
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -508,8 +516,9 @@ class TestValidatorPackageService:
                         "maintainers": [],
                         "repository": {"url": "some-repo"},
                         "namespace": "",
-                        "package_name": "test-validator",
-                        "module_name": "test_validator",
+                        "packageName": "test-validator",
+                        "moduleName": "test_validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -536,7 +545,7 @@ class TestValidatorPackageService:
         "manifest,expected",
         [
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -544,8 +553,9 @@ class TestValidatorPackageService:
                         "maintainers": [],
                         "repository": {"url": "some-repo"},
                         "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
+                        "packageName": "test-validator",
+                        "moduleName": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                     }
@@ -553,7 +563,7 @@ class TestValidatorPackageService:
                 "git+some-repo",
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -561,8 +571,9 @@ class TestValidatorPackageService:
                         "maintainers": [],
                         "repository": {"url": "git+some-repo"},
                         "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
+                        "packageName": "test-validator",
+                        "moduleName": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                         "post_install": "",
@@ -571,7 +582,7 @@ class TestValidatorPackageService:
                 "git+some-repo",
             ),
             (
-                ModuleManifest.from_dict(
+                Manifest.from_dict(
                     {
                         "id": "id",
                         "name": "name",
@@ -579,8 +590,9 @@ class TestValidatorPackageService:
                         "maintainers": [],
                         "repository": {"url": "git+some-repo", "branch": "prod"},
                         "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
+                        "packageName": "test-validator",
+                        "moduleName": "validator",
+                        "description": "description",
                         "exports": ["TestValidator"],
                         "tags": {},
                         "post_install": "",
@@ -639,7 +651,7 @@ class TestValidatorPackageService:
             "Sucessfully installed pydash>=7.0.6,<8.0.0",
         ]
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
                 "id": "id",
                 "name": "name",
@@ -647,8 +659,9 @@ class TestValidatorPackageService:
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }

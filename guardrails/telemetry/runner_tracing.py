@@ -178,6 +178,8 @@ async def trace_async_stream_step_generator(
                     yield res
                 except StopIteration:
                     next_exists = False
+                except StopAsyncIteration:
+                    next_exists = False
         except Exception as e:
             step_span.set_status(status=StatusCode.ERROR, description=str(e))
             exception = e

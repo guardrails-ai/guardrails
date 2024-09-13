@@ -40,3 +40,5 @@ docusaurus/static/docs
 */include/*
 */share/*
 pyvenv.cfg
+mlruns
+mlartifacts
