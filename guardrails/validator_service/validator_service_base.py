@@ -195,8 +195,7 @@ class ValidatorServiceBase:
                 serialize(current), serialize(nextval), serialize(original_value)
             )
             current = deserialize(original_value, current)
-        deserialized_value = deserialize(original_value, current)
-        if deserialized_value is None and current is not None:
+        if current is None and original_value is not None:
             # QUESTION: How do we escape hatch
             #    for when deserializing the merged value fails?
 
@@ -205,4 +204,4 @@ class ValidatorServiceBase:
 
             # Or just pick one of the new values?
             return new_vals[0]
-        return deserialized_value
+        return current
