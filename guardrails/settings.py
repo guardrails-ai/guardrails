@@ -1,10 +1,13 @@
 import threading
 from typing import Optional
 
+from guardrails.classes.rc import RC
+
 
 class Settings:
     _instance = None
     _lock = threading.Lock()
+    _rc: RC
     """Whether to use a local server for running Guardrails."""
     use_server: Optional[bool]
     """Whether to disable tracing.
@@ -25,6 +28,16 @@ class Settings:
     def _initialize(self):
         self.use_server = None
         self.disable_tracing = None
+
+    @property
+    def rc(self) -> RC:
+        if self._rc is None:
+            self._rc = RC.load()
+        return self._rc
+
+    @rc.setter
+    def rc(self, value: RC):
+        self._rc = value
 
 
 settings = Settings()

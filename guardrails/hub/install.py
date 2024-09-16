@@ -6,7 +6,7 @@ from guardrails.hub.validator_package_service import (
     ValidatorPackageService,
     ValidatorModuleType,
 )
-from guardrails.classes.credentials import Credentials
+from guardrails.classes.rc import RC
 
 from guardrails.cli.hub.console import console
 from guardrails.cli.logger import LEVELS, logger as cli_logger
@@ -61,7 +61,7 @@ def install(
     quiet_printer = console.print if not quiet else lambda x: None
 
     # 1. Validation
-    has_rc_file = Credentials.has_rc_file()
+    rc_file_exists = RC.exists()
     module_name = ValidatorPackageService.get_module_name(package_uri)
 
     installing_msg = f"Installing {package_uri}..."
@@ -98,11 +98,10 @@ def install(
     )
 
     try:
-        if has_rc_file:
+        if rc_file_exists:
             # if we do want to remote then we don't want to install local models
             use_remote_endpoint = (
-                Credentials.from_rc_file(cli_logger).use_remote_inferencing
-                and module_has_endpoint
+                RC.load(cli_logger).use_remote_inferencing and module_has_endpoint
             )
         elif install_local_models is None and module_has_endpoint:
             install_local_models = install_local_models_confirm()

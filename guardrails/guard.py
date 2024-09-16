@@ -32,9 +32,9 @@ from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
+from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
@@ -259,6 +259,7 @@ class Guard(IGuard, Generic[OT]):
             self._set_num_reasks(num_reasks)
         if tracer:
             self._set_tracer(tracer)
+        self._load_rc()
         self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
@@ -285,24 +286,26 @@ class Guard(IGuard, Generic[OT]):
         set_tracer_context()
         self._tracer_context = get_tracer_context()
 
+    def _load_rc(self) -> None:
+        rc = RC.load(logger)
+        settings.rc = rc
+
     def _configure_hub_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
-        credentials = None
-        if allow_metrics_collection is None:
-            credentials = Credentials.from_rc_file(logger)
-            # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.enable_metrics is True
+        allow_metrics_collection = (
+            settings.rc.enable_metrics is True
+            if allow_metrics_collection is None
+            else allow_metrics_collection
+        )
 
         self._allow_metrics_collection = allow_metrics_collection
 
-        if allow_metrics_collection:
-            if not credentials:
-                credentials = Credentials.from_rc_file(logger)
-            # Get unique id of user from credentials
-            self._user_id = credentials.id or ""
+        if allow_metrics_collection is True:
+            # Get unique id of user from rc file
+            self._user_id = settings.rc.id or ""
             # Initialize Hub Telemetry singleton and get the tracer
-            self._hub_telemetry = HubTelemetry()
+            self._hub_telemetry = HubTelemetry(enabled=True)
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
@@ -920,6 +923,7 @@ class Guard(IGuard, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    # @trace(name="Guard.__call__")
     def __call__(
         self,
         llm_api: Optional[Callable] = None,

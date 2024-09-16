@@ -9,16 +9,17 @@ from collections import defaultdict
 from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing_extensions import deprecated
 from warnings import warn
 
 import nltk
 import requests
 from langchain_core.runnables import Runnable
 
+from guardrails.settings import settings
 from guardrails.classes import ErrorSpan  # noqa
 from guardrails.classes import PassResult  # noqa
 from guardrails.classes import FailResult, ValidationResult
-from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
@@ -79,22 +80,25 @@ class Validator:
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
-        self.creds = Credentials.from_rc_file()
-        self._disable_telemetry = self.creds.enable_metrics is not True
+        self._disable_telemetry = settings.rc.enable_metrics is not True
         if not self._disable_telemetry:
-            self._hub_telemetry = HubTelemetry()
+            self._hub_telemetry = HubTelemetry(enabled=settings.rc.enable_metrics)
 
         self.use_local = kwargs.get("use_local", None)
         self.validation_endpoint = kwargs.get("validation_endpoint", None)
-        if not self.creds:
+        # NOTE: I think this is an evergreen check
+        # We should test w/o an rc file,
+        #   and if this doesn't raise then we should remove this.
+        if not settings.rc:
             raise ValueError(
-                "No credentials found. Please run `guardrails configure` and try again."
+                "No .guardrailsrc file found."
+                " Please run `guardrails configure` and try again."
             )
-        self.hub_jwt_token = get_jwt_token(self.creds)
+        self.hub_jwt_token = get_jwt_token(settings.rc)
 
         # If use_local is not set, we can fall back to the setting determined in CLI
         if self.use_local is None:
-            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+            self.use_local = not remote_inference.get_use_remote_inference(settings.rc)
 
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
@@ -132,6 +136,18 @@ class Validator:
         assert (
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
+
+    @deprecated(
+        (
+            "The `creds` attribute is deprecated and will be removed in version 0.6.x."
+            " Use `settings.rc` instead."
+        )
+    )
+    @property
+    def creds(self):
+        from guardrails.classes.credentials import Credentials
+
+        return Credentials.from_rc_file()
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.
@@ -411,6 +427,7 @@ class Validator:
 
         return ValidatorRunnable(self)
 
+    # TODO: Move and Remove this
     def _log_telemetry(self) -> None:
         """Logs telemetry after the validator is called."""
 

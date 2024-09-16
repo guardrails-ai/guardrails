@@ -23,3 +23,11 @@ def to_string(v: Any) -> Optional[str]:
         return str_value
     except Exception:
         return None
+
+
+def to_bool(value: str) -> Optional[bool]:
+    if value.lower() == "true":
+        return True
+    if value.lower() == "false":
+        return False
+    return None

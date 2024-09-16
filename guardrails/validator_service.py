@@ -155,7 +155,7 @@ class ValidatorServiceBase:
         if not self._disable_tracer:
             # Get HubTelemetry singleton and create a new span to
             # log the validator usage
-            _hub_telemetry = HubTelemetry()
+            _hub_telemetry = HubTelemetry(enabled=True)
             _hub_telemetry.create_new_span(
                 span_name="/validator_usage",
                 attributes=[

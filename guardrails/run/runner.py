@@ -156,7 +156,7 @@ class Runner:
 
         if not self._disable_tracer:
             # Get the HubTelemetry singleton
-            self._hub_telemetry = HubTelemetry()
+            self._hub_telemetry = HubTelemetry(enabled=True)
 
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget

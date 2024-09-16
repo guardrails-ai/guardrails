@@ -1,5 +1,6 @@
 # Imports
 import logging
+from typing import Optional
 
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
@@ -23,18 +24,23 @@ class HubTelemetry:
     _tracer = None
     _prop = None
     _carrier = {}
+    _enabled = False
 
     def __new__(
         cls,
         service_name: str = "guardrails-hub",
         tracer_name: str = "gr_hub",
         export_locally: bool = False,
+        *,
+        enabled: Optional[bool] = False,
     ):
         if cls._instance is None:
             logging.debug("Creating HubTelemetry instance...")
             cls._instance = super(HubTelemetry, cls).__new__(cls)
             logging.debug("Initializing HubTelemetry instance...")
-            cls._instance.initialize_tracer(service_name, tracer_name, export_locally)
+            cls._instance.initialize_tracer(
+                service_name, tracer_name, export_locally, enabled=enabled
+            )
         else:
             logging.debug("Returning existing HubTelemetry instance...")
         return cls._instance
@@ -44,9 +50,12 @@ class HubTelemetry:
         service_name: str,
         tracer_name: str,
         export_locally: bool,
+        *,
+        enabled: Optional[bool] = False,
     ):
         """Initializes a tracer for Guardrails Hub."""
 
+        self._enabled = enabled
         self._service_name = service_name
         # self._endpoint = "http://localhost:4318/v1/traces"
         self._endpoint = (
