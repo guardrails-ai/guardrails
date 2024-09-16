@@ -64,6 +64,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
@@ -738,42 +739,6 @@ class Guard(IGuard, Generic[OT]):
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
 
-            if self._allow_metrics_collection and self._hub_telemetry:
-                # Create a new span for this guard call
-                llm_api_str = ""
-                if llm_api:
-                    llm_api_module_name = (
-                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                    )
-                    llm_api_name = (
-                        llm_api.__name__
-                        if hasattr(llm_api, "__name__")
-                        else type(llm_api).__name__
-                    )
-                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_call",
-                    attributes=[
-                        ("guard_id", self.id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api_str if llm_api_str else "None"),
-                        (
-                            "custom_reask_prompt",
-                            self._exec_opts.reask_prompt is not None,
-                        ),
-                        (
-                            "custom_reask_instructions",
-                            self._exec_opts.reask_instructions is not None,
-                        ),
-                        (
-                            "custom_reask_messages",
-                            self._exec_opts.reask_messages is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
-
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
             set_tracer_context(self._tracer_context)
@@ -923,7 +888,7 @@ class Guard(IGuard, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
-    # @trace(name="Guard.__call__")
+    @trace(name="/guard_call", origin="Guard.__call__")
     def __call__(
         self,
         llm_api: Optional[Callable] = None,
@@ -982,6 +947,7 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
+    @trace(name="/guard_call", origin="Guard.parse")
     def parse(
         self,
         llm_output: str,
@@ -1158,6 +1124,7 @@ class Guard(IGuard, Generic[OT]):
         self._save()
         return self
 
+    @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
         return self.parse(llm_output=llm_output, *args, **kwargs)
 

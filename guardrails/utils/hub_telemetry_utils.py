@@ -23,7 +23,6 @@ class HubTelemetry:
     _processor = None
     _tracer = None
     _prop = None
-    _carrier = {}
     _enabled = False
 
     def __new__(
@@ -56,6 +55,7 @@ class HubTelemetry:
         """Initializes a tracer for Guardrails Hub."""
 
         self._enabled = enabled
+        self._carrier = {}
         self._service_name = service_name
         # self._endpoint = "http://localhost:4318/v1/traces"
         self._endpoint = (
