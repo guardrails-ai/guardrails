@@ -28,6 +28,7 @@ class Settings:
     def _initialize(self):
         self.use_server = None
         self.disable_tracing = None
+        self._rc = RC.load()
 
     @property
     def rc(self) -> RC:

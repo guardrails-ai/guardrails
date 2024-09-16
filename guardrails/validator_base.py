@@ -137,13 +137,13 @@ class Validator:
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
+    @property
     @deprecated(
         (
             "The `creds` attribute is deprecated and will be removed in version 0.6.x."
             " Use `settings.rc` instead."
         )
     )
-    @property
     def creds(self):
         from guardrails.classes.credentials import Credentials
 

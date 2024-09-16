@@ -63,7 +63,6 @@ class RC(Serializeable):
                 no_metrics_val = config.pop("no_metrics", None)
                 if no_metrics_val is not None and config.get("enable_metrics") is None:
                     config["enable_metrics"] = not no_metrics_val
-                    del config["no_metrics"]
 
                 rc = cls.from_dict(config)
                 return rc
