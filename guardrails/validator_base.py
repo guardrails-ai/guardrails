@@ -145,9 +145,9 @@ class Validator:
         )
     )
     def creds(self):
-        from guardrails.classes.credentials import Credentials
+        from guardrails.classes.credentials import Credentials  # type: ignore
 
-        return Credentials.from_rc_file()
+        return Credentials.from_rc_file()  # type: ignore
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.

@@ -33,9 +33,9 @@ class Credentials(RC):
         return RC.exists()
 
     @staticmethod
-    def from_rc_file(logger: Optional[logging.Logger] = None) -> "Credentials":
+    def from_rc_file(logger: Optional[logging.Logger] = None) -> "Credentials":  # type: ignore
         rc = RC.load(logger)
-        return Credentials(
+        return Credentials(  # type: ignore
             id=rc.id,
             token=rc.token,
             enable_metrics=rc.enable_metrics,
