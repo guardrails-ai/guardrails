@@ -3,6 +3,8 @@
 #   - [ ] Maintain validator_base.py for exports but deprecate them
 #   - [ ] Remove validator_base.py in 0.6.x
 
+import asyncio
+from functools import partial
 import inspect
 import logging
 from collections import defaultdict
@@ -10,6 +12,7 @@ from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from warnings import warn
+import warnings
 
 import nltk
 import requests
@@ -24,6 +27,7 @@ from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
 from guardrails.types.on_fail import OnFailAction
+from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
 #   See: https://github.com/guardrails-ai/guardrails/issues/829
@@ -76,7 +80,7 @@ class Validator:
 
     def __init__(
         self,
-        on_fail: Optional[Union[Callable, OnFailAction]] = None,
+        on_fail: Optional[Union[Callable[[Any, FailResult], Any], OnFailAction]] = None,
         **kwargs,
     ):
         self.creds = Credentials.from_rc_file()
@@ -124,7 +128,8 @@ class Validator:
             )
             self.on_fail_method = None
         else:
-            self.on_fail_method = on_fail
+            self.on_fail_descriptor = OnFailAction.CUSTOM
+            self._set_on_fail_method(on_fail)
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -132,6 +137,31 @@ class Validator:
         assert (
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
+
+    def _set_on_fail_method(self, on_fail: Callable[[Any, FailResult], Any]):
+        """Set the on_fail method for the validator."""
+        on_fail_args = inspect.getfullargspec(on_fail)
+        second_arg = safe_get(on_fail_args.args, 1)
+        if second_arg is None:
+            raise ValueError(
+                "The on_fail method must take two arguments: "
+                "the value being validated and the FailResult."
+            )
+        second_arg_type = on_fail_args.annotations.get(second_arg)
+        if second_arg_type == List[FailResult]:
+            warnings.warn(
+                "Specifying a List[FailResult] as the second argument"
+                " for a custom on_fail handler is deprecated. "
+                "Please use FailResult instead.",
+                DeprecationWarning,
+            )
+
+            def on_fail_wrapper(value: Any, fail_result: FailResult) -> Any:
+                return on_fail(value, [fail_result])  # type: ignore
+
+            self.on_fail_method = on_fail_wrapper
+        else:
+            self.on_fail_method = on_fail
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.
@@ -173,6 +203,19 @@ class Validator:
         validation_result = self._validate(value, metadata)
         self._log_telemetry()
         return validation_result
+
+    async def async_validate(
+        self, value: Any, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        """Use this function if your validation logic requires asyncio.
+
+        Guaranteed to work with AsyncGuard
+
+        May not work with synchronous Guards if they are used within an
+        async context     due to lack of available event loops.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.validate, value, metadata)
 
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
@@ -254,6 +297,15 @@ class Validator:
                 ]
 
         return validation_result
+
+    async def async_validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Optional[ValidationResult]:
+        loop = asyncio.get_event_loop()
+        validate_stream_partial = partial(
+            self.validate_stream, chunk, metadata, **kwargs
+        )
+        return await loop.run_in_executor(None, validate_stream_partial)
 
     def _hub_inference_request(
         self, request_body: Union[dict, str], validation_endpoint: str
@@ -343,12 +395,12 @@ class Validator:
     def __call__(self, value):
         result = self.validate(value, {})
         if isinstance(result, FailResult):
-            from guardrails.validator_service import ValidatorServiceBase
+            from guardrails.validator_service.validator_service_base import (
+                ValidatorServiceBase,
+            )
 
             validator_service = ValidatorServiceBase()
-            return validator_service.perform_correction(
-                [result], value, self, self.on_fail_descriptor
-            )
+            return validator_service.perform_correction(result, value, self)
         return value
 
     def __eq__(self, other):

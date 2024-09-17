@@ -24,6 +24,7 @@ def mock_span():
 def mock_guard_hub_telemetry():
     with patch("guardrails.guard.HubTelemetry") as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
+        MockHubTelemetry.return_value.to_dict = None
         yield MockHubTelemetry
 
 
@@ -31,13 +32,17 @@ def mock_guard_hub_telemetry():
 def mock_validator_base_hub_telemetry():
     with patch("guardrails.validator_base.HubTelemetry") as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
+        MockHubTelemetry.return_value.to_dict = None
         yield MockHubTelemetry
 
 
 @pytest.fixture(autouse=True)
 def mock_validator_service_hub_telemetry():
-    with patch("guardrails.validator_service.HubTelemetry") as MockHubTelemetry:
+    with patch(
+        "guardrails.validator_service.validator_service_base.HubTelemetry"
+    ) as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
+        MockHubTelemetry.return_value.to_dict = None
         yield MockHubTelemetry
 
 
@@ -45,6 +50,7 @@ def mock_validator_service_hub_telemetry():
 def mock_runner_hub_telemetry():
     with patch("guardrails.run.runner.HubTelemetry") as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
+        MockHubTelemetry.return_value.to_dict = None
         yield MockHubTelemetry
 
 

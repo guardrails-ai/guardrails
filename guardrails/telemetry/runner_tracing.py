@@ -17,8 +17,9 @@ from guardrails.settings import settings
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
-from guardrails.telemetry.common import get_tracer, serialize
+from guardrails.telemetry.common import get_tracer
 from guardrails.utils.safe_get import safe_get
+from guardrails.utils.serialization_utils import serialize
 from guardrails.version import GUARDRAILS_VERSION
 
 
