@@ -107,7 +107,7 @@ The Guardrails validation loop is opinionated about how it handles failures when
     
     \*_NOTE:_ `FIX_REASK` Will fall into either the `REASK` or `FIX` bucket based on if the fixed value passes the second round of validation.
 
-This means that if any valdiator with `on_fail=OnFailAction.EXCEPTION` returns a `FailResult`, then Guardrails will raise a `ValidationError` interrupting the process.
+This means that if any validator with `on_fail=OnFailAction.EXCEPTION` returns a `FailResult`, then Guardrails will raise a `ValidationError` interrupting the process.
 
 If any validator on a specific property which has `on_fail=OnFailAction.FILTER` or `on_fail=OnFailAction.REFRAIN` returns a `FailResult`, whichever of these is the first to finish will the returned early as the value for that property,
 
