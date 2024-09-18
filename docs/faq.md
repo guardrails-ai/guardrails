@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-## I get an "Unauthorized" error when isntalling validators from the Guardrails hub. What should I do?
+## I get an "Unauthorized" error when installing validators from the Guardrails Hub. What should I do?
 
 If you see an "Unauthorized" error when installing validators from the Guardrails hub, it means that the API key you are using is not authorized to access the Guardrails hub. It may be unset or expired. 
 
