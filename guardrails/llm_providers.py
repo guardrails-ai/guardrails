@@ -27,10 +27,10 @@ from guardrails.classes.llm.prompt_callable import (
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,
-    get_static_openai_acreate_func,
-    get_static_openai_chat_acreate_func,
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
+    is_static_openai_acreate_func,
+    is_static_openai_chat_acreate_func,
+    is_static_openai_chat_create_func,
+    is_static_openai_create_func,
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 from guardrails.utils.safe_get import safe_get
@@ -784,9 +784,9 @@ def get_llm_ask(
     except ImportError:
         pass
 
-    if llm_api == get_static_openai_create_func():
+    if is_static_openai_create_func(llm_api):
         return OpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_create_func():
+    if is_static_openai_chat_create_func(llm_api):
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -1252,9 +1252,12 @@ def get_async_llm_ask(
         pass
 
     # these only work with openai v0 (None otherwise)
-    if llm_api == get_static_openai_acreate_func():
+    # We no longer support OpenAI v0
+    # We should drop these checks or update the logic to support
+    #   OpenAI v1 clients instead of just static methods
+    if is_static_openai_acreate_func(llm_api):
         return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_acreate_func():
+    if is_static_openai_chat_acreate_func(llm_api):
         return AsyncOpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -1293,13 +1296,13 @@ def get_llm_api_enum(
 ) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
-    if llm_api == get_static_openai_create_func():
+    if is_static_openai_create_func(llm_api):
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
-    elif llm_api == get_static_openai_chat_create_func():
+    elif is_static_openai_chat_create_func(llm_api):
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
-    elif llm_api == get_static_openai_acreate_func():
+    elif is_static_openai_acreate_func(llm_api):  # This is always False
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
-    elif llm_api == get_static_openai_chat_acreate_func():
+    elif is_static_openai_chat_acreate_func(llm_api):  # This is always False
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
     elif isinstance(model, LiteLLMCallable):
         return LLMResource.LITELLM_DOT_COMPLETION

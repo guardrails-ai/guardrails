@@ -2,16 +2,13 @@ import json
 from datetime import date, time
 from typing import List, Literal, Union
 
+import openai
 import pytest
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import guardrails as gd
 from guardrails import Validator, register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import (
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
-)
 from guardrails.types import OnFailAction
 from guardrails.classes.validation.validation_result import (
     FailResult,
@@ -131,7 +128,7 @@ def test_python_rail(mocker):
 
     # Guardrails runs validation and fixes the first failing output through reasking
     final_output = guard(
-        get_static_openai_chat_create_func(),
+        openai.chat.completions.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
         full_schema_reask=False,
@@ -202,7 +199,7 @@ ${ingredients}
         instructions=instructions,
     )
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,

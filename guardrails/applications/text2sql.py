@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import openai
 from string import Template
 from typing import Callable, Dict, Optional, Type, cast
 
@@ -8,7 +9,6 @@ from guardrails.classes import ValidationOutcome
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
-from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.utils.sql_utils import create_sql_driver
 from guardrails.vectordb import Faiss, VectorDBBase
 
@@ -89,7 +89,7 @@ class Text2Sql:
             reask_prompt: Prompt to use for reasking. Defaults to REASK_PROMPT.
         """
         if llm_api is None:
-            llm_api = get_static_openai_create_func()
+            llm_api = openai.completions.create
 
         self.example_formatter = example_formatter
         self.llm_api = llm_api

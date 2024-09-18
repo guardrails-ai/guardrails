@@ -1,11 +1,10 @@
 from typing import Dict
-
+import openai
 import pytest
 
 import guardrails as gd
 from guardrails import register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import OnFailAction
 from guardrails.classes.validation.validation_result import FailResult, ValidationResult
 
@@ -149,7 +148,7 @@ def test_reask_prompt_instructions(mocker):
 
     guard.parse(
         llm_output="Tomato Cheese Pizza",
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         msg_history=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},

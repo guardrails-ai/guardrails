@@ -1,16 +1,13 @@
 import json
 import re
 from typing import Any, Dict, List
-
+import openai
 import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard, Validator, register_validator
 from guardrails.async_guard import AsyncGuard
 from guardrails.errors import ValidationError
-from guardrails.utils.openai_utils import (
-    get_static_openai_create_func,
-)
 from guardrails.actions.reask import FieldReAsk
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.filter import Filter
@@ -771,10 +768,10 @@ This also is not two words
     [
         (
             OnFailAction.REASK,
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
             "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
             "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='This is', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='This is', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
             "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='This also', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
         ),
         (
@@ -818,11 +815,6 @@ async def test_input_validation_fail_async(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"
         )
-
-    mocker.patch(
-        "guardrails.llm_providers.get_static_openai_acreate_func",
-        return_value=custom_llm,
-    )
 
     # with_prompt_validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
@@ -944,7 +936,7 @@ def test_input_validation_mismatch_raise():
 
     with pytest.raises(ValueError):
         guard(
-            get_static_openai_create_func(),
+            openai.completions.create,
             msg_history=[
                 {
                     "role": "user",
@@ -959,7 +951,7 @@ def test_input_validation_mismatch_raise():
 
     with pytest.raises(ValueError):
         guard(
-            get_static_openai_create_func(),
+            openai.completions.create,
             msg_history=[
                 {
                     "role": "user",
@@ -974,6 +966,6 @@ def test_input_validation_mismatch_raise():
 
     with pytest.raises(ValueError):
         guard(
-            get_static_openai_create_func(),
+            openai.completions.create,
             prompt="What kind of pet should I get?",
         )
