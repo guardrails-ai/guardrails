@@ -1,5 +1,6 @@
 import json
 from typing import Any, Callable, Dict, Optional, Union
+from opentelemetry.baggage import get_baggage
 from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import Tracer, Span
@@ -103,3 +104,23 @@ def wrap_with_otel_context(
             context.detach(token)
 
     return wrapped_func
+
+
+def add_user_attributes(span: Span):
+    try:
+        client_ip = get_baggage("client.ip") or "unknown"
+        user_agent = get_baggage("http.user_agent") or "unknown"
+        referrer = get_baggage("http.referrer") or "unknown"
+        user_id = get_baggage("user.id") or "unknown"
+        organization = get_baggage("organization") or "unknown"
+        app = get_baggage("app") or "unknown"
+
+        span.set_attribute("client.ip", client_ip)
+        span.set_attribute("http.user_agent", user_agent)
+        span.set_attribute("http.referrer", referrer)
+        span.set_attribute("user.id", user_id)
+        span.set_attribute("organization", organization)
+        span.set_attribute("app", app)
+    except Exception as e:
+        logger.warning("Error loading baggage user information", e)
+        pass
