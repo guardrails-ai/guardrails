@@ -9,6 +9,7 @@ from guardrails.classes.validation.validation_result import (
     PassResult,
     ValidationResult,
 )
+from guardrails.telemetry.hub_tracing import async_trace
 from guardrails.telemetry.validator_tracing import trace_async_validator
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.classes.validation.validator_logs import ValidatorLogs
@@ -23,6 +24,9 @@ ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 
 
 class AsyncValidatorService(ValidatorServiceBase):
+    @async_trace(
+        name="/validator_usage", origin="AsyncValidatorService.execute_validator"
+    )
     async def execute_validator(
         self,
         validator: Validator,
