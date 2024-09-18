@@ -291,7 +291,7 @@ for chunk in stream_chunk_generator
 See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.
 
 ## Custom LLM Wrappers
-In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that takes accepts a prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
+In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that accepts a positional argument for the prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
 
 ```python
 from guardrails import Guard
