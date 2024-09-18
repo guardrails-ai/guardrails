@@ -304,7 +304,7 @@ guard = Guard().use(ProfanityFree())
 def my_llm_api(
     prompt: Optional[str] = None,
     *,
-    instruction: Optional[str] = None,
+    instructions: Optional[str] = None,
     msg_history: Optional[list[dict]] = None,
     **kwargs
 ) -> str:
@@ -324,7 +324,7 @@ def my_llm_api(
 
     # Call your LLM API here
     # What you pass to the llm will depend on what arguments it accepts.
-    llm_output = some_llm(prompt, instruction, msg_history, **kwargs)
+    llm_output = some_llm(prompt, instructions, msg_history, **kwargs)
 
     return llm_output
 
