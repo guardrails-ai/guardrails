@@ -3,7 +3,7 @@ import importlib
 import json
 import os
 import openai
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
@@ -877,7 +877,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
         OneLine.run_in_separate_process = separate_proc_bak
 
 
-def test_enum_datatype():
+def test_enum_datatype(mocker):
     class TaskStatus(enum.Enum):
         not_started = "not started"
         on_hold = "on hold"
@@ -886,16 +886,29 @@ def test_enum_datatype():
     class Task(BaseModel):
         status: TaskStatus
 
+    return_value = pydantic.LLM_OUTPUT_ENUM
+
+    def custom_llm(
+        prompt: Optional[str] = None,
+        *args,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict[str, str]]] = None,
+        **kwargs,
+    ) -> str:
+        nonlocal return_value
+        return return_value
+
     guard = gd.Guard.from_pydantic(Task)
     _, dict_o, *rest = guard(
-        lambda *args, **kwargs: pydantic.LLM_OUTPUT_ENUM,
+        custom_llm,
         prompt="What is the status of this task?",
     )
     assert dict_o == {"status": "not started"}
 
+    return_value = pydantic.LLM_OUTPUT_ENUM_2
     guard = gd.Guard.from_pydantic(Task)
     result = guard(
-        lambda *args, **kwargs: pydantic.LLM_OUTPUT_ENUM_2,
+        custom_llm,
         prompt="What is the status of this task REALLY?",
         num_reasks=0,
     )
@@ -1441,5 +1454,198 @@ class TestValidatorInitializedOnce:
         assert init_spy.call_count == 1
 
 
+# These tests are descriptive not prescriptive.
+# The method signature for custom LLM APIs needs to be updated to make more sense.
+# With 0.6.0 we can drop the baggage of
+#   the prompt and instructions and just pass in the messages.
 class TestCustomLLMApi:
-    pass
+    def test_with_prompt(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            prompt="Can you generate a list of 10 things that are not food?",
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            "Can you generate a list of 10 things that are not food?",
+            instructions=None,
+            msg_history=None,
+            temperature=0,
+        )
+
+    def test_with_prompt_and_instructions(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            prompt="Can you generate a list of 10 things that are not food?",
+            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            "Can you generate a list of 10 things that are not food?",
+            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
+            msg_history=None,
+            temperature=0,
+        )
+
+    def test_with_msg_history(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            None,
+            instructions=None,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            temperature=0,
+        )
+
+    def test_with_messages(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            None,
+            instructions=None,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            temperature=0,
+        )

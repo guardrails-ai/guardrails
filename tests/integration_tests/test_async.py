@@ -3,6 +3,7 @@ import pytest
 from guardrails import AsyncGuard, Prompt
 from guardrails.utils import docs_utils
 from guardrails.classes.llm.llm_response import LLMResponse
+from tests.integration_tests.test_assets.custom_llm import mock_async_llm
 from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_llm_output,
     fixture_rail_spec,
@@ -10,10 +11,6 @@ from tests.integration_tests.test_assets.fixtures import (  # noqa
 )
 
 from .mock_llm_outputs import entity_extraction
-
-
-async def mock_llm(*args, **kwargs):
-    return ""
 
 
 @pytest.mark.asyncio
@@ -45,7 +42,7 @@ async def test_entity_extraction_with_reask(mocker):
     preprocess_prompt_spy = mocker.spy(async_runner, "preprocess_prompt")
 
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -104,7 +101,7 @@ async def test_entity_extraction_with_noop(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -151,7 +148,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
         prompt=entity_extraction.PYDANTIC_PROMPT,
     )
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -192,7 +189,7 @@ async def test_entity_extraction_with_filter(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -232,7 +229,7 @@ async def test_entity_extraction_with_fix(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -269,7 +266,7 @@ async def test_entity_extraction_with_refrain(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
     final_output = await guard(
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -295,7 +292,7 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     guard = AsyncGuard.from_rail_string(rail_spec)
     output = await guard.parse(
         llm_output,
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
     )
     assert output.validated_output == validated_output
 
@@ -334,7 +331,7 @@ async def test_string_rail_spec_output_parse(
     guard: AsyncGuard = AsyncGuard.from_rail_string(string_rail_spec)
     output = await guard.parse(
         string_llm_output,
-        llm_api=mock_llm,
+        llm_api=mock_async_llm,
         num_reasks=0,
     )
     assert output.validated_output == validated_string_output

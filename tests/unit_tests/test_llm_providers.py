@@ -13,6 +13,7 @@ from guardrails.llm_providers import (
     LLMResponse,
     PromptCallableException,
     chat_prompt,
+    get_async_llm_ask,
     get_llm_ask,
 )
 from guardrails.utils.safe_get import safe_get_with_brackets
@@ -401,7 +402,9 @@ def test_litellm_callable(mocker):
 
 
 class ReturnTempCallable(Callable):
-    def __call__(*args, **kwargs) -> Any:
+    def __call__(
+        self, prompt: str, *args, instructions=None, msg_history=None, **kwargs
+    ) -> Any:
         return ""
 
 
@@ -589,6 +592,112 @@ def test_get_llm_ask_litellm():
     prompt_callable = get_llm_ask(completion)
 
     assert isinstance(prompt_callable, LiteLLMCallable)
+
+
+def test_get_llm_ask_custom_llm():
+    from guardrails.llm_providers import ArbitraryCallable
+
+    def my_llm(prompt: str, *, instructions=None, msg_history=None, **kwargs) -> str:
+        return f"Hello {prompt}!"
+
+    prompt_callable = get_llm_ask(my_llm)
+
+    assert isinstance(prompt_callable, ArbitraryCallable)
+
+
+def test_get_llm_ask_custom_llm_warning():
+    from guardrails.llm_providers import ArbitraryCallable
+
+    def my_llm(prompt: str, **kwargs) -> str:
+        return f"Hello {prompt}!"
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "We recommend including 'instructions' and 'msg_history'"
+            " as keyword-only arguments for custom LLM callables."
+            " Doing so ensures these arguments are not uninentionally"
+            " passed through to other calls via \\*\\*kwargs."
+        ),
+    ):
+        prompt_callable = get_llm_ask(my_llm)
+
+        assert isinstance(prompt_callable, ArbitraryCallable)
+
+
+def test_get_llm_ask_custom_llm_must_accept_prompt():
+    def my_llm() -> str:
+        return "Hello!"
+
+    with pytest.raises(
+        ValueError,
+        match="Custom LLM callables must accept at least one positional argument for prompt!",  # noqa
+    ):
+        get_llm_ask(my_llm)
+
+
+def test_get_llm_ask_custom_llm_must_accept_kwargs():
+    def my_llm(prompt: str) -> str:
+        return f"Hello {prompt}!"
+
+    with pytest.raises(
+        ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"
+    ):
+        get_llm_ask(my_llm)
+
+
+def test_get_async_llm_ask_custom_llm():
+    from guardrails.llm_providers import AsyncArbitraryCallable
+
+    async def my_llm(
+        prompt: str, *, instructions=None, msg_history=None, **kwargs
+    ) -> str:
+        return f"Hello {prompt}!"
+
+    prompt_callable = get_async_llm_ask(my_llm)
+
+    assert isinstance(prompt_callable, AsyncArbitraryCallable)
+
+
+def test_get_async_llm_ask_custom_llm_warning():
+    from guardrails.llm_providers import AsyncArbitraryCallable
+
+    async def my_llm(prompt: str, **kwargs) -> str:
+        return f"Hello {prompt}!"
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "We recommend including 'instructions' and 'msg_history'"
+            " as keyword-only arguments for custom LLM callables."
+            " Doing so ensures these arguments are not uninentionally"
+            " passed through to other calls via \\*\\*kwargs."
+        ),
+    ):
+        prompt_callable = get_async_llm_ask(my_llm)
+
+        assert isinstance(prompt_callable, AsyncArbitraryCallable)
+
+
+def test_get_async_llm_ask_custom_llm_must_accept_prompt():
+    async def my_llm() -> str:
+        return "Hello!"
+
+    with pytest.raises(
+        ValueError,
+        match="Custom LLM callables must accept at least one positional argument for prompt!",  # noqa
+    ):
+        get_async_llm_ask(my_llm)
+
+
+def test_get_async_llm_ask_custom_llm_must_accept_kwargs():
+    def my_llm(prompt: str) -> str:
+        return f"Hello {prompt}!"
+
+    with pytest.raises(
+        ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"
+    ):
+        get_async_llm_ask(my_llm)
 
 
 def test_chat_prompt():

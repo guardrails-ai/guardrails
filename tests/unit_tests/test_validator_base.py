@@ -421,7 +421,7 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    def mock_llm_api(*args, **kwargs):
+    def mock_llm_api(prompt, *args, instructions=None, msg_history=None, **kwargs):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
@@ -514,7 +514,9 @@ This also is not two words
 
 @pytest.mark.asyncio
 async def test_async_input_validation_fix(mocker):
-    async def mock_llm_api(*args, **kwargs):
+    async def mock_llm_api(
+        prompt, *args, instructions=None, msg_history=None, **kwargs
+    ) -> str:
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
@@ -660,7 +662,7 @@ def test_input_validation_fail(
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="prompt")
 
-    def custom_llm(*args, **kwargs):
+    def custom_llm(prompt, *args, instructions=None, msg_history=None, **kwargs):
         raise Exception(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"
@@ -810,7 +812,9 @@ async def test_input_validation_fail_async(
     unstructured_prompt_error,
     unstructured_instructions_error,
 ):
-    async def custom_llm(*args, **kwargs):
+    async def custom_llm(
+        prompt, *args, instructions=None, msg_history=None, **kwargs
+    ) -> str:
         raise Exception(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"
