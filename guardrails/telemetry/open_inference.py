@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from guardrails.telemetry.common import get_span, serialize, to_dict
+from guardrails.telemetry.common import get_span, to_dict
+from guardrails.utils.serialization_utils import serialize
 
 
 def trace_operation(

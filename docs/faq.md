@@ -58,7 +58,7 @@ You can override the `fix` behavior by passing it as a function to the Guard obj
 ```python
 from guardrails import Guard
 
-def fix_is_cake(value, metadata):
+def fix_is_cake(value, fail_result: FailResult):
     return "IT IS cake"
 
 guard = Guard().use(is_cake, on_fail=fix_is_cake)
