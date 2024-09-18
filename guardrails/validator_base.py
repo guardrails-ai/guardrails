@@ -24,6 +24,7 @@ from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
+from guardrails.telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
@@ -187,9 +188,9 @@ class Validator:
         validation requirements, logic, or pre/post processing.
         """
         validation_result = self._validate(value, metadata)
-        self._log_telemetry()
         return validation_result
 
+    @trace(name="/validator_inference", origin="Validator._inference")
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
         validation call.
@@ -426,30 +427,6 @@ class Validator:
         )
 
         return ValidatorRunnable(self)
-
-    # TODO: Move and Remove this
-    def _log_telemetry(self) -> None:
-        """Logs telemetry after the validator is called."""
-
-        if not self._disable_telemetry:
-            # Get HubTelemetry singleton and create a new span to
-            # log the validator inference
-            used_guardrails_endpoint = (
-                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
-            )
-            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
-            self._hub_telemetry.create_new_span(
-                span_name="/validator_inference",
-                attributes=[
-                    ("validator_name", self.rail_alias),
-                    ("used_remote_inference", not self.use_local),
-                    ("used_local_inference", self.use_local),
-                    ("used_guardrails_endpoint", used_guardrails_endpoint),
-                    ("used_custom_endpoint", used_custom_endpoint),
-                ],
-                is_parent=False,  # This span will have no children
-                has_parent=True,  # This span has a parent
-            )
 
 
 V = TypeVar("V", bound=Validator, covariant=True)

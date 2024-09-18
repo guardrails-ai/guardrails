@@ -19,6 +19,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
+from guardrails.telemetry.hub_tracing import trace
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -158,6 +159,7 @@ class Runner:
             # Get the HubTelemetry singleton
             self._hub_telemetry = HubTelemetry(enabled=True)
 
+    @trace(name="/reasks", origin="Runner.__call__")
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -222,16 +224,6 @@ class Runner:
                     )
                 )
 
-            # Log how many times we reasked
-            # Use the HubTelemetry singleton
-            if not self._disable_tracer:
-                self._hub_telemetry.create_new_span(
-                    span_name="/reasks",
-                    attributes=[("reask_count", index)],
-                    is_parent=False,  # This span has no children
-                    has_parent=True,  # This span has a parent
-                )
-
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log.exception = e.original_exception
@@ -242,6 +234,7 @@ class Runner:
             raise e
         return call_log
 
+    @trace(name="/step", origin="Runner.step")
     @trace_step
     def step(
         self,
@@ -335,6 +328,7 @@ class Runner:
             raise e
         return iteration
 
+    @trace(name="/input_validation", origin="Runner.validate_msg_history")
     def validate_msg_history(
         self, call_log: Call, msg_history: MessageHistory, attempt_number: int
     ) -> None:
@@ -384,6 +378,7 @@ class Runner:
 
         return formatted_msg_history
 
+    @trace(name="/input_validation", origin="Runner.validate_prompt")
     def validate_prompt(self, call_log: Call, prompt: Prompt, attempt_number: int):
         inputs = Inputs(
             llm_output=prompt.source,
@@ -411,6 +406,7 @@ class Runner:
             raise ValidationError("Prompt validation failed")
         return Prompt(cast(str, validated_prompt))
 
+    @trace(name="/input_validation", origin="Runner.validate_instructions")
     def validate_instructions(
         self, call_log: Call, instructions: Instructions, attempt_number: int
     ):
@@ -477,6 +473,7 @@ class Runner:
 
         return instructions, prompt
 
+    @trace(name="/input_prep", origin="Runner.prepare")
     def prepare(
         self,
         call_log: Call,
@@ -527,6 +524,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
+    @trace(name="/llm_call", origin="Runner.call")
     @trace_call
     def call(
         self,
@@ -572,6 +570,7 @@ class Runner:
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
+    @trace(name="/validation", origin="Runner.validate")
     def validate(
         self,
         iteration: Iteration,

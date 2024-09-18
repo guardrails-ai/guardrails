@@ -13,7 +13,7 @@ from guardrails_hub_types import Manifest
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.hub.utils import get_org_and_package_dirs
 from guardrails.cli.hub.utils import get_hub_directory
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.telemetry.hub_tracing import trace
 
 from .console import console
 
@@ -74,6 +74,7 @@ def uninstall_hub_module(manifest: Manifest, site_packages: str):
         sys.exit(1)
 
 
+@trace(name="guardrails-cli/hub/uninstall", is_parent=True)
 @hub_command.command()
 def uninstall(
     package_uri: str = typer.Argument(
@@ -81,7 +82,6 @@ def uninstall(
     ),
 ):
     """Uninstall a validator from the Hub."""
-    trace_if_enabled("hub/uninstall")
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)

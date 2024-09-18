@@ -3,6 +3,8 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 from opentelemetry.trace import Span
 
+from guardrails.classes.validation.validation_result import ValidationResult
+from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE
 from guardrails.types.primitives import PrimitiveTypes
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -51,21 +53,67 @@ def get_guard_call_attributes(
     return attrs
 
 
+def get_validator_inference_attributes(
+    attrs: Dict[str, Any], *args, **kwargs
+) -> Dict[str, Any]:
+    validator_self = safe_get(args, 0)
+    if validator_self is not None:
+        used_guardrails_endpoint = (
+            VALIDATOR_HUB_SERVICE in validator_self.validation_endpoint
+            and not validator_self.use_local
+        )
+        used_custom_endpoint = (
+            not validator_self.use_local and not used_guardrails_endpoint
+        )
+        attrs["validator_name"] = validator_self.rail_alias
+        attrs["used_remote_inference"] = not validator_self.use_local
+        attrs["used_local_inference"] = validator_self.use_local
+        attrs["used_guardrails_endpoint"] = used_guardrails_endpoint
+        attrs["used_custom_endpoint"] = used_custom_endpoint
+    return attrs
+
+
+def get_validator_usage_attributes(
+    attrs: Dict[str, Any], response, *args, **kwargs
+) -> Dict[str, Any]:
+    validator_self = safe_get(args, 0)
+    if validator_self is not None:
+        attrs["validator_name"] = validator_self.rail_alias
+        attrs["validator_on_fail"] = validator_self.on_fail_descriptor
+
+    if response is not None:
+        attrs["validator_result"] = (
+            response.outcome if isinstance(response, ValidationResult) else None
+        )
+
+    return attrs
+
+
 def add_attributes(
-    span: Span, attrs: Dict[str, Any], name: str, origin: str, *args, **kwargs
+    span: Span, attrs: Dict[str, Any], name: str, origin: str, response, *args, **kwargs
 ):
     attrs["origin"] = origin
     if name == "/guard_call":
         attrs = get_guard_call_attributes(attrs, *args, **kwargs)
+    elif name == "/reasks":
+        if response is not None and hasattr(response, "iterations"):
+            attrs["reask_count"] = len(response.iterations) - 1
+        else:
+            attrs["reask_count"] = 0
+    elif name == "/validator_inference":
+        attrs = get_validator_inference_attributes(attrs, *args, **kwargs)
+    elif name == "/validator_usage":
+        attrs = get_validator_usage_attributes(attrs, response * args, **kwargs)
 
     for key, value in attrs.items():
-        span.set_attribute(key, value)
+        if value is not None:
+            span.set_attribute(key, value)
 
 
 def trace(
     *,
     name: str,
-    origin: str,
+    origin: Optional[str] = None,
     is_parent: Optional[bool] = False,
     **attrs,
 ):
@@ -77,15 +125,20 @@ def trace(
                 context = (
                     hub_telemetry.extract_current_context() if not is_parent else None
                 )
-                with hub_telemetry._tracer.start_as_current_span(
-                    name, context=context
+                with hub_telemetry._tracer.start_span(
+                    name,
+                    context=context,
+                    set_status_on_exception=True,
                 ) as span:  # noqa
                     if is_parent:
                         # Inject the current context
                         hub_telemetry.inject_current_context()
+                    nonlocal origin
+                    origin = origin if origin is not None else name
 
-                    add_attributes(span, attrs, origin, *args, **kwargs)
-                    return fn(*args, **kwargs)
+                    resp = fn(*args, **kwargs)
+                    add_attributes(span, attrs, origin, resp, *args, **kwargs)
+                    return resp
             else:
                 return fn(*args, **kwargs)
 
@@ -97,7 +150,7 @@ def trace(
 def async_trace(
     *,
     name: str,
-    origin: str,
+    origin: Optional[str] = None,
     is_parent: Optional[bool] = False,
 ):
     def decorator(fn: Callable[..., Awaitable[Any]]):
@@ -114,11 +167,98 @@ def async_trace(
                     if is_parent:
                         # Inject the current context
                         hub_telemetry.inject_current_context()
+
+                    nonlocal origin
+                    origin = origin if origin is not None else name
                     add_attributes(span, {"async": True}, origin, *args, **kwargs)
                     return await fn(*args, **kwargs)
             else:
                 return await fn(*args, **kwargs)
 
         return async_wrapper
+
+    return decorator
+
+
+def _run_gen(fn, *args, **kwargs):
+    gen = fn(*args, **kwargs)
+    for item in gen:
+        yield item
+
+
+def trace_stream(
+    *,
+    name: str,
+    origin: Optional[str] = None,
+    is_parent: Optional[bool] = False,
+    **attrs,
+):
+    def decorator(fn: Callable[..., Any]):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            hub_telemetry = HubTelemetry()
+            if hub_telemetry._enabled and hub_telemetry._tracer is not None:
+                context = (
+                    hub_telemetry.extract_current_context() if not is_parent else None
+                )
+                with hub_telemetry._tracer.start_span(
+                    name,
+                    context=context,
+                    set_status_on_exception=True,
+                ) as span:  # noqa
+                    if is_parent:
+                        # Inject the current context
+                        hub_telemetry.inject_current_context()
+
+                    nonlocal origin
+                    origin = origin if origin is not None else name
+                    add_attributes(span, attrs, name, origin, None, *args, **kwargs)
+                    return _run_gen(fn, *args, **kwargs)
+            else:
+                return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+async def _run_async_gen(fn, *args, **kwargs):
+    gen = fn(*args, **kwargs)
+    async for item in gen:
+        yield item
+
+
+def async_trace_stream(
+    *,
+    name: str,
+    origin: Optional[str] = None,
+    is_parent: Optional[bool] = False,
+    **attrs,
+):
+    def decorator(fn: Callable[..., Awaitable[Any]]):
+        @wraps(fn)
+        async def wrapper(*args, **kwargs):
+            hub_telemetry = HubTelemetry()
+            if hub_telemetry._enabled and hub_telemetry._tracer is not None:
+                context = (
+                    hub_telemetry.extract_current_context() if not is_parent else None
+                )
+                with hub_telemetry._tracer.start_span(
+                    name,
+                    context=context,
+                    set_status_on_exception=True,
+                ) as span:  # noqa
+                    if is_parent:
+                        # Inject the current context
+                        hub_telemetry.inject_current_context()
+
+                    nonlocal origin
+                    origin = origin if origin is not None else name
+                    add_attributes(span, attrs, name, origin, None, *args, **kwargs)
+                    return _run_async_gen(fn, *args, **kwargs)
+            else:
+                return fn(*args, **kwargs)
+
+        return wrapper
 
     return decorator

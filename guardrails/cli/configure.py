@@ -78,7 +78,8 @@ def configure(
         help="Clear the existing token from the configuration file.",
     ),
 ):
-    trace_if_enabled("configure")
+    if settings.rc.exists():
+        trace_if_enabled("configure")
     existing_token = _get_default_token()
     last4 = existing_token[-4:] if existing_token else ""
 

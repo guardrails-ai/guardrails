@@ -5,7 +5,7 @@ import typer
 
 from guardrails import Guard
 from guardrails.cli.guardrails import guardrails
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.telemetry.hub_tracing import trace
 
 
 def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, None]:
@@ -15,6 +15,7 @@ def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, No
     return result.validated_output
 
 
+@trace(name="guardrails-cli/validate", is_parent=True)
 @guardrails.command()
 def validate(
     rail: str = typer.Argument(
@@ -29,7 +30,6 @@ def validate(
     ),
 ):
     """Validate the output of an LLM against a `rail` spec."""
-    trace_if_enabled("validate")
     result = validate_llm_output(rail, llm_output)
     # Result is a dictionary, log it to a file
     print(result)

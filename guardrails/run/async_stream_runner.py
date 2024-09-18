@@ -27,9 +27,11 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
+from guardrails.telemetry.hub_tracing import async_trace_stream
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
+    # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> AsyncIterable[ValidationOutcome]:
@@ -63,6 +65,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         async for call in result:
             yield call
 
+    @async_trace_stream(name="/step", origin="AsyncStreamRunner.async_step")
     @trace_async_stream_step
     async def async_step(
         self,

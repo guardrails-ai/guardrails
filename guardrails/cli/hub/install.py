@@ -5,9 +5,10 @@ import typer
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import logger
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.telemetry.hub_tracing import trace
 
 
+@trace(name="guardrails-cli/hub/install", is_parent=True)
 @hub_command.command()
 def install(
     package_uris: List[str] = typer.Argument(
@@ -30,7 +31,6 @@ def install(
     ),
 ):
     try:
-        trace_if_enabled("hub/install")
         from guardrails.hub.install import install_multiple
 
         def confirm():
