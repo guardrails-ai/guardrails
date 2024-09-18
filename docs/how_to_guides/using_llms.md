@@ -289,3 +289,49 @@ for chunk in stream_chunk_generator
 ## Other LLMs
 
 See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.
+
+## Custom LLM Wrappers
+In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that takes accepts a prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
+
+```python
+from guardrails import Guard
+from guardrails.hub import ProfanityFree
+
+# Create a Guard class
+guard = Guard().use(ProfanityFree())
+
+# Function that takes the prompt as a string and returns the LLM output as string
+def my_llm_api(
+    prompt: Optional[str] = None,
+    *,
+    instruction: Optional[str] = None,
+    msg_history: Optional[list[dict]] = None,
+    **kwargs
+) -> str:
+    """Custom LLM API wrapper.
+
+    At least one of prompt, instruction or msg_history should be provided.
+
+    Args:
+        prompt (str): The prompt to be passed to the LLM API
+        instruction (str): The instruction to be passed to the LLM API
+        msg_history (list[dict]): The message history to be passed to the LLM API
+        **kwargs: Any additional arguments to be passed to the LLM API
+
+    Returns:
+        str: The output of the LLM API
+    """
+
+    # Call your LLM API here
+    # What you pass to the llm will depend on what arguments it accepts.
+    llm_output = some_llm(prompt, instruction, msg_history, **kwargs)
+
+    return llm_output
+
+# Wrap your LLM API call
+validated_response = guard(
+    my_llm_api,
+    prompt="Can you generate a list of 10 things that are not food?",
+    **kwargs,
+)
+```
