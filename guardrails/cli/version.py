@@ -13,7 +13,7 @@ def get_guardrails_version():
 
 
 def version_warnings_if_applicable(console: Console):
-    current_version = "0.1.0" or get_guardrails_version()
+    current_version = get_guardrails_version()
 
     with contextlib.suppress(Exception):
         res = requests.get(f"https://pypi.org/pypi/{GUARDRAILS_PACKAGE_NAME}/json")
