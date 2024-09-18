@@ -13,6 +13,13 @@ This document will overview a few of the key features of the Guardrails Server, 
 
 # Walkthrough
 
+## 0. Configure Guardrails
+First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
+
+```bash
+guardrails configure
+```
+
 ## 1. Install the Guardrails Server
 This is done by simply installing the `guardrails-ai` package. See the [installation guide](./quickstart.md) for more information.
 
