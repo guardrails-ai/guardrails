@@ -7,7 +7,6 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Generator,
     Iterator,
     Union,
 )
@@ -220,12 +219,12 @@ class MlFlowInstrumentor:
         return trace_step_wrapper
 
     def _instrument_stream_runner_step(
-        self, runner_step: Callable[..., Generator[ValidationOutcome[OT], None, None]]
+        self, runner_step: Callable[..., Iterator[ValidationOutcome[OT]]]
     ):
         @wraps(runner_step)
         def trace_stream_step_wrapper(
             *args, **kwargs
-        ) -> Generator[ValidationOutcome[OT], None, None]:
+        ) -> Iterator[ValidationOutcome[OT]]:
             with mlflow.start_span(
                 name="guardrails/guard/step",
                 span_type="step",

@@ -12,6 +12,9 @@ from guardrails.classes.validation.validation_result import (
 )
 from guardrails.types import ValidatorMap
 from guardrails.telemetry.legacy_validator_tracing import trace_validation_result
+
+# Keep this imported for backwards compatibility
+from guardrails.validator_service.validator_service_base import ValidatorServiceBase  # noqa
 from guardrails.validator_service.async_validator_service import AsyncValidatorService
 from guardrails.validator_service.sequential_validator_service import (
     SequentialValidatorService,

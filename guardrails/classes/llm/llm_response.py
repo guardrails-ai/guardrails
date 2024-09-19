@@ -73,7 +73,7 @@ class LLMResponse(ILLMResponse):
     def from_interface(cls, i_llm_response: ILLMResponse) -> "LLMResponse":
         stream_output = None
         if i_llm_response.stream_output:
-            stream_output = [so for so in i_llm_response.stream_output]
+            stream_output = iter([so for so in i_llm_response.stream_output])
 
         async_stream_output = None
         if i_llm_response.async_stream_output:

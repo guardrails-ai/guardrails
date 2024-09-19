@@ -1,11 +1,7 @@
 from functools import wraps
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
     Dict,
-    Iterator,
     Optional,
     TypeVar,
 )
@@ -136,9 +132,11 @@ def trace(
     is_parent: Optional[bool] = False,
     **attrs,
 ):
-    def decorator(fn: Callable[..., R]):
+    # def decorator(fn: Callable[..., R]):
+    def decorator(fn):
         @wraps(fn)
-        def wrapper(*args, **kwargs) -> R:
+        # def wrapper(*args, **kwargs) -> R:
+        def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
                 context = (
@@ -174,9 +172,11 @@ def async_trace(
     origin: Optional[str] = None,
     is_parent: Optional[bool] = False,
 ):
-    def decorator(fn: Callable[..., Awaitable[R]]):
+    # def decorator(fn: Callable[..., Awaitable[R]]):
+    def decorator(fn):
         @wraps(fn)
-        async def async_wrapper(*args, **kwargs) -> R:
+        # async def async_wrapper(*args, **kwargs) -> R:
+        async def async_wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
                 context = (
@@ -214,9 +214,11 @@ def trace_stream(
     is_parent: Optional[bool] = False,
     **attrs,
 ):
-    def decorator(fn: Callable[..., Iterator[R]]):
+    # def decorator(fn: Callable[..., Iterator[R]]):
+    def decorator(fn):
         @wraps(fn)
-        def wrapper(*args, **kwargs) -> Iterator[R]:
+        # def wrapper(*args, **kwargs) -> Iterator[R]:
+        def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
                 context = (
@@ -256,9 +258,10 @@ def async_trace_stream(
     is_parent: Optional[bool] = False,
     **attrs,
 ):
-    def decorator(fn: Callable[..., AsyncIterator[R]]):
+    # def decorator(fn: Callable[..., AsyncIterator[R]]):
+    def decorator(fn):
         @wraps(fn)
-        async def wrapper(*args, **kwargs) -> AsyncIterator[R]:
+        async def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
                 context = (
