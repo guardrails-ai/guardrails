@@ -39,7 +39,7 @@ def add_guard_attributes(
     prompt = history.last.compiled_prompt if history.last else ""
     messages = []
     if history.last and history.last.iterations.last:
-        messages = history.last.iterations.last.inputs.msg_history or []
+        messages = history.last.iterations.last.inputs.messages or []
     if not instructions:
         system_messages = [msg for msg in messages if msg["role"] == "system"]
         system_message = system_messages[-1] if system_messages else {}

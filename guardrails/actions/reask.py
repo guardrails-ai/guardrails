@@ -499,7 +499,7 @@ def get_reask_setup(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 

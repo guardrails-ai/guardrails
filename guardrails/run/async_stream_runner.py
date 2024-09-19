@@ -23,7 +23,6 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
@@ -36,14 +35,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         prompt_params = prompt_params or {}
 
         (
-            instructions,
-            prompt,
-            msg_history,
+            messages,
             output_schema,
         ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
+            self.messages,
             self.output_schema,
         )
 
@@ -52,9 +47,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
             output_schema,
             call_log,
             api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             output=self.output,
         )
@@ -71,9 +64,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         call_log: Call,
         *,
         api: Optional[AsyncPromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> AsyncIterable[ValidationOutcome]:
@@ -81,9 +72,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -97,27 +86,19 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
         if output is not None:
-            instructions = None
-            prompt = None
-            msg_history = None
+            messages = None
         else:
-            instructions, prompt, msg_history = await self.async_prepare(
+            messages = await self.async_prepare(
                 call_log,
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                messages=messages,
                 prompt_params=prompt_params,
                 api=api,
                 attempt_number=index,
             )
 
-        iteration.inputs.prompt = prompt
-        iteration.inputs.instructions = instructions
-        iteration.inputs.msg_history = msg_history
+        iteration.inputs.messages = messages
 
-        llm_response = await self.async_call(
-            instructions, prompt, msg_history, api, output
-        )
+        llm_response = await self.async_call(messages, api, output)
         iteration.outputs.llm_response_info = llm_response
         stream_output = llm_response.async_stream_output
         if not stream_output:

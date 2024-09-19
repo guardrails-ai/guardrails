@@ -15,8 +15,7 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
     Attributes:
         llm_api (Optional[Callable[[Any], Awaitable[Any]]]): The LLM function
             provided by the user during Guard.__call__ or Guard.parse.
-        prompt (Optional[str]): The prompt string as provided by the user.
-        instructions (Optional[str]): The instructions string as provided by the user.
+        messages (Optional[dict[str, str]]): The messages as provided by the user.
         args (List[Any]): Additional arguments for the LLM as provided by the user.
             Default [].
         kwargs (Dict[str, Any]): Additional keyword-arguments for
@@ -28,11 +27,8 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         "during Guard.__call__ or Guard.parse.",
         default=None,
     )
-    prompt: Optional[str] = Field(
-        description="The prompt string as provided by the user.", default=None
-    )
-    instructions: Optional[str] = Field(
-        description="The instructions string as provided by the user.", default=None
+    messages: Optional[dict[str, str]] = Field(
+        description="The messages as provided by the user.", default=None
     )
     args: List[Any] = Field(
         description="Additional arguments for the LLM as provided by the user.",
@@ -67,9 +63,7 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         return cls(
             llm_api=None,
             llm_output=i_call_inputs.llm_output,
-            instructions=i_call_inputs.instructions,
-            prompt=i_call_inputs.prompt,
-            msg_history=i_call_inputs.msg_history,
+            messages=i_call_inputs.messages,
             prompt_params=i_call_inputs.prompt_params,
             num_reasks=i_call_inputs.num_reasks,
             metadata=i_call_inputs.metadata,

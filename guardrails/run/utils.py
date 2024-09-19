@@ -15,9 +15,9 @@ from guardrails.types.inputs import MessageHistory
 from guardrails.prompt.instructions import Instructions
 
 
-def msg_history_source(msg_history: MessageHistory) -> MessageHistory:
-    msg_history_copy = []
-    for msg in msg_history:
+def messages_source(messages: MessageHistory) -> MessageHistory:
+    messages_copy = []
+    for msg in messages:
         msg_copy = copy.deepcopy(msg)
         content = (
             msg["content"].source
@@ -25,20 +25,20 @@ def msg_history_source(msg_history: MessageHistory) -> MessageHistory:
             else msg["content"]
         )
         msg_copy["content"] = content
-        msg_history_copy.append(cast(Dict[str, str], msg_copy))
-    return msg_history_copy
+        messages_copy.append(cast(Dict[str, str], msg_copy))
+    return messages_copy
 
 
-def msg_history_string(msg_history: MessageHistory) -> str:
-    msg_history_copy = ""
-    for msg in msg_history:
+def messages_string(messages: MessageHistory) -> str:
+    messages_copy = ""
+    for msg in messages:
         content = (
             msg["content"].source
             if isinstance(msg["content"], Prompt)
             else msg["content"]
         )
-        msg_history_copy += content
-    return msg_history_copy
+        messages_copy += content
+    return messages_copy
 
 
 def preprocess_prompt_for_string_output(
