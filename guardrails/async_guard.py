@@ -37,7 +37,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
-from guardrails.telemetry.hub_tracing import async_trace
+from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
 from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context

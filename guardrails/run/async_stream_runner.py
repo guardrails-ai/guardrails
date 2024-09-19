@@ -27,7 +27,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
-from guardrails.telemetry.hub_tracing import async_trace_stream
+from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):

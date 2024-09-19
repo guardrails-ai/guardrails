@@ -10,7 +10,7 @@ from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.cli.hub.template import get_template
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 console = Console()
 

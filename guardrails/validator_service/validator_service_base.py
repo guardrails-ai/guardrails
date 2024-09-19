@@ -12,7 +12,7 @@ from guardrails.classes.validation.validation_result import (
 )
 from guardrails.errors import ValidationError
 from guardrails.merge import merge
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import OnFailAction
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk

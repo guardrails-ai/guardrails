@@ -5,7 +5,7 @@ import typer
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import logger
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 
 @trace(name="guardrails-cli/hub/install", is_parent=True)

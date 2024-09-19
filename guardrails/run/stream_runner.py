@@ -12,7 +12,7 @@ from guardrails.llm_providers import (
 )
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.telemetry.hub_tracing import trace_stream
+from guardrails.hub_telemetry.hub_tracing import trace_stream
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,

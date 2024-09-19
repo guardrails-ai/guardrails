@@ -15,7 +15,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.run.utils import msg_history_source, msg_history_string
 from guardrails.schema.validator import schema_validation
-from guardrails.telemetry.hub_tracing import async_trace
+from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.inputs import MessageHistory
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap

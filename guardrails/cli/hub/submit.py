@@ -8,7 +8,7 @@ from pydash import snake_case
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import HttpError, post_validator_submit
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 
 @trace(name="guardrails-cli/hub/submit", is_parent=True)

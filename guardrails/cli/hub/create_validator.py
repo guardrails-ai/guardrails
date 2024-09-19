@@ -8,7 +8,7 @@ from pydash import pascal_case, snake_case
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 validator_template = Template(
     """

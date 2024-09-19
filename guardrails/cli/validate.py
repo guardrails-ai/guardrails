@@ -5,7 +5,7 @@ import typer
 
 from guardrails import Guard
 from guardrails.cli.guardrails import guardrails
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 
 def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, None]:

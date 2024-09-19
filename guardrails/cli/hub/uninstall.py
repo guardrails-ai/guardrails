@@ -13,7 +13,7 @@ from guardrails_hub_types import Manifest
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.hub.utils import get_org_and_package_dirs
 from guardrails.cli.hub.utils import get_hub_directory
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 
 from .console import console
 

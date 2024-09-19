@@ -19,7 +19,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry

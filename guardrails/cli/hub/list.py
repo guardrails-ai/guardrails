@@ -3,7 +3,7 @@ import re
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 from .console import console
 
 

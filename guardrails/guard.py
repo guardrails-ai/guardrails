@@ -64,7 +64,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
-from guardrails.telemetry.hub_tracing import trace
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
