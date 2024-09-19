@@ -1,11 +1,11 @@
 import inspect
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
-    Iterable,
+    Iterator,
     Optional,
     Union,
 )
@@ -131,9 +131,9 @@ def add_guard_attributes(
 
 def trace_stream_guard(
     guard_span: Span,
-    result: Iterable[ValidationOutcome[OT]],
+    result: Iterator[ValidationOutcome[OT]],
     history: Stack[Call],
-) -> Iterable[ValidationOutcome[OT]]:
+) -> Iterator[ValidationOutcome[OT]]:
     next_exists = True
     while next_exists:
         try:
@@ -150,12 +150,12 @@ def trace_guard_execution(
     guard_name: str,
     history: Stack[Call],
     _execute_fn: Callable[
-        ..., Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]
+        ..., Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]
     ],
     tracer: Optional[Tracer] = None,
     *args,
     **kwargs,
-) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -170,7 +170,7 @@ def trace_guard_execution(
 
             try:
                 result = _execute_fn(*args, **kwargs)
-                if isinstance(result, Iterable) and not isinstance(
+                if isinstance(result, Iterator) and not isinstance(
                     result, ValidationOutcome
                 ):
                     return trace_stream_guard(guard_span, result, history)
@@ -185,9 +185,9 @@ def trace_guard_execution(
 
 async def trace_async_stream_guard(
     guard_span: Span,
-    result: AsyncIterable[ValidationOutcome[OT]],
+    result: AsyncIterator[ValidationOutcome[OT]],
     history: Stack[Call],
-) -> AsyncIterable[ValidationOutcome[OT]]:
+) -> AsyncIterator[ValidationOutcome[OT]]:
     next_exists = True
     while next_exists:
         try:
@@ -211,7 +211,7 @@ async def trace_async_guard_execution(
             Union[
                 ValidationOutcome[OT],
                 Awaitable[ValidationOutcome[OT]],
-                AsyncIterable[ValidationOutcome[OT]],
+                AsyncIterator[ValidationOutcome[OT]],
             ],
         ],
     ],
@@ -221,7 +221,7 @@ async def trace_async_guard_execution(
 ) -> Union[
     ValidationOutcome[OT],
     Awaitable[ValidationOutcome[OT]],
-    AsyncIterable[ValidationOutcome[OT]],
+    AsyncIterator[ValidationOutcome[OT]],
 ]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
@@ -237,7 +237,7 @@ async def trace_async_guard_execution(
 
             try:
                 result = await _execute_fn(*args, **kwargs)
-                if isinstance(result, AsyncIterable):
+                if isinstance(result, AsyncIterator):
                     return trace_async_stream_guard(guard_span, result, history)
 
                 res = result

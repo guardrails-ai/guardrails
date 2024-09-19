@@ -155,9 +155,9 @@ class Runner:
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
 
-        if not self._disable_tracer:
-            # Get the HubTelemetry singleton
-            self._hub_telemetry = HubTelemetry(enabled=True)
+        # Get the HubTelemetry singleton
+        self._hub_telemetry = HubTelemetry()
+        self._hub_telemetry._enabled = not self._disable_tracer
 
     @trace(name="/reasks", origin="Runner.__call__")
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:

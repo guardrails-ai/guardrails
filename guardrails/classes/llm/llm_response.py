@@ -1,6 +1,6 @@
 import asyncio
 from itertools import tee
-from typing import Any, Dict, Iterable, Optional, AsyncIterable
+from typing import Any, Dict, Iterator, Optional, AsyncIterator
 
 from guardrails_api_client import LLMResponse as ILLMResponse
 from pydantic.config import ConfigDict
@@ -19,9 +19,9 @@ class LLMResponse(ILLMResponse):
 
     Attributes:
         output (str): The output from the LLM.
-        stream_output (Optional[Iterable]): A stream of output from the LLM.
+        stream_output (Optional[Iterator]): A stream of output from the LLM.
             Default None.
-        async_stream_output (Optional[AsyncIterable]): An async stream of output
+        async_stream_output (Optional[AsyncIterator]): An async stream of output
             from the LLM.  Default None.
         prompt_token_count (Optional[int]): The number of tokens in the prompt.
             Default None.
@@ -35,8 +35,8 @@ class LLMResponse(ILLMResponse):
     prompt_token_count: Optional[int] = None
     response_token_count: Optional[int] = None
     output: str
-    stream_output: Optional[Iterable] = None
-    async_stream_output: Optional[AsyncIterable] = None
+    stream_output: Optional[Iterator] = None
+    async_stream_output: Optional[AsyncIterator] = None
 
     def to_interface(self) -> ILLMResponse:
         stream_output = None

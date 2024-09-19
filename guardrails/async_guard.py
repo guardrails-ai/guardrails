@@ -4,7 +4,7 @@ import inspect
 from opentelemetry import context as otel_context
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -188,7 +188,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         self._fill_validator_map()
         self._fill_validators()
@@ -220,7 +220,7 @@ class AsyncGuard(Guard, Generic[OT]):
         ) -> Union[
             ValidationOutcome[OT],
             Awaitable[ValidationOutcome[OT]],
-            AsyncIterable[ValidationOutcome[OT]],
+            AsyncIterator[ValidationOutcome[OT]],
         ]:
             prompt_params = prompt_params or {}
             metadata = metadata or {}
@@ -334,7 +334,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         """Call the LLM asynchronously and validate the output.
 
@@ -416,7 +416,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
@@ -534,7 +534,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
     async def _stream_server_call(
         self, *, payload: Dict[str, Any]
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterator[ValidationOutcome[OT]]:
         # TODO: Once server side supports async streaming, this function will need to
         # yield async generators, not generators
         if self._api_client:

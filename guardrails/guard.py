@@ -7,7 +7,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -302,11 +302,13 @@ class Guard(IGuard, Generic[OT]):
 
         self._allow_metrics_collection = allow_metrics_collection
 
+        # Initialize Hub Telemetry singleton and get the tracer
+        self._hub_telemetry = HubTelemetry()
+        self._hub_telemetry._enabled = allow_metrics_collection
+
         if allow_metrics_collection is True:
             # Get unique id of user from rc file
             self._user_id = settings.rc.id or ""
-            # Initialize Hub Telemetry singleton and get the tracer
-            self._hub_telemetry = HubTelemetry(enabled=True)
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
@@ -696,7 +698,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
         self._fill_exec_opts(
@@ -837,7 +839,7 @@ class Guard(IGuard, Generic[OT]):
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         api = None
 
         if llm_api is not None or kwargs.get("model") is not None:
@@ -901,7 +903,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output.
 
         Args:
@@ -1187,7 +1189,7 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         payload: Dict[str, Any],
-    ) -> Iterable[ValidationOutcome[OT]]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         if settings.use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
@@ -1237,7 +1239,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         if settings.use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),

@@ -1,6 +1,6 @@
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Dict,
     List,
     Optional,
@@ -34,7 +34,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
     # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
 
         (
@@ -79,7 +79,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         msg_history: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,

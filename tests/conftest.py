@@ -37,16 +37,6 @@ def mock_validator_base_hub_telemetry():
 
 
 @pytest.fixture(autouse=True)
-def mock_validator_service_hub_telemetry():
-    with patch(
-        "guardrails.validator_service.validator_service_base.HubTelemetry"
-    ) as MockHubTelemetry:
-        MockHubTelemetry.return_value = MagicMock()
-        MockHubTelemetry.return_value.to_dict = None
-        yield MockHubTelemetry
-
-
-@pytest.fixture(autouse=True)
 def mock_runner_hub_telemetry():
     with patch("guardrails.run.runner.HubTelemetry") as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
@@ -56,7 +46,7 @@ def mock_runner_hub_telemetry():
 
 @pytest.fixture(autouse=True)
 def mock_hub_tracing():
-    with patch("guardrails.telemetry.hub_tracing.HubTelemetry") as MockHubTelemetry:
+    with patch("guardrails.hub_telemetry.hub_tracing.HubTelemetry") as MockHubTelemetry:
         MockHubTelemetry.return_value = MagicMock()
         yield MockHubTelemetry
 
@@ -66,6 +56,5 @@ def pytest_collection_modifyitems(items):
         if "no_hub_telemetry_mock" in item.keywords:
             item.fixturenames.remove("mock_guard_hub_telemetry")
             item.fixturenames.remove("mock_validator_base_hub_telemetry")
-            item.fixturenames.remove("mock_validator_service_hub_telemetry")
             item.fixturenames.remove("mock_runner_hub_telemetry")
             item.fixturenames.remove("mock_hub_tracing")
