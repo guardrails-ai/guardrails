@@ -1,13 +1,13 @@
 from typing import Dict
-
+import openai
 import pytest
 
 import guardrails as gd
 from guardrails import register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import OnFailAction
 from guardrails.classes.validation.validation_result import FailResult, ValidationResult
+from tests.integration_tests.test_assets.custom_llm import mock_async_llm, mock_llm
 
 from .test_assets import pydantic, string
 
@@ -34,11 +34,8 @@ def test_parsing_reask(mocker):
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
 
-    def mock_callable(prompt: str):
-        return
-
     final_output = guard(
-        llm_api=mock_callable,
+        llm_api=mock_llm,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
@@ -88,11 +85,8 @@ async def test_async_parsing_reask(mocker):
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
 
-    async def mock_async_callable(prompt: str):
-        return
-
     final_output = await guard(
-        llm_api=mock_async_callable,
+        llm_api=mock_async_llm,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
@@ -149,7 +143,7 @@ def test_reask_prompt_instructions(mocker):
 
     guard.parse(
         llm_output="Tomato Cheese Pizza",
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         msg_history=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},

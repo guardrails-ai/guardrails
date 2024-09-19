@@ -2,7 +2,8 @@ import enum
 import importlib
 import json
 import os
-from typing import List, Optional, Union
+import openai
+from typing import Dict, List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
@@ -15,10 +16,6 @@ from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.validation.validation_result import FailResult
 from guardrails.guard import Guard
-from guardrails.utils.openai_utils import (
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
-)
 from guardrails.actions.reask import FieldReAsk
 from tests.integration_tests.test_assets.validators import (
     RegexMatch,
@@ -182,7 +179,7 @@ def test_entity_extraction_with_reask(
     guard = guard_initializer(rail, prompt)
 
     final_output: ValidationOutcome = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
         max_tokens=2000,
@@ -267,7 +264,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -313,7 +310,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -348,7 +345,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -384,7 +381,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -430,7 +427,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt, instructions)
     final_output = guard(
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -460,7 +457,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_LIST)
     _, final_output, *rest = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         num_reasks=1,
     )
     assert final_output == string.LIST_LLM_OUTPUT
@@ -487,7 +484,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
             entity_extraction.OPTIONAL_PROMPT_COMPLETION_MODEL,
             None,
             None,
-            get_static_openai_create_func(),
+            openai.completions.create,
             entity_extraction.COMPILED_PROMPT,
             None,
             entity_extraction.COMPILED_PROMPT_REASK,
@@ -504,7 +501,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
             entity_extraction.OPTIONAL_PROMPT_CHAT_MODEL,
             entity_extraction.OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
             None,
-            get_static_openai_chat_create_func(),
+            openai.chat.completions.create,
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -521,7 +518,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
             None,
             None,
             entity_extraction.OPTIONAL_MSG_HISTORY,
-            get_static_openai_chat_create_func(),
+            openai.chat.completions.create,
             None,
             None,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -558,7 +555,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         for o in llm_outputs
     ]
     mock_openai_invoke_llm = None
-    if llm_api == get_static_openai_create_func():
+    if llm_api == openai.completions.create:
         mock_openai_invoke_llm = mocker.patch(
             "guardrails.llm_providers.OpenAICallable._invoke_llm"
         )
@@ -669,7 +666,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK
         )
         final_output = guard(
-            llm_api=get_static_openai_create_func(),
+            llm_api=openai.completions.create,
             prompt_params={"document": content[:6000]},
             max_tokens=1000,
             num_reasks=1,
@@ -713,7 +710,7 @@ def test_string_with_message_history_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         msg_history=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
@@ -769,7 +766,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         msg_history=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
@@ -818,7 +815,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
         )
 
         guard(
-            llm_api=get_static_openai_create_func(),
+            llm_api=openai.completions.create,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -861,7 +858,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
         )
 
         guard(
-            llm_api=get_static_openai_create_func(),
+            llm_api=openai.completions.create,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -880,7 +877,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
         OneLine.run_in_separate_process = separate_proc_bak
 
 
-def test_enum_datatype():
+def test_enum_datatype(mocker):
     class TaskStatus(enum.Enum):
         not_started = "not started"
         on_hold = "on hold"
@@ -889,16 +886,29 @@ def test_enum_datatype():
     class Task(BaseModel):
         status: TaskStatus
 
+    return_value = pydantic.LLM_OUTPUT_ENUM
+
+    def custom_llm(
+        prompt: Optional[str] = None,
+        *args,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict[str, str]]] = None,
+        **kwargs,
+    ) -> str:
+        nonlocal return_value
+        return return_value
+
     guard = gd.Guard.from_pydantic(Task)
     _, dict_o, *rest = guard(
-        lambda *args, **kwargs: pydantic.LLM_OUTPUT_ENUM,
+        custom_llm,
         prompt="What is the status of this task?",
     )
     assert dict_o == {"status": "not started"}
 
+    return_value = pydantic.LLM_OUTPUT_ENUM_2
     guard = gd.Guard.from_pydantic(Task)
     result = guard(
-        lambda *args, **kwargs: pydantic.LLM_OUTPUT_ENUM_2,
+        custom_llm,
         prompt="What is the status of this task REALLY?",
         num_reasks=0,
     )
@@ -933,7 +943,7 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
 
     guard = guard_initializer(rail, prompt=prompt)
 
-    output = guard(llm_api=get_static_openai_create_func())
+    output = guard(llm_api=openai.completions.create)
 
     # Validate the output
     assert output.validated_output == [
@@ -989,7 +999,7 @@ def test_string_output(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
     )
@@ -1071,7 +1081,7 @@ def test_json_function_calling_tool(mocker):
     ]
 
     final_output = guard(
-        llm_api=get_static_openai_chat_create_func(),
+        llm_api=openai.chat.completions.create,
         msg_history=[
             {
                 "role": "user",
@@ -1125,7 +1135,7 @@ def test_string_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
@@ -1442,3 +1452,200 @@ class TestValidatorInitializedOnce:
         guard_2.parse("some-other-name")
 
         assert init_spy.call_count == 1
+
+
+# These tests are descriptive not prescriptive.
+# The method signature for custom LLM APIs needs to be updated to make more sense.
+# With 0.6.0 we can drop the baggage of
+#   the prompt and instructions and just pass in the messages.
+class TestCustomLLMApi:
+    def test_with_prompt(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            prompt="Can you generate a list of 10 things that are not food?",
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            "Can you generate a list of 10 things that are not food?",
+            instructions=None,
+            msg_history=None,
+            temperature=0,
+        )
+
+    def test_with_prompt_and_instructions(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            prompt="Can you generate a list of 10 things that are not food?",
+            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            "Can you generate a list of 10 things that are not food?",
+            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
+            msg_history=None,
+            temperature=0,
+        )
+
+    def test_with_msg_history(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            None,
+            instructions=None,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            temperature=0,
+        )
+
+    def test_with_messages(self, mocker):
+        mock_llm = mocker.Mock()
+
+        def custom_llm(
+            prompt: Optional[str] = None,
+            *args,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict[str, str]]] = None,
+            **kwargs,
+        ) -> str:
+            mock_llm(
+                prompt,
+                *args,
+                instructions=instructions,
+                msg_history=msg_history,
+                **kwargs,
+            )
+            return "Not really, no.  I'm just a static function."
+
+        guard = Guard().use(
+            ValidLength(1, 100),
+        )
+        output = guard(
+            llm_api=custom_llm,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+        )
+
+        assert output.validation_passed is True
+        assert output.validated_output == "Not really, no.  I'm just a static function."
+        mock_llm.assert_called_once_with(
+            None,
+            instructions=None,
+            msg_history=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
+                },
+                {
+                    "role": "user",
+                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
+                },
+            ],
+            temperature=0,
+        )
