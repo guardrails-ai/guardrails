@@ -784,6 +784,16 @@ def get_llm_ask(
     except ImportError:
         pass
 
+    if llm_api is not None:
+        llm_self = getattr(llm_api, "__self__", None)
+        if (
+            llm_self is not None
+            and hasattr(llm_self, "__class__")
+            and getattr(llm_self.__class__, "__name__", None) == "GuardrailsEngine"
+            and getattr(llm_api, "__name__", None) == "engine_api"
+        ):
+            return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
+
     if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
     if llm_api == get_static_openai_chat_create_func():
