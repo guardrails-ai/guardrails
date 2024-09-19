@@ -115,12 +115,12 @@ def add_user_attributes(span: Span):
         organization = get_baggage("organization") or "unknown"
         app = get_baggage("app") or "unknown"
 
-        span.set_attribute("client.ip", client_ip)
-        span.set_attribute("http.user_agent", user_agent)
-        span.set_attribute("http.referrer", referrer)
-        span.set_attribute("user.id", user_id)
-        span.set_attribute("organization", organization)
-        span.set_attribute("app", app)
+        span.set_attribute("client.ip", client_ip)  # type: ignore
+        span.set_attribute("http.user_agent", user_agent)  # type: ignore
+        span.set_attribute("http.referrer", referrer)  # type: ignore
+        span.set_attribute("user.id", user_id)  # type: ignore
+        span.set_attribute("organization", organization)  # type: ignore
+        span.set_attribute("app", app)  # type: ignore
     except Exception as e:
         logger.warning("Error loading baggage user information", e)
         pass
