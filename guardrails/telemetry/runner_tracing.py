@@ -17,9 +17,8 @@ from guardrails.settings import settings
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
-from guardrails.telemetry.common import get_tracer
+from guardrails.telemetry.common import get_tracer, add_user_attributes, serialize
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.serialization_utils import serialize
 from guardrails.version import GUARDRAILS_VERSION
 
 
@@ -73,10 +72,12 @@ def trace_step(fn: Callable[..., Iteration]):
                 try:
                     response = fn(*args, **kwargs)
                     add_step_attributes(step_span, response, *args, **kwargs)
+                    add_user_attributes(step_span)
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
                     add_step_attributes(step_span, None, *args, **kwargs)
+                    add_user_attributes(step_span)
                     raise e
         else:
             return fn(*args, **kwargs)
@@ -112,6 +113,7 @@ def trace_stream_step_generator(
             call = safe_get(args, 8, kwargs.get("call_log", None))
             iteration = call.iterations.last if call else None
             add_step_attributes(step_span, iteration, *args, **kwargs)
+            add_user_attributes(step_span)
             if exception:
                 raise exception
 
@@ -145,10 +147,12 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
             ) as step_span:
                 try:
                     response = await fn(*args, **kwargs)
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, response, *args, **kwargs)
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, None, *args, **kwargs)
                     raise e
 
