@@ -111,11 +111,9 @@ class SequentialValidatorService(ValidatorServiceBase):
     # requires at least 2 validators
     def multi_merge(self, original: str, new_values: list[str]) -> Optional[str]:
         current = new_values.pop()
-        print("Fmerging these:", new_values)
         while len(new_values) > 0:
             nextval = new_values.pop()
             current = merge(current, nextval, original)
-        print("\nFmerge result:", current)
         return current
 
     def run_validators_stream_fix(
