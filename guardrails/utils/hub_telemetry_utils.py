@@ -58,10 +58,10 @@ class HubTelemetry:
         self._enabled = enabled
         self._carrier = {}
         self._service_name = service_name
-        self._endpoint = "http://localhost:5318/v1/traces"
-        # self._endpoint = (
-        #     "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
-        # )
+        # self._endpoint = "http://localhost:5318/v1/traces"
+        self._endpoint = (
+            "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
+        )
         self._tracer_name = tracer_name
 
         # Create a resource
