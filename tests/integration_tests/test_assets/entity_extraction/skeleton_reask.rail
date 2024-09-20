@@ -11,8 +11,8 @@
     <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
 </output>
 
-
-<prompt>
+<messages>
+    <message>
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
 'None'.
 
@@ -22,6 +22,7 @@ ${gr.xml_prefix_prompt}
 
 ${xml_output_schema}
 
-${gr.xml_suffix_prompt_v2_wo_none}</prompt>
+${gr.xml_suffix_prompt_v2_wo_none}</message>
+</messages>
 
 </rail>

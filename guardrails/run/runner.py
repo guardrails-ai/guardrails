@@ -299,25 +299,40 @@ class Runner:
         )
         iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        value, _metadata = validator_service.validate(
-            value=msg_str,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="messages",
-        )
-        validated_messages = validator_service.post_process_validation(
-            value, attempt_number, iteration, OutputTypes.STRING
-        )
 
-        iteration.outputs.validation_response = validated_messages
-        if isinstance(validated_messages, ReAsk):
-            raise ValidationError(
-                f"Message validation failed: " f"{validated_messages}"
+        validated_msgs = ""
+
+        for msg in messages:
+            content = (
+                msg["content"].source
+                if isinstance(msg["content"], Prompt)
+                else msg["content"]
             )
-        if validated_messages != msg_str:
-            raise ValidationError("Message validation failed")
+
+            value, _metadata = validator_service.validate(
+                value=content,
+                metadata=self.metadata,
+                validator_map=self.validation_map,
+                iteration=iteration,
+                disable_tracer=self._disable_tracer,
+                path="messages",
+            )
+
+            validated_msg = validator_service.post_process_validation(
+                value, attempt_number, iteration, OutputTypes.STRING
+            )
+
+            if isinstance(validated_msg, ReAsk):
+                raise ValidationError(f"Message validation failed: {validated_msg}")
+            elif not validated_msg or iteration.status == fail_status:
+                raise ValidationError("Message validation failed")
+
+            msg["content"] = cast(str, validated_msg)
+            validated_msgs += validated_msg
+
+        iteration.outputs.validation_response = validated_msgs
+
+        return messages  # type: ignore
 
     def prepare_messages(
         self,

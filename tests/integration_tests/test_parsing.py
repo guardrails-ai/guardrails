@@ -31,7 +31,8 @@ def test_parsing_reask(mocker):
     ]
 
     guard = gd.Guard.from_pydantic(
-        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
+        output_class=pydantic.PersonalDetails,
+        messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
 
     final_output = guard(

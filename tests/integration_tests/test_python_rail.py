@@ -17,7 +17,7 @@ from guardrails.classes.validation.validation_result import (
 )
 from tests.integration_tests.test_assets.validators import ValidLength, TwoWords
 
-from .mock_llm_outputs import MockOpenAICallable
+from .mock_llm_outputs import MockLiteLLMCallable
 from .test_assets import python_rail, string
 
 
@@ -176,7 +176,7 @@ def test_python_rail(mocker):
 
 def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     validators = [TwoWords(on_fail=OnFailAction.REASK)]
     description = "Name for the pizza"

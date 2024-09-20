@@ -93,7 +93,12 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         compiled_messages = []
         for message in messages:
-            compiled_messages.append(message.format(**prompt_params).source)
+            compiled_messages.append(
+                {
+                    "role": message["role"],
+                    "content": message["content"].format(**prompt_params),
+                }
+            )
 
         return compiled_messages
 

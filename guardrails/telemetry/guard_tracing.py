@@ -35,22 +35,19 @@ def add_guard_attributes(
     history: Stack[Call],
     resp: ValidationOutcome,
 ):
-    instructions = history.last.compiled_instructions if history.last else ""
-    prompt = history.last.compiled_prompt if history.last else ""
     messages = []
     if history.last and history.last.iterations.last:
         messages = history.last.iterations.last.inputs.messages or []
-    if not instructions:
-        system_messages = [msg for msg in messages if msg["role"] == "system"]
-        system_message = system_messages[-1] if system_messages else {}
-        instructions = system_message.get("content", "")
-    if not prompt:
-        user_messages = [msg for msg in messages if msg["role"] == "user"]
-        user_message = user_messages[-1] if user_messages else {}
-        prompt = user_message.get("content", "")
+
+    system_messages = [msg for msg in messages if msg["role"] == "system"]
+    system_message = system_messages[-1] if system_messages else {}
+
+    user_messages = [msg for msg in messages if msg["role"] == "user"]
+    user_message = user_messages[-1] if user_messages else {}
+
     input_value = f"""
-        {instructions}
-        {prompt}
+        {system_message}
+        {user_message}
         """
     trace_operation(
         input_mime_type="text/plain",

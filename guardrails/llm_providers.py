@@ -776,20 +776,11 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
 class AsyncArbitraryCallable(AsyncPromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
-        if not llm_api_args.args:
-            raise ValueError(
-                "Custom LLM callables must accept"
-                " at least one positional argument for prompt!"
-            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
-        if (
-            not llm_api_args.kwonlyargs
-            or "instructions" not in llm_api_args.kwonlyargs
-            or "msg_history" not in llm_api_args.kwonlyargs
-        ):
+        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
             warnings.warn(
-                "We recommend including 'instructions' and 'msg_history'"
+                "We recommend including 'messages'"
                 " as keyword-only arguments for custom LLM callables."
                 " Doing so ensures these arguments are not uninentionally"
                 " passed through to other calls via **kwargs.",

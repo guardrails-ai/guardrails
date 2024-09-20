@@ -26,8 +26,7 @@ from tests.integration_tests.test_assets.validators import (
 )
 
 from .mock_llm_outputs import (
-    MockOpenAICallable,
-    MockOpenAIChatCallable,
+    MockLiteLLMCallable,
     entity_extraction,
     lists_object,
 )
@@ -149,7 +148,7 @@ def test_entity_extraction_with_reask(
     second time.
     """
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     second_response = (
         entity_extraction.LLM_OUTPUT_FULL_REASK
@@ -259,7 +258,7 @@ def test_entity_extraction_with_reask(
 )
 def test_entity_extraction_with_noop(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -305,7 +304,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
 )
 def test_entity_extraction_with_filter(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -340,7 +339,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
 )
 def test_entity_extraction_with_fix(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -376,7 +375,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
 )
 def test_entity_extraction_with_refrain(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -557,7 +556,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     mock_openai_invoke_llm = None
     if llm_api == openai.completions.create:
         mock_openai_invoke_llm = mocker.patch(
-            "guardrails.llm_providers.OpenAICallable._invoke_llm"
+            "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
         )
     else:
         mock_openai_invoke_llm = mocker.patch(
@@ -572,7 +571,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         llm_api=llm_api,
         prompt=prompt,
         instructions=instructions,
-        msg_history=history,
+        messages=history,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -632,7 +631,7 @@ def test_skeleton_reask(mocker):
     from unittest.mock import patch
 
     with patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         side_effect=[
             LLMResponse(
                 output=entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,
@@ -705,13 +704,13 @@ def test_string_with_message_history_reask(mocker):
     reask."""
     mocker.patch(
         "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+        new=MockLiteLLMCallable,
     )
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
+    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_messages)
     final_output = guard(
         llm_api=openai.chat.completions.create,
-        msg_history=string.MOVIE_MSG_HISTORY,
+        messages=string.MOVIE_messages,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
@@ -744,12 +743,12 @@ def test_pydantic_with_message_history_reask(mocker):
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
-            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
+            output=pydantic.messages_LLM_OUTPUT_INCORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
         LLMResponse(
-            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            output=pydantic.messages_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
@@ -764,17 +763,17 @@ def test_pydantic_with_message_history_reask(mocker):
         },
     )
 
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_messages)
     final_output = guard(
         llm_api=openai.chat.completions.create,
-        msg_history=string.MOVIE_MSG_HISTORY,
+        messages=string.MOVIE_messages,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
 
-    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert final_output.raw_llm_output == pydantic.messages_LLM_OUTPUT_CORRECT
     assert final_output.validated_output == json.loads(
-        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+        pydantic.messages_LLM_OUTPUT_CORRECT
     )
 
     call = guard.history.first
@@ -784,7 +783,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
     assert call.compiled_instructions is None
     assert call.compiled_prompt is None
-    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+    assert call.iterations.first.raw_output == pydantic.messages_LLM_OUTPUT_INCORRECT
     assert (
         call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
     )
@@ -792,13 +791,13 @@ def test_pydantic_with_message_history_reask(mocker):
     # For re-asked prompt and output
     assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
     assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert call.raw_outputs.last == pydantic.messages_LLM_OUTPUT_CORRECT
+    assert call.guarded_output == json.loads(pydantic.messages_LLM_OUTPUT_CORRECT)
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):
     mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=entity_extraction.LLM_OUTPUT,
             prompt_token_count=123,
@@ -841,7 +840,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
 
 def test_in_memory_validator_log_is_not_duplicated(mocker):
     mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=entity_extraction.LLM_OUTPUT,
             prompt_token_count=123,
@@ -892,7 +891,7 @@ def test_enum_datatype(mocker):
         prompt: Optional[str] = None,
         *args,
         instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict[str, str]]] = None,
+        messages: Optional[List[Dict[str, str]]] = None,
         **kwargs,
     ) -> str:
         nonlocal return_value
@@ -939,7 +938,7 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
     # Create a Guard with a top level list return type
 
     # Mock the LLM
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = guard_initializer(rail, prompt=prompt)
 
@@ -960,34 +959,34 @@ def test_pydantic_with_lite_llm(mocker):
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
-            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
+            output=pydantic.messages_LLM_OUTPUT_INCORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
         LLMResponse(
-            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            output=pydantic.messages_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
     ]
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_messages)
     final_output = guard(
-        messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
+        messages=string.MOVIE_messages, model="gpt-3.5-turbo", max_tokens=10
     )
-    assert guard.history.last.inputs.msg_history == [
+    assert guard.history.last.inputs.messages == [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Can you give me your favorite movie?"},
     ]
 
     call = guard.history.first
     assert call.iterations.length == 2
-    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert final_output.raw_llm_output == pydantic.messages_LLM_OUTPUT_CORRECT
 
 
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -1082,7 +1081,7 @@ def test_json_function_calling_tool(mocker):
 
     final_output = guard(
         llm_api=openai.chat.completions.create,
-        msg_history=[
+        messages=[
             {
                 "role": "user",
                 "content": "You are a helpful assistant"
@@ -1118,7 +1117,7 @@ def test_json_function_calling_tool(mocker):
 def test_string_reask(mocker):
     """Test single string (non-JSON) generation with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -1269,7 +1268,7 @@ def test_guard_from_pydantic_with_mock_hf_model():
     _ = guard(
         model.generate,
         tokenizer=tokenizer,
-        prompt="Don't care about the output.",
+        messages=[{"role": "user", "content": "Don't care about the output."}],
     )
 
 
@@ -1459,133 +1458,6 @@ class TestValidatorInitializedOnce:
 # With 0.6.0 we can drop the baggage of
 #   the prompt and instructions and just pass in the messages.
 class TestCustomLLMApi:
-    def test_with_prompt(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            prompt="Can you generate a list of 10 things that are not food?",
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            "Can you generate a list of 10 things that are not food?",
-            instructions=None,
-            msg_history=None,
-            temperature=0,
-        )
-
-    def test_with_prompt_and_instructions(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            prompt="Can you generate a list of 10 things that are not food?",
-            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            "Can you generate a list of 10 things that are not food?",
-            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
-            msg_history=None,
-            temperature=0,
-        )
-
-    def test_with_msg_history(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            None,
-            instructions=None,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
-            temperature=0,
-        )
-
     def test_with_messages(self, mocker):
         mock_llm = mocker.Mock()
 
@@ -1593,14 +1465,14 @@ class TestCustomLLMApi:
             prompt: Optional[str] = None,
             *args,
             instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
+            messages: Optional[List[Dict[str, str]]] = None,
             **kwargs,
         ) -> str:
             mock_llm(
                 prompt,
                 *args,
                 instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 **kwargs,
             )
             return "Not really, no.  I'm just a static function."
@@ -1627,16 +1499,6 @@ class TestCustomLLMApi:
         mock_llm.assert_called_once_with(
             None,
             instructions=None,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
             messages=[
                 {
                     "role": "system",

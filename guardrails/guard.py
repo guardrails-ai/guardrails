@@ -861,7 +861,7 @@ class Guard(IGuard, Generic[OT]):
             ValidationOutcome
         """
 
-        messages = messages or []
+        messages = messages or self._exec_opts.messages or []
         if messages is not None and not len(messages):
             raise RuntimeError(
                 "You must provide messages. "
@@ -1016,8 +1016,6 @@ class Guard(IGuard, Generic[OT]):
                     )
 
         hydrated_validator = get_validator(validator, *args, **kwargs)
-        if on == "messages":
-            on = "msg_history"
         self.__add_validator(hydrated_validator, on=on)
         self._save()
         return self
@@ -1039,8 +1037,6 @@ class Guard(IGuard, Generic[OT]):
     ) -> "Guard":
         """Use multiple validators to validate results of an LLM request."""
         # Loop through the validators
-        if on == "messages":
-            on = "msg_history"
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)

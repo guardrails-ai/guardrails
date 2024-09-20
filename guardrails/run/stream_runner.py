@@ -6,8 +6,6 @@ from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
     LiteLLMCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
     PromptCallableBase,
 )
 from guardrails.run.runner import Runner
@@ -248,12 +246,7 @@ class StreamRunner(Runner):
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
-        if isinstance(api, OpenAICallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].text
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, OpenAIChatCallable) or isinstance(api, LiteLLMCallable):
+        if isinstance(api, LiteLLMCallable):
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].delta.content
             if not finished and content:

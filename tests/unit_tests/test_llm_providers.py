@@ -1,11 +1,10 @@
 import importlib.util
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import BaseModel
 
 from guardrails.llm_providers import (
     ArbitraryCallable,
@@ -153,100 +152,6 @@ def openai_stream_mock():
             }
 
     return gen()
-
-
-def test_openai_callable(mocker, openai_mock):
-    mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
-
-    from guardrails.llm_providers import OpenAICallable
-
-    openai_callable = OpenAICallable()
-
-    response = openai_callable(text="Hello")
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
-
-
-def test_openai_stream_callable(mocker, openai_stream_mock):
-    mocker.patch("openai.resources.Completions.create", return_value=openai_stream_mock)
-
-    from guardrails.llm_providers import OpenAICallable
-
-    openai_callable = OpenAICallable()
-    response = openai_callable(text="1,2,3,", stream=True)
-
-    assert isinstance(response, LLMResponse) is True
-    assert isinstance(response.stream_output, Iterable) is True
-
-    actual_op = None
-    i = 4
-    for fragment in response.stream_output:
-        actual_op = fragment["choices"][0]["text"]
-        assert actual_op == f"{i},"
-        i += 1
-
-
-def test_openai_chat_callable(mocker, openai_chat_mock):
-    mocker.patch(
-        "openai.resources.chat.completions.Completions.create",
-        return_value=openai_chat_mock,
-    )
-    from guardrails.llm_providers import OpenAIChatCallable
-
-    openai_chat_callable = OpenAIChatCallable()
-    response = openai_chat_callable(text="Hello")
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
-
-
-def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
-    mocker.patch(
-        "openai.resources.chat.completions.Completions.create",
-        return_value=openai_chat_stream_mock,
-    )
-    from guardrails.llm_providers import OpenAIChatCallable
-
-    openai_chat_callable = OpenAIChatCallable()
-    response = openai_chat_callable(text="1,2,3,", stream=True)
-
-    assert isinstance(response, LLMResponse) is True
-    assert isinstance(response.stream_output, Iterable) is True
-
-    actual_op = None
-    i = 4
-    for fragment in response.stream_output:
-        actual_op = fragment["choices"][0]["delta"]["content"]
-        assert actual_op == f"{i},"
-        i += 1
-
-
-def test_openai_chat_model_callable(mocker, openai_chat_mock):
-    mocker.patch(
-        "openai.resources.chat.completions.Completions.create",
-        return_value=openai_chat_mock,
-    )
-
-    from guardrails.llm_providers import OpenAIChatCallable
-
-    class MyModel(BaseModel):
-        a: str
-
-    openai_chat_model_callable = OpenAIChatCallable()
-    response = openai_chat_model_callable(
-        text="Hello",
-        base_model=MyModel,
-    )
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
 
 
 @pytest.mark.skipif(
@@ -422,38 +327,6 @@ def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
 
 
 @pytest.mark.skipif(
-    not importlib.util.find_spec("openai"),
-    reason="openai is not installed",
-)
-def test_get_llm_ask_openai_completion():
-    import openai
-
-    from guardrails.llm_providers import OpenAICallable
-
-    completion_create = None
-    completion_create = openai.completions.create
-    prompt_callable = get_llm_ask(completion_create)
-
-    assert isinstance(prompt_callable, OpenAICallable)
-
-
-@pytest.mark.skipif(
-    not importlib.util.find_spec("openai"),
-    reason="openai is not installed",
-)
-def test_get_llm_ask_openai_chat():
-    import openai
-
-    from guardrails.llm_providers import OpenAIChatCallable
-
-    chat_completion_create = openai.chat.completions.create
-
-    prompt_callable = get_llm_ask(chat_completion_create)
-
-    assert isinstance(prompt_callable, OpenAIChatCallable)
-
-
-@pytest.mark.skipif(
     not importlib.util.find_spec("manifest"),
     reason="manifest is not installed",
 )
@@ -474,54 +347,6 @@ def test_get_llm_ask_manifest(mocker):
     prompt_callable = get_llm_ask(manifest_client)
 
     assert isinstance(prompt_callable, ManifestCallable)
-
-
-@pytest.mark.skipif(
-    not importlib.util.find_spec("cohere"),
-    reason="cohere is not installed",
-)
-def test_get_llm_ask_cohere():
-    from cohere import Client
-
-    from guardrails.llm_providers import CohereCallable
-
-    cohere_client = Client(api_key="mock_api_key")
-
-    prompt_callable = get_llm_ask(cohere_client.chat)
-
-    assert isinstance(prompt_callable, CohereCallable)
-
-
-@pytest.mark.skipif(
-    not importlib.util.find_spec("cohere"),
-    reason="cohere is not installed",
-)
-def test_get_llm_ask_cohere_legacy():
-    from cohere import Client
-
-    from guardrails.llm_providers import CohereCallable
-
-    cohere_client = Client(api_key="mock_api_key")
-
-    prompt_callable = get_llm_ask(cohere_client.generate)
-
-    assert isinstance(prompt_callable, CohereCallable)
-
-
-@pytest.mark.skipif(
-    not importlib.util.find_spec("anthropic"),
-    reason="anthropic is not installed",
-)
-def test_get_llm_ask_anthropic():
-    if importlib.util.find_spec("anthropic"):
-        from anthropic import Anthropic
-
-        from guardrails.llm_providers import AnthropicCallable
-
-        anthropic_client = Anthropic(api_key="my_api_key")
-        prompt_callable = get_llm_ask(anthropic_client.completions.create)
-
-        assert isinstance(prompt_callable, AnthropicCallable)
 
 
 @pytest.mark.skipif(

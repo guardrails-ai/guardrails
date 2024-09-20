@@ -27,7 +27,7 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         "during Guard.__call__ or Guard.parse.",
         default=None,
     )
-    messages: Optional[dict[str, str]] = Field(
+    messages: Optional[list[dict[str, str]]] = Field(
         description="The messages as provided by the user.", default=None
     )
     args: List[Any] = Field(

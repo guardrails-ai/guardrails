@@ -10,7 +10,7 @@ from .test_assets import python_rail
 def test_multi_reask(mocker):
     """Test that parallel reasking works."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(

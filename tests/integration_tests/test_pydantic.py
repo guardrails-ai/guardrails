@@ -16,7 +16,7 @@ from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(

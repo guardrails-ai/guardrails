@@ -428,7 +428,12 @@ class AsyncGuard(Guard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
 
-        messages = messages or kwargs.pop("messages", None) or []
+        # Retrieve messages from the provided arguments or default options
+        messages_from_kwargs = kwargs.pop("messages", None)
+        messages_from_exec_opts = self._exec_opts.messages
+
+        # Determine the final value for messages
+        messages = messages or messages_from_kwargs or messages_from_exec_opts or []
 
         if messages is not None and not len(messages):
             raise RuntimeError(

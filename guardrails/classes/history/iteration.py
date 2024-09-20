@@ -198,7 +198,7 @@ class Iteration(IIteration, ArbitraryModel):
             table.add_column("Content")
 
             for msg in messages:
-                table.add_row(str(msg["role"]), msg["content"].source)
+                table.add_row(str(msg["role"]), msg["content"])
 
             return table
 

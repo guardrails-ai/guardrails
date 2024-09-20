@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
 
@@ -6,7 +6,6 @@ from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.llm.prompt_callable import PromptCallableBase
 from guardrails.prompt.prompt import Prompt
-from guardrails.prompt.messages import Messages
 
 
 class Inputs(IInputs, ArbitraryModel):
@@ -38,7 +37,7 @@ class Inputs(IInputs, ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    messages: Optional[List[Messages]] = Field(
+    messages: Optional[List[Dict[str, Union[str, Prompt]]]] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )
