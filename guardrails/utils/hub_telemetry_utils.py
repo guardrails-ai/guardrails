@@ -2,6 +2,7 @@
 import logging
 from typing import Optional
 
+from guardrails.settings import settings
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
 )
@@ -32,7 +33,7 @@ class HubTelemetry:
         tracer_name: str = "gr_hub",
         export_locally: bool = False,
         *,
-        enabled: Optional[bool] = False,
+        enabled: Optional[bool] = None,
     ):
         if cls._instance is None:
             logging.debug("Creating HubTelemetry instance...")
@@ -51,9 +52,11 @@ class HubTelemetry:
         tracer_name: str,
         export_locally: bool,
         *,
-        enabled: Optional[bool] = False,
+        enabled: Optional[bool] = None,
     ):
         """Initializes a tracer for Guardrails Hub."""
+        if enabled is None:
+            enabled = settings.rc.enable_metrics or False
 
         self._enabled = enabled
         self._carrier = {}

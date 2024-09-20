@@ -3,7 +3,6 @@ from typing import (
     Any,
     Dict,
     Optional,
-    TypeVar,
 )
 
 from opentelemetry.trace import Span
@@ -14,8 +13,6 @@ from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE
 from guardrails.types.primitives import PrimitiveTypes
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-
-R = TypeVar("R", covariant=True)
 
 
 def get_guard_call_attributes(
