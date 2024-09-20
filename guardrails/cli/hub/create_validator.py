@@ -147,8 +147,8 @@ class Test${class_name}:
 )
 
 
-@trace(name="guardrails-cli/hub/create-validator", is_parent=True)
 @hub_command.command(name="create-validator")
+@trace(name="guardrails-cli/hub/create-validator")
 def create_validator(
     name: str = typer.Argument(help="The name for your validator."),
     filepath: str = typer.Argument(

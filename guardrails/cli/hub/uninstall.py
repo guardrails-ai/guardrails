@@ -74,8 +74,8 @@ def uninstall_hub_module(manifest: Manifest, site_packages: str):
         sys.exit(1)
 
 
-@trace(name="guardrails-cli/hub/uninstall", is_parent=True)
 @hub_command.command()
+@trace(name="guardrails-cli/hub/uninstall")
 def uninstall(
     package_uri: str = typer.Argument(
         help="URI to the package to uninstall. Example: hub://guardrails/regex_match."

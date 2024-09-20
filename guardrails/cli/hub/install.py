@@ -10,8 +10,8 @@ from guardrails.cli.hub.console import console
 from guardrails.cli.version import version_warnings_if_applicable
 
 
-@trace(name="guardrails-cli/hub/install", is_parent=True)
 @hub_command.command()
+@trace(name="guardrails-cli/hub/install")
 def install(
     package_uris: List[str] = typer.Argument(
         ...,

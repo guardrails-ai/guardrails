@@ -7,8 +7,8 @@ from guardrails.hub_telemetry.hub_tracing import trace
 from .console import console
 
 
-@trace(name="guardrails-cli/hub/list", is_parent=True)
 @hub_command.command(name="list")
+@trace(name="guardrails-cli/hub/list")
 def list():
     """List all installed validators."""
     site_packages = get_site_packages_location()

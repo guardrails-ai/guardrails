@@ -7,6 +7,7 @@ from typing import (
 )
 
 from opentelemetry.trace import Span
+from opentelemetry.trace.propagation import set_span_in_context
 
 from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE
@@ -129,27 +130,20 @@ def trace(
     *,
     name: str,
     origin: Optional[str] = None,
-    is_parent: Optional[bool] = False,
     **attrs,
 ):
-    # def decorator(fn: Callable[..., R]):
     def decorator(fn):
         @wraps(fn)
-        # def wrapper(*args, **kwargs) -> R:
         def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
-                context = (
-                    hub_telemetry.extract_current_context() if not is_parent else None
-                )
                 with hub_telemetry._tracer.start_span(
                     name,
-                    context=context,
+                    context=hub_telemetry.extract_current_context(),
                     set_status_on_exception=True,
                 ) as span:  # noqa
-                    if is_parent:
-                        # Inject the current context
-                        hub_telemetry.inject_current_context()
+                    context = set_span_in_context(span)
+                    hub_telemetry.inject_current_context(context=context)
                     nonlocal origin
                     origin = origin if origin is not None else name
 
@@ -170,24 +164,19 @@ def async_trace(
     *,
     name: str,
     origin: Optional[str] = None,
-    is_parent: Optional[bool] = False,
 ):
-    # def decorator(fn: Callable[..., Awaitable[R]]):
     def decorator(fn):
         @wraps(fn)
-        # async def async_wrapper(*args, **kwargs) -> R:
         async def async_wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
-                context = (
-                    hub_telemetry.extract_current_context() if not is_parent else None
-                )
-                with hub_telemetry._tracer.start_as_current_span(
-                    name, context=context
+                with hub_telemetry._tracer.start_span(
+                    name,
+                    context=hub_telemetry.extract_current_context(),
+                    set_status_on_exception=True,
                 ) as span:  # noqa
-                    if is_parent:
-                        # Inject the current context
-                        hub_telemetry.inject_current_context()
+                    context = set_span_in_context(span)
+                    hub_telemetry.inject_current_context(context=context)
 
                     nonlocal origin
                     origin = origin if origin is not None else name
@@ -211,27 +200,20 @@ def trace_stream(
     *,
     name: str,
     origin: Optional[str] = None,
-    is_parent: Optional[bool] = False,
     **attrs,
 ):
-    # def decorator(fn: Callable[..., Iterator[R]]):
     def decorator(fn):
         @wraps(fn)
-        # def wrapper(*args, **kwargs) -> Iterator[R]:
         def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
-                context = (
-                    hub_telemetry.extract_current_context() if not is_parent else None
-                )
                 with hub_telemetry._tracer.start_span(
                     name,
-                    context=context,
+                    context=hub_telemetry.extract_current_context(),
                     set_status_on_exception=True,
                 ) as span:  # noqa
-                    if is_parent:
-                        # Inject the current context
-                        hub_telemetry.inject_current_context()
+                    context = set_span_in_context(span)
+                    hub_telemetry.inject_current_context(context=context)
 
                     nonlocal origin
                     origin = origin if origin is not None else name
@@ -255,26 +237,20 @@ def async_trace_stream(
     *,
     name: str,
     origin: Optional[str] = None,
-    is_parent: Optional[bool] = False,
     **attrs,
 ):
-    # def decorator(fn: Callable[..., AsyncIterator[R]]):
     def decorator(fn):
         @wraps(fn)
         async def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
-                context = (
-                    hub_telemetry.extract_current_context() if not is_parent else None
-                )
                 with hub_telemetry._tracer.start_span(
                     name,
-                    context=context,
+                    context=hub_telemetry.extract_current_context(),
                     set_status_on_exception=True,
                 ) as span:  # noqa
-                    if is_parent:
-                        # Inject the current context
-                        hub_telemetry.inject_current_context()
+                    context = set_span_in_context(span)
+                    hub_telemetry.inject_current_context(context=context)
 
                     nonlocal origin
                     origin = origin if origin is not None else name

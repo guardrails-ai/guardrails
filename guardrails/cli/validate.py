@@ -15,8 +15,8 @@ def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, No
     return result.validated_output
 
 
-@trace(name="guardrails-cli/validate", is_parent=True)
 @guardrails.command()
+@trace(name="guardrails-cli/validate")
 def validate(
     rail: str = typer.Argument(
         ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False

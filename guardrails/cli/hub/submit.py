@@ -11,8 +11,8 @@ from guardrails.cli.server.hub_client import HttpError, post_validator_submit
 from guardrails.hub_telemetry.hub_tracing import trace
 
 
-@trace(name="guardrails-cli/hub/submit", is_parent=True)
 @hub_command.command(name="submit")
+@trace(name="guardrails-cli/hub/submit")
 def submit(
     package_name: str = typer.Argument(help="The package name for your validator."),
     filepath: str = typer.Argument(

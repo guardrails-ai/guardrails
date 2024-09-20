@@ -15,8 +15,8 @@ from guardrails.hub_telemetry.hub_tracing import trace
 console = Console()
 
 
-@trace(name="guardrails-cli/create", is_parent=True)
 @gr_cli.command(name="create")
+@trace(name="guardrails-cli/create")
 def create_command(
     validators: Optional[str] = typer.Option(
         default="",
