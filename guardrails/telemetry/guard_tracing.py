@@ -19,6 +19,7 @@ from guardrails.classes.history.call import Call
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.telemetry.open_inference import trace_operation
+from guardrails.telemetry.common import add_user_attributes
 from guardrails.version import GUARDRAILS_VERSION
 
 
@@ -141,6 +142,7 @@ def trace_stream_guard(
             # FIXME: This should only be called once;
             # Accumulate the validated output and call at the end
             add_guard_attributes(guard_span, history, res)
+            add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False
@@ -175,6 +177,7 @@ def trace_guard_execution(
                 ):
                     return trace_stream_guard(guard_span, result, history)
                 add_guard_attributes(guard_span, history, result)
+                add_user_attributes(guard_span)
                 return result
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
@@ -193,6 +196,7 @@ async def trace_async_stream_guard(
         try:
             res = await anext(result)  # type: ignore
             add_guard_attributes(guard_span, history, res)
+            add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False
@@ -244,9 +248,11 @@ async def trace_async_guard_execution(
                 if inspect.isawaitable(result):
                     res = await result
                 add_guard_attributes(guard_span, history, res)  # type: ignore
+                add_user_attributes(guard_span)
                 return res
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
+                add_user_attributes(guard_span)
                 raise e
     else:
         return await _execute_fn(*args, **kwargs)

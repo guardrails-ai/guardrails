@@ -12,7 +12,7 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.hub.console import console
 from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 from guardrails.cli.telemetry import trace_if_enabled
-
+from guardrails.cli.version import version_warnings_if_applicable
 
 DEFAULT_TOKEN = ""
 DEFAULT_ENABLE_METRICS = True
@@ -78,6 +78,7 @@ def configure(
         help="Clear the existing token from the configuration file.",
     ),
 ):
+    version_warnings_if_applicable(console)
     if settings.rc.exists():
         trace_if_enabled("configure")
     existing_token = _get_default_token()

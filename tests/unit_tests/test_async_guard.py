@@ -6,6 +6,7 @@ from guardrails.classes.validation.validation_result import PassResult
 from guardrails.utils import args, kwargs, on_fail
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.types import OnFailAction
+from tests.integration_tests.test_assets.custom_llm import mock_async_llm
 from tests.integration_tests.test_assets.validators import (
     EndsWith,
     LowerCase,
@@ -96,17 +97,14 @@ async def test_required_metadata(spec, metadata, error_message):
     not_missing_keys = verify_metadata_requirements(metadata, guard._validators)
     assert not_missing_keys == []
 
-    async def mock_llm(*args, **kwargs):
-        return ""
-
     # test async guard
     with pytest.raises(ValueError) as excinfo:
         await guard.parse("{}")
-        await guard.parse("{}", llm_api=mock_llm, num_reasks=0)
+        await guard.parse("{}", llm_api=mock_async_llm, num_reasks=0)
     assert str(excinfo.value) == error_message
 
     response = await guard.parse(
-        "{}", metadata=metadata, llm_api=mock_llm, num_reasks=0
+        "{}", metadata=metadata, llm_api=mock_async_llm, num_reasks=0
     )
     assert response.error is None
 

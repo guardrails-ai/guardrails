@@ -17,6 +17,8 @@ pip install guardrails-ai
 ```
 
 ### Configure the Guardrails CLI (required)
+
+First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
     
 ```bash
 guardrails configure

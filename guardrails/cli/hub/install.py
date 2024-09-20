@@ -6,6 +6,8 @@ import typer
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import logger
 from guardrails.hub_telemetry.hub_tracing import trace
+from guardrails.cli.hub.console import console
+from guardrails.cli.version import version_warnings_if_applicable
 
 
 @trace(name="guardrails-cli/hub/install", is_parent=True)
@@ -39,6 +41,8 @@ def install(
                 "Would you still like to install the"
                 " local models for local inference?",
             )
+
+        version_warnings_if_applicable(console)
 
         install_multiple(
             package_uris,
