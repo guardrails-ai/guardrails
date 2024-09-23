@@ -13,6 +13,7 @@ from guardrails.actions.reask import SkeletonReAsk
 from guardrails.classes import ValidationOutcome
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.constants import pass_status
 from guardrails.llm_providers import (
     AsyncLiteLLMCallable,
@@ -164,11 +165,16 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     )
                 validation_response += cast(str, validated_fragment)
                 passed = call_log.status == pass_status
+                validator_logs = iteration.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs(
+                    validator_logs
+                )
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     raw_llm_output=chunk_text,
                     validated_output=validated_fragment,
                     validation_passed=passed,
+                    validation_summaries=validation_summaries,
                 )
         else:
             async for chunk in stream_output:
@@ -204,11 +210,17 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     validation_response = cast(list, validated_fragment)
                 else:
                     validation_response = cast(dict, validated_fragment)
+
+                validator_logs = iteration.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs(
+                    validator_logs
+                )
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
                     validated_output=chunk_text,
                     validation_passed=validated_fragment is not None,
+                    validation_summaries=validation_summaries,
                 )
 
         iteration.outputs.raw_output = fragment

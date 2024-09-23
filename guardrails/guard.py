@@ -1193,6 +1193,11 @@ class Guard(IGuard, Generic[OT]):
             )
             self.history.extend([Call.from_interface(call) for call in guard_history])
 
+            # TODO Validation Summary
+            # validator_logs = self.history.last.iterations.last.validator_logs
+            # validation_summaries = ValidationSummary.
+            # from_validator_logs(validator_logs)
+
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
@@ -1203,6 +1208,7 @@ class Guard(IGuard, Generic[OT]):
                 if validation_output.validated_output
                 else None
             )
+            # TODO: Validation Summary
             return ValidationOutcome[OT](
                 call_id=validation_output.call_id,  # type: ignore
                 raw_llm_output=validation_output.raw_llm_output,
@@ -1224,9 +1230,11 @@ class Guard(IGuard, Generic[OT]):
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
+            print("Server response:", response)
             for fragment in response:
                 validation_output = fragment
                 if validation_output is None:
+                    # TODO Validation Summary
                     yield ValidationOutcome[OT](
                         call_id="0",  # type: ignore
                         raw_llm_output=None,
@@ -1240,6 +1248,7 @@ class Guard(IGuard, Generic[OT]):
                         if validation_output.validated_output
                         else None
                     )
+                    # TODO Validation Summary
                     yield ValidationOutcome[OT](
                         call_id=validation_output.call_id,  # type: ignore
                         raw_llm_output=validation_output.raw_llm_output,
