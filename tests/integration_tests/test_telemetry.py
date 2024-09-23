@@ -52,10 +52,6 @@ class TestTelemetry:
         private_spans = private_exporter.get_finished_spans()
         hub_spans = hub_exporter.get_finished_spans()
 
-        print("Private spans: ", private_spans)
-        print(" ")
-        print("Hub spans: ", hub_spans)
-
         assert len(private_spans) == 4
         assert len(hub_spans) == 0
 

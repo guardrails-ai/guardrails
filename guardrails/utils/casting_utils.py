@@ -1,4 +1,5 @@
 from typing import Any, Optional
+import warnings
 
 
 def to_int(v: Any) -> Optional[int]:
@@ -30,4 +31,5 @@ def to_bool(value: str) -> Optional[bool]:
         return True
     if value.lower() == "false":
         return False
+    warnings.warn(f"Could not cast {value} to bool. Returning None.")
     return None
