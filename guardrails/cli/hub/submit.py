@@ -8,10 +8,11 @@ from pydash import snake_case
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import HttpError, post_validator_submit
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.hub_telemetry.hub_tracing import trace
 
 
 @hub_command.command(name="submit")
+@trace(name="guardrails-cli/hub/submit")
 def submit(
     package_name: str = typer.Argument(help="The package name for your validator."),
     filepath: str = typer.Argument(
@@ -21,7 +22,6 @@ def submit(
     """Submit a validator to the Guardrails AI team for review and
     publishing."""
     try:
-        trace_if_enabled("hub/submit")
         if not filepath or filepath == "./{package_name}.py":
             filepath = f"./{package_name}.py"
 

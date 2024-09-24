@@ -7,7 +7,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -32,10 +32,10 @@ from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
+from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
@@ -65,6 +65,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
@@ -260,6 +261,7 @@ class Guard(IGuard, Generic[OT]):
             self._set_num_reasks(num_reasks)
         if tracer:
             self._set_tracer(tracer)
+        self._load_rc()
         self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
@@ -286,24 +288,28 @@ class Guard(IGuard, Generic[OT]):
         set_tracer_context()
         self._tracer_context = get_tracer_context()
 
+    def _load_rc(self) -> None:
+        rc = RC.load(logger)
+        settings.rc = rc
+
     def _configure_hub_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
-        credentials = None
-        if allow_metrics_collection is None:
-            credentials = Credentials.from_rc_file(logger)
-            # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.enable_metrics is True
+        allow_metrics_collection = (
+            settings.rc.enable_metrics is True
+            if allow_metrics_collection is None
+            else allow_metrics_collection
+        )
 
         self._allow_metrics_collection = allow_metrics_collection
 
-        if allow_metrics_collection:
-            if not credentials:
-                credentials = Credentials.from_rc_file(logger)
-            # Get unique id of user from credentials
-            self._user_id = credentials.id or ""
-            # Initialize Hub Telemetry singleton and get the tracer
-            self._hub_telemetry = HubTelemetry()
+        # Initialize Hub Telemetry singleton and get the tracer
+        self._hub_telemetry = HubTelemetry()
+        self._hub_telemetry._enabled = allow_metrics_collection
+
+        if allow_metrics_collection is True:
+            # Get unique id of user from rc file
+            self._user_id = settings.rc.id or ""
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
@@ -693,7 +699,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
         self._fill_exec_opts(
@@ -735,42 +741,6 @@ class Guard(IGuard, Generic[OT]):
             metadata = metadata or {}
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
-
-            if self._allow_metrics_collection and self._hub_telemetry:
-                # Create a new span for this guard call
-                llm_api_str = ""
-                if llm_api:
-                    llm_api_module_name = (
-                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                    )
-                    llm_api_name = (
-                        llm_api.__name__
-                        if hasattr(llm_api, "__name__")
-                        else type(llm_api).__name__
-                    )
-                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_call",
-                    attributes=[
-                        ("guard_id", self.id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api_str if llm_api_str else "None"),
-                        (
-                            "custom_reask_prompt",
-                            self._exec_opts.reask_prompt is not None,
-                        ),
-                        (
-                            "custom_reask_instructions",
-                            self._exec_opts.reask_instructions is not None,
-                        ),
-                        (
-                            "custom_reask_messages",
-                            self._exec_opts.reask_messages is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -870,7 +840,7 @@ class Guard(IGuard, Generic[OT]):
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         api = None
 
         if llm_api is not None or kwargs.get("model") is not None:
@@ -921,6 +891,7 @@ class Guard(IGuard, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @trace(name="/guard_call", origin="Guard.__call__")
     def __call__(
         self,
         llm_api: Optional[Callable] = None,
@@ -933,7 +904,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output.
 
         Args:
@@ -979,6 +950,7 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
+    @trace(name="/guard_call", origin="Guard.parse")
     def parse(
         self,
         llm_output: str,
@@ -1155,6 +1127,7 @@ class Guard(IGuard, Generic[OT]):
         self._save()
         return self
 
+    @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
         return self.parse(llm_output=llm_output, *args, **kwargs)
 
@@ -1223,7 +1196,7 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         payload: Dict[str, Any],
-    ) -> Iterable[ValidationOutcome[OT]]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         if settings.use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
@@ -1273,7 +1246,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         if settings.use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),

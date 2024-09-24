@@ -1,6 +1,6 @@
+import openai
 import guardrails as gd
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import get_static_openai_create_func
 
 import tests.integration_tests.test_assets.validators  # noqa
 
@@ -33,7 +33,7 @@ def test_multi_reask(mocker):
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
     guard(
-        llm_api=get_static_openai_create_func(),
+        llm_api=openai.completions.create,
         engine="text-davinci-003",
         num_reasks=5,
     )

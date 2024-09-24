@@ -13,11 +13,10 @@ from opentelemetry.trace import StatusCode, Tracer, Span
 
 from guardrails.settings import settings
 from guardrails.classes.validation.validation_result import ValidationResult
-from guardrails.telemetry.common import get_tracer
+from guardrails.telemetry.common import get_tracer, add_user_attributes, serialize
 from guardrails.telemetry.open_inference import trace_operation
 from guardrails.utils.casting_utils import to_string
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.serialization_utils import serialize
 from guardrails.version import GUARDRAILS_VERSION
 
 
@@ -106,6 +105,7 @@ def trace_validator(
                 ) as validator_span:
                     try:
                         resp = fn(*args, **kwargs)
+                        add_user_attributes(validator_span)
                         add_validator_attributes(
                             *args,
                             validator_span=validator_span,
@@ -122,6 +122,7 @@ def trace_validator(
                         validator_span.set_status(
                             status=StatusCode.ERROR, description=str(e)
                         )
+                        add_user_attributes(validator_span)
                         add_validator_attributes(
                             *args,
                             validator_span=validator_span,
@@ -168,6 +169,7 @@ def trace_async_validator(
                 ) as validator_span:
                     try:
                         resp = await fn(*args, **kwargs)
+                        add_user_attributes(validator_span)
                         add_validator_attributes(
                             *args,
                             validator_span=validator_span,
@@ -184,6 +186,7 @@ def trace_async_validator(
                         validator_span.set_status(
                             status=StatusCode.ERROR, description=str(e)
                         )
+                        add_user_attributes(validator_span)
                         add_validator_attributes(
                             *args,
                             validator_span=validator_span,

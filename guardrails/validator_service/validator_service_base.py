@@ -12,8 +12,8 @@ from guardrails.classes.validation.validation_result import (
 )
 from guardrails.errors import ValidationError
 from guardrails.merge import merge
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import OnFailAction
-from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk
 from guardrails.telemetry import trace_validator
@@ -43,6 +43,7 @@ class ValidatorServiceBase:
     #       This is a well known issue without any real solutions.
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
+    @trace(name="/validator_usage", origin="ValidatorServiceBase.execute_validator")
     def execute_validator(
         self,
         validator: Validator,
@@ -151,26 +152,6 @@ class ValidatorServiceBase:
         end_time = datetime.now()
         validator_logs.validation_result = result
         validator_logs.end_time = end_time
-
-        if not self._disable_tracer:
-            # Get HubTelemetry singleton and create a new span to
-            # log the validator usage
-            _hub_telemetry = HubTelemetry()
-            _hub_telemetry.create_new_span(
-                span_name="/validator_usage",
-                attributes=[
-                    ("validator_name", validator.rail_alias),
-                    ("validator_on_fail", validator.on_fail_descriptor),
-                    (
-                        "validator_result",
-                        result.outcome
-                        if isinstance(result, ValidationResult)
-                        else None,
-                    ),
-                ],
-                is_parent=False,  # This span will have no children
-                has_parent=True,  # This span has a parent
-            )
 
         return validator_logs
 

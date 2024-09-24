@@ -1,4 +1,4 @@
-from typing import Any, AsyncIterable, Dict, Iterable, List, cast
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, cast
 
 import openai
 
@@ -12,20 +12,30 @@ from guardrails.utils.safe_get import safe_get
 from guardrails.telemetry import trace_llm_call, trace_operation
 
 
-def get_static_openai_create_func():
-    return openai.completions.create
+def is_static_openai_create_func(llm_api: Optional[Callable]) -> bool:
+    try:
+        return llm_api == openai.completions.create
+    except openai.OpenAIError:
+        return False
 
 
-def get_static_openai_chat_create_func():
-    return openai.chat.completions.create
+def is_static_openai_chat_create_func(llm_api: Optional[Callable]) -> bool:
+    try:
+        return llm_api == openai.chat.completions.create
+    except openai.OpenAIError:
+        return False
 
 
-def get_static_openai_acreate_func():
-    return None
+def is_static_openai_acreate_func(llm_api: Optional[Callable]) -> bool:
+    # Because the static version of this does not exist in OpenAI 1.x
+    # Can we just drop these checks?
+    return False
 
 
-def get_static_openai_chat_acreate_func():
-    return None
+def is_static_openai_chat_acreate_func(llm_api: Optional[Callable]) -> bool:
+    # Because the static version of this does not exist in OpenAI 1.x
+    # Can we just drop these checks?
+    return False
 
 
 OpenAIServiceUnavailableError = openai.APIError
@@ -95,7 +105,7 @@ class OpenAIClientV1(BaseOpenAIClient):
         if stream:
             # If stream is defined and set to True,
             # openai returns a generator
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
+            openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
             return LLMResponse(output="", stream_output=openai_response)
@@ -170,7 +180,7 @@ class OpenAIClientV1(BaseOpenAIClient):
         if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
+            openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
             return LLMResponse(output="", stream_output=openai_response)
@@ -256,7 +266,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
-            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
+            openai_response = cast(AsyncIterator[Dict[str, Any]], openai_response)
             async for response in openai_response:
                 complete_output += response["choices"][0]["text"]
 
@@ -320,7 +330,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
-            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
+            openai_response = cast(AsyncIterator[Dict[str, Any]], openai_response)
             async for chunk in openai_response:
                 chunk_message = chunk["choices"][0]["delta"]
                 collected_messages.append(chunk_message)  # save the message

@@ -1,11 +1,11 @@
 import inspect
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
-    Iterable,
+    Iterator,
     Optional,
     Union,
 )
@@ -19,6 +19,7 @@ from guardrails.classes.history.call import Call
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.telemetry.open_inference import trace_operation
+from guardrails.telemetry.common import add_user_attributes
 from guardrails.version import GUARDRAILS_VERSION
 
 
@@ -131,9 +132,9 @@ def add_guard_attributes(
 
 def trace_stream_guard(
     guard_span: Span,
-    result: Iterable[ValidationOutcome[OT]],
+    result: Iterator[ValidationOutcome[OT]],
     history: Stack[Call],
-) -> Iterable[ValidationOutcome[OT]]:
+) -> Iterator[ValidationOutcome[OT]]:
     next_exists = True
     while next_exists:
         try:
@@ -141,6 +142,7 @@ def trace_stream_guard(
             # FIXME: This should only be called once;
             # Accumulate the validated output and call at the end
             add_guard_attributes(guard_span, history, res)
+            add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False
@@ -150,12 +152,12 @@ def trace_guard_execution(
     guard_name: str,
     history: Stack[Call],
     _execute_fn: Callable[
-        ..., Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]
+        ..., Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]
     ],
     tracer: Optional[Tracer] = None,
     *args,
     **kwargs,
-) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -170,11 +172,12 @@ def trace_guard_execution(
 
             try:
                 result = _execute_fn(*args, **kwargs)
-                if isinstance(result, Iterable) and not isinstance(
+                if isinstance(result, Iterator) and not isinstance(
                     result, ValidationOutcome
                 ):
                     return trace_stream_guard(guard_span, result, history)
                 add_guard_attributes(guard_span, history, result)
+                add_user_attributes(guard_span)
                 return result
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
@@ -185,14 +188,15 @@ def trace_guard_execution(
 
 async def trace_async_stream_guard(
     guard_span: Span,
-    result: AsyncIterable[ValidationOutcome[OT]],
+    result: AsyncIterator[ValidationOutcome[OT]],
     history: Stack[Call],
-) -> AsyncIterable[ValidationOutcome[OT]]:
+) -> AsyncIterator[ValidationOutcome[OT]]:
     next_exists = True
     while next_exists:
         try:
             res = await anext(result)  # type: ignore
             add_guard_attributes(guard_span, history, res)
+            add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False
@@ -211,7 +215,7 @@ async def trace_async_guard_execution(
             Union[
                 ValidationOutcome[OT],
                 Awaitable[ValidationOutcome[OT]],
-                AsyncIterable[ValidationOutcome[OT]],
+                AsyncIterator[ValidationOutcome[OT]],
             ],
         ],
     ],
@@ -221,7 +225,7 @@ async def trace_async_guard_execution(
 ) -> Union[
     ValidationOutcome[OT],
     Awaitable[ValidationOutcome[OT]],
-    AsyncIterable[ValidationOutcome[OT]],
+    AsyncIterator[ValidationOutcome[OT]],
 ]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
@@ -237,16 +241,18 @@ async def trace_async_guard_execution(
 
             try:
                 result = await _execute_fn(*args, **kwargs)
-                if isinstance(result, AsyncIterable):
+                if isinstance(result, AsyncIterator):
                     return trace_async_stream_guard(guard_span, result, history)
 
                 res = result
                 if inspect.isawaitable(result):
                     res = await result
                 add_guard_attributes(guard_span, history, res)  # type: ignore
+                add_user_attributes(guard_span)
                 return res
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
+                add_user_attributes(guard_span)
                 raise e
     else:
         return await _execute_fn(*args, **kwargs)

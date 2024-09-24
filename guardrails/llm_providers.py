@@ -1,11 +1,12 @@
 import asyncio
 
+import inspect
 from typing import (
     Any,
     Awaitable,
     Callable,
     Dict,
-    Iterable,
+    Iterator,
     List,
     Optional,
     Type,
@@ -27,10 +28,10 @@ from guardrails.classes.llm.prompt_callable import (
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,
-    get_static_openai_acreate_func,
-    get_static_openai_chat_acreate_func,
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
+    is_static_openai_acreate_func,
+    is_static_openai_chat_acreate_func,
+    is_static_openai_chat_create_func,
+    is_static_openai_create_func,
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 from guardrails.utils.safe_get import safe_get
@@ -505,7 +506,7 @@ class LiteLLMCallable(PromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(Iterable[str], response)
+            llm_response = cast(Iterator[str], response)
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
@@ -711,6 +712,26 @@ class HuggingFacePipelineCallable(PromptCallableBase):
 
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Optional[Callable] = None, *args, **kwargs):
+        llm_api_args = inspect.getfullargspec(llm_api)
+        if not llm_api_args.args:
+            raise ValueError(
+                "Custom LLM callables must accept"
+                " at least one positional argument for prompt!"
+            )
+        if not llm_api_args.varkw:
+            raise ValueError("Custom LLM callables must accept **kwargs!")
+        if (
+            not llm_api_args.kwonlyargs
+            or "instructions" not in llm_api_args.kwonlyargs
+            or "msg_history" not in llm_api_args.kwonlyargs
+        ):
+            warnings.warn(
+                "We recommend including 'instructions' and 'msg_history'"
+                " as keyword-only arguments for custom LLM callables."
+                " Doing so ensures these arguments are not uninentionally"
+                " passed through to other calls via **kwargs.",
+                UserWarning,
+            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
@@ -753,7 +774,7 @@ class ArbitraryCallable(PromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(Iterable[str], llm_response)
+            llm_response = cast(Iterator[str], llm_response)
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
@@ -784,9 +805,9 @@ def get_llm_ask(
     except ImportError:
         pass
 
-    if llm_api == get_static_openai_create_func():
+    if is_static_openai_create_func(llm_api):
         return OpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_create_func():
+    if is_static_openai_chat_create_func(llm_api):
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -1080,7 +1101,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            # response = cast(AsyncIterable[str], response)
+            # response = cast(AsyncIterator[str], response)
             return LLMResponse(
                 output="",
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
@@ -1190,6 +1211,26 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
 
 class AsyncArbitraryCallable(AsyncPromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
+        llm_api_args = inspect.getfullargspec(llm_api)
+        if not llm_api_args.args:
+            raise ValueError(
+                "Custom LLM callables must accept"
+                " at least one positional argument for prompt!"
+            )
+        if not llm_api_args.varkw:
+            raise ValueError("Custom LLM callables must accept **kwargs!")
+        if (
+            not llm_api_args.kwonlyargs
+            or "instructions" not in llm_api_args.kwonlyargs
+            or "msg_history" not in llm_api_args.kwonlyargs
+        ):
+            warnings.warn(
+                "We recommend including 'instructions' and 'msg_history'"
+                " as keyword-only arguments for custom LLM callables."
+                " Doing so ensures these arguments are not uninentionally"
+                " passed through to other calls via **kwargs.",
+                UserWarning,
+            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
@@ -1241,7 +1282,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
 
 def get_async_llm_ask(
-    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
+    llm_api: Callable[..., Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
     try:
         import litellm
@@ -1252,9 +1293,12 @@ def get_async_llm_ask(
         pass
 
     # these only work with openai v0 (None otherwise)
-    if llm_api == get_static_openai_acreate_func():
+    # We no longer support OpenAI v0
+    # We should drop these checks or update the logic to support
+    #   OpenAI v1 clients instead of just static methods
+    if is_static_openai_acreate_func(llm_api):
         return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_acreate_func():
+    if is_static_openai_chat_acreate_func(llm_api):
         return AsyncOpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -1265,11 +1309,12 @@ def get_async_llm_ask(
     except ImportError:
         pass
 
-    return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)
+    if llm_api is not None:
+        return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)
 
 
 def model_is_supported_server_side(
-    llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+    llm_api: Optional[Union[Callable, Callable[..., Awaitable[Any]]]] = None,
     *args,
     **kwargs,
 ) -> bool:
@@ -1289,17 +1334,17 @@ def model_is_supported_server_side(
 
 # CONTINUOUS FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
-    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
+    llm_api: Callable[..., Awaitable[Any]], *args, **kwargs
 ) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
-    if llm_api == get_static_openai_create_func():
+    if is_static_openai_create_func(llm_api):
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
-    elif llm_api == get_static_openai_chat_create_func():
+    elif is_static_openai_chat_create_func(llm_api):
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
-    elif llm_api == get_static_openai_acreate_func():
+    elif is_static_openai_acreate_func(llm_api):  # This is always False
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
-    elif llm_api == get_static_openai_chat_acreate_func():
+    elif is_static_openai_chat_acreate_func(llm_api):  # This is always False
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
     elif isinstance(model, LiteLLMCallable):
         return LLMResource.LITELLM_DOT_COMPLETION

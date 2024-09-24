@@ -5,10 +5,13 @@ import typer
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import logger
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.hub_telemetry.hub_tracing import trace
+from guardrails.cli.hub.console import console
+from guardrails.cli.version import version_warnings_if_applicable
 
 
 @hub_command.command()
+@trace(name="guardrails-cli/hub/install")
 def install(
     package_uris: List[str] = typer.Argument(
         ...,
@@ -30,7 +33,6 @@ def install(
     ),
 ):
     try:
-        trace_if_enabled("hub/install")
         from guardrails.hub.install import install_multiple
 
         def confirm():
@@ -39,6 +41,8 @@ def install(
                 "Would you still like to install the"
                 " local models for local inference?",
             )
+
+        version_warnings_if_applicable(console)
 
         install_multiple(
             package_uris,
