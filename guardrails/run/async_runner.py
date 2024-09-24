@@ -298,40 +298,14 @@ class AsyncRunner(Runner):
         prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
-
-        has_prompt_validation = "prompt" in self.validation_map
-        has_instructions_validation = "instructions" in self.validation_map
-        has_messages_validation = "messages" in self.validation_map
+        print("===== runner messages are", messages)
         if messages:
-            if has_prompt_validation or has_instructions_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Prompt and instructions validation are "
-                        "not supported when using message history."
-                    )
-                )
-
-            prompt, instructions = None, None
-
             # Runner.prepare_messages
             messages = await self.prepare_messages(
                 call_log=call_log,
                 messages=messages,
                 prompt_params=prompt_params,
                 attempt_number=attempt_number,
-            )
-        elif prompt is not None:
-            if has_messages_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Message history validation is "
-                        "not supported when using prompt/instructions."
-                    )
-                )
-            messages = None
-
-            instructions, prompt = await self.prepare_prompt(
-                call_log, instructions, prompt, prompt_params, api, attempt_number
             )
 
         else:
@@ -387,7 +361,7 @@ class AsyncRunner(Runner):
         iteration.outputs.validation_response = validated_messages
         if isinstance(validated_messages, ReAsk):
             raise ValidationError(
-                f"Message history validation failed: " f"{validated_messages}"
+                f"Messages validation failed: " f"{validated_messages}"
             )
         if validated_messages != msg_str:
-            raise ValidationError("Message history validation failed")
+            raise ValidationError("Messages validation failed")

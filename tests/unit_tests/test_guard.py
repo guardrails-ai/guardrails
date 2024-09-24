@@ -266,16 +266,16 @@ def test_use():
     assert prompt_validators[1].__class__.__name__ == "OneLine"
 
     # Check guard for output validators
-    assert len(guard._validators) == 6
+    assert len(guard._validators) == 4
 
-    assert isinstance(guard._validators[4], EndsWith)
-    assert guard._validators[4]._kwargs["end"] == "a"
+    assert isinstance(guard._validators[2], EndsWith)
+    assert guard._validators[2]._kwargs["end"] == "a"
     assert (
-        guard._validators[4].on_fail_descriptor == OnFailAction.FIX
+        guard._validators[2].on_fail_descriptor == OnFailAction.FIX
     )  # bc this is the default
 
-    assert isinstance(guard._validators[5], TwoWords)
-    assert guard._validators[5].on_fail_descriptor == OnFailAction.REASK  # bc we set it
+    assert isinstance(guard._validators[3], TwoWords)
+    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
 
     # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):
@@ -569,33 +569,25 @@ def test_use_and_use_many():
         )
     )
 
-    # Check schemas for prompt, instructions and msg_history validators
-    prompt_validators = guard._validator_map.get("prompt", [])
+    # Check schemas for messages validators
+    prompt_validators = guard._validator_map.get("messages", [])
     assert len(prompt_validators) == 2
     assert prompt_validators[0].__class__.__name__ == "OneLine"
     assert prompt_validators[1].__class__.__name__ == "LowerCase"
 
-    instructions_validators = guard._validator_map.get("instructions", [])
-    assert len(instructions_validators) == 1
-    assert instructions_validators[0].__class__.__name__ == "UpperCase"
-
-    msg_history_validators = guard._validator_map.get("msg_history", [])
-    assert len(msg_history_validators) == 1
-    assert msg_history_validators[0].__class__.__name__ == "LowerCase"
-
     # Check guard for validators
-    assert len(guard._validators) == 6
+    assert len(guard._validators) == 4
 
-    assert isinstance(guard._validators[4], TwoWords)
-    assert guard._validators[4].on_fail_descriptor == OnFailAction.REASK  # bc we set it
+    assert isinstance(guard._validators[2], TwoWords)
+    assert guard._validators[2].on_fail_descriptor == OnFailAction.REASK  # bc we set it
 
-    assert isinstance(guard._validators[5], ValidLength)
-    assert guard._validators[5]._min == 0
-    assert guard._validators[5]._kwargs["min"] == 0
-    assert guard._validators[5]._max == 12
-    assert guard._validators[5]._kwargs["max"] == 12
+    assert isinstance(guard._validators[3], ValidLength)
+    assert guard._validators[3]._min == 0
+    assert guard._validators[3]._kwargs["min"] == 0
+    assert guard._validators[3]._max == 12
+    assert guard._validators[3]._kwargs["max"] == 12
     assert (
-        guard._validators[5].on_fail_descriptor == OnFailAction.REFRAIN
+        guard._validators[3].on_fail_descriptor == OnFailAction.REFRAIN
     )  # bc we set it
 
     # Test with an unrecognized "on" parameter, should warn with a UserWarning

@@ -39,6 +39,22 @@ class Messages:
         else:
             self.source = source
 
+        # Ensure self.source is iterable
+        self.source = list(self._source)
+        self._index = 0
+
+    def __iter__(self):
+        self._index = 0
+        return self
+
+    def __next__(self):
+        if self._index < len(self.source):
+            result = self.source[self._index]
+            self._index += 1
+            return result
+        else:
+            raise StopIteration
+
     def format(
         self,
         **kwargs,

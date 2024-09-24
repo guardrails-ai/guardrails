@@ -15,7 +15,7 @@ Hello world
 <message role="user">
 Hello world
 </message>
-
+</messages>
 </rail>
 """
     rail_string_to_schema(rail_spec)
@@ -39,6 +39,7 @@ Hello world
 <message role="user">
 Hello world
 </message>
+</messages>
 </rail>
 """
     rail_string_to_schema(rail_spec)

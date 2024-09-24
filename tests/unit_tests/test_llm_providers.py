@@ -483,8 +483,8 @@ def test_get_async_llm_ask_custom_llm():
 def test_get_async_llm_ask_custom_llm_warning():
     from guardrails.llm_providers import AsyncArbitraryCallable
 
-    async def my_llm(prompt: str, **kwargs) -> str:
-        return f"Hello {prompt}!"
+    async def my_llm(messages: str, **kwargs) -> str:
+        return f"Hello {messages}!"
 
     with pytest.warns(
         UserWarning,
@@ -498,17 +498,6 @@ def test_get_async_llm_ask_custom_llm_warning():
         prompt_callable = get_async_llm_ask(my_llm)
 
         assert isinstance(prompt_callable, AsyncArbitraryCallable)
-
-
-def test_get_async_llm_ask_custom_llm_must_accept_prompt():
-    async def my_llm() -> str:
-        return "Hello!"
-
-    with pytest.raises(
-        ValueError,
-        match="Custom LLM callables must accept at least one positional argument for prompt!",  # noqa
-    ):
-        get_async_llm_ask(my_llm)
 
 
 def test_get_async_llm_ask_custom_llm_must_accept_kwargs():

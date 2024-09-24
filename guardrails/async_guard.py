@@ -408,7 +408,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
         # Determine the final value for messages
         messages = messages or messages_from_kwargs or messages_from_exec_opts or []
-
+        print("===== messages is", messages)
         if messages is not None and not len(messages):
             raise RuntimeError(
                 "You must provide a prompt if messages is empty. "

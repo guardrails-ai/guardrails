@@ -6,7 +6,8 @@ from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.llm.prompt_callable import PromptCallableBase
 from guardrails.prompt.prompt import Prompt
-
+from guardrails.prompt.messages import Messages
+from guardrails.prompt.instructions import Instructions
 
 class Inputs(IInputs, ArbitraryModel):
     """Inputs represent the input data that is passed into the validation loop.
@@ -37,7 +38,7 @@ class Inputs(IInputs, ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    messages: Optional[List[Dict[str, Union[str, Prompt]]]] = Field(
+    messages: Optional[Union[List[Dict[str, Union[str, Prompt, Instructions]]], Messages]] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )

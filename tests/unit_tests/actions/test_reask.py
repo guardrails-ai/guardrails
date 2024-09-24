@@ -552,8 +552,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 
     (
         reask_schema,
-        reask_prompt,
-        reask_instructions,
+        reask_messages
     ) = get_reask_setup(
         output_type,
         output_schema,
@@ -574,9 +573,9 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         # json.dumps(json_example, indent=2),
     )
 
-    assert reask_prompt.source == expected_prompt
+    assert reask_messages.source[1]["content"].source == expected_prompt
 
-    assert reask_instructions.source == expected_instructions
+    assert reask_messages.source[0]["content"].source == expected_instructions
 
 
 ### FIXME: Implement once Field Level ReAsk is implemented w/ JSON schema ###

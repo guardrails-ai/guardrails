@@ -523,6 +523,5 @@ class Runner:
             prompt_params=prompt_params,
             exec_options=self.exec_options,
         )
-        # TODO add messages support
-        messages = None
+
         return output_schema, messages
