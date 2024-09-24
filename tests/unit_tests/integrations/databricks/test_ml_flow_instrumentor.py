@@ -194,9 +194,9 @@ class TestMlFlowInstrumentor:
 
         m = MlFlowInstrumentor("mock experiment")
 
-        mock_result = [
-            ValidationOutcome(call_id="mock call id", validation_passed=True)
-        ]
+        mock_result = iter(
+            [ValidationOutcome(call_id="mock call id", validation_passed=True)]
+        )
         mock_execute = MagicMock()
         mock_execute.return_value = mock_result
         mock_guard = MagicMock(spec=Guard)

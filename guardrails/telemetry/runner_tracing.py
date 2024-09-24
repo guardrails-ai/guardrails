@@ -1,10 +1,10 @@
 import json
 from functools import wraps
 from typing import (
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
-    Generator,
+    Iterator,
     Optional,
 )
 
@@ -86,8 +86,8 @@ def trace_step(fn: Callable[..., Iteration]):
 
 
 def trace_stream_step_generator(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]], *args, **kwargs
-) -> Generator[ValidationOutcome[OT], None, None]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> Iterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -119,12 +119,10 @@ def trace_stream_step_generator(
 
 
 def trace_stream_step(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]],
-) -> Callable[..., Generator[ValidationOutcome[OT], None, None]]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]],
+) -> Callable[..., Iterator[ValidationOutcome[OT]]]:
     @wraps(fn)
-    def trace_stream_step_wrapper(
-        *args, **kwargs
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    def trace_stream_step_wrapper(*args, **kwargs) -> Iterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_stream_step_generator(fn, *args, **kwargs)
         else:
@@ -163,8 +161,8 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
 
 
 async def trace_async_stream_step_generator(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]], *args, **kwargs
-) -> AsyncIterable[ValidationOutcome[OT]]:
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> AsyncIterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -197,12 +195,12 @@ async def trace_async_stream_step_generator(
 
 
 def trace_async_stream_step(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]],
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]],
 ):
     @wraps(fn)
     async def trace_async_stream_step_wrapper(
         *args, **kwargs
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_async_stream_step_generator(fn, *args, **kwargs)
         else:
