@@ -33,6 +33,7 @@ from pydantic.config import ConfigDict
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation.validation_result import ErrorSpan
+from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
@@ -1193,10 +1194,8 @@ class Guard(IGuard, Generic[OT]):
             )
             self.history.extend([Call.from_interface(call) for call in guard_history])
 
-            # TODO Validation Summary
-            # validator_logs = self.history.last.iterations.last.validator_logs
-            # validation_summaries = ValidationSummary.
-            # from_validator_logs(validator_logs)
+            validator_logs = self.history.last.iterations.last.validator_logs
+            validation_summaries = ValidationSummary.from_validator_logs(validator_logs)
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
@@ -1208,12 +1207,12 @@ class Guard(IGuard, Generic[OT]):
                 if validation_output.validated_output
                 else None
             )
-            # TODO: Validation Summary
             return ValidationOutcome[OT](
                 call_id=validation_output.call_id,  # type: ignore
                 raw_llm_output=validation_output.raw_llm_output,
                 validated_output=validated_output,
                 validation_passed=(validation_output.validation_passed is True),
+                validation_summaries=validation_summaries,
             )
         else:
             raise ValueError("Guard does not have an api client!")
