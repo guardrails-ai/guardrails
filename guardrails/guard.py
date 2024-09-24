@@ -1229,11 +1229,9 @@ class Guard(IGuard, Generic[OT]):
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
-            print("Server response:", response)
             for fragment in response:
                 validation_output = fragment
                 if validation_output is None:
-                    # TODO Validation Summary
                     yield ValidationOutcome[OT](
                         call_id="0",  # type: ignore
                         raw_llm_output=None,
@@ -1247,7 +1245,6 @@ class Guard(IGuard, Generic[OT]):
                         if validation_output.validated_output
                         else None
                     )
-                    # TODO Validation Summary
                     yield ValidationOutcome[OT](
                         call_id=validation_output.call_id,  # type: ignore
                         raw_llm_output=validation_output.raw_llm_output,
