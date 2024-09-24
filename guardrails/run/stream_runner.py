@@ -1,8 +1,10 @@
 from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 
+
 from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
+from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
     LiteLLMCallable,
@@ -176,8 +178,7 @@ class StreamRunner(Runner):
                 "$",
                 validate_subschema=True,
             )
-
-            for res in gen:
+            for chunk_index, res in enumerate(gen):
                 chunk = res.chunk
                 original_text = res.original_text
                 if isinstance(chunk, SkeletonReAsk):
@@ -196,12 +197,20 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 validation_response += cast(str, chunk)
                 passed = call_log.status == pass_status
+
+                validator_logs = call_log.iterations.last.validator_logs
+
+                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+                    validator_logs
+                )
+
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
                     raw_llm_output=original_text,
                     validated_output=chunk,
                     validation_passed=passed,
+                    validation_summaries=validation_summaries,
                 )
 
         # handle non string schema
@@ -246,11 +255,17 @@ class StreamRunner(Runner):
                 else:
                     validation_response = cast(dict, validated_fragment)
                 # 5. Convert validated fragment to a pretty JSON string
+
+                validator_logs = iteration.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+                    validator_logs
+                )
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
                     validated_output=validated_fragment,
                     validation_passed=validated_fragment is not None,
+                    validation_summaries=validation_summaries,
                 )
 
         # # Finally, add to logs

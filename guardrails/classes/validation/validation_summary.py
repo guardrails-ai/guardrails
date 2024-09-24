@@ -40,3 +40,15 @@ class ValidationSummary(IValidationSummary, ArbitraryModel):
         ):
             summaries.append(summary)
         return summaries
+
+    @staticmethod
+    def from_validator_logs_only_fails(
+        validator_logs: List[ValidatorLogs],
+    ) -> List["ValidationSummary"]:
+        summaries = []
+        for summary in ValidationSummary._generate_summaries_from_validator_logs(
+            validator_logs
+        ):
+            if summary.failure_reason:
+                summaries.append(summary)
+        return summaries

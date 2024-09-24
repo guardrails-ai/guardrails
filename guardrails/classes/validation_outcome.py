@@ -82,7 +82,9 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
         )
         validation_passed = call.status == pass_status
         validator_logs = last_iteration.validator_logs or []
-        validation_summaries = ValidationSummary.from_validator_logs(validator_logs)
+        validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+            validator_logs
+        )
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error
         output = cast(OT, call.guarded_output)
