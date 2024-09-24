@@ -307,9 +307,7 @@ def test_litellm_callable(mocker):
 
 
 class ReturnTempCallable(Callable):
-    def __call__(
-        self, prompt: str, *args, instructions=None, msg_history=None, **kwargs
-    ) -> Any:
+    def __call__(self, *args, messages=None, **kwargs) -> Any:
         return ""
 
 
@@ -422,7 +420,7 @@ def test_get_llm_ask_litellm():
 def test_get_llm_ask_custom_llm():
     from guardrails.llm_providers import ArbitraryCallable
 
-    def my_llm(prompt: str, *, instructions=None, msg_history=None, **kwargs) -> str:
+    def my_llm(prompt: str, *, messages=None, **kwargs) -> str:
         return f"Hello {prompt}!"
 
     prompt_callable = get_llm_ask(my_llm)
@@ -439,9 +437,9 @@ def test_get_llm_ask_custom_llm_warning():
     with pytest.warns(
         UserWarning,
         match=(
-            "We recommend including 'instructions' and 'msg_history'"
+            "We recommend including 'messages'"
             " as keyword-only arguments for custom LLM callables."
-            " Doing so ensures these arguments are not uninentionally"
+            " Doing so ensures these arguments are not unintentionally"
             " passed through to other calls via \\*\\*kwargs."
         ),
     ):
@@ -474,9 +472,7 @@ def test_get_llm_ask_custom_llm_must_accept_kwargs():
 def test_get_async_llm_ask_custom_llm():
     from guardrails.llm_providers import AsyncArbitraryCallable
 
-    async def my_llm(
-        prompt: str, *, instructions=None, msg_history=None, **kwargs
-    ) -> str:
+    async def my_llm(prompt: str, *, messages=None, **kwargs) -> str:
         return f"Hello {prompt}!"
 
     prompt_callable = get_async_llm_ask(my_llm)
@@ -493,9 +489,9 @@ def test_get_async_llm_ask_custom_llm_warning():
     with pytest.warns(
         UserWarning,
         match=(
-            "We recommend including 'instructions' and 'msg_history'"
+            "We recommend including 'messages'"
             " as keyword-only arguments for custom LLM callables."
-            " Doing so ensures these arguments are not uninentionally"
+            " Doing so ensures these arguments are not unintentionally"
             " passed through to other calls via \\*\\*kwargs."
         ),
     ):
@@ -526,6 +522,6 @@ def test_get_async_llm_ask_custom_llm_must_accept_kwargs():
 
 
 def test_chat_prompt():
-    # raises when neither msg_history or prompt are provided
+    # raises when messages are not provided
     with pytest.raises(PromptCallableException):
         chat_prompt(None)

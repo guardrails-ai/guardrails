@@ -195,8 +195,10 @@ ${ingredients}
     guard = gd.Guard.from_string(
         validators,
         string_description=description,
-        prompt=prompt,
-        instructions=instructions,
+        messages=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt},
+        ],
     )
     final_output = guard(
         llm_api=openai.completions.create,

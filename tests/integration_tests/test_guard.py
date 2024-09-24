@@ -103,15 +103,13 @@ def validated_output():
     }
 
 
-def guard_initializer(
-    rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
-) -> Guard:
+def guard_initializer(rail: Union[str, BaseModel], messages=None) -> Guard:
     """Helper function to initialize a Guard using the correct method."""
 
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
     else:
-        return Guard.from_pydantic(rail, prompt=prompt, instructions=instructions)
+        return Guard.from_pydantic(rail, messages=messages)
 
 
 '''def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
@@ -400,17 +398,25 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
 
 
 @pytest.mark.parametrize(
-    "rail,prompt,instructions",
+    "rail,messages",
     [
-        (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None, None),
+        (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None),
         (
             entity_extraction.PYDANTIC_RAIL_WITH_FIX,
-            entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
-            entity_extraction.PYDANTIC_INSTRUCTIONS_CHAT_MODEL,
+            [
+                {
+                    "role": "system",
+                    "content": entity_extraction.PYDANTIC_INSTRUCTIONS_CHAT_MODEL,
+                },
+                {
+                    "role": "user",
+                    "content": entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
+                },
+            ],
         ),
     ],
 )
-def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructions):
+def test_entity_extraction_with_fix_chat_models(mocker, rail, messages):
     """Test that the entity extraction works with fix for chat models."""
     mock_invoke_llm = mocker.patch(
         "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
@@ -424,7 +430,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt, instructions)
+    guard = guard_initializer(rail, messages)
     final_output = guard(
         llm_api=openai.chat.completions.create,
         prompt_params={"document": content[:6000]},

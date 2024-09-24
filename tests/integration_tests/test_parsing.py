@@ -145,7 +145,7 @@ def test_reask_prompt_instructions(mocker):
     guard.parse(
         llm_output="Tomato Cheese Pizza",
         llm_api=openai.chat.completions.create,
-        msg_history=[
+        messages=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},
         ],

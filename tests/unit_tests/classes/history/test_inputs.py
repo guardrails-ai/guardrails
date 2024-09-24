@@ -8,9 +8,7 @@ def test_empty_initialization():
 
     assert inputs.llm_api is None
     assert inputs.llm_output is None
-    assert inputs.instructions is None
-    assert inputs.prompt is None
-    assert inputs.msg_history is None
+    assert inputs.messages is None
     assert inputs.prompt_params is None
     assert inputs.num_reasks is None
     assert inputs.metadata is None

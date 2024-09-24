@@ -485,7 +485,7 @@ def test_input_validation_fix(mocker):
 
     # but raises for messages validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
+    guard.use(TwoWords(on_fail=OnFailAction.EXCEPTION), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         guard(
@@ -501,41 +501,19 @@ def test_input_validation_fix(mocker):
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
-    # rail prompt validation
+    # rail messages validation
     guard = Guard.from_rail_string(
         """
 <rail version="0.1">
-<prompt
-    validators="two-words"
-    on-fail-two-words="fix"
->
-This is not two words
-</prompt>
-<output type="string">
-</output>
-</rail>
-"""
-    )
-    guard(
-        mock_llm_api,
-    )
-    assert guard.history.first.iterations.first.outputs.validation_response == "This is"
-
-    # rail instructions validation
-    guard = Guard.from_rail_string(
-        """
-<rail version="0.1">
-<prompt>
-This is not two words
-</prompt>
-<instructions
-    validators="two-words"
-    on-fail-two-words="fix"
->
-This also is not two words
-</instructions>
-<output type="string">
-</output>
+    <messages
+        validators="two-words"
+        on-fail-two-words="fix"
+    >
+        <message>This is not two words</message>
+        <message>This also is not two words</message>
+    </messages>
+    <output type="string">
+    </output>
 </rail>
 """
     )
@@ -549,10 +527,10 @@ This also is not two words
 
 @pytest.mark.asyncio
 async def test_async_messages_validation_fix(mocker):
-    async def mock_llm_api(*args, instructions=None, messages=None, **kwargs) -> str:
+    async def mock_llm_api(*args, messages=None, **kwargs) -> str:
         return json.dumps({"name": "Fluffy"})
 
-    # fix returns an amended value for prompt/instructions validation,
+    # fix returns an amended value for messages validation,
     guard = AsyncGuard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
@@ -600,7 +578,7 @@ async def test_async_messages_validation_fix(mocker):
                 }
             ],
         )
-    assert str(excinfo.value) == "Message history validation failed"
+    assert str(excinfo.value) == "Messages validation failed"
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
@@ -659,7 +637,7 @@ def test_input_validation_fail(
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
-    def custom_llm(prompt, *args, instructions=None, messages=None, **kwargs):
+    def custom_llm(*args, messages=None, **kwargs):
         raise Exception(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"

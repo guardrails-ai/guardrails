@@ -6,7 +6,53 @@ from guardrails.llm_providers import (
 )
 from guardrails.classes.llm.llm_response import LLMResponse
 
-from .test_assets import entity_extraction, pydantic, python_rail, string
+from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
+
+
+class MockLiteLLMCallableOther(LiteLLMCallable):
+    # NOTE: this class normally overrides `llm_providers.LiteLLMCallable`,
+    # which compiles instructions and prompt into a single prompt;
+    # here the instructions are passed into kwargs and ignored
+    def _invoke_llm(self, prompt, *args, **kwargs):
+        """Mock the OpenAI API call to Completion.create."""
+
+        _rail_to_compiled_prompt = {  # noqa
+            entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
+        }
+
+        mock_llm_responses = {
+            entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
+            entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
+            entity_extraction.COMPILED_PROMPT_FULL_REASK: entity_extraction.LLM_OUTPUT_FULL_REASK,  # noqa: E501
+            entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1: entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,  # noqa: E501
+            entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2: entity_extraction.LLM_OUTPUT_SKELETON_REASK_2,  # noqa: E501
+            pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
+            pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
+            pydantic.COMPILED_PROMPT_FULL_REASK_1: pydantic.LLM_OUTPUT_FULL_REASK_1,
+            pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
+            pydantic.COMPILED_PROMPT_FULL_REASK_2: pydantic.LLM_OUTPUT_FULL_REASK_2,
+            pydantic.COMPILED_PROMPT_ENUM: pydantic.LLM_OUTPUT_ENUM,
+            pydantic.COMPILED_PROMPT_ENUM_2: pydantic.LLM_OUTPUT_ENUM_2,
+            string.COMPILED_PROMPT: string.LLM_OUTPUT,
+            string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
+            string.COMPILED_LIST_PROMPT: string.LIST_LLM_OUTPUT,
+            python_rail.VALIDATOR_PARALLELISM_PROMPT_1: python_rail.VALIDATOR_PARALLELISM_RESPONSE_1,  # noqa: E501
+            python_rail.VALIDATOR_PARALLELISM_PROMPT_2: python_rail.VALIDATOR_PARALLELISM_RESPONSE_2,  # noqa: E501
+            python_rail.VALIDATOR_PARALLELISM_PROMPT_3: python_rail.VALIDATOR_PARALLELISM_RESPONSE_3,  # noqa: E501
+            lists_object.LIST_PROMPT: lists_object.LIST_OUTPUT,
+        }
+
+        try:
+            output = mock_llm_responses[prompt]
+            return LLMResponse(
+                output=output,
+                prompt_token_count=123,
+                response_token_count=1234,
+            )
+        except KeyError:
+            print("Unrecognized prompt!")
+            print(prompt)
+            raise ValueError("Compiled prompt not found")
 
 
 class MockAsyncLiteLLMCallable(AsyncLiteLLMCallable):

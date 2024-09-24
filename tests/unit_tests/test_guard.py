@@ -249,10 +249,8 @@ def test_use():
     # everything else is in the schema
     guard: Guard = (
         Guard()
-        .use(LowerCase, on="prompt")
-        .use(OneLine, on="prompt")
-        .use(UpperCase, on="instructions")
-        .use(LowerCase, on="msg_history")
+        .use(LowerCase, on="messages")
+        .use(OneLine, on="messages")
         .use(
             EndsWith, end="a", on="output"
         )  # default on="output", still explicitly set
@@ -261,19 +259,11 @@ def test_use():
         )  # default on="output", implicitly set
     )
 
-    # Check schemas for prompt, instructions and msg_history validators
-    prompt_validators = guard._validator_map.get("prompt", [])
+    # Check schemas for messages validators
+    prompt_validators = guard._validator_map.get("messages", [])
     assert len(prompt_validators) == 2
     assert prompt_validators[0].__class__.__name__ == "LowerCase"
     assert prompt_validators[1].__class__.__name__ == "OneLine"
-
-    instructions_validators = guard._validator_map.get("instructions", [])
-    assert len(instructions_validators) == 1
-    assert instructions_validators[0].__class__.__name__ == "UpperCase"
-
-    msg_history_validators = guard._validator_map.get("msg_history", [])
-    assert len(msg_history_validators) == 1
-    assert msg_history_validators[0].__class__.__name__ == "LowerCase"
 
     # Check guard for output validators
     assert len(guard._validators) == 6
@@ -554,9 +544,7 @@ class TestValidate:
     def test_on_many_failure(self):
         guard: Guard = (
             Guard()
-            .use(OneLine, on="prompt")
-            .use(LowerCase, on="instructions")
-            .use(UpperCase, on="msg_history")
+            .use(OneLine, on="messages")
             .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
             .use(TwoWords)
             .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
@@ -573,9 +561,7 @@ class TestValidate:
 def test_use_and_use_many():
     guard: Guard = (
         Guard()
-        .use_many(OneLine(), LowerCase(), on="prompt")
-        .use(UpperCase, on="instructions")
-        .use(LowerCase, on="msg_history")
+        .use_many(OneLine(), LowerCase(), on="messages")
         .use_many(
             TwoWords(on_fail=OnFailAction.REASK),
             ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
@@ -616,9 +602,7 @@ def test_use_and_use_many():
     with pytest.warns(UserWarning):
         guard: Guard = (
             Guard()
-            .use_many(OneLine(), LowerCase(), on="prompt")
-            .use(UpperCase, on="instructions")
-            .use(LowerCase, on="msg_history")
+            .use_many(OneLine(), LowerCase(), on="messages")
             .use_many(
                 TwoWords(on_fail=OnFailAction.REASK),
                 ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
