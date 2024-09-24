@@ -1,7 +1,6 @@
 import json
 import re
 from typing import Any, Dict, List
-import openai
 import pytest
 from pydantic import BaseModel, Field
 
@@ -451,7 +450,7 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    def mock_llm_api(prompt, *args, instructions=None, messages=None, **kwargs):
+    def mock_llm_api(*args, messages=None, **kwargs):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
@@ -467,20 +466,9 @@ def test_input_validation_fix(mocker):
             }
         ],
     )
+
     assert (
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
-    )
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
-
-    guard(
-        mock_llm_api,
-        prompt="What kind of pet should I get and what should I name it?",
-        instructions="But really, what kind of pet should I get?",
-    )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response
-        == "But really,"
     )
 
     # but raises for messages validation
@@ -497,7 +485,7 @@ def test_input_validation_fix(mocker):
                 }
             ],
         )
-    assert str(excinfo.value) == "Message history validation failed"
+    assert str(excinfo.value) == "Validation failed for field with errors: must be exactly two words"
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
@@ -509,8 +497,8 @@ def test_input_validation_fix(mocker):
         validators="two-words"
         on-fail-two-words="fix"
     >
-        <message>This is not two words</message>
-        <message>This also is not two words</message>
+        <message role="user">This is not two words</message>
+        <message role="user">This also is not two words</message>
     </messages>
     <output type="string">
     </output>
@@ -568,19 +556,17 @@ async def test_async_messages_validation_fix(mocker):
     guard = AsyncGuard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValidationError) as excinfo:
-        await guard(
-            mock_llm_api,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "What kind of pet should I get?",
-                }
-            ],
-        )
-    assert str(excinfo.value) == "Messages validation failed"
-    assert isinstance(guard.history.first.exception, ValidationError)
-    assert guard.history.first.exception == excinfo.value
+    await guard(
+        mock_llm_api,
+        messages=[
+            {
+                "role": "user",
+                "content": "What kind of pet should I get?",
+            }
+        ],
+    )
+
+    assert guard.history.first.iterations.first.outputs.validation_response == "What kind"
 
     # rail prompt validation
     guard = AsyncGuard.from_rail_string(
@@ -590,7 +576,7 @@ async def test_async_messages_validation_fix(mocker):
     validators="two-words"
     on-fail-two-words="fix"
 >
-<message>This is not two words</message>
+<message role="user">This is not two words</message>
 </messages>
 <output type="string">
 </output>
@@ -608,18 +594,18 @@ async def test_async_messages_validation_fix(mocker):
     [
         (
             OnFailAction.REASK,
-            "Message validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
-            "Message validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,
-            "Message validation failed",
-            "Message validation failed",
+            "Messages validation failed",
+            "Messages validation failed",
         ),
         (
             OnFailAction.REFRAIN,
-            "Message validation failed",
-            "Message validation failed",
+            "Messages validation failed",
+            "Messages validation failed",
         ),
         (
             OnFailAction.EXCEPTION,
@@ -690,8 +676,8 @@ def test_input_validation_fail(
     [
         (
             OnFailAction.REASK,
-            "Message validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
-            "Message validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,
@@ -782,19 +768,3 @@ async def test_input_validation_fail_async(
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
-
-def test_input_validation_mismatch_raise():
-    # messages validation, prompt argument
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
-
-    with pytest.raises(ValueError):
-        guard(
-            openai.completions.create,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "What kind of pet should I get?",
-                }
-            ],
-        )

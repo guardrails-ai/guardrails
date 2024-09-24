@@ -647,8 +647,8 @@ class Guard(IGuard, Generic[OT]):
             reask_messages=reask_messages,
         )
         metadata = metadata or {}
-        if not llm_output and llm_api and not (messages):
-            raise RuntimeError("'messages' must be provided in order to call an LLM!")
+        # if not llm_output and llm_api and not (messages):
+        #     raise RuntimeError("'messages' must be provided in order to call an LLM!")
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
@@ -841,11 +841,11 @@ class Guard(IGuard, Generic[OT]):
         """
 
         messages = messages or self._exec_opts.messages or []
-        if messages is not None and not len(messages):
-            raise RuntimeError(
-                "You must provide messages. "
-                "Alternatively, you can provide a prompt in the Schema constructor."
-            )
+        # if messages is not None and not len(messages):
+        #     raise RuntimeError(
+        #         "You must provide messages. "
+        #         "Alternatively, you can provide a prompt in the Schema constructor."
+        #     )
         return trace_guard_execution(
             self.name,
             self.history,

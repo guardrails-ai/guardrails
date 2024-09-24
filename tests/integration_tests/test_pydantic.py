@@ -36,10 +36,12 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.from_pydantic(ListOfPeople, 
+                                   messages=[{
+                                    "role": "user",
+                                      "content": VALIDATED_RESPONSE_REASK_PROMPT}])
     final_output = guard(
-        openai.completions.create,
-        engine="text-davinci-003",
+        model="text-davinci-003",
         max_tokens=512,
         temperature=0.5,
         num_reasks=2,
@@ -55,8 +57,8 @@ def test_pydantic_with_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 3
 
-    # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.COMPILED_PROMPT
+    # For original prompt and output
+    assert call.compiled_messages[0]["content"]._source == pydantic.COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
@@ -102,7 +104,7 @@ def test_pydantic_with_reask(mocker):
 def test_pydantic_with_full_schema_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -122,9 +124,11 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.from_pydantic(ListOfPeople, messages=[{
+            "content": VALIDATED_RESPONSE_REASK_PROMPT,
+            "role": "user",
+        }])
     final_output = guard(
-        openai.chat.completions.create,
         model="gpt-3.5-turbo",
         max_tokens=512,
         temperature=0.5,
@@ -142,8 +146,8 @@ def test_pydantic_with_full_schema_reask(mocker):
     assert call.iterations.length == 3
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.COMPILED_PROMPT_CHAT
-    assert call.compiled_instructions == pydantic.COMPILED_INSTRUCTIONS_CHAT
+    assert call.compiled_messages[0]["content"]._source == pydantic.COMPILED_PROMPT_CHAT
+    assert call.compiled_messages[1]["content"] == pydantic.COMPILED_INSTRUCTIONS_CHAT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1

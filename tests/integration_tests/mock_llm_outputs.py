@@ -128,6 +128,11 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
+            if msg_history:
+                key = (msg_history[0]["content"], msg_history[1]["content"])
+                print("=========trying key", key)
+                out_text = mock_llm_responses[key]
+                print("========found out text", out_text)
             if prompt and instructions and not msg_history:
                 out_text = mock_llm_responses[(prompt, instructions)]
             elif msg_history and not prompt and not instructions:

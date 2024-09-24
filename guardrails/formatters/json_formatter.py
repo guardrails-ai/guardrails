@@ -105,12 +105,16 @@ class JsonFormatter(BaseFormatter):
                 messages: Optional[List[Dict[str, str]]] = None,
                 **kwargs,
             ) -> str:
+                prompt = ""
+                for msg in messages:
+                    prompt += msg["content"]
+
                 return json.dumps(
                     Jsonformer(
                         model=model.model,
                         tokenizer=model.tokenizer,
                         json_schema=self.output_schema,
-                        messages=messages,
+                        prompt=prompt
                     )()
                 )
 
@@ -127,12 +131,16 @@ class JsonFormatter(BaseFormatter):
                 messages: Optional[List[Dict[str, str]]] = None,
                 **kwargs,
             ) -> str:
+                prompt = ""
+                for msg in messages:
+                    prompt += msg["content"]
+            
                 return json.dumps(
                     Jsonformer(
                         model=model,
                         tokenizer=tokenizer,
                         json_schema=self.output_schema,
-                        messages=messages,
+                        prompt=prompt
                     )()
                 )
 

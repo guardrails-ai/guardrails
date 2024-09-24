@@ -287,22 +287,17 @@ class Runner:
     def validate_messages(
         self, call_log: Call, messages: MessageHistory, attempt_number: int
     ) -> None:
-        msg_str = messages_string(messages)
-        inputs = Inputs(
-            llm_output=msg_str,
-        )
-        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
-        call_log.iterations.insert(0, iteration)
-
-        validated_msgs = ""
-
         for msg in messages:
             content = (
                 msg["content"].source
                 if isinstance(msg["content"], Prompt)
                 else msg["content"]
             )
-
+            inputs = Inputs(
+                        llm_output=content,
+                    )
+            iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+            call_log.iterations.insert(0, iteration)
             value, _metadata = validator_service.validate(
                 value=content,
                 metadata=self.metadata,
@@ -315,16 +310,15 @@ class Runner:
             validated_msg = validator_service.post_process_validation(
                 value, attempt_number, iteration, OutputTypes.STRING
             )
+            
+            iteration.outputs.validation_response = validated_msg
 
             if isinstance(validated_msg, ReAsk):
-                raise ValidationError(f"Message validation failed: {validated_msg}")
+                raise ValidationError(f"Messages validation failed: {validated_msg}")
             elif not validated_msg or iteration.status == fail_status:
-                raise ValidationError("Message validation failed")
+                raise ValidationError("Messages validation failed")
 
             msg["content"] = cast(str, validated_msg)
-            validated_msgs += validated_msg
-
-        iteration.outputs.validation_response = validated_msgs
 
         return messages  # type: ignore
 

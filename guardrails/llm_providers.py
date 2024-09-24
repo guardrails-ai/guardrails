@@ -43,14 +43,14 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
 def chat_prompt(
     prompt: Optional[str],
     instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
+    messages: Optional[List[Dict]] = None,
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
-    if msg_history:
-        return msg_history
+    if messages:
+        return messages
     if prompt is None:
         raise PromptCallableException(
-            "You must pass in either `text` or `msg_history` to `guard.__call__`."
+            "You must pass in either `text` or `messages` to `guard.__call__`."
         )
 
     if not instructions:
@@ -65,14 +65,14 @@ def chat_prompt(
 def litellm_messages(
     prompt: Optional[str],
     instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
+    messages: Optional[List[Dict]] = None,
 ) -> List[Dict[str, str]]:
     """Prepare messages for LiteLLM."""
-    if msg_history:
-        return msg_history
+    if messages:
+        return messages
     if prompt is None:
         raise PromptCallableException(
-            "Either `text` or `msg_history` required for `guard.__call__`."
+            "Either `text` or `messages` required for `guard.__call__`."
         )
 
     if instructions:
@@ -143,8 +143,7 @@ class LiteLLMCallable(PromptCallableBase):
         self,
         text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -170,9 +169,9 @@ class LiteLLMCallable(PromptCallableBase):
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             ) from e
-        if text is not None or instructions is not None or msg_history is not None:
+        if messages is not None:
             messages = litellm_messages(
-                prompt=text, instructions=instructions, msg_history=msg_history
+                prompt=text, messages=messages
             )
             kwargs["messages"] = messages
 
@@ -592,7 +591,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         self,
         text: Optional[str] = None,
         instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ):
@@ -619,11 +618,11 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-        if text is not None or instructions is not None or msg_history is not None:
+        if text is not None or instructions is not None or messages is not None:
             messages = litellm_messages(
                 prompt=text,
                 instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
             )
             kwargs["messages"] = messages
 

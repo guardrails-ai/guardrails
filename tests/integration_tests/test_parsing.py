@@ -49,16 +49,16 @@ def test_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"]._source == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"]._source == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
@@ -83,7 +83,8 @@ async def test_async_parsing_reask(mocker):
     ]
 
     guard = gd.AsyncGuard.from_pydantic(
-        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
+        output_class=pydantic.PersonalDetails,
+        messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
 
     final_output = await guard(
@@ -100,17 +101,17 @@ async def test_async_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"]._source == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
 
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"]._source == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
@@ -123,7 +124,7 @@ def test_reask_prompt_instructions(mocker):
     """
 
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=string.MSG_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
@@ -144,7 +145,7 @@ def test_reask_prompt_instructions(mocker):
 
     guard.parse(
         llm_output="Tomato Cheese Pizza",
-        llm_api=openai.chat.completions.create,
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},

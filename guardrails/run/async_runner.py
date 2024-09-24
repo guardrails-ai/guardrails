@@ -22,6 +22,8 @@ from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.telemetry import trace_async_call, trace_async_step
 
+from guardrails.constants import fail_status
+from guardrails.prompt import Prompt
 
 class AsyncRunner(Runner):
     def __init__(
@@ -339,29 +341,37 @@ class AsyncRunner(Runner):
     async def validate_messages(
         self, call_log: Call, messages: MessageHistory, attempt_number: int
     ):
-        msg_str = messages_string(messages)
-        inputs = Inputs(
-            llm_output=msg_str,
-        )
-        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
-        call_log.iterations.insert(0, iteration)
-        value, _metadata = await validator_service.async_validate(
-            value=msg_str,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="messages",
-        )
-        validated_messages = validator_service.post_process_validation(
-            value, attempt_number, iteration, OutputTypes.STRING
-        )
-        validated_messages = cast(str, validated_messages)
-
-        iteration.outputs.validation_response = validated_messages
-        if isinstance(validated_messages, ReAsk):
-            raise ValidationError(
-                f"Messages validation failed: " f"{validated_messages}"
+        for msg in messages:
+            content = (
+                msg["content"].source
+                if isinstance(msg["content"], Prompt)
+                else msg["content"]
             )
-        if validated_messages != msg_str:
-            raise ValidationError("Messages validation failed")
+            inputs = Inputs(
+                        llm_output=content,
+                    )
+            iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+            call_log.iterations.insert(0, iteration)
+            value, _metadata = await validator_service.async_validate(
+                value=content,
+                metadata=self.metadata,
+                validator_map=self.validation_map,
+                iteration=iteration,
+                disable_tracer=self._disable_tracer,
+                path="messages",
+            )
+
+            validated_msg = validator_service.post_process_validation(
+                value, attempt_number, iteration, OutputTypes.STRING
+            )
+            
+            iteration.outputs.validation_response = validated_msg
+
+            if isinstance(validated_msg, ReAsk):
+                raise ValidationError(f"Messages validation failed: {validated_msg}")
+            elif not validated_msg or iteration.status == fail_status:
+                raise ValidationError("Messages validation failed")
+
+            msg["content"] = cast(str, validated_msg)
+
+        return messages  # type: ignore

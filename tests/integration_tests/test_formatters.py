@@ -25,7 +25,7 @@ def test_hugging_face_model_callable():
         bez: List[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model.generate, tokenizer=tokenizer, prompt="test")
+    response = g(model.generate, tokenizer=tokenizer, messages=[{"content": "test","role": "user"}])
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
@@ -45,7 +45,7 @@ def test_hugging_face_pipeline_callable():
         bez: List[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model, prompt="Sample:")
+    response = g(model, messages=[{"content": "Sample:","role": "user"}])
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
