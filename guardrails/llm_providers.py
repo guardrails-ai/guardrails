@@ -6,7 +6,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
+    Iterator,
     List,
     Optional,
     Union,
@@ -210,7 +210,7 @@ class LiteLLMCallable(PromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(Iterable[str], response)
+            llm_response = cast(Iterator[str], response)
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
@@ -469,7 +469,7 @@ class ArbitraryCallable(PromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(Iterable[str], llm_response)
+            llm_response = cast(Iterator[str], llm_response)
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
@@ -656,7 +656,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            # response = cast(AsyncIterable[str], response)
+            # response = cast(AsyncIterator[str], response)
             return LLMResponse(
                 output="",
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]

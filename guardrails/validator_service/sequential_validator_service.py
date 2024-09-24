@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
@@ -80,12 +80,12 @@ class SequentialValidatorService(ValidatorServiceBase):
         self,
         iteration: Iteration,
         validator_map: ValidatorMap,
-        value_stream: Iterable[Tuple[Any, bool]],
+        value_stream: Iterator[Tuple[Any, bool]],
         metadata: Dict[str, Any],
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[StreamValidationResult]:
+    ) -> Iterator[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             if validator.on_fail_descriptor == OnFailAction.FIX:
@@ -111,23 +111,21 @@ class SequentialValidatorService(ValidatorServiceBase):
     # requires at least 2 validators
     def multi_merge(self, original: str, new_values: list[str]) -> Optional[str]:
         current = new_values.pop()
-        print("Fmerging these:", new_values)
         while len(new_values) > 0:
             nextval = new_values.pop()
             current = merge(current, nextval, original)
-        print("\nFmerge result:", current)
         return current
 
     def run_validators_stream_fix(
         self,
         iteration: Iteration,
         validator_map: ValidatorMap,
-        value_stream: Iterable[Tuple[Any, bool]],
+        value_stream: Iterator[Tuple[Any, bool]],
         metadata: Dict[str, Any],
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[StreamValidationResult]:
+    ) -> Iterator[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
         validator_partial_acc: dict[int, str] = {}
@@ -271,12 +269,12 @@ class SequentialValidatorService(ValidatorServiceBase):
         self,
         iteration: Iteration,
         validator_map: ValidatorMap,
-        value_stream: Iterable[Tuple[Any, bool]],
+        value_stream: Iterator[Tuple[Any, bool]],
         metadata: Dict[str, Any],
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[StreamValidationResult]:
+    ) -> Iterator[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
@@ -481,14 +479,14 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_stream(
         self,
-        value_stream: Iterable[Tuple[Any, bool]],
+        value_stream: Iterator[Tuple[Any, bool]],
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[StreamValidationResult]:
+    ) -> Iterator[StreamValidationResult]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 

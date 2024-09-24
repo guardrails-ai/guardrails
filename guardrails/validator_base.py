@@ -11,6 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing_extensions import deprecated
 from warnings import warn
 import warnings
 
@@ -18,14 +19,15 @@ import nltk
 import requests
 from langchain_core.runnables import Runnable
 
+from guardrails.settings import settings
 from guardrails.classes import ErrorSpan  # noqa
 from guardrails.classes import PassResult  # noqa
 from guardrails.classes import FailResult, ValidationResult
-from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -83,22 +85,25 @@ class Validator:
         on_fail: Optional[Union[Callable[[Any, FailResult], Any], OnFailAction]] = None,
         **kwargs,
     ):
-        self.creds = Credentials.from_rc_file()
-        self._disable_telemetry = self.creds.enable_metrics is not True
+        self._disable_telemetry = settings.rc.enable_metrics is not True
         if not self._disable_telemetry:
-            self._hub_telemetry = HubTelemetry()
+            self._hub_telemetry = HubTelemetry(enabled=settings.rc.enable_metrics)
 
         self.use_local = kwargs.get("use_local", None)
         self.validation_endpoint = kwargs.get("validation_endpoint", None)
-        if not self.creds:
+        # NOTE: I think this is an evergreen check
+        # We should test w/o an rc file,
+        #   and if this doesn't raise then we should remove this.
+        if not settings.rc:
             raise ValueError(
-                "No credentials found. Please run `guardrails configure` and try again."
+                "No .guardrailsrc file found."
+                " Please run `guardrails configure` and try again."
             )
-        self.hub_jwt_token = get_jwt_token(self.creds)
+        self.hub_jwt_token = get_jwt_token(settings.rc)
 
         # If use_local is not set, we can fall back to the setting determined in CLI
         if self.use_local is None:
-            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+            self.use_local = not remote_inference.get_use_remote_inference(settings.rc)
 
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
@@ -137,6 +142,18 @@ class Validator:
         assert (
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
+
+    @property
+    @deprecated(
+        (
+            "The `creds` attribute is deprecated and will be removed in version 0.6.x."
+            " Use `settings.rc` instead."
+        )
+    )
+    def creds(self):
+        from guardrails.classes.credentials import Credentials  # type: ignore
+
+        return Credentials.from_rc_file()  # type: ignore
 
     def _set_on_fail_method(self, on_fail: Callable[[Any, FailResult], Any]):
         """Set the on_fail method for the validator."""
@@ -201,7 +218,6 @@ class Validator:
         validation requirements, logic, or pre/post processing.
         """
         validation_result = self._validate(value, metadata)
-        self._log_telemetry()
         return validation_result
 
     async def async_validate(
@@ -217,6 +233,7 @@ class Validator:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.validate, value, metadata)
 
+    @trace(name="/validator_inference", origin="Validator._inference")
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
         validation call.
@@ -462,29 +479,6 @@ class Validator:
         )
 
         return ValidatorRunnable(self)
-
-    def _log_telemetry(self) -> None:
-        """Logs telemetry after the validator is called."""
-
-        if not self._disable_telemetry:
-            # Get HubTelemetry singleton and create a new span to
-            # log the validator inference
-            used_guardrails_endpoint = (
-                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
-            )
-            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
-            self._hub_telemetry.create_new_span(
-                span_name="/validator_inference",
-                attributes=[
-                    ("validator_name", self.rail_alias),
-                    ("used_remote_inference", not self.use_local),
-                    ("used_local_inference", self.use_local),
-                    ("used_guardrails_endpoint", used_guardrails_endpoint),
-                    ("used_custom_endpoint", used_custom_endpoint),
-                ],
-                is_parent=False,  # This span will have no children
-                has_parent=True,  # This span has a parent
-            )
 
 
 V = TypeVar("V", bound=Validator, covariant=True)

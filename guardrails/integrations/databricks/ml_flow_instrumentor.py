@@ -3,12 +3,11 @@ import inspect
 import sys
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
-    Generator,
-    Iterable,
+    Iterator,
     Union,
 )
 
@@ -107,13 +106,13 @@ class MlFlowInstrumentor:
     def _instrument_guard(
         self,
         guard_execute: Callable[
-            ..., Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]
+            ..., Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]
         ],
     ):
         @wraps(guard_execute)
         def _guard_execute_wrapper(
             *args, **kwargs
-        ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+        ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
             with mlflow.start_span(
                 name="guardrails/guard",
                 span_type="guard",
@@ -131,7 +130,7 @@ class MlFlowInstrumentor:
 
                 try:
                     result = guard_execute(*args, **kwargs)
-                    if isinstance(result, Iterable) and not isinstance(
+                    if isinstance(result, Iterator) and not isinstance(
                         result, ValidationOutcome
                     ):
                         return trace_stream_guard(guard_span, result, history)  # type: ignore
@@ -153,7 +152,7 @@ class MlFlowInstrumentor:
                 Union[
                     ValidationOutcome[OT],
                     Awaitable[ValidationOutcome[OT]],
-                    AsyncIterable[ValidationOutcome[OT]],
+                    AsyncIterator[ValidationOutcome[OT]],
                 ],
             ],
         ],
@@ -164,7 +163,7 @@ class MlFlowInstrumentor:
         ) -> Union[
             ValidationOutcome[OT],
             Awaitable[ValidationOutcome[OT]],
-            AsyncIterable[ValidationOutcome[OT]],
+            AsyncIterator[ValidationOutcome[OT]],
         ]:
             with mlflow.start_span(
                 name="guardrails/guard",
@@ -184,7 +183,7 @@ class MlFlowInstrumentor:
 
                 try:
                     result = await guard_execute(*args, **kwargs)
-                    if isinstance(result, AsyncIterable):
+                    if isinstance(result, AsyncIterator):
                         return trace_async_stream_guard(guard_span, result, history)  # type: ignore
                     res = result
                     if inspect.isawaitable(result):
@@ -220,12 +219,12 @@ class MlFlowInstrumentor:
         return trace_step_wrapper
 
     def _instrument_stream_runner_step(
-        self, runner_step: Callable[..., Generator[ValidationOutcome[OT], None, None]]
+        self, runner_step: Callable[..., Iterator[ValidationOutcome[OT]]]
     ):
         @wraps(runner_step)
         def trace_stream_step_wrapper(
             *args, **kwargs
-        ) -> Generator[ValidationOutcome[OT], None, None]:
+        ) -> Iterator[ValidationOutcome[OT]]:
             with mlflow.start_span(
                 name="guardrails/guard/step",
                 span_type="step",
@@ -283,12 +282,12 @@ class MlFlowInstrumentor:
         return trace_async_step_wrapper
 
     def _instrument_async_stream_runner_step(
-        self, runner_step: Callable[..., AsyncIterable[ValidationOutcome[OT]]]
-    ) -> Callable[..., AsyncIterable[ValidationOutcome[OT]]]:
+        self, runner_step: Callable[..., AsyncIterator[ValidationOutcome[OT]]]
+    ) -> Callable[..., AsyncIterator[ValidationOutcome[OT]]]:
         @wraps(runner_step)
         async def trace_async_stream_step_wrapper(
             *args, **kwargs
-        ) -> AsyncIterable[ValidationOutcome[OT]]:
+        ) -> AsyncIterator[ValidationOutcome[OT]]:
             with mlflow.start_span(
                 name="guardrails/guard/step",
                 span_type="step",

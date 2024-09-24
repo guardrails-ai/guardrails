@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Iterable, Optional
+from typing import Any, Iterator, Optional
 
 import requests
 from guardrails_api_client.configuration import Configuration
@@ -80,7 +80,7 @@ class GuardrailsApiClient:
         guard: Guard,
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
-    ) -> Iterable[Any]:
+    ) -> Iterator[Any]:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None

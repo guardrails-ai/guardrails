@@ -1,6 +1,6 @@
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Dict,
     List,
     Optional,
@@ -24,12 +24,14 @@ from guardrails.logger import set_scope
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
+from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
+    # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
 
         (
@@ -54,6 +56,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         async for call in result:
             yield call
 
+    @async_trace_stream(name="/step", origin="AsyncStreamRunner.async_step")
     @trace_async_stream_step
     async def async_step(
         self,
@@ -65,7 +68,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         messages: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,

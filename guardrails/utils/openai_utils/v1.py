@@ -1,4 +1,4 @@
-from typing import Any, AsyncIterable, Callable, Dict, Iterable, List, Optional, cast
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, cast
 
 import openai
 
@@ -105,7 +105,7 @@ class OpenAIClientV1(BaseOpenAIClient):
         if stream:
             # If stream is defined and set to True,
             # openai returns a generator
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
+            openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
             return LLMResponse(output="", stream_output=openai_response)
@@ -180,7 +180,7 @@ class OpenAIClientV1(BaseOpenAIClient):
         if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
+            openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
             return LLMResponse(output="", stream_output=openai_response)
@@ -266,7 +266,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
-            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
+            openai_response = cast(AsyncIterator[Dict[str, Any]], openai_response)
             async for response in openai_response:
                 complete_output += response["choices"][0]["text"]
 
@@ -330,7 +330,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
-            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
+            openai_response = cast(AsyncIterator[Dict[str, Any]], openai_response)
             async for chunk in openai_response:
                 chunk_message = chunk["choices"][0]["delta"]
                 collected_messages.append(chunk_message)  # save the message

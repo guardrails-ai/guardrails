@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, Iterable, Optional, Tuple
+from typing import Any, Iterator, Optional, Tuple
 import warnings
 
 from guardrails.actions.filter import apply_filters
@@ -12,6 +12,9 @@ from guardrails.classes.validation.validation_result import (
 )
 from guardrails.types import ValidatorMap
 from guardrails.telemetry.legacy_validator_tracing import trace_validation_result
+
+# Keep this imported for backwards compatibility
+from guardrails.validator_service.validator_service_base import ValidatorServiceBase  # noqa
 from guardrails.validator_service.async_validator_service import AsyncValidatorService
 from guardrails.validator_service.sequential_validator_service import (
     SequentialValidatorService,
@@ -98,14 +101,14 @@ def validate(
 
 
 def validate_stream(
-    value_stream: Iterable[Tuple[Any, bool]],
+    value_stream: Iterator[Tuple[Any, bool]],
     metadata: dict,
     validator_map: ValidatorMap,
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
-) -> Iterable[StreamValidationResult]:
+) -> Iterator[StreamValidationResult]:
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)

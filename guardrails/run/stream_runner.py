@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
@@ -9,6 +9,7 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.run.runner import Runner
+from guardrails.hub_telemetry.hub_tracing import trace_stream
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,
@@ -27,9 +28,10 @@ class StreamRunner(Runner):
     similar.
     """
 
+    @trace_stream(name="/reasks", origin="StreamRunner.__call__")
     def __call__(
         self, call_log: Call, prompt_params: Optional[Dict] = {}
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         """Execute the StreamRunner.
 
         Args:
@@ -60,6 +62,7 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
+    @trace_stream(name="/step", origin="StreamRunner.step")
     @trace_stream_step
     def step(
         self,
@@ -70,7 +73,7 @@ class StreamRunner(Runner):
         output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         """Run a full step."""
         inputs = Inputs(
             llm_api=api,
@@ -124,7 +127,7 @@ class StreamRunner(Runner):
         # for now, handle string and json schema differently
         if self.output_type == OutputTypes.STRING:
 
-            def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
+            def prepare_chunk_generator(stream) -> Iterator[Tuple[Any, bool]]:
                 for chunk in stream:
                     chunk_text = self.get_chunk_text(chunk, api)
                     nonlocal fragment
@@ -263,11 +266,7 @@ class StreamRunner(Runner):
         return chunk_text
 
     def parse(
-        self,
-        output: str,
-        output_schema: Dict[str, Any],
-        *,
-        verified: set,
+        self, output: str, output_schema: Dict[str, Any], *, verified: set, **kwargs
     ):
         """Parse the output."""
         parsed_output, error = parse_llm_output(

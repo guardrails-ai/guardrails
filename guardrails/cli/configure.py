@@ -6,7 +6,7 @@ from typing import Optional
 
 import typer
 
-from guardrails.classes.credentials import Credentials
+from guardrails.settings import settings
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.hub.console import console
@@ -46,7 +46,7 @@ def save_configuration_file(
 
 def _get_default_token() -> str:
     """Get the default token from the configuration file."""
-    file_token = Credentials.from_rc_file(logger).token
+    file_token = settings.rc.token
     if file_token is None:
         return ""
     return file_token
@@ -79,7 +79,8 @@ def configure(
     ),
 ):
     version_warnings_if_applicable(console)
-    trace_if_enabled("configure")
+    if settings.rc.exists():
+        trace_if_enabled("configure")
     existing_token = _get_default_token()
     last4 = existing_token[-4:] if existing_token else ""
 

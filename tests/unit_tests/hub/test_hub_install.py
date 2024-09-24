@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import ANY, call, MagicMock
 
-from guardrails.classes.credentials import Credentials
+from guardrails.classes.rc import RC
 from guardrails_hub_types import Manifest
 from guardrails.hub.validator_package_service import (
     InvalidHubInstallURL,
@@ -35,7 +35,7 @@ class TestInstall:
 
     def test_exits_early_if_uri_is_not_valid(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         with pytest.raises(InvalidHubInstallURL):
@@ -43,12 +43,12 @@ class TestInstall:
 
     def test_install_local_models__false(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         mocker.patch(
-            "guardrails.hub.install.Credentials.from_rc_file",
-            return_value=Credentials.from_dict(
+            "guardrails.hub.install.RC.load",
+            return_value=RC.from_dict(
                 {"use_remote_inferencing": use_remote_inferencing}
             ),
         )
@@ -105,12 +105,12 @@ class TestInstall:
 
     def test_install_local_models__true(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         mocker.patch(
-            "guardrails.hub.install.Credentials.from_rc_file",
-            return_value=Credentials.from_dict(
+            "guardrails.hub.install.RC.load",
+            return_value=RC.from_dict(
                 {"use_remote_inferencing": use_remote_inferencing}
             ),
         )
@@ -166,12 +166,12 @@ class TestInstall:
 
     def test_install_local_models__none(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         mocker.patch(
-            "guardrails.hub.install.Credentials.from_rc_file",
-            return_value=Credentials.from_dict(
+            "guardrails.hub.install.RC.load",
+            return_value=RC.from_dict(
                 {"use_remote_inferencing": use_remote_inferencing}
             ),
         )
@@ -227,12 +227,12 @@ class TestInstall:
 
     def test_happy_path(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         mocker.patch(
-            "guardrails.hub.install.Credentials.from_rc_file",
-            return_value=Credentials.from_dict(
+            "guardrails.hub.install.RC.load",
+            return_value=RC.from_dict(
                 {"use_remote_inferencing": use_remote_inferencing}
             ),
         )
@@ -284,7 +284,7 @@ class TestInstall:
 
     def test_install_local_models_confirmation(self, mocker, use_remote_inferencing):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=False,
         )
         mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -335,7 +335,7 @@ class TestInstall:
         self, mocker, use_remote_inferencing
     ):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=False,
         )
         mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -381,12 +381,12 @@ class TestInstall:
 
     def test_use_remote_endpoint(self, mocker, use_remote_inferencing: bool):
         mocker.patch(
-            "guardrails.hub.install.Credentials.has_rc_file",
+            "guardrails.hub.install.RC.exists",
             return_value=True,
         )
         mocker.patch(
-            "guardrails.hub.install.Credentials.from_rc_file",
-            return_value=Credentials.from_dict(
+            "guardrails.hub.install.RC.load",
+            return_value=RC.from_dict(
                 {"use_remote_inferencing": use_remote_inferencing}
             ),
         )

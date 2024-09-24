@@ -8,11 +8,13 @@ from guardrails.classes.execution.guard_execution_options import GuardExecutionO
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import AsyncPromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.run.runner import Runner
 from guardrails.run.utils import messages_source, messages_string
 from guardrails.schema.validator import schema_validation
+from guardrails.hub_telemetry.hub_tracing import async_trace
+from guardrails.types.inputs import MessageHistory
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
@@ -52,10 +54,11 @@ class AsyncRunner(Runner):
             disable_tracer=disable_tracer,
             exec_options=exec_options,
         )
-        self.api: Optional[AsyncPromptCallableBase] = api
+        self.api = api
 
     # TODO: Refactor this to use inheritance and overrides
     # Why are we using a different method here instead of just overriding?
+    @async_trace(name="/reasks", origin="AsyncRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
@@ -107,15 +110,6 @@ class AsyncRunner(Runner):
                     prompt_params=prompt_params,
                 )
 
-            # Log how many times we reasked
-            # Use the HubTelemetry singleton
-            if not self._disable_tracer:
-                self._hub_telemetry.create_new_span(
-                    span_name="/reasks",
-                    attributes=[("reask_count", index)],
-                    is_parent=False,  # This span has no children
-                    has_parent=True,  # This span has a parent
-                )
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log.exception = e.original_exception
@@ -128,6 +122,7 @@ class AsyncRunner(Runner):
         return call_log
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/step", origin="AsyncRunner.async_step")
     @trace_async_step
     async def async_step(
         self,
@@ -213,6 +208,7 @@ class AsyncRunner(Runner):
         return iteration
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/llm_call", origin="AsyncRunner.async_call")
     @trace_async_call
     async def async_call(
         self,
@@ -245,6 +241,7 @@ class AsyncRunner(Runner):
         return llm_response
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/validation", origin="AsyncRunner.async_validate")
     async def async_validate(
         self,
         iteration: Iteration,
@@ -283,6 +280,7 @@ class AsyncRunner(Runner):
         return validated_output
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/input_prep", origin="AsyncRunner.async_prepare")
     async def async_prepare(
         self,
         call_log: Call,
@@ -290,7 +288,7 @@ class AsyncRunner(Runner):
         *,
         messages: Optional[List[Dict]],
         prompt_params: Optional[Dict] = None,
-        api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
+        api: Optional[AsyncPromptCallableBase],
     ) -> Optional[List[Dict]]:
         """Prepare by running pre-processing and input validation.
 
@@ -298,48 +296,98 @@ class AsyncRunner(Runner):
             The instructions, prompt, and message history.
         """
         prompt_params = prompt_params or {}
+        if api is None:
+            raise UserFacingException(ValueError("API must be provided."))
 
+        has_prompt_validation = "prompt" in self.validation_map
+        has_instructions_validation = "instructions" in self.validation_map
+        has_messages_validation = "messages" in self.validation_map
         if messages:
-            # Runner.prepare_messages
-            formatted_messages = []
-
-            # Format any variables in the message history with the prompt params.
-            for msg in messages:
-                msg_copy = copy.deepcopy(msg)
-                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-                formatted_messages.append(msg_copy)
-
-            if "messages" in self.validation_map:
-                # Runner.validate_messages
-                msg_str = messages_string(formatted_messages)
-                inputs = Inputs(
-                    llm_output=msg_str,
-                )
-                iteration = Iteration(
-                    call_id=call_log.id, index=attempt_number, inputs=inputs
-                )
-                call_log.iterations.insert(0, iteration)
-                value, _metadata = await validator_service.async_validate(
-                    value=msg_str,
-                    metadata=self.metadata,
-                    validator_map=self.validation_map,
-                    iteration=iteration,
-                    disable_tracer=self._disable_tracer,
-                    path="messages",
-                )
-                validated_messages = validator_service.post_process_validation(
-                    value, attempt_number, iteration, OutputTypes.STRING
-                )
-                validated_messages = cast(str, validated_messages)
-
-                iteration.outputs.validation_response = validated_messages
-                if isinstance(validated_messages, ReAsk):
-                    raise ValidationError(
-                        f"Message validation failed: " f"{validated_messages}"
+            if has_prompt_validation or has_instructions_validation:
+                raise UserFacingException(
+                    ValueError(
+                        "Prompt and instructions validation are "
+                        "not supported when using message history."
                     )
-                if validated_messages != msg_str:
-                    raise ValidationError("Messages validation failed")
+                )
+
+            prompt, instructions = None, None
+
+            # Runner.prepare_messages
+            messages = await self.prepare_messages(
+                call_log=call_log,
+                messages=messages,
+                prompt_params=prompt_params,
+                attempt_number=attempt_number,
+            )
+        elif prompt is not None:
+            if has_messages_validation:
+                raise UserFacingException(
+                    ValueError(
+                        "Message history validation is "
+                        "not supported when using prompt/instructions."
+                    )
+                )
+            messages = None
+
+            instructions, prompt = await self.prepare_prompt(
+                call_log, instructions, prompt, prompt_params, api, attempt_number
+            )
+
         else:
             raise UserFacingException(ValueError("'messages' must be provided."))
 
         return messages
+
+    async def prepare_messages(
+        self,
+        call_log: Call,
+        messages: MessageHistory,
+        prompt_params: Dict,
+        attempt_number: int,
+    ) -> MessageHistory:
+        formatted_messages = []
+
+        # Format any variables in the message history with the prompt params.
+        for msg in messages:
+            msg_copy = copy.deepcopy(msg)
+            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            formatted_messages.append(msg_copy)
+
+        if "messages" in self.validation_map:
+            await self.validate_messages(
+                call_log, formatted_messages, attempt_number
+            )
+
+        return formatted_messages
+
+    @async_trace(name="/input_validation", origin="AsyncRunner.validate_messages")
+    async def validate_messages(
+        self, call_log: Call, messages: MessageHistory, attempt_number: int
+    ):
+        msg_str = messages_string(messages)
+        inputs = Inputs(
+            llm_output=msg_str,
+        )
+        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+        call_log.iterations.insert(0, iteration)
+        value, _metadata = await validator_service.async_validate(
+            value=msg_str,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
+            disable_tracer=self._disable_tracer,
+            path="messages",
+        )
+        validated_messages = validator_service.post_process_validation(
+            value, attempt_number, iteration, OutputTypes.STRING
+        )
+        validated_messages = cast(str, validated_messages)
+
+        iteration.outputs.validation_response = validated_messages
+        if isinstance(validated_messages, ReAsk):
+            raise ValidationError(
+                f"Message history validation failed: " f"{validated_messages}"
+            )
+        if validated_messages != msg_str:
+            raise ValidationError("Message history validation failed")
