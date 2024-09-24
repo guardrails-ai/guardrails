@@ -2123,14 +2123,21 @@ dev = ["coverage", "gunicorn (>=22.0.0,<23)", "pytest", "pytest-mock", "ruff"]
 
 [[package]]
 name = "guardrails-api-client"
-version = "0.3.8"
+version = "0.3.12"
 description = "Guardrails API Client."
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api_client-0.3.8-py3-none-any.whl", hash = "sha256:2becd5ac9c720879a997e50e2a813d9e77a6fb1a7068a96b1b9712dd6dd9efb8"},
-    {file = "guardrails_api_client-0.3.8.tar.gz", hash = "sha256:2e1e45cddf727534a378bc99f7f98da0800960918c75bda010b8bc493b946d16"},
+    {file = "guardrails_api_client-0.3.12-py3-none-any.whl", hash = "sha256:ba9c2a8cf12e5f78486890e19739fb94e7aaf6955ef4453f096cc730df84794e"},
+    {file = "guardrails_api_client-0.3.12.tar.gz", hash = "sha256:3c0a40549c2857744b059baceae63e0646a9178305700e72320b1b53dbaeb33e"},
 ]
+
+[package.dependencies]
+pydantic = ">=2"
+python-dateutil = ">=2.5.3"
+setuptools = ">=21.0.0"
+typing-extensions = ">=4.7.1"
+urllib3 = ">=1.25.3,<2.1.0"
 
 [package.extras]
 dev = ["pyright", "pytest", "pytest-cov", "ruff"]
@@ -7855,23 +7862,6 @@ secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "p
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
-name = "urllib3"
-version = "2.2.1"
-description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "urllib3-2.2.1-py3-none-any.whl", hash = "sha256:450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d"},
-    {file = "urllib3-2.2.1.tar.gz", hash = "sha256:d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19"},
-]
-
-[package.extras]
-brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
-h2 = ["h2 (>=4,<5)"]
-socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
-zstd = ["zstandard (>=0.18.0)"]
-
-[[package]]
 name = "uvloop"
 version = "0.20.0"
 description = "Fast implementation of asyncio event loop on top of libuv"
@@ -8419,4 +8409,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6253610141bb5686330057ae658550f9257aabe83ee7b279b783a7f4418a26a6"
+content-hash = "8cbf51c8006599fb64f6810841dc8da70f11c9f889934fce77b2766da6a46c79"
