@@ -65,7 +65,7 @@ ${order}
 ${gr.complete_xml_suffix_v2}
 """
 
-order = """I want a burger with large fries and a coke."""
+order = """I want a burger with two large fries and a coke zero."""
 
 # MinimumOneRange is a hypothetical custom validator that an integer > 0 is supplied
 class Lineitem(BaseModel):
@@ -84,12 +84,11 @@ response = guard(
         "content": prompt
     }],
     prompt_params={"order": order},
-    num_reasks=2,
 )
 
 print(response.validated_output)
 
 # [{'item': 'burger', 'quantity': 1},
-#  {'item': 'fries', 'quantity': 1},
-#  {'item': 'coke', 'quantity': 1}]
+#  {'item': 'fries', 'quantity': 2},
+#  {'item': 'coke zero', 'quantity': 1}]
 ```
