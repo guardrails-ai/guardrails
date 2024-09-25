@@ -253,13 +253,13 @@ class StreamRunner(Runner):
             content = chunk.choices[0].text
             if not finished and content:
                 chunk_text = content
-        except Exception as e:
+        except Exception:
             try:
                 finished = chunk.choices[0].finish_reason
                 content = chunk.choices[0].delta.content
                 if not finished and content:
                     chunk_text = content
-            except Exception as e:
+            except Exception:
                 try:
                     chunk_text = chunk
                 except Exception as e:

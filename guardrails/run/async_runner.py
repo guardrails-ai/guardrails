@@ -1,6 +1,6 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 
 from guardrails import validator_service
@@ -11,7 +11,7 @@ from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.run.runner import Runner
-from guardrails.run.utils import messages_source, messages_string
+from guardrails.run.utils import messages_source
 from guardrails.schema.validator import schema_validation
 from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.inputs import MessageHistory
@@ -24,6 +24,7 @@ from guardrails.telemetry import trace_async_call, trace_async_step
 
 from guardrails.constants import fail_status
 from guardrails.prompt import Prompt
+
 
 class AsyncRunner(Runner):
     def __init__(
@@ -331,9 +332,7 @@ class AsyncRunner(Runner):
             formatted_messages.append(msg_copy)
 
         if "messages" in self.validation_map:
-            await self.validate_messages(
-                call_log, formatted_messages, attempt_number
-            )
+            await self.validate_messages(call_log, formatted_messages, attempt_number)
 
         return formatted_messages
 
@@ -348,9 +347,11 @@ class AsyncRunner(Runner):
                 else msg["content"]
             )
             inputs = Inputs(
-                        llm_output=content,
-                    )
-            iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+                llm_output=content,
+            )
+            iteration = Iteration(
+                call_id=call_log.id, index=attempt_number, inputs=inputs
+            )
             call_log.iterations.insert(0, iteration)
             value, _metadata = await validator_service.async_validate(
                 value=content,
@@ -364,7 +365,7 @@ class AsyncRunner(Runner):
             validated_msg = validator_service.post_process_validation(
                 value, attempt_number, iteration, OutputTypes.STRING
             )
-            
+
             iteration.outputs.validation_response = validated_msg
 
             if isinstance(validated_msg, ReAsk):
