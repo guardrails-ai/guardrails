@@ -13,7 +13,7 @@ from guardrails.cli.version import version_warnings_if_applicable
 # Quick note: This is the command for `guardrails hub install`.  We change the name of
 # the function def to prevent confusion, lest people import it directly and calling it
 # with a string for package_uris instead of a list, which behaves oddly. If you need to
-# call install from a script, please consider importing install from guardrails.hub,
+# call install from a script, please consider importing install from guardrails,
 # not guardrails.cli.hub.install.
 @hub_command.command(name="install")
 @trace(name="guardrails-cli/hub/install")
@@ -42,8 +42,8 @@ def install_cli(
             logger.error(
                 f"`install` in {__file__} was called with a string instead of "
                 "a list! This can happen if it is invoked directly instead of "
-                "being run via the CLI. Did you mean to import `from "
-                "guardrails.hub import install` instead?  Recovering..."
+                "being run via the CLI. Did you mean to import `from guardrails import "
+                "install` instead?  Recovering..."
             )
             package_uris = [
                 package_uris,
