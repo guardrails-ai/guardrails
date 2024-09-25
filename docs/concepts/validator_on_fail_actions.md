@@ -88,4 +88,8 @@ response = guard(
 )
 
 print(response.validated_output)
+
+# [{'item': 'burger', 'quantity': 1},
+#  {'item': 'fries', 'quantity': 1},
+#  {'item': 'coke', 'quantity': 1}]
 ```
