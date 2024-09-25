@@ -284,10 +284,7 @@ def get_reask_setup_for_string(
     )
 
     instructions = None
-    if exec_options.reask_instructions:
-        instructions = Instructions(exec_options.reask_instructions)
-    if instructions is None:
-        instructions = Instructions("You are a helpful assistant.")
+    instructions = Instructions("You are a helpful assistant.")
     instructions = instructions.format(
         output_schema=schema_prompt_content,
         xml_output_schema=xml_output_schema,

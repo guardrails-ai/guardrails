@@ -5,6 +5,7 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
+    LiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.run.runner import Runner
@@ -250,13 +251,13 @@ class StreamRunner(Runner):
         chunk_text = ""
         try:
             finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].text
+            content = chunk.choices[0].delta.content
             if not finished and content:
                 chunk_text = content
         except Exception:
             try:
                 finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].delta.content
+                content = chunk.choices[0].text
                 if not finished and content:
                     chunk_text = content
             except Exception:

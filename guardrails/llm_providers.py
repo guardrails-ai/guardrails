@@ -416,16 +416,13 @@ class HuggingFacePipelineCallable(PromptCallableBase):
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Optional[Callable] = None, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
+        if not llm_api_args.args:
+            raise ValueError(
+                "Custom LLM callables must accept"
+                " at least one positional argument for messages!"
+            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
-        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
-            warnings.warn(
-                "We recommend including 'messages'"
-                " as keyword-only arguments for custom LLM callables."
-                " Doing so ensures these arguments are not unintentionally"
-                " passed through to other calls via **kwargs.",
-                UserWarning,
-            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
@@ -766,16 +763,13 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
 class AsyncArbitraryCallable(AsyncPromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
+        if not llm_api_args.args:
+            raise ValueError(
+                "Custom LLM callables must accept"
+                " at least one positional argument for messages!"
+            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
-        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
-            warnings.warn(
-                "We recommend including 'messages'"
-                " as keyword-only arguments for custom LLM callables."
-                " Doing so ensures these arguments are not uninentionally"
-                " passed through to other calls via **kwargs.",
-                UserWarning,
-            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 

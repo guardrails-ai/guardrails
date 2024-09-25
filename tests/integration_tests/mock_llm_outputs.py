@@ -66,7 +66,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
         self,
         prompt=None,
         instructions=None,
-        msg_history=None,
+        messages=None,
         base_model=None,
         *args,
         **kwargs,
@@ -128,28 +128,26 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
-            if msg_history:
-                key = (msg_history[0]["content"], msg_history[1]["content"])
-                print("=========trying key", key)
+            if messages:
+                key = (messages[0]["content"], messages[1]["content"])
                 out_text = mock_llm_responses[key]
-                print("========found out text", out_text)
-            if prompt and instructions and not msg_history:
+            if prompt and instructions and not messages:
                 out_text = mock_llm_responses[(prompt, instructions)]
-            elif msg_history and not prompt and not instructions:
-                if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
+            elif messages and not prompt and not instructions:
+                if messages == entity_extraction.COMPILED_MSG_HISTORY:
                     out_text = entity_extraction.LLM_OUTPUT
                 elif (
-                    msg_history == string.MOVIE_MSG_HISTORY
+                    messages == string.MOVIE_MSG_HISTORY
                     and base_model == pydantic.WITH_MSG_HISTORY
                 ):
                     out_text = pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-                elif msg_history == string.MOVIE_MSG_HISTORY:
+                elif messages == string.MOVIE_MSG_HISTORY:
                     out_text = string.MSG_LLM_OUTPUT_INCORRECT
                 else:
-                    raise ValueError("msg_history not found")
+                    raise ValueError("messages not found")
             else:
                 raise ValueError(
-                    "specify either prompt and instructions " "or msg_history"
+                    "specify either prompt and instructions " "or messages"
                 )
             return LLMResponse(
                 output=out_text,
@@ -160,7 +158,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
             print("Unrecognized prompt!")
             print("\n prompt: \n", prompt)
             print("\n instructions: \n", instructions)
-            print("\n msg_history: \n", msg_history)
+            print("\n messages: \n", messages)
             raise ValueError("Compiled prompt not found")
 
 

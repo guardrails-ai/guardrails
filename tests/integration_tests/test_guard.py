@@ -419,7 +419,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
 def test_entity_extraction_with_fix_chat_models(mocker, rail, messages):
     """Test that the entity extraction works with fix for chat models."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -566,7 +566,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         )
     else:
         mock_openai_invoke_llm = mocker.patch(
-            "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+            "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
         )
     mock_openai_invoke_llm.side_effect = llm_return_values
 
@@ -709,14 +709,13 @@ def test_string_with_message_history_reask(mocker):
     """Test single string (non-JSON) generation with message history and
     reask."""
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
+        "guardrails.llm_providers.LiteLLMCallable",
         new=MockLiteLLMCallable,
     )
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_messages)
+    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.chat.completions.create,
-        messages=string.MOVIE_messages,
+        messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
@@ -745,16 +744,16 @@ def test_string_with_message_history_reask(mocker):
 def test_pydantic_with_message_history_reask(mocker):
     """Test JSON generation with message history re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
-            output=pydantic.messages_LLM_OUTPUT_INCORRECT,
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
         LLMResponse(
-            output=pydantic.messages_LLM_OUTPUT_CORRECT,
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
@@ -769,17 +768,17 @@ def test_pydantic_with_message_history_reask(mocker):
         },
     )
 
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_messages)
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
         llm_api=openai.chat.completions.create,
-        messages=string.MOVIE_messages,
+        messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
 
-    assert final_output.raw_llm_output == pydantic.messages_LLM_OUTPUT_CORRECT
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     assert final_output.validated_output == json.loads(
-        pydantic.messages_LLM_OUTPUT_CORRECT
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     )
 
     call = guard.history.first
@@ -789,7 +788,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
     assert call.compiled_instructions is None
     assert call.compiled_prompt is None
-    assert call.iterations.first.raw_output == pydantic.messages_LLM_OUTPUT_INCORRECT
+    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert (
         call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
     )
@@ -797,8 +796,8 @@ def test_pydantic_with_message_history_reask(mocker):
     # For re-asked prompt and output
     assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
     assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    assert call.raw_outputs.last == pydantic.messages_LLM_OUTPUT_CORRECT
-    assert call.guarded_output == json.loads(pydantic.messages_LLM_OUTPUT_CORRECT)
+    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):
@@ -965,19 +964,19 @@ def test_pydantic_with_lite_llm(mocker):
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
-            output=pydantic.messages_LLM_OUTPUT_INCORRECT,
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
         LLMResponse(
-            output=pydantic.messages_LLM_OUTPUT_CORRECT,
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
             response_token_count=1234,
         ),
     ]
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_messages)
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        messages=string.MOVIE_messages, model="gpt-3.5-turbo", max_tokens=10
+        messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
     )
     assert guard.history.last.inputs.messages == [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -986,7 +985,7 @@ def test_pydantic_with_lite_llm(mocker):
 
     call = guard.history.first
     assert call.iterations.length == 2
-    assert final_output.raw_llm_output == pydantic.messages_LLM_OUTPUT_CORRECT
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
 
 
 def test_string_output(mocker):
@@ -1025,7 +1024,7 @@ def test_string_output(mocker):
 
 def test_json_function_calling_tool(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     task_list = {
         "list": [
@@ -1086,7 +1085,7 @@ def test_json_function_calling_tool(mocker):
     ]
 
     final_output = guard(
-        llm_api=openai.chat.completions.create,
+        model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "user",
@@ -1464,7 +1463,7 @@ class TestValidatorInitializedOnce:
 # With 0.6.0 we can drop the baggage of
 #   the prompt and instructions and just pass in the messages.
 class TestCustomLLMApi:
-    def test_with_messages(self, mocker):
+    def test_WITH_MSG_HISTORY(self, mocker):
         mock_llm = mocker.Mock()
 
         def custom_llm(

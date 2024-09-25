@@ -35,7 +35,6 @@ from guardrails.utils.prompt_utils import (
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.telemetry import trace_call, trace_step
 
-
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
     output validation.

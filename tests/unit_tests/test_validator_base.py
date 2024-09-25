@@ -450,7 +450,7 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    def mock_llm_api(*args, messages=None, **kwargs):
+    def mock_llm_api(messages, *args, **kwargs):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
@@ -515,7 +515,7 @@ def test_input_validation_fix(mocker):
 
 @pytest.mark.asyncio
 async def test_async_messages_validation_fix(mocker):
-    async def mock_llm_api(*args, messages=None, **kwargs) -> str:
+    async def mock_llm_api(messages, *args, **kwargs) -> str:
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for messages validation,
@@ -623,7 +623,7 @@ def test_input_validation_fail(
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
-    def custom_llm(*args, messages=None, **kwargs):
+    def custom_llm(messages, *args, **kwargs):
         raise Exception(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"
@@ -703,7 +703,7 @@ async def test_input_validation_fail_async(
     structured_messages_error,
     unstructured_messages_error,
 ):
-    async def custom_llm(*args, messages=None, **kwargs) -> str:
+    async def custom_llm(messages, *args, **kwargs) -> str:
         raise Exception(
             "LLM was called when it should not have been!"
             "Input Validation did not raise as expected!"

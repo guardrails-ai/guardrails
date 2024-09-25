@@ -145,21 +145,17 @@ def test_pydantic_with_full_schema_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 3
 
-    # For orginal prompt and output
+    # For original prompt and output
     assert call.compiled_messages[0]["content"]._source == pydantic.COMPILED_PROMPT_CHAT
-    assert call.compiled_messages[1]["content"] == pydantic.COMPILED_INSTRUCTIONS_CHAT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
     )
 
     # For re-asked prompt and output
-    assert call.iterations.at(1).inputs.prompt == gd.Prompt(
-        pydantic.COMPILED_PROMPT_FULL_REASK_1
-    )
-    assert call.iterations.at(1).inputs.instructions == gd.Instructions(
-        pydantic.COMPILED_INSTRUCTIONS_CHAT
-    )
+    assert call.iterations.at(1).inputs.messages[0]["content"]._source == pydantic.COMPILED_INSTRUCTIONS_CHAT
+    assert call.iterations.at(1).inputs.messages[1]["content"]._source == pydantic.COMPILED_PROMPT_FULL_REASK
+
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_FULL_REASK_1
     assert (
         call.iterations.at(1).validation_response == pydantic.VALIDATED_OUTPUT_REASK_2

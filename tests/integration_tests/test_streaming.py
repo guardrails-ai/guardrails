@@ -125,7 +125,7 @@ def mock_openai_completion_create(chunks):
                 choices=[
                     Choice(
                         text=chunk,
-                        delta=Delta(content=""),
+                        delta=None,
                         finish_reason=None,
                     )
                 ],
@@ -142,7 +142,7 @@ def mock_openai_chat_completion_create(chunks):
             yield MockOpenAIV1ChunkResponse(
                 choices=[
                     Choice(
-                        text="",
+                        text=None,
                         delta=Delta(content=chunk),
                         finish_reason=None,
                     )

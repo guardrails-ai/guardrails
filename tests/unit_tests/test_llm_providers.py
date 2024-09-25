@@ -24,7 +24,7 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     llm = MockOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
-    arbitrary_callable = ArbitraryCallable(llm.succeed, prompt="Hello")
+    arbitrary_callable = ArbitraryCallable(llm.succeed, messages=[{"role":"user", "content":"Hello"}])
     response = arbitrary_callable()
 
     assert succeed_spy.call_count == 1
@@ -39,7 +39,7 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
     llm = MockAsyncOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
-    arbitrary_callable = AsyncArbitraryCallable(llm.succeed, prompt="Hello")
+    arbitrary_callable = AsyncArbitraryCallable(llm.succeed, messages=[{"role":"user", "content":"Hello"}])
     response = await arbitrary_callable()
 
     assert succeed_spy.call_count == 1
@@ -460,8 +460,8 @@ def test_get_llm_ask_custom_llm_must_accept_prompt():
 
 
 def test_get_llm_ask_custom_llm_must_accept_kwargs():
-    def my_llm(prompt: str) -> str:
-        return f"Hello {prompt}!"
+    def my_llm(messages: str) -> str:
+        return f"Hello {messages}!"
 
     with pytest.raises(
         ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"
@@ -472,8 +472,8 @@ def test_get_llm_ask_custom_llm_must_accept_kwargs():
 def test_get_async_llm_ask_custom_llm():
     from guardrails.llm_providers import AsyncArbitraryCallable
 
-    async def my_llm(prompt: str, *, messages=None, **kwargs) -> str:
-        return f"Hello {prompt}!"
+    async def my_llm(messages: str, **kwargs) -> str:
+        return f"Hello {messages}!"
 
     prompt_callable = get_async_llm_ask(my_llm)
 

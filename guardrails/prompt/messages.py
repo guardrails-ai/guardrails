@@ -62,12 +62,16 @@ class Messages:
         """Format the messages using the given keyword arguments."""
         formatted_messages = []
         for message in self.source:
+            if isinstance(message["content"], str):
+                msg_str = message["content"]
+            else:
+                msg_str = message["content"]._source
             # Only use the keyword arguments that are present in the message.
-            vars = get_template_variables(message["content"])
+            vars = get_template_variables(msg_str)
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
             # Return another instance of the class with the formatted message.
-            formatted_message = Template(message["content"]).safe_substitute(
+            formatted_message = Template(msg_str).safe_substitute(
                 **filtered_kwargs
             )
             formatted_messages.append(

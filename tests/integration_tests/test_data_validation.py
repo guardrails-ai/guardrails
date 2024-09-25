@@ -64,7 +64,7 @@ def test_choice_validation(llm_output, raises, fails, has_error):
     <message role="user">
 Dummy prompt.
     </message>
-<messages>
+</messages>
 </rail>
 """
     guard = Guard.from_rail_string(rail_spec)

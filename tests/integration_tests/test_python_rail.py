@@ -182,8 +182,22 @@ def test_python_rail(mocker):
 
 def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""
-    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
-
+    # mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=string.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=string.LLM_OUTPUT_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
     validators = [TwoWords(on_fail=OnFailAction.REASK)]
     description = "Name for the pizza"
     instructions = """
@@ -221,14 +235,14 @@ ${ingredients}
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"]._source == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_messages[1]["content"]._source == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    assert call.iterations.last.inputs.messages[1]["content"] == string.COMPILED_PROMPT_REASK
     # Same as above
-    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+    assert call.reask_messages.last[-1]["content"] == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.guarded_output == string.LLM_OUTPUT_REASK
