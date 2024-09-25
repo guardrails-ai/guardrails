@@ -252,9 +252,9 @@ def async_trace_stream(
                     nonlocal origin
                     origin = origin if origin is not None else name
                     add_attributes(span, attrs, name, origin, *args, **kwargs)
-                    return _run_async_gen(fn, *args, **kwargs)
+                    return await _run_async_gen(fn, *args, **kwargs)
             else:
-                return fn(*args, **kwargs)
+                return await fn(*args, **kwargs)
 
         return wrapper
 
