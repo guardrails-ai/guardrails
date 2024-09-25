@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from guardrails.errors import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.llm.prompt_callable import (
+    CALLABLE_FAILURE_SUFFIX,
     PromptCallableBase,
     PromptCallableException,
 )
@@ -903,18 +904,12 @@ class AsyncPromptCallableBase(PromptCallableBase):
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
-                f" with the following error: `{e}`. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
+                f" with the following error: `{e}`. {CALLABLE_FAILURE_SUFFIX}"
             )
         if not isinstance(result, LLMResponse):
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` returned"
-                f" a non-string value: {result}. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
+                f" a non-string value: {result}. {CALLABLE_FAILURE_SUFFIX}"
             )
         return result
 
