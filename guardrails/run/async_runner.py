@@ -300,7 +300,7 @@ class AsyncRunner(Runner):
         prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
-        print("===== runner messages are", messages)
+
         if messages:
             # Runner.prepare_messages
             messages = await self.prepare_messages(
