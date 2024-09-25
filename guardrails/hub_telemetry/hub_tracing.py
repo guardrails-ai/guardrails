@@ -3,6 +3,7 @@ from typing import (
     Any,
     Dict,
     Optional,
+    AsyncGenerator,
 )
 
 from opentelemetry.trace import Span
@@ -224,7 +225,7 @@ def trace_stream(
     return decorator
 
 
-async def _run_async_gen(fn, *args, **kwargs):
+async def _run_async_gen(fn, *args, **kwargs) -> AsyncGenerator[Any, None]:
     gen = fn(*args, **kwargs)
     async for item in gen:
         yield item
@@ -238,7 +239,7 @@ def async_trace_stream(
 ):
     def decorator(fn):
         @wraps(fn)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             hub_telemetry = HubTelemetry()
             if hub_telemetry._enabled and hub_telemetry._tracer is not None:
                 with hub_telemetry._tracer.start_span(
@@ -252,9 +253,9 @@ def async_trace_stream(
                     nonlocal origin
                     origin = origin if origin is not None else name
                     add_attributes(span, attrs, name, origin, *args, **kwargs)
-                    return await _run_async_gen(fn, *args, **kwargs)
+                    return _run_async_gen(fn, *args, **kwargs)
             else:
-                return await fn(*args, **kwargs)
+                return fn(*args, **kwargs)
 
         return wrapper
 
