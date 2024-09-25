@@ -1167,10 +1167,12 @@ class Guard(IGuard, Generic[OT]):
             )
             self.history.extend([Call.from_interface(call) for call in guard_history])
 
-            validator_logs = self.history.last.iterations.last.validator_logs
-            validation_summaries = ValidationSummary.from_validator_logs_only_fails(
-                validator_logs
-            )
+            validation_summaries = []
+            if self.history.last and self.history.last.iterations.last:
+                validator_logs = self.history.last.iterations.last.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+                    validator_logs
+                )
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
