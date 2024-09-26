@@ -33,8 +33,7 @@ def test_multi_reask(mocker):
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
     guard(
-        llm_api=openai.completions.create,
-        engine="text-davinci-003",
+        model="text-davinci-003",
         num_reasks=5,
     )
 

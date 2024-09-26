@@ -13,8 +13,7 @@ from typing import (
     cast,
 )
 
-import warnings
-
+from guardrails.prompt import Prompt
 from guardrails_api_client.models import LLMResource
 
 from guardrails.errors import UserFacingException
@@ -23,6 +22,20 @@ from guardrails.classes.llm.prompt_callable import (
     PromptCallableBase,
     PromptCallableException,
 )
+
+from guardrails.types.inputs import MessageHistory
+
+# todo fix circular import
+def messages_string(messages: MessageHistory) -> str:
+    messages_copy = ""
+    for msg in messages:
+        content = (
+            msg["content"].source
+            if isinstance(msg["content"], Prompt)
+            else msg["content"]
+        )
+        messages_copy += content
+    return messages_copy
 
 from guardrails.utils.safe_get import safe_get
 from guardrails.telemetry import trace_llm_call, trace_operation
@@ -252,7 +265,7 @@ class LiteLLMCallable(PromptCallableBase):
 
 class HuggingFaceModelCallable(PromptCallableBase):
     def _invoke_llm(
-        self, prompt: str, model_generate: Any, *args, **kwargs
+        self, model_generate: Any, *args, messages: list[dict[str, str]], **kwargs
     ) -> LLMResponse:
         try:
             import transformers  # noqa: F401 # type: ignore
@@ -268,7 +281,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
                 "The `torch` package is not installed. "
                 "Install with `pip install torch`"
             )
-
+        prompt = messages_string(messages)
         tokenizer = kwargs.pop("tokenizer")
         if not tokenizer:
             raise UserFacingException(
@@ -320,7 +333,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
         )
 
         trace_llm_call(
-            input_messages=chat_prompt(prompt, kwargs.get("instructions")),
+            input_messages=messages,
             invocation_parameters={
                 **model_inputs,
                 **kwargs,
@@ -416,11 +429,6 @@ class HuggingFacePipelineCallable(PromptCallableBase):
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Optional[Callable] = None, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
-        if not llm_api_args.args:
-            raise ValueError(
-                "Custom LLM callables must accept"
-                " at least one positional argument for messages!"
-            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
         self.llm_api = llm_api

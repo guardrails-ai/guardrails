@@ -770,7 +770,6 @@ def test_pydantic_with_message_history_reask(mocker):
 
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.chat.completions.create,
         messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
@@ -1467,16 +1466,12 @@ class TestCustomLLMApi:
         mock_llm = mocker.Mock()
 
         def custom_llm(
-            prompt: Optional[str] = None,
             *args,
-            instructions: Optional[str] = None,
             messages: Optional[List[Dict[str, str]]] = None,
             **kwargs,
         ) -> str:
             mock_llm(
-                prompt,
                 *args,
-                instructions=instructions,
                 messages=messages,
                 **kwargs,
             )
@@ -1502,8 +1497,6 @@ class TestCustomLLMApi:
         assert output.validation_passed is True
         assert output.validated_output == "Not really, no.  I'm just a static function."
         mock_llm.assert_called_once_with(
-            None,
-            instructions=None,
             messages=[
                 {
                     "role": "system",

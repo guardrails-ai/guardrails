@@ -95,6 +95,7 @@ class Inputs(IInputs, ArbitraryModel):
     @classmethod
     def from_interface(cls, i_inputs: IInputs) -> "Inputs":
         deserialized_messages = None
+        print("====== inputs.py: Inputs.from_interface() ======", i_inputs)
         if i_inputs.messages:
             deserialized_messages = []
             for msg in i_inputs.messages:
