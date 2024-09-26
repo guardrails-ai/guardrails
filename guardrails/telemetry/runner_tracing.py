@@ -21,6 +21,10 @@ from guardrails.telemetry.common import get_tracer, add_user_attributes, seriali
 from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
 
+import sys
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 #########################################
 ### START Runner.step Instrumentation ###

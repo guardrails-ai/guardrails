@@ -153,6 +153,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     validate_subschema=True,
                     stream=True,
                 )
+                # TODO why? how does it happen in the other places we handle streams
+                if validated_fragment is None:
+                    validated_fragment = ""
+
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -165,7 +169,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
-                validation_response += cast(str, validated_fragment)
+                validation_response += validated_fragment
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore

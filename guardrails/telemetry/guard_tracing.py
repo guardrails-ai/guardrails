@@ -11,7 +11,7 @@ from typing import (
 )
 
 from opentelemetry import context, trace
-from opentelemetry.trace import StatusCode, Tracer, Span
+from opentelemetry.trace import StatusCode, Tracer, Span, Link, get_tracer
 
 from guardrails.settings import settings
 from guardrails.classes.generic.stack import Stack
@@ -22,6 +22,10 @@ from guardrails.telemetry.open_inference import trace_operation
 from guardrails.telemetry.common import add_user_attributes
 from guardrails.version import GUARDRAILS_VERSION
 
+import sys
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 # from sentence_transformers import SentenceTransformer
 # import numpy as np
@@ -195,8 +199,17 @@ async def trace_async_stream_guard(
     while next_exists:
         try:
             res = await anext(result)  # type: ignore
-            add_guard_attributes(guard_span, history, res)
-            add_user_attributes(guard_span)
+            if not guard_span.is_recording():
+                # Assuming you have a tracer instance
+                tracer = get_tracer(__name__)
+                # Create a new span and link it to the previous span
+                with tracer.start_as_current_span(
+                    "new_guard_span", links=[Link(guard_span.get_span_context())]
+                ) as new_span:
+                    guard_span = new_span
+
+                    add_guard_attributes(guard_span, history, res)
+                    add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False

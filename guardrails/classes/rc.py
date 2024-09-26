@@ -53,7 +53,7 @@ class RC(Serializeable):
                             value = to_bool(value)
 
                         config[key] = value
-
+                print("===== loaded config", config)
                 rc_file.close()
 
                 # backfill no_metrics, handle defaults
