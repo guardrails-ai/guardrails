@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import asyncio
 import pytest
-from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.casting_utils import to_int
@@ -21,11 +20,6 @@ from guardrails.validator_base import (
     register_validator,
 )
 from tests.integration_tests.test_assets.validators import LowerCase, MockDetectPII
-
-expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
-expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
-expected_noop_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
-expected_filter_refrain_output = {}
 
 
 @register_validator(name="minsentencelength", data_type=["string", "list"])
@@ -136,52 +130,6 @@ class Response:
 
         self.completion_stream = gen()
 
-
-class LowerCaseFix(BaseModel):
-    statement: str = Field(
-        description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail=OnFailAction.FIX)],
-    )
-
-
-class LowerCaseNoop(BaseModel):
-    statement: str = Field(
-        description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail=OnFailAction.NOOP)],
-    )
-
-
-class LowerCaseFilter(BaseModel):
-    statement: str = Field(
-        description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail=OnFailAction.FILTER)],
-    )
-
-
-class LowerCaseRefrain(BaseModel):
-    statement: str = Field(
-        description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail=OnFailAction.REFRAIN)],
-    )
-
-
-expected_minsentence_noop_output = ""
-
-
-class MinSentenceLengthNoOp(BaseModel):
-    statement: str = Field(
-        description="Validates whether the text is in lower case.",
-        validators=[MinSentenceLengthValidator(on_fail=OnFailAction.NOOP)],
-    )
-
-
-STR_PROMPT = "Say something nice to me."
-
-PROMPT = """
-Say something nice to me.
-
-${gr.complete_json_suffix}
-"""
 
 POETRY_CHUNKS = [
     '"John, under ',
