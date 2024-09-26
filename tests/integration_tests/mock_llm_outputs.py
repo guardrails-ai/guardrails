@@ -13,7 +13,7 @@ class MockLiteLLMCallableOther(LiteLLMCallable):
     # NOTE: this class normally overrides `llm_providers.LiteLLMCallable`,
     # which compiles instructions and prompt into a single prompt;
     # here the instructions are passed into kwargs and ignored
-    def _invoke_llm(self, prompt, *args, **kwargs):
+    def _invoke_llm(self, messages, *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
 
         _rail_to_compiled_prompt = {  # noqa
@@ -43,16 +43,16 @@ class MockLiteLLMCallableOther(LiteLLMCallable):
         }
 
         try:
-            output = mock_llm_responses[prompt]
+            output = mock_llm_responses[messages[0]["content"]]
             return LLMResponse(
                 output=output,
                 prompt_token_count=123,
                 response_token_count=1234,
             )
         except KeyError:
-            print("Unrecognized prompt!")
-            print(prompt)
-            raise ValueError("Compiled prompt not found")
+            print("Unrecognized messages!")
+            print(messages)
+            raise ValueError("Compiled messages not found")
 
 
 class MockAsyncLiteLLMCallable(AsyncLiteLLMCallable):
@@ -129,7 +129,10 @@ class MockLiteLLMCallable(LiteLLMCallable):
 
         try:
             if messages:
-                key = (messages[0]["content"], messages[1]["content"])
+                if len(messages) == 2:
+                    key = (messages[0]["content"], messages[1]["content"])
+                elif len(messages) == 1:
+                    key = (messages[0]["content"], None)
                 out_text = mock_llm_responses[key]
             if prompt and instructions and not messages:
                 out_text = mock_llm_responses[(prompt, instructions)]

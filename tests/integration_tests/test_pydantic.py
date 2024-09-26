@@ -1,6 +1,5 @@
 import json
 from typing import Dict, List
-import openai
 import pytest
 from pydantic import BaseModel
 
@@ -36,10 +35,10 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, 
-                                   messages=[{
-                                    "role": "user",
-                                      "content": VALIDATED_RESPONSE_REASK_PROMPT}])
+    guard = gd.Guard.from_pydantic(
+        ListOfPeople,
+        messages=[{"role": "user", "content": VALIDATED_RESPONSE_REASK_PROMPT}],
+    )
     final_output = guard(
         model="text-davinci-003",
         max_tokens=512,
@@ -124,10 +123,15 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, messages=[{
-            "content": VALIDATED_RESPONSE_REASK_PROMPT,
-            "role": "user",
-        }])
+    guard = gd.Guard.from_pydantic(
+        ListOfPeople,
+        messages=[
+            {
+                "content": VALIDATED_RESPONSE_REASK_PROMPT,
+                "role": "user",
+            }
+        ],
+    )
     final_output = guard(
         model="gpt-3.5-turbo",
         max_tokens=512,
@@ -153,9 +157,14 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
 
     # For re-asked prompt and output
-    assert call.iterations.at(1).inputs.messages[0]["content"]._source == pydantic.COMPILED_INSTRUCTIONS_CHAT
-    assert call.iterations.at(1).inputs.messages[1]["content"]._source == pydantic.COMPILED_PROMPT_FULL_REASK
-
+    assert (
+        call.iterations.at(1).inputs.messages[0]["content"]._source
+        == pydantic.COMPILED_PROMPT_FULL_REASK_1
+    )
+    assert (
+        call.iterations.at(1).inputs.messages[1]["content"]._source
+        == pydantic.COMPILED_INSTRUCTIONS_CHAT
+    )
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_FULL_REASK_1
     assert (
         call.iterations.at(1).validation_response == pydantic.VALIDATED_OUTPUT_REASK_2
