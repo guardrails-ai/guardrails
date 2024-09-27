@@ -78,21 +78,23 @@ class Call(ICall, ArbitraryModel):
         return self.inputs.prompt_params
 
     @property
-    def messages(self) -> Optional[Messages]:
+    def messages(self) -> Optional[Union[Messages, list[dict[str, str]]]]:
         """The messages as provided by the user when initializing or calling the
         Guard."""
         return self.inputs.messages
 
     @property
-    def compiled_messages(self) -> Optional[str]:
+    def compiled_messages(self) -> Optional[list[dict[str, str]]]:
         """The initial compiled messages that were passed to the LLM on the
         first call."""
         if self.iterations.empty():
             return None
-        initial_inputs = self.iterations.first.inputs
-        messages: Messages = initial_inputs.messages
+        initial_inputs = self.iterations.first.inputs  # type: ignore
+        messages = initial_inputs.messages
         prompt_params = initial_inputs.prompt_params or {}
         compiled_messages = []
+        if messages is None:
+            return None
         for message in messages:
             content = message["content"].format(**prompt_params)
             if isinstance(content, (Prompt, Instructions)):
@@ -116,11 +118,11 @@ class Call(ICall, ArbitraryModel):
             reasks = self.iterations.copy()
             initial_messages = reasks.first
             reasks.remove(initial_messages)  # type: ignore
-            initial_inputs = self.iterations.first.inputs
+            initial_inputs = self.iterations.first.inputs  # type: ignore
             prompt_params = initial_inputs.prompt_params or {}
             compiled_reasks = []
             for reask in reasks:
-                messages: Messages = reask.inputs.messages
+                messages = reask.inputs.messages
 
                 if messages is None:
                     compiled_reasks.append(None)
@@ -136,7 +138,7 @@ class Call(ICall, ArbitraryModel):
                                 "content": content,
                             }
                         )
-                compiled_reasks.append(compiled_messages)
+                    compiled_reasks.append(compiled_messages)
             return Stack(*compiled_reasks)
 
         return Stack()

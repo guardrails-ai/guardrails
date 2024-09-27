@@ -32,13 +32,16 @@ from guardrails.telemetry import trace_llm_call, trace_operation
 
 
 # todo fix circular import
-def messages_string(messages: MessageHistory) -> str:
+def messages_string(
+    messages: Union[list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory],
+) -> str:
     messages_copy = ""
     for msg in messages:
         content = (
-            msg["content"].source
+            msg["content"].source  # type: ignore
             if isinstance(msg["content"], Prompt)
-            else msg["content"]
+            or isinstance(msg["content"], Instructions)  # type: ignore
+            else msg["content"]  # type: ignore
         )
         messages_copy += content
     return messages_copy
@@ -269,7 +272,9 @@ class HuggingFaceModelCallable(PromptCallableBase):
         self,
         model_generate: Any,
         *args,
-        messages: list[dict[str, Union[str, Prompt, Instructions]]],
+        messages: Union[
+            list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory
+        ],
         **kwargs,
     ) -> LLMResponse:
         try:

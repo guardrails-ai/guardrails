@@ -12,7 +12,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
-from guardrails.prompt.prompt import Prompt
+from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
 from guardrails.classes.validation.validation_result import ErrorSpan
@@ -189,7 +189,7 @@ class Iteration(IIteration, ArbitraryModel):
     @property
     def rich_group(self) -> Group:
         def create_messages_table(
-            messages: Optional[List[Dict[str, Prompt]]],
+            messages: Optional[List[Dict[str, Union[str, Prompt, Instructions]]]],
         ) -> Union[str, Table]:
             if messages is None:
                 return "No messages."
@@ -198,11 +198,11 @@ class Iteration(IIteration, ArbitraryModel):
             table.add_column("Content")
 
             for msg in messages:
-                table.add_row(str(msg["role"]), msg["content"])
+                table.add_row(str(msg["role"]), msg["content"])  # type: ignore
 
             return table
 
-        table = create_messages_table(self.inputs.messages)
+        table = create_messages_table(self.inputs.messages)  # type: ignore
 
         return Group(
             Panel(table, title="Messages", style="on #E7DFEB"),

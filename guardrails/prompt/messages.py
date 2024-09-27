@@ -2,9 +2,9 @@
 
 import re
 from string import Template
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
-
+from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 from guardrails.utils.templating_utils import get_template_variables
@@ -13,7 +13,7 @@ from guardrails.utils.templating_utils import get_template_variables
 class Messages:
     def __init__(
         self,
-        source: List[Dict[str, str]],
+        source: List[Dict[str, Union[str, Prompt, Instructions]]],
         output_schema: Optional[str] = None,
         *,
         xml_output_schema: Optional[str] = None,
@@ -71,9 +71,7 @@ class Messages:
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
             # Return another instance of the class with the formatted message.
-            formatted_message = Template(msg_str).safe_substitute(
-                **filtered_kwargs
-            )
+            formatted_message = Template(msg_str).safe_substitute(**filtered_kwargs)
             formatted_messages.append(
                 {"role": message["role"], "content": formatted_message}
             )

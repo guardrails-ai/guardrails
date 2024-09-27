@@ -106,7 +106,7 @@ class JsonFormatter(BaseFormatter):
                 **kwargs,
             ) -> str:
                 prompt = ""
-                for msg in messages:
+                for msg in messages:  # type: ignore
                     prompt += msg["content"]
 
                 return json.dumps(
@@ -114,7 +114,7 @@ class JsonFormatter(BaseFormatter):
                         model=model.model,
                         tokenizer=model.tokenizer,
                         json_schema=self.output_schema,
-                        prompt=prompt
+                        prompt=prompt,
                     )()
                 )
 
@@ -132,15 +132,15 @@ class JsonFormatter(BaseFormatter):
                 **kwargs,
             ) -> str:
                 prompt = ""
-                for msg in messages:
+                for msg in messages:  # type: ignore
                     prompt += msg["content"]
-            
+
                 return json.dumps(
                     Jsonformer(
                         model=model,
                         tokenizer=tokenizer,
                         json_schema=self.output_schema,
-                        prompt=prompt
+                        prompt=prompt,
                     )()
                 )
 

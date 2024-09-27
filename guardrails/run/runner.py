@@ -16,7 +16,8 @@ from guardrails.llm_providers import (
 )
 from guardrails.logger import set_scope
 from guardrails.prompt import Prompt
-from guardrails.run.utils import messages_source, messages_string
+from guardrails.prompt.messages import Messages
+from guardrails.run.utils import messages_source
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
 from guardrails.hub_telemetry.hub_tracing import trace
@@ -34,6 +35,7 @@ from guardrails.utils.prompt_utils import (
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.telemetry import trace_call, trace_step
+
 
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
@@ -293,9 +295,11 @@ class Runner:
                 else msg["content"]
             )
             inputs = Inputs(
-                        llm_output=content,
-                    )
-            iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+                llm_output=content,
+            )
+            iteration = Iteration(
+                call_id=call_log.id, index=attempt_number, inputs=inputs
+            )
             call_log.iterations.insert(0, iteration)
             value, _metadata = validator_service.validate(
                 value=content,
@@ -309,7 +313,7 @@ class Runner:
             validated_msg = validator_service.post_process_validation(
                 value, attempt_number, iteration, OutputTypes.STRING
             )
-            
+
             iteration.outputs.validation_response = validated_msg
 
             if isinstance(validated_msg, ReAsk):
@@ -501,7 +505,7 @@ class Runner:
         prompt_params: Optional[Dict] = None,
     ) -> Tuple[
         Dict[str, Any],
-        Optional[List[Dict]],
+        Optional[Union[List[Dict], Messages]],
     ]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
