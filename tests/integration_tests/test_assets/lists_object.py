@@ -16,7 +16,12 @@ class Item(BaseModel):
 PYDANTIC_RAIL_WITH_LIST = List[Item]
 
 
-RAIL_SPEC_WITH_LIST = """
+message = (
+    '<message role="user">'
+    "Create a list of items that may be found in a grocery store."
+    "</message>"
+)
+RAIL_SPEC_WITH_LIST = f"""
 <rail version="0.1">
   <output type="list">
     <object>
@@ -25,7 +30,7 @@ RAIL_SPEC_WITH_LIST = """
     </object>
   </output>
   <messages>
-  <message role="user">Create a list of items that may be found in a grocery store.</message>
+  {message}
   </messages>
 </rail>
 """

@@ -79,8 +79,8 @@ class Call(ICall, ArbitraryModel):
 
     @property
     def messages(self) -> Optional[Union[Messages, list[dict[str, str]]]]:
-        """The messages as provided by the user when initializing or calling the
-        Guard."""
+        """The messages as provided by the user when initializing or calling
+        the Guard."""
         return self.inputs.messages
 
     @property

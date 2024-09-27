@@ -5,7 +5,6 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
-    LiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.run.runner import Runner

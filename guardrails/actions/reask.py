@@ -297,8 +297,9 @@ def get_reask_setup_for_string(
     if messages is None:
         messages = Messages(
             [
-                {"role": "system", "content": instructions}, 
-                {"role": "user", "content": prompt}]
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
         )
 
     messages = messages.format(

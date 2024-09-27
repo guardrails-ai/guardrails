@@ -485,7 +485,9 @@ def test_input_validation_fix(mocker):
                 }
             ],
         )
-    assert str(excinfo.value) == "Validation failed for field with errors: must be exactly two words"
+    assert str(excinfo.value) == (
+        "Validation failed for field with errors:" " must be exactly two words"
+    )
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
@@ -565,8 +567,8 @@ async def test_async_messages_validation_fix(mocker):
             }
         ],
     )
-
-    assert guard.history.first.iterations.first.outputs.validation_response == "What kind"
+    first_iter = guard.history.first.iterations.first
+    assert first_iter.outputs.validation_response == "What kind"
 
     # rail prompt validation
     guard = AsyncGuard.from_rail_string(
@@ -767,4 +769,3 @@ async def test_input_validation_fail_async(
     assert str(excinfo.value) == unstructured_messages_error
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
-
