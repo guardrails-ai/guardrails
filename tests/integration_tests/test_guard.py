@@ -1328,7 +1328,7 @@ class TestSerizlizationAndDeserialization:
 
         ser_guard = guard.to_dict()
 
-        deser_guard = Guard.for_dict(ser_guard)
+        deser_guard = Guard.from_dict(ser_guard)
 
         assert deser_guard == guard
 
