@@ -4,11 +4,13 @@
 #   - [ ] Remove validator_base.py in 0.6.x
 
 import asyncio
+import contextlib
 from functools import partial
 import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+import re
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from typing_extensions import deprecated
@@ -30,6 +32,7 @@ from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
+from guardrails.utils.tokenization_utils import postproc_splits
 
 
 ### functions to get chunks ###
@@ -39,6 +42,46 @@ def split_sentence_str(chunk: str):
         return []
     fragments = chunk.split(".")
     return [fragments[0] + ".", ".".join(fragments[1:])]
+
+
+def split_sentence_str_v2(chunk: str):
+    """
+    Use a sentence tokenizer to detect if at least one sentence is present in the chunk.
+    We return the first sentence and the remaining chunks without the first sentence.
+
+    We perform the first step of WordTokenizers.jl's split_sentences function to
+    detect possible sentence boundaries before calling the sentence tokenizer.
+
+    Args:
+        chunk (str): The text to split into sentences.
+
+    Returns:
+        List[str]: A list of two strings. The first string is the first sentence
+            in the chunk. The second string is the remaining text in the chunk.
+    """
+    # using the sentence tokenizer is expensive
+    # we check for a . to avoid wastefully calling the tokenizer
+
+    # check at least 3 characters have been accumulated before splitting
+    is_minimum_length = False
+    with contextlib.suppress(IndexError):
+        chunk[2]
+        is_minimum_length = True
+
+    # check for potential line endings, which is what split_sentences does
+    chunk_with_potential_line_endings, count = re.subn(r"([?!.])\s", r"\1\n", chunk)
+    any_potential_line_endings = count > 0
+    if not is_minimum_length or not any_potential_line_endings:
+        return []
+
+    sentences = postproc_splits(chunk_with_potential_line_endings).split("\n")
+    # if not more than one sentence, we haven't accumulated enough for a validation
+    if len(sentences) <= 1:
+        return []
+
+    # return the sentence
+    # then the remaining chunks that aren't finished accumulating
+    return [sentences[0], "".join(sentences[1:])]
 
 
 # TODO ensure this is not indeed needed
