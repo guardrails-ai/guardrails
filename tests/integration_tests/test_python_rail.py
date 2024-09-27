@@ -114,7 +114,7 @@ def test_python_rail(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"

@@ -5,9 +5,9 @@
     options:
         members: 
             - "__init__"
-            - "from_rail"
-            - "from_rail_string"
-            - "from_pydantic"
+            - "for_rail"
+            - "for_rail_string"
+            - "for_pydantic"
             - "from_string"
             - "configure"
             - "use"
