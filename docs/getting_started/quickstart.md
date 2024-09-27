@@ -106,7 +106,7 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet)
+guard = Guard.for_pydantic(output_class=Pet)
 
 res = guard(
     model="gpt-3.5-turbo",

@@ -147,7 +147,7 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
 raw_output, validated_output, *rest = guard(
     llm_api=openai.completions.create,

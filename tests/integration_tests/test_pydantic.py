@@ -36,7 +36,7 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.for_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(
         openai.completions.create,
         engine="text-davinci-003",
@@ -122,7 +122,7 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.for_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(
         openai.chat.completions.create,
         model="gpt-3.5-turbo",
@@ -213,6 +213,6 @@ class ContainerModel2(BaseModel):
 def test_container_types(model, output):
     output_str = json.dumps(output)
 
-    guard = gd.Guard.from_pydantic(model)
+    guard = gd.Guard.for_pydantic(model)
     out = guard.parse(output_str)
     assert out.validated_output == output
