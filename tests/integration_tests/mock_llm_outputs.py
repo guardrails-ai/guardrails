@@ -128,26 +128,15 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
+            out_text = None
             if messages:
                 if len(messages) == 2:
                     key = (messages[0]["content"], messages[1]["content"])
                 elif len(messages) == 1:
                     key = (messages[0]["content"], None)
-                out_text = mock_llm_responses[key]
-            if prompt and instructions and not messages:
-                out_text = mock_llm_responses[(prompt, instructions)]
-            elif messages and not prompt and not instructions:
-                if messages == entity_extraction.COMPILED_MSG_HISTORY:
-                    out_text = entity_extraction.LLM_OUTPUT
-                elif (
-                    messages == string.MOVIE_MSG_HISTORY
-                    and base_model == pydantic.WITH_MSG_HISTORY
-                ):
-                    out_text = pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-                elif messages == string.MOVIE_MSG_HISTORY:
-                    out_text = string.MSG_LLM_OUTPUT_INCORRECT
-                else:
-                    raise ValueError("messages not found")
+
+                if hasattr(mock_llm_responses[key], "read"):
+                    out_text = mock_llm_responses[key]
             else:
                 raise ValueError(
                     "specify either prompt and instructions " "or messages"
@@ -162,7 +151,8 @@ class MockLiteLLMCallable(LiteLLMCallable):
             print("\n prompt: \n", prompt)
             print("\n instructions: \n", instructions)
             print("\n messages: \n", messages)
-            raise ValueError("Compiled prompt not found")
+            print("\n base_model: \n", base_model)
+            raise ValueError("Compiled prompt not found in mock llm response")
 
 
 class MockArbitraryCallable(ArbitraryCallable):

@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from guardrails.prompt import Prompt
+from guardrails.prompt import Prompt, Instructions
 from guardrails_api_client.models import LLMResource
 
 from guardrails.errors import UserFacingException
@@ -24,6 +24,12 @@ from guardrails.classes.llm.prompt_callable import (
 )
 
 from guardrails.types.inputs import MessageHistory
+
+import warnings
+
+from guardrails.utils.safe_get import safe_get
+from guardrails.telemetry import trace_llm_call, trace_operation
+
 
 # todo fix circular import
 def messages_string(messages: MessageHistory) -> str:
@@ -36,9 +42,6 @@ def messages_string(messages: MessageHistory) -> str:
         )
         messages_copy += content
     return messages_copy
-
-from guardrails.utils.safe_get import safe_get
-from guardrails.telemetry import trace_llm_call, trace_operation
 
 
 ###
@@ -183,9 +186,7 @@ class LiteLLMCallable(PromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
         if messages is not None:
-            messages = litellm_messages(
-                prompt=text, messages=messages
-            )
+            messages = litellm_messages(prompt=text, messages=messages)
             kwargs["messages"] = messages
 
         trace_operation(
@@ -265,7 +266,11 @@ class LiteLLMCallable(PromptCallableBase):
 
 class HuggingFaceModelCallable(PromptCallableBase):
     def _invoke_llm(
-        self, model_generate: Any, *args, messages: list[dict[str, str]], **kwargs
+        self,
+        model_generate: Any,
+        *args,
+        messages: list[dict[str, Union[str, Prompt, Instructions]]],
+        **kwargs,
     ) -> LLMResponse:
         try:
             import transformers  # noqa: F401 # type: ignore
@@ -431,6 +436,14 @@ class ArbitraryCallable(PromptCallableBase):
         llm_api_args = inspect.getfullargspec(llm_api)
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
+        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
+            warnings.warn(
+                "We recommend including 'messages'"
+                " as keyword-only arguments for custom LLM callables."
+                " Doing so ensures these arguments are not unintentionally"
+                " passed through to other calls via **kwargs.",
+                UserWarning,
+            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
@@ -771,13 +784,16 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
 class AsyncArbitraryCallable(AsyncPromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
-        if not llm_api_args.args:
-            raise ValueError(
-                "Custom LLM callables must accept"
-                " at least one positional argument for messages!"
-            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
+        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
+            warnings.warn(
+                "We recommend including 'messages'"
+                " as keyword-only arguments for custom LLM callables."
+                " Doing so ensures these arguments are not unintentionally"
+                " passed through to other calls via **kwargs.",
+                UserWarning,
+            )
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 

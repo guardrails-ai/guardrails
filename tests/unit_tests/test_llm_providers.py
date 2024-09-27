@@ -24,7 +24,9 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     llm = MockOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
-    arbitrary_callable = ArbitraryCallable(llm.succeed, messages=[{"role":"user", "content":"Hello"}])
+    arbitrary_callable = ArbitraryCallable(
+        llm.succeed, messages=[{"role": "user", "content": "Hello"}]
+    )
     response = arbitrary_callable()
 
     assert succeed_spy.call_count == 1
@@ -39,7 +41,9 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
     llm = MockAsyncOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
-    arbitrary_callable = AsyncArbitraryCallable(llm.succeed, messages=[{"role":"user", "content":"Hello"}])
+    arbitrary_callable = AsyncArbitraryCallable(
+        llm.succeed, messages=[{"role": "user", "content": "Hello"}]
+    )
     response = await arbitrary_callable()
 
     assert succeed_spy.call_count == 1
@@ -229,7 +233,9 @@ def test_hugging_face_model_callable(mocker, model_inputs, tokenizer_call_count)
 
     hf_model_callable = HuggingFaceModelCallable()
     response = hf_model_callable(
-        "Hello", model_generate=model_generate, tokenizer=tokenizer
+        model_generate=model_generate,
+        messages=[{"role": "user", "content": "Hello"}],
+        tokenizer=tokenizer,
     )
 
     assert tokenizer_call_spy.call_count == 1
@@ -448,17 +454,6 @@ def test_get_llm_ask_custom_llm_warning():
         assert isinstance(prompt_callable, ArbitraryCallable)
 
 
-def test_get_llm_ask_custom_llm_must_accept_prompt():
-    def my_llm() -> str:
-        return "Hello!"
-
-    with pytest.raises(
-        ValueError,
-        match="Custom LLM callables must accept at least one positional argument for prompt!",  # noqa
-    ):
-        get_llm_ask(my_llm)
-
-
 def test_get_llm_ask_custom_llm_must_accept_kwargs():
     def my_llm(messages: str) -> str:
         return f"Hello {messages}!"
@@ -483,8 +478,8 @@ def test_get_async_llm_ask_custom_llm():
 def test_get_async_llm_ask_custom_llm_warning():
     from guardrails.llm_providers import AsyncArbitraryCallable
 
-    async def my_llm(messages: str, **kwargs) -> str:
-        return f"Hello {messages}!"
+    async def my_llm(**kwargs) -> str:
+        return "Hello world!"
 
     with pytest.warns(
         UserWarning,

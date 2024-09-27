@@ -9,6 +9,7 @@ from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.messages import Messages
 from guardrails.prompt.instructions import Instructions
 
+
 class Inputs(IInputs, ArbitraryModel):
     """Inputs represent the input data that is passed into the validation loop.
 
@@ -38,7 +39,9 @@ class Inputs(IInputs, ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    messages: Optional[Union[List[Dict[str, Union[str, Prompt, Instructions]]], Messages]] = Field(
+    messages: Optional[
+        Union[List[Dict[str, Union[str, Prompt, Instructions]]], Messages]
+    ] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )
@@ -95,7 +98,6 @@ class Inputs(IInputs, ArbitraryModel):
     @classmethod
     def from_interface(cls, i_inputs: IInputs) -> "Inputs":
         deserialized_messages = None
-        print("====== inputs.py: Inputs.from_interface() ======", i_inputs)
         if i_inputs.messages:
             deserialized_messages = []
             for msg in i_inputs.messages:

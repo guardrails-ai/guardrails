@@ -44,7 +44,7 @@ def test_multi_reask(mocker):
     assert len(call.iterations) == 3
 
     assert (
-        call.compiled_messages[0]["content"]._source
+        call.compiled_messages[0]["content"]
         == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
     )
     assert call.raw_outputs.first == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1

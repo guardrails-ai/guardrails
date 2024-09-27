@@ -16,6 +16,7 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.messages import Messages
+from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import (
     ReAsk,
@@ -93,10 +94,13 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         compiled_messages = []
         for message in messages:
+            content = message["content"].format(**prompt_params)
+            if isinstance(content, (Prompt, Instructions)):
+                content = content._source
             compiled_messages.append(
                 {
                     "role": message["role"],
-                    "content": message["content"].format(**prompt_params),
+                    "content": content,
                 }
             )
 
@@ -112,12 +116,28 @@ class Call(ICall, ArbitraryModel):
             reasks = self.iterations.copy()
             initial_messages = reasks.first
             reasks.remove(initial_messages)  # type: ignore
-            return Stack(
-                *[
-                    r.inputs.messages if r.inputs.messages is not None else None
-                    for r in reasks
-                ]
-            )
+            initial_inputs = self.iterations.first.inputs
+            prompt_params = initial_inputs.prompt_params or {}
+            compiled_reasks = []
+            for reask in reasks:
+                messages: Messages = reask.inputs.messages
+
+                if messages is None:
+                    compiled_reasks.append(None)
+                else:
+                    compiled_messages = []
+                    for message in messages:
+                        content = message["content"].format(**prompt_params)
+                        if isinstance(content, (Prompt, Instructions)):
+                            content = content._source
+                        compiled_messages.append(
+                            {
+                                "role": message["role"],
+                                "content": content,
+                            }
+                        )
+                compiled_reasks.append(compiled_messages)
+            return Stack(*compiled_reasks)
 
         return Stack()
 

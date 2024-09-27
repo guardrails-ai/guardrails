@@ -1,5 +1,4 @@
 from typing import Dict
-import openai
 import pytest
 
 import guardrails as gd
@@ -49,7 +48,7 @@ def test_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_messages[0]["content"]._source == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
@@ -58,7 +57,7 @@ def test_parsing_reask(mocker):
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_messages[0][1]["content"]._source == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"] == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
@@ -101,7 +100,7 @@ async def test_async_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_messages[0]["content"]._source == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
@@ -111,7 +110,7 @@ async def test_async_parsing_reask(mocker):
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_messages[0][1]["content"]._source == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"] == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 

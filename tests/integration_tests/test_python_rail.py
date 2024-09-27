@@ -2,7 +2,6 @@ import json
 from datetime import date, time
 from typing import List, Literal, Union
 
-import openai
 import pytest
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -17,7 +16,6 @@ from guardrails.classes.validation.validation_result import (
 )
 from tests.integration_tests.test_assets.validators import ValidLength, TwoWords
 
-from .mock_llm_outputs import MockLiteLLMCallable
 from .test_assets import python_rail, string
 
 
@@ -118,13 +116,16 @@ def test_python_rail(mocker):
         output_class=Director,
         messages=[
             {
-                "role": "system", 
-                "content": "\nYou are a helpful assistant only capable of communicating"
-                    " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
+                "role": "system",
+                "content": "\nYou are a helpful assistant"
+                " only capable of communicating"
+                " with valid JSON, and no other"
+                " text.\n${gr.xml_suffix_prompt_examples}",
             },
             {
-            "role": "user", 
-            "content":"Provide detailed information about the top 5 grossing movies from"
+                "role": "user",
+                "content": "Provide detailed information"
+                " about the top 5 grossing movies from"
                 " ${director} including release date, duration, budget, whether "
                 "it's a sequel, website, and contact email.\n"
                 "${gr.xml_suffix_without_examples}",
@@ -152,7 +153,7 @@ def test_python_rail(mocker):
     assert call.iterations.length == 2
 
     assert (
-        call.compiled_messages[1]["content"]._source
+        call.compiled_messages[1]["content"]
         == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
     )
 
@@ -165,7 +166,10 @@ def test_python_rail(mocker):
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
     # Same as above
-    assert call.reask_messages[0][1]["content"]._source == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+    assert (
+        call.reask_messages[0][1]["content"]
+        == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+    )
     assert (
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
@@ -235,13 +239,16 @@ ${ingredients}
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_messages[0]["content"]._source == string.COMPILED_INSTRUCTIONS
-    assert call.compiled_messages[1]["content"]._source == string.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.messages[1]["content"] == string.COMPILED_PROMPT_REASK
+    assert (
+        call.iterations.last.inputs.messages[1]["content"]
+        == string.COMPILED_PROMPT_REASK
+    )
     # Same as above
     assert call.reask_messages.last[-1]["content"] == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
