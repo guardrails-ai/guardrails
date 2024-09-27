@@ -52,7 +52,7 @@ import openai
 # use a descriptive name that will differentiate where your metrics are stored
 default_otlp_tracer("petname_guard")
 
-guard = Guard.from_string(
+guard = Guard.for_string(
   validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
 )
 

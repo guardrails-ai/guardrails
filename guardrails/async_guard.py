@@ -54,7 +54,7 @@ class AsyncGuard(Guard, Generic[OT]):
     - `for_rail`
     - `for_rail_string`
     - `for_pydantic`
-    - `from_string`
+    - `for_string`
 
     The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an Async LLM
@@ -121,7 +121,7 @@ class AsyncGuard(Guard, Generic[OT]):
             return cast(AsyncGuard[Dict], guard)
 
     @classmethod
-    def from_string(
+    def for_string(
         cls,
         validators: Sequence[Validator],
         *,
@@ -135,7 +135,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super().from_string(
+        guard = super().for_string(
             validators,
             string_description=string_description,
             prompt=prompt,

@@ -130,7 +130,7 @@ model_inputs = tokenizer(prompt, return_tensors="pt").to(torch_device)
 
 
 # Create the Guard
-guard = Guard.from_string(
+guard = Guard.for_string(
     validators=[
         ValidLength(
             min=48,
@@ -175,7 +175,7 @@ generator = pipeline("text-generation", model="facebook/opt-350m")
 
 
 # Create the Guard
-guard = Guard.from_string(
+guard = Guard.for_string(
     validators=[
         ValidLength(
             min=48,

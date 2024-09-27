@@ -8,7 +8,7 @@
             - "for_rail"
             - "for_rail_string"
             - "for_pydantic"
-            - "from_string"
+            - "for_string"
             - "configure"
             - "use"
             - "use_many"
