@@ -44,7 +44,7 @@ def split_sentence_str(chunk: str):
     return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
-def split_sentence_str_v2(chunk: str):
+def split_sentence_word_tokenizers_jl(chunk: str):
     """
     Use a sentence tokenizer to detect if at least one sentence is present in the chunk.
     We return the first sentence and the remaining chunks without the first sentence.
@@ -303,7 +303,7 @@ class Validator:
         Returns:
             list[str]: The text chunked into some subset.
         """
-        return split_sentence_str(chunk)
+        return split_sentence_word_tokenizers_jl(chunk)
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
