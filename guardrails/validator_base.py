@@ -15,7 +15,6 @@ from typing_extensions import deprecated
 from warnings import warn
 import warnings
 
-import nltk
 import requests
 from langchain_core.runnables import Runnable
 
@@ -32,12 +31,6 @@ from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
-#   See: https://github.com/guardrails-ai/guardrails/issues/829
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
-
 
 ### functions to get chunks ###
 def split_sentence_str(chunk: str):
@@ -48,24 +41,25 @@ def split_sentence_str(chunk: str):
     return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
-def split_sentence_nltk(chunk: str):
-    """
-    NOTE: this approach currently does not work
-    Use a sentence tokenizer to split the chunk into sentences.
+# TODO ensure this is not indeed needed
+# def split_sentence_nltk(chunk: str):
+#     """
+#     NOTE: this approach currently does not work
+#     Use a sentence tokenizer to split the chunk into sentences.
 
-    Because using the tokenizer is expensive, we only use it if there
-    is a period present in the chunk.
-    """
-    # using the sentence tokenizer is expensive
-    # we check for a . to avoid wastefully calling the tokenizer
-    if "." not in chunk:
-        return []
-    sentences = nltk.sent_tokenize(chunk)
-    if len(sentences) == 0:
-        return []
-    # return the sentence
-    # then the remaining chunks that aren't finished accumulating
-    return [sentences[0], "".join(sentences[1:])]
+#     Because using the tokenizer is expensive, we only use it if there
+#     is a period present in the chunk.
+#     """
+#     # using the sentence tokenizer is expensive
+#     # we check for a . to avoid wastefully calling the tokenizer
+#     if "." not in chunk:
+#         return []
+#     sentences = nltk.sent_tokenize(chunk)
+#     if len(sentences) == 0:
+#         return []
+#     # return the sentence
+#     # then the remaining chunks that aren't finished accumulating
+#     return [sentences[0], "".join(sentences[1:])]
 
 
 # TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
