@@ -57,6 +57,14 @@ def postproc_splits(sentences):
         sentences, r"\(([^\(\)]{0,250})\n([^\(\)]{0,250})\)", r"(\1 \2)"
     )
 
+    # Guardrails mods for line breaks within quotes
+    sentences = replace_til_no_change(
+        sentences, r'"([^"\n]{0,250})\n([^"\n]{0,250})"', r'"\1 \2"'
+    )
+    sentences = replace_til_no_change(
+        sentences, r"'([^'\n]{0,250})\n([^'\n]{0,250})'", r"'\1 \2'"
+    )
+
     # Nesting to depth one
     sentences = replace_til_no_change(
         sentences,
