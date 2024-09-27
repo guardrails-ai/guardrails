@@ -165,7 +165,7 @@ You are a helpful bot, who answers only with valid JSON
 
 def test_parse_prompt():
     """Test parsing a prompt."""
-    guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
+    guard = gd.Guard.for_rail_string(SIMPLE_RAIL_SPEC)
 
     # Strip both, raw and parsed, to be safe
     instructions = Instructions(guard._exec_opts.messages[0]["content"])
@@ -176,7 +176,7 @@ def test_parse_prompt():
 
 def test_instructions_with_params():
     """Test a guard with instruction parameters."""
-    guard = gd.Guard.from_rail_string(RAIL_WITH_PARAMS)
+    guard = gd.Guard.for_rail_string(RAIL_WITH_PARAMS)
 
     user_instructions = "A useful system message."
     user_prompt = "A useful prompt."
@@ -199,7 +199,7 @@ def test_instructions_with_params():
 )
 def test_variable_names(rail, var_names):
     """Test extracting variable names from a prompt."""
-    guard = gd.Guard.from_rail_string(rail)
+    guard = gd.Guard.for_rail_string(rail)
 
     prompt = Prompt(guard._exec_opts.messages[1]["content"])
 
@@ -208,7 +208,7 @@ def test_variable_names(rail, var_names):
 
 def test_format_instructions():
     """Test extracting format instructions from a prompt."""
-    guard = gd.Guard.from_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
+    guard = gd.Guard.for_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
 
     output_schema = prompt_content_for_schema(
         guard._output_type,
@@ -229,12 +229,12 @@ def test_format_instructions():
 
 
 def test_reask_messages_user():
-    guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_MESSAGES_USER)
+    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_MESSAGES_USER)
     assert guard._exec_opts.reask_messages[0]["content"] == REASK_PROMPT
 
 
 def test_reask_messages_user_and_system():
-    guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_MESSAGES_USER_AND_SYSTEM)
+    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_MESSAGES_USER_AND_SYSTEM)
     assert guard._exec_opts.reask_messages[1]["content"] == INSTRUCTIONS
 
 
@@ -268,7 +268,7 @@ def test_gr_prefixed_prompt_item_passes():
         }
     ]
 
-    guard = gd.Guard.from_pydantic(output_class=TestResponse, messages=messages)
+    guard = gd.Guard.for_pydantic(output_class=TestResponse, messages=messages)
     prompt = Prompt(guard._exec_opts.messages[0]["content"])
     assert len(prompt.variable_names) == 1
 

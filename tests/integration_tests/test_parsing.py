@@ -29,7 +29,7 @@ def test_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         output_class=pydantic.PersonalDetails,
         messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
@@ -81,7 +81,7 @@ async def test_async_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.AsyncGuard.from_pydantic(
+    guard = gd.AsyncGuard.for_pydantic(
         output_class=pydantic.PersonalDetails,
         messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
@@ -135,9 +135,9 @@ def test_reask_prompt_instructions(mocker):
     def always_fail(value: str, metadata: Dict) -> ValidationResult:
         return FailResult(error_message=f"Value {value} should fail.")
 
-    # We don't support tuple syntax for from_string and never have
+    # We don't support tuple syntax for for_string and never have
     # Once the validator function is decorated though, it becomes a Validator class
-    guard = gd.Guard.from_string(
+    guard = gd.Guard.for_string(
         validators=[always_fail(OnFailAction.REASK)],
         description="Some description",
     )

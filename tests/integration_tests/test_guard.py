@@ -106,14 +106,14 @@ def guard_initializer(rail: Union[str, BaseModel], messages=None) -> Guard:
     """Helper function to initialize a Guard using the correct method."""
 
     if isinstance(rail, str):
-        return Guard.from_rail_string(rail)
+        return Guard.for_rail_string(rail)
     else:
-        return Guard.from_pydantic(rail, messages=messages)
+        return Guard.for_pydantic(rail, messages=messages)
 
 
 '''def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
-    guard = gd.Guard.from_rail_string(rail_spec)
+    guard = gd.Guard.for_rail_string(rail_spec)
     assert guard.parse(llm_output) == validated_output'''
 
 
@@ -526,7 +526,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, messages):
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_LIST)
+    guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_LIST)
     _, final_output, *rest = guard(
         llm_api=openai.completions.create,
         num_reasks=1,
@@ -636,7 +636,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     mock_openai_invoke_llm.side_effect = llm_return_values
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = Guard.from_rail_string(rail)
+    guard = Guard.for_rail_string(rail)
 
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -737,7 +737,7 @@ def test_skeleton_reask(mocker):
         )
 
         content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-        guard = gd.Guard.from_rail_string(
+        guard = gd.Guard.for_rail_string(
             entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK
         )
         final_output = guard(
@@ -801,7 +801,7 @@ def test_string_with_message_history_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
+    guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
         messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
@@ -856,7 +856,7 @@ def test_pydantic_with_message_history_reask(mocker):
         },
     )
 
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    guard = gd.Guard.for_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
         messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
@@ -991,7 +991,7 @@ def test_enum_datatype(mocker):
         nonlocal return_value
         return return_value
 
-    guard = gd.Guard.from_pydantic(Task)
+    guard = gd.Guard.for_pydantic(Task)
     _, dict_o, *rest = guard(
         custom_llm,
         prompt="What is the status of this task?",
@@ -999,7 +999,7 @@ def test_enum_datatype(mocker):
     assert dict_o == {"status": "not started"}
 
     return_value = pydantic.LLM_OUTPUT_ENUM_2
-    guard = gd.Guard.from_pydantic(Task)
+    guard = gd.Guard.for_pydantic(Task)
     result = guard(
         custom_llm,
         prompt="What is the status of this task REALLY?",
@@ -1065,7 +1065,7 @@ def test_pydantic_with_lite_llm(mocker):
             response_token_count=1234,
         ),
     ]
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    guard = gd.Guard.for_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
         messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
     )
@@ -1092,7 +1092,7 @@ def test_string_output(mocker):
         )
     ]
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
+    guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
         model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
@@ -1153,7 +1153,7 @@ def test_json_function_calling_tool(mocker):
     class Tasks(BaseModel):
         list: List[Task]
 
-    guard = Guard.from_pydantic(Tasks)
+    guard = Guard.for_pydantic(Tasks)
     tools = [
         {
             "type": "function",
@@ -1228,7 +1228,7 @@ def test_string_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
+    guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
         model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
@@ -1328,7 +1328,7 @@ class TestSerizlizationAndDeserialization:
 
         ser_guard = guard.to_dict()
 
-        deser_guard = Guard.from_dict(ser_guard)
+        deser_guard = Guard.for_dict(ser_guard)
 
         assert deser_guard == guard
 
@@ -1346,7 +1346,7 @@ class TestSerizlizationAndDeserialization:
     and not importlib.util.find_spec("torch"),
     reason="transformers or torch is not installed",
 )
-def test_guard_from_pydantic_with_mock_hf_pipeline():
+def test_guard_for_pydantic_with_mock_hf_pipeline():
     from tests.unit_tests.mocks.mock_hf_models import make_mock_pipeline
 
     pipe = make_mock_pipeline()
@@ -1359,7 +1359,7 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
     and not importlib.util.find_spec("torch"),
     reason="transformers or torch is not installed",
 )
-def test_guard_from_pydantic_with_mock_hf_model():
+def test_guard_for_pydantic_with_mock_hf_model():
     from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
 
     model, tokenizer = make_mock_model_and_tokenizer()
@@ -1389,10 +1389,10 @@ class TestValidatorInitializedOnce:
 
         assert init_spy.call_count == 1
 
-    def test_from_rail(self, mocker):
+    def test_for_rail(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
-        guard = Guard.from_rail_string(
+        guard = Guard.for_rail_string(
             """
             <rail version="0.1">
             <output
@@ -1410,13 +1410,13 @@ class TestValidatorInitializedOnce:
 
         assert init_spy.call_count == 1
 
-    def test_from_pydantic_validator_instance(self, mocker):
+    def test_for_pydantic_validator_instance(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
         class MyModel(BaseModel):
             name: str = Field(..., validators=[LowerCase()])
 
-        guard = Guard().from_pydantic(MyModel)
+        guard = Guard().for_pydantic(MyModel)
 
         assert init_spy.call_count == 1
 
@@ -1425,13 +1425,13 @@ class TestValidatorInitializedOnce:
 
         assert init_spy.call_count == 1
 
-    def test_from_pydantic_str(self, mocker):
+    def test_for_pydantic_str(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
         class MyModel(BaseModel):
             name: str = Field(..., validators=[("lower-case", "noop")])
 
-        guard = Guard().from_pydantic(MyModel)
+        guard = Guard().for_pydantic(MyModel)
 
         assert init_spy.call_count == 1
 
@@ -1440,7 +1440,7 @@ class TestValidatorInitializedOnce:
 
         assert init_spy.call_count == 1
 
-    def test_from_pydantic_same_instance_on_two_models(self, mocker):
+    def test_for_pydantic_same_instance_on_two_models(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
         lower_case = LowerCase()
@@ -1451,8 +1451,8 @@ class TestValidatorInitializedOnce:
         class MyOtherModel(BaseModel):
             name: str = Field(..., validators=[lower_case])
 
-        guard_1 = Guard.from_pydantic(MyModel)
-        guard_2 = Guard.from_pydantic(MyOtherModel)
+        guard_1 = Guard.for_pydantic(MyModel)
+        guard_2 = Guard.for_pydantic(MyOtherModel)
 
         assert init_spy.call_count == 1
 

@@ -37,7 +37,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(hello_validator(), OnFailAction.FIX)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -56,7 +56,7 @@ def test_validator_as_tuple():
             ],
         )
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -69,7 +69,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.FIX)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -93,7 +93,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(hello_validator(), OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -119,7 +119,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[("two-words", OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -134,7 +134,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -149,7 +149,7 @@ def test_validator_as_tuple():
 
     # Unintentionally supported, but supported nonetheless
     # with pytest.raises(ValueError):
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     assert len(guard._validators) == 1
 
 
@@ -164,7 +164,7 @@ def test_custom_func_validator():
     </rail>
     """
 
-    guard = Guard.from_rail_string(rail_str)
+    guard = Guard.for_rail_string(rail_str)
 
     output = guard.parse(
         '{"greeting": "hello"}',
@@ -265,7 +265,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         response = guard.parse(output, num_reasks=0)
         assert response.validation_passed is True
@@ -297,7 +297,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         response = guard.parse(output, num_reasks=0)
         assert response.validation_passed is True
@@ -338,7 +338,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -372,7 +372,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
@@ -403,7 +403,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -437,7 +437,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, messages=messages)
+        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -454,7 +454,7 @@ def test_input_validation_fix(mocker):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     guard(
@@ -472,7 +472,7 @@ def test_input_validation_fix(mocker):
     )
 
     # but raises for messages validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.EXCEPTION), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -492,7 +492,7 @@ def test_input_validation_fix(mocker):
     assert guard.history.first.exception == excinfo.value
 
     # rail messages validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         """
 <rail version="0.1">
     <messages
@@ -521,7 +521,7 @@ async def test_async_messages_validation_fix(mocker):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for messages validation,
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     await guard(
@@ -537,7 +537,7 @@ async def test_async_messages_validation_fix(mocker):
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
     )
 
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     await guard(
@@ -555,7 +555,7 @@ async def test_async_messages_validation_fix(mocker):
     )
 
     # but raises for messages validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     await guard(
@@ -571,7 +571,7 @@ async def test_async_messages_validation_fix(mocker):
     assert first_iter.outputs.validation_response == "What kind"
 
     # rail prompt validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         """
 <rail version="0.1">
 <messages
@@ -622,7 +622,7 @@ def test_input_validation_fail(
     unstructured_messages_error,
 ):
     # With Prompt Validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     def custom_llm(messages, *args, **kwargs):
@@ -632,7 +632,7 @@ def test_input_validation_fail(
         )
 
     # With messages Validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -650,7 +650,7 @@ def test_input_validation_fail(
     assert guard.history.last.exception == excinfo.value
 
     # Rail Prompt Validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         f"""
 <rail version="0.1">
 <messages
@@ -712,7 +712,7 @@ async def test_input_validation_fail_async(
         )
 
     # with_messages_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -730,7 +730,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # with_messages_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -748,7 +748,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         f"""
 <rail version="0.1">
 <messages

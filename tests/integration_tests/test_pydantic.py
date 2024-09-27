@@ -35,7 +35,7 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         ListOfPeople,
         messages=[{"role": "user", "content": VALIDATED_RESPONSE_REASK_PROMPT}],
     )
@@ -123,7 +123,7 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         ListOfPeople,
         messages=[
             {
@@ -222,6 +222,6 @@ class ContainerModel2(BaseModel):
 def test_container_types(model, output):
     output_str = json.dumps(output)
 
-    guard = gd.Guard.from_pydantic(model)
+    guard = gd.Guard.for_pydantic(model)
     out = guard.parse(output_str)
     assert out.validated_output == output

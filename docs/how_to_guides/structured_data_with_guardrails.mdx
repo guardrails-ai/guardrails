@@ -33,7 +33,7 @@ Below is the syntax for generating structured data with Guardrails AI using `Pyd
     ```python
     from guardrails import Guard
 
-    guard = Guard.from_pydantic(Person)
+    guard = Guard.for_pydantic(Person)
     ```
 
     Finally, call the LLM of your choice with the `guard` object to generate structured data.
@@ -62,7 +62,7 @@ Below is the syntax for generating structured data with Guardrails AI using `Pyd
     ```python
     from guardrails import Guard
 
-    guard = Guard.from_rail_string("""
+    guard = Guard.for_rail_string("""
       <rail version="0.1">
         <output>
           <string name="name" />

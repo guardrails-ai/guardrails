@@ -226,19 +226,19 @@ STR_MESSAGES = [
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -282,19 +282,19 @@ def test_streaming_with_openai_callable(
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -354,7 +354,7 @@ STR_LLM_CHUNKS = [
     "guard, expected_error_spans",
     [
         (
-            gd.Guard.from_string(
+            gd.Guard.for_string(
                 # only the middle sentence should pass
                 validators=[
                     MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)

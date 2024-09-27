@@ -149,7 +149,7 @@ class Text2Sql:
         if rail_params is not None:
             rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
 
-        guard = Guard.from_rail_string(rail_spec_str)
+        guard = Guard.for_rail_string(rail_spec_str)
         guard._exec_opts.reask_messages = reask_messages
 
         return guard

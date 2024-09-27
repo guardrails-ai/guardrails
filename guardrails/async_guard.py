@@ -51,10 +51,10 @@ class AsyncGuard(Guard, Generic[OT]):
     This class one of the main entry point for using Guardrails. It is
     initialized from one of the following class methods:
 
-    - `from_rail`
-    - `from_rail_string`
-    - `from_pydantic`
-    - `from_string`
+    - `for_rail`
+    - `for_rail_string`
+    - `for_pydantic`
+    - `for_string`
 
     The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an Async LLM
@@ -63,7 +63,7 @@ class AsyncGuard(Guard, Generic[OT]):
     """
 
     @classmethod
-    def _from_rail_schema(
+    def _for_rail_schema(
         cls,
         schema: ProcessedSchema,
         rail: str,
@@ -73,7 +73,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super()._from_rail_schema(
+        guard = super()._for_rail_schema(
             schema,
             rail,
             num_reasks=num_reasks,
@@ -89,7 +89,7 @@ class AsyncGuard(Guard, Generic[OT]):
             return cast(AsyncGuard[Dict], guard)
 
     @classmethod
-    def from_pydantic(
+    def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
         *,
@@ -100,7 +100,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super().from_pydantic(
+        guard = super().for_pydantic(
             output_class,
             num_reasks=num_reasks,
             messages=messages,
@@ -115,7 +115,7 @@ class AsyncGuard(Guard, Generic[OT]):
             return cast(AsyncGuard[Dict], guard)
 
     @classmethod
-    def from_string(
+    def for_string(
         cls,
         validators: Sequence[Validator],
         *,
@@ -127,7 +127,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super().from_string(
+        guard = super().for_string(
             validators,
             string_description=string_description,
             messages=messages,

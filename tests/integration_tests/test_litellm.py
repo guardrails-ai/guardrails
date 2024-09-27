@@ -37,7 +37,7 @@ def test_litellm_tools():
     class Fruits(BaseModel):
         list: List[Fruit]
 
-    guard = gd.Guard.from_pydantic(Fruits)
+    guard = gd.Guard.for_pydantic(Fruits)
     res = guard(
         model="gpt-4o",
         messages=[{"role": "user", "content": "Name 10 unique fruits, lowercase only"}],

@@ -44,8 +44,8 @@ def test_validate_llm_output(mocker):
     from guardrails.classes import ValidationOutcome
 
     mock_guard = MockGuard()
-    from_rail_mock = mocker.patch.object(Guard, "from_rail")
-    from_rail_mock.return_value = mock_guard
+    for_rail_mock = mocker.patch.object(Guard, "for_rail")
+    for_rail_mock.return_value = mock_guard
 
     parse_mock = mocker.patch.object(mock_guard, "parse")
     parse_mock.return_value = ValidationOutcome(
@@ -60,7 +60,7 @@ def test_validate_llm_output(mocker):
     rail = "my_spec.rail"
     response = validate_llm_output(rail, "output")
 
-    from_rail_mock.assert_called_once_with(rail)
+    for_rail_mock.assert_called_once_with(rail)
     parse_mock.assert_called_once_with("output")
 
     assert response == "validated output"
