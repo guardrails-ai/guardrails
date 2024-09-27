@@ -204,7 +204,8 @@ async def trace_async_stream_guard(
                 tracer = get_tracer(__name__)
                 # Create a new span and link it to the previous span
                 with tracer.start_as_current_span(
-                    "new_guard_span", links=[Link(guard_span.get_span_context())]
+                    "new_guard_span",
+                    links=[Link(guard_span.get_span_context())],  # type: ignore
                 ) as new_span:
                     guard_span = new_span
 
