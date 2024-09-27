@@ -63,7 +63,7 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         return cls(
             llm_api=None,
             llm_output=i_call_inputs.llm_output,
-            messages=i_call_inputs.messages,
+            messages=i_call_inputs.messages,  # type: ignore
             prompt_params=i_call_inputs.prompt_params,
             num_reasks=i_call_inputs.num_reasks,
             metadata=i_call_inputs.metadata,
