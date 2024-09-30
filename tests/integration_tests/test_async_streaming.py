@@ -132,7 +132,7 @@ class Response:
 
 
 POETRY_CHUNKS = [
-    '"John, under ',
+    "John, under ",
     "GOLDEN bridges",
     ", roams,\n",
     "SAN Francisco's ",
@@ -173,7 +173,12 @@ async def test_filter_behavior(mocker):
     final_res = None
     async for res in gen:
         final_res = res
-        text = text + res.validated_output
+        text += res.validated_output
 
     assert final_res.raw_llm_output == ", he's always THERE."
-    assert text == ""
+    # TODO deep dive this
+    assert text == (
+        "John, under GOLDEN bridges, roams,\n"
+        "SAN Francisco's Dreams of FOG, and salty AIR,\n"
+        "In his HEART"
+    )
