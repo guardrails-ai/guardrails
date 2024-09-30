@@ -89,7 +89,7 @@ class RequiringValidator2(Validator):
 )
 @pytest.mark.asyncio
 async def test_required_metadata(spec, metadata, error_message):
-    guard: AsyncGuard = AsyncGuard.from_rail_string(spec)
+    guard: AsyncGuard = AsyncGuard.for_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard._validators)
     assert set(missing_keys) == set(metadata)
@@ -121,22 +121,22 @@ class EmptyModel(BaseModel):
     empty_field: str
 
 
-r_guard_none = AsyncGuard.from_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = AsyncGuard.from_rail(
+r_guard_none = AsyncGuard.for_rail("tests/unit_tests/test_assets/empty.rail")
+r_guard_two = AsyncGuard.for_rail(
     "tests/unit_tests/test_assets/empty.rail", num_reasks=2
 )
-rs_guard_none = AsyncGuard.from_rail_string(empty_rail_string)
-rs_guard_two = AsyncGuard.from_rail_string(empty_rail_string, num_reasks=2)
-py_guard_none = AsyncGuard.from_pydantic(output_class=EmptyModel)
-py_guard_two = AsyncGuard.from_pydantic(output_class=EmptyModel, num_reasks=2)
+rs_guard_none = AsyncGuard.for_rail_string(empty_rail_string)
+rs_guard_two = AsyncGuard.for_rail_string(empty_rail_string, num_reasks=2)
+py_guard_none = AsyncGuard.for_pydantic(output_class=EmptyModel)
+py_guard_two = AsyncGuard.for_pydantic(output_class=EmptyModel, num_reasks=2)
 s_guard_none = AsyncGuard.from_string(validators=[], description="empty railspec")
 s_guard_two = AsyncGuard.from_string(
     validators=[], description="empty railspec", num_reasks=2
 )
 
 
-def guard_init_from_rail():
-    guard = AsyncGuard.from_rail("tests/unit_tests/test_assets/simple.rail")
+def guard_init_for_rail():
+    guard = AsyncGuard.for_rail("tests/unit_tests/test_assets/simple.rail")
     assert (
         guard.instructions.format().source.strip()
         == "You are a helpful bot, who answers only with valid JSON"
@@ -192,7 +192,7 @@ def test_use():
     class TestClass(BaseModel):
         another_field: str
 
-    py_guard = AsyncGuard.from_pydantic(output_class=TestClass)
+    py_guard = AsyncGuard.for_pydantic(output_class=TestClass)
     py_guard.use(EndsWith("a"))
     assert py_guard._validator_map.get("$") == [EndsWith("a")]
 
@@ -283,7 +283,7 @@ def test_use_many_instances():
     class TestClass(BaseModel):
         another_field: str
 
-    py_guard = AsyncGuard.from_pydantic(output_class=TestClass)
+    py_guard = AsyncGuard.for_pydantic(output_class=TestClass)
     py_guard.use_many(
         EndsWith("a"),
         OneLine(),

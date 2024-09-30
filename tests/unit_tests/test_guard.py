@@ -91,7 +91,7 @@ class RequiringValidator2(Validator):
 @pytest.mark.asyncio
 @pytest.mark.skip(reason="Only for OpenAI v0")  # FIXME: Rewrite for OpenAI v1
 async def test_required_metadata(spec, metadata, error_message):
-    guard = Guard.from_rail_string(spec)
+    guard = Guard.for_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard.output_schema.root_datatype)
     assert set(missing_keys) == set(metadata)
@@ -136,12 +136,12 @@ class EmptyModel(BaseModel):
 # FIXME: Init with json schema
 # i_guard_none = Guard(rail)
 # i_guard_two = Guard(rail, 2)
-r_guard_none = Guard.from_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = Guard.from_rail("tests/unit_tests/test_assets/empty.rail", num_reasks=2)
-rs_guard_none = Guard.from_rail_string(empty_rail_string)
-rs_guard_two = Guard.from_rail_string(empty_rail_string, num_reasks=2)
-py_guard_none = Guard.from_pydantic(output_class=EmptyModel)
-py_guard_two = Guard.from_pydantic(output_class=EmptyModel, num_reasks=2)
+r_guard_none = Guard.for_rail("tests/unit_tests/test_assets/empty.rail")
+r_guard_two = Guard.for_rail("tests/unit_tests/test_assets/empty.rail", num_reasks=2)
+rs_guard_none = Guard.for_rail_string(empty_rail_string)
+rs_guard_two = Guard.for_rail_string(empty_rail_string, num_reasks=2)
+py_guard_none = Guard.for_pydantic(output_class=EmptyModel)
+py_guard_two = Guard.for_pydantic(output_class=EmptyModel, num_reasks=2)
 s_guard_none = Guard.from_string(validators=[], string_description="empty railspec")
 s_guard_two = Guard.from_string(
     validators=[], description="empty railspec", num_reasks=2
@@ -183,8 +183,8 @@ class TestConfigure:
         assert mock_get_tracer_context.call_count == 1
 
 
-def guard_init_from_rail():
-    guard = Guard.from_rail("tests/unit_tests/test_assets/simple.rail")
+def guard_init_for_rail():
+    guard = Guard.for_rail("tests/unit_tests/test_assets/simple.rail")
     assert (
         guard.instructions.format().source.strip()
         == "You are a helpful bot, who answers only with valid JSON"
@@ -240,7 +240,7 @@ def test_use():
     class TestClass(BaseModel):
         another_field: str
 
-    py_guard = Guard.from_pydantic(output_class=TestClass)
+    py_guard = Guard.for_pydantic(output_class=TestClass)
     py_guard.use(EndsWith("a"))
     assert py_guard._validator_map.get("$") == [EndsWith("a")]
 
@@ -331,7 +331,7 @@ def test_use_many_instances():
     class TestClass(BaseModel):
         another_field: str
 
-    py_guard = Guard.from_pydantic(output_class=TestClass)
+    py_guard = Guard.for_pydantic(output_class=TestClass)
     py_guard.use_many(
         EndsWith("a"),
         OneLine(),
