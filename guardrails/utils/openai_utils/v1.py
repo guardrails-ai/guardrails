@@ -2,6 +2,7 @@ from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional,
 
 import openai
 
+import warnings
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils.base import BaseOpenAIClient
 from guardrails.utils.openai_utils.streaming_utils import (
@@ -10,6 +11,38 @@ from guardrails.utils.openai_utils.streaming_utils import (
 )
 from guardrails.utils.safe_get import safe_get
 from guardrails.telemetry import trace_llm_call, trace_operation
+
+
+def get_static_openai_create_func():
+    warnings.warn(
+        "This function is deprecated. " " and will be removed in 0.6.0",
+        DeprecationWarning,
+    )
+    return openai.completions.create
+
+
+def get_static_openai_chat_create_func():
+    warnings.warn(
+        "This function is deprecated and will be removed in 0.6.0",
+        DeprecationWarning,
+    )
+    return openai.chat.completions.create
+
+
+def get_static_openai_acreate_func():
+    warnings.warn(
+        "This function is deprecated and will be removed in 0.6.0",
+        DeprecationWarning,
+    )
+    return None
+
+
+def get_static_openai_chat_acreate_func():
+    warnings.warn(
+        "This function is deprecated and will be removed in 0.6.0",
+        DeprecationWarning,
+    )
+    return None
 
 
 def is_static_openai_create_func(llm_api: Optional[Callable]) -> bool:

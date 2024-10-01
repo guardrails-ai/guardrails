@@ -126,7 +126,7 @@ def get_validator(
     # Guard.use syntax
     elif isinstance(validator, Type) and issubclass(validator, Validator):
         return validator(*args, **kwargs)
-    # Guard.useMany or Guard.from_pydantic syntax
+    # Guard.useMany or Guard.for_pydantic syntax
     elif isinstance(validator, Tuple):
         first_arg = safe_get(validator, 0)
         # useMany Tuple Syntax
@@ -140,7 +140,7 @@ def get_validator(
             if v:
                 return v
         raise invalid_error
-    # Guard.from_rail or Guard.from_rail_string syntax
+    # Guard.for_rail or Guard.for_rail_string syntax
     elif isinstance(validator, str):
         v = parse_rail_validator(validator)
         if v:

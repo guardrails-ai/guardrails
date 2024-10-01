@@ -38,7 +38,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(hello_validator(), OnFailAction.FIX)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -57,7 +57,7 @@ def test_validator_as_tuple():
             ],
         )
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -70,7 +70,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.FIX)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     output = guard.parse(
         '{"a_field": "hello there yo"}',
         num_reasks=0,
@@ -94,7 +94,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(hello_validator(), OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -120,7 +120,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[("two-words", OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -135,7 +135,7 @@ def test_validator_as_tuple():
     class MyModel(BaseModel):
         a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.REASK)])
 
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
 
     output = guard.parse(
         '{"a_field": "hello there yo"}',
@@ -150,7 +150,7 @@ def test_validator_as_tuple():
 
     # Unintentionally supported, but supported nonetheless
     # with pytest.raises(ValueError):
-    guard = Guard.from_pydantic(MyModel)
+    guard = Guard.for_pydantic(MyModel)
     assert len(guard._validators) == 1
 
 
@@ -165,7 +165,7 @@ def test_custom_func_validator():
     </rail>
     """
 
-    guard = Guard.from_rail_string(rail_str)
+    guard = Guard.for_rail_string(rail_str)
 
     output = guard.parse(
         '{"greeting": "hello"}',
@@ -261,7 +261,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         response = guard.parse(output, num_reasks=0)
         assert response.validation_passed is True
@@ -288,7 +288,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         response = guard.parse(output, num_reasks=0)
         assert response.validation_passed is True
@@ -324,7 +324,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -353,7 +353,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
@@ -379,7 +379,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -408,7 +408,7 @@ class TestCustomOnFailHandler:
             pet_type: str = Field(description="Species of pet", validators=[validator])
             name: str = Field(description="a unique pet name")
 
-        guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+        guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
         response = guard.parse(output, num_reasks=0)
 
@@ -425,7 +425,7 @@ def test_input_validation_fix(mocker):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
 
     guard(
@@ -435,7 +435,7 @@ def test_input_validation_fix(mocker):
     assert (
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
     )
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
 
     guard(
@@ -449,7 +449,7 @@ def test_input_validation_fix(mocker):
     )
 
     # but raises for msg_history validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -467,7 +467,7 @@ def test_input_validation_fix(mocker):
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         """
 <rail version="0.1">
 <prompt
@@ -487,7 +487,7 @@ This is not two words
     assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         """
 <rail version="0.1">
 <prompt>
@@ -520,7 +520,7 @@ async def test_async_input_validation_fix(mocker):
         return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
 
     await guard(
@@ -531,7 +531,7 @@ async def test_async_input_validation_fix(mocker):
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
     )
 
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
 
     await guard(
@@ -545,7 +545,7 @@ async def test_async_input_validation_fix(mocker):
     )
 
     # but raises for msg_history validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -563,7 +563,7 @@ async def test_async_input_validation_fix(mocker):
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         """
 <rail version="0.1">
 <prompt
@@ -583,7 +583,7 @@ This is not two words
     assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         """
 <rail version="0.1">
 <prompt>
@@ -659,7 +659,7 @@ def test_input_validation_fail(
     unstructured_instructions_error,
 ):
     # With Prompt Validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="prompt")
 
     def custom_llm(prompt, *args, instructions=None, msg_history=None, **kwargs):
@@ -678,7 +678,7 @@ def test_input_validation_fail(
     assert guard.history.last.exception == excinfo.value
 
     # With Instructions Validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="instructions")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -693,7 +693,7 @@ def test_input_validation_fail(
     assert guard.history.last.exception == excinfo.value
 
     # With Msg History Validation
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="msg_history")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -711,7 +711,7 @@ def test_input_validation_fail(
     assert guard.history.last.exception == excinfo.value
 
     # Rail Prompt Validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         f"""
 <rail version="0.1">
 <prompt
@@ -734,7 +734,7 @@ This is not two words
     assert guard.history.last.exception == excinfo.value
 
     # Rail Instructions Validation
-    guard = Guard.from_rail_string(
+    guard = Guard.for_rail_string(
         f"""
 <rail version="0.1">
 <prompt>
@@ -821,7 +821,7 @@ async def test_input_validation_fail_async(
         )
 
     # with_prompt_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="prompt")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -834,7 +834,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # with_instructions_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="instructions")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -848,7 +848,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # with_msg_history_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="msg_history")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -866,7 +866,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # with_messages_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -884,7 +884,7 @@ async def test_input_validation_fail_async(
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         f"""
 <rail version="0.1">
 <prompt
@@ -907,7 +907,7 @@ This is not two words
     assert guard.history.last.exception == excinfo.value
 
     # rail instructions validation
-    guard = AsyncGuard.from_rail_string(
+    guard = AsyncGuard.for_rail_string(
         f"""
 <rail version="0.1">
 <prompt>
@@ -935,7 +935,7 @@ This also is not two words
 
 def test_input_validation_mismatch_raise():
     # prompt validation, msg_history argument
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
 
     with pytest.raises(ValueError):
@@ -950,7 +950,7 @@ def test_input_validation_mismatch_raise():
         )
 
     # instructions validation, msg_history argument
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
 
     with pytest.raises(ValueError):
@@ -965,7 +965,7 @@ def test_input_validation_mismatch_raise():
         )
 
     # msg_history validation, prompt argument
-    guard = Guard.from_pydantic(output_class=Pet)
+    guard = Guard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
 
     with pytest.raises(ValueError):

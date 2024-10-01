@@ -6,6 +6,10 @@ from .v1 import (
     is_static_openai_chat_acreate_func,
     is_static_openai_chat_create_func,
     is_static_openai_create_func,
+    get_static_openai_create_func,
+    get_static_openai_chat_create_func,
+    get_static_openai_acreate_func,
+    get_static_openai_chat_acreate_func,
 )
 
 __all__ = [
@@ -16,4 +20,8 @@ __all__ = [
     "is_static_openai_acreate_func",
     "is_static_openai_chat_acreate_func",
     "OpenAIServiceUnavailableError",
+    "get_static_openai_create_func",
+    "get_static_openai_chat_create_func",
+    "get_static_openai_acreate_func",
+    "get_static_openai_chat_acreate_func",
 ]

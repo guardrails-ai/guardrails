@@ -28,7 +28,7 @@ val = ProvenanceLLM(
 )
 
 # Setup Guard
-guard = Guard.from_string(validators=[val])
+guard = Guard.for_string(validators=[val])
 ```
 
 Below, we show how to pass the metadata to the `guard.validate` method.
