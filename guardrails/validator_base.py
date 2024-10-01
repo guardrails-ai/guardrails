@@ -32,9 +32,8 @@ from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.tokenization_utils import postproc_splits
-from guardrails.utils.tokenization_utils_seperator import (
-    postproc_splits as postproc_splits_separator,
+from guardrails.utils.tokenization_utils import (
+    postproc_splits,
 )
 
 
@@ -81,7 +80,7 @@ def split_sentence_word_tokenizers_jl_separator(
     if not is_minimum_length or not any_potential_line_endings:
         return []
 
-    sentences = postproc_splits_separator(chunk_with_potential_line_endings, separator)
+    sentences = postproc_splits(chunk_with_potential_line_endings, separator)
     sentences = re.split(rf"\n?{separator} ?\n?", sentences)
     # if not more than one sentence, we haven't accumulated enough for a validation
     if len(sentences) <= 1:
@@ -90,69 +89,6 @@ def split_sentence_word_tokenizers_jl_separator(
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
-
-
-def split_sentence_word_tokenizers_jl(chunk: str):
-    """
-    Use a sentence tokenizer to detect if at least one sentence is present in the chunk.
-    We return the first sentence and the remaining chunks without the first sentence.
-
-    We perform the first step of WordTokenizers.jl's split_sentences function to
-    detect possible sentence boundaries before calling the sentence tokenizer.
-
-    Args:
-        chunk (str): The text to split into sentences.
-
-    Returns:
-        List[str]: A list of two strings. The first string is the first sentence
-            in the chunk. The second string is the remaining text in the chunk.
-    """
-    # using the sentence tokenizer is expensive
-    # we check for a . to avoid wastefully calling the tokenizer
-
-    # check at least 3 characters have been accumulated before splitting
-    is_minimum_length = False
-    with contextlib.suppress(IndexError):
-        chunk[2]
-        is_minimum_length = True
-
-    # check for potential line endings, which is what split_sentences does
-    chunk_with_potential_line_endings, count = re.subn(
-        r"([?!.])(?=\s|$)", r"\1\n", chunk
-    )
-    any_potential_line_endings = count > 0
-    if not is_minimum_length or not any_potential_line_endings:
-        return []
-
-    sentences = postproc_splits(chunk_with_potential_line_endings).split("\n")
-    # if not more than one sentence, we haven't accumulated enough for a validation
-    if len(sentences) <= 1:
-        return []
-
-    # return the sentence
-    # then the remaining chunks that aren't finished accumulating
-    return [sentences[0], "".join(sentences[1:])]
-
-
-# TODO ensure this is not indeed needed
-# def split_sentence_nltk(chunk: str):
-#     """
-#     NOTE: this approach currently does not work
-#     Use a sentence tokenizer to split the chunk into sentences.
-
-#     Because using the tokenizer is expensive, we only use it if there
-#     is a period present in the chunk.
-#     """
-#     # using the sentence tokenizer is expensive
-#     # we check for a . to avoid wastefully calling the tokenizer
-#     if "." not in chunk:
-#         return []
-#     sentences = nltk.sent_tokenize(chunk)
-#     if len(sentences) == 0:
-#         return []
-#     # return the sentence
-#     # then the remaining chunks that aren't finished accumulating
-#     return [sentences[0], "".join(sentences[1:])]
 
 
 # TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
