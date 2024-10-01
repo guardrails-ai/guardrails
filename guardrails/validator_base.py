@@ -69,7 +69,7 @@ def split_sentence_word_tokenizers_jl(chunk: str):
         is_minimum_length = True
 
     # check for potential line endings, which is what split_sentences does
-    chunk_with_potential_line_endings, count = re.subn(r"([?!.])\s", r"\1\n", chunk)
+    chunk_with_potential_line_endings, count = re.subn(r"([?!.])(\s)?", r"\1\n", chunk)
     any_potential_line_endings = count > 0
     if not is_minimum_length or not any_potential_line_endings:
         return []
