@@ -44,9 +44,7 @@ def split_sentence_str(chunk: str):
     return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
-def split_sentence_word_tokenizers_jl(
-    chunk: str, separator: str = "SENTENCEBREAK"
-) -> List[str]:
+def split_sentence_word_tokenizers_jl(chunk: str):
     """
     Use a sentence tokenizer to detect if at least one sentence is present in the chunk.
     We return the first sentence and the remaining chunks without the first sentence.
@@ -71,16 +69,12 @@ def split_sentence_word_tokenizers_jl(
         is_minimum_length = True
 
     # check for potential line endings, which is what split_sentences does
-    chunk_with_potential_line_endings, count = re.subn(
-        r"([?!.])(?=\s|$)", rf"\1{separator}", chunk
-    )
+    chunk_with_potential_line_endings, count = re.subn(r"([?!.])\s", r"\1\n", chunk)
     any_potential_line_endings = count > 0
     if not is_minimum_length or not any_potential_line_endings:
         return []
 
-    sentences = postproc_splits(chunk_with_potential_line_endings, separator).split(
-        "\n"
-    )
+    sentences = postproc_splits(chunk_with_potential_line_endings).split("\n")
     # if not more than one sentence, we haven't accumulated enough for a validation
     if len(sentences) <= 1:
         return []
