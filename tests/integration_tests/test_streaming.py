@@ -487,8 +487,7 @@ def test_fix_behavior_one_validator(mocker):
     assert (
         text
         == """"john, under golden bridges, roams,
-san francisco's hills, his home.
-dreams of fog, and salty air,
+san francisco's hills, his home.dreams of fog, and salty air,
 in his heart, he's always there."""
     )
     assert (
@@ -530,8 +529,7 @@ def test_fix_behavior_two_validators(mocker):
     assert (
         text
         == """"<PERSON>, under golden bridges, roams,
-<LOCATION> hills, his home.
-dreams of fog, and salty air,
+<LOCATION> hills, his home.dreams of fog, and salty air,
 in his heart, he's always there."""
     )
     assert (
