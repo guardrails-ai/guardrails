@@ -147,9 +147,9 @@ def postproc_splits(sentences, separator):
 
     # No sentence break after specific abbreviations
     abbreviations = [
-        r"e\.?g\.",
-        r"i\.?e\.",
-        r"i\.?v\.",
+        r"e\. ?g\.",
+        r"i\. ?e\.",
+        r"i\. ?v\.",
         r"vs\.",
         r"cf\.",
         r"Dr\.",
@@ -165,11 +165,12 @@ def postproc_splits(sentences, separator):
         r"Fig\.",
         r"vol\.",
         r"Vols\.",
-        r"No\.",
+        r"no\.",
         r"Nos\.",
         r"et\.",
         r"al\.",
-        r"Inc\.",
+        r"i\. ?v\.",
+        r"inc\.",
         r"Ltd\.",
         r"Co\.",
         r"Corp\.",
@@ -188,7 +189,7 @@ def postproc_splits(sentences, separator):
         r"sen\.",
         r"st\.",
         r"vs\.",
-        r"i\.?e\.",
+        r"i\. ?e\.",
     ]
     for abbr in abbreviations:
         sentences = re.sub(

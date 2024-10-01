@@ -584,8 +584,7 @@ def test_fix_behavior_three_validators(mocker):
     assert (
         text
         == """"REDACTED!!, under purple!! bridges, roams,
-<LOCATION> hills, his home.
-dreams of fog, and salty air,
+<LOCATION> hills, his home.dreams of fog, and salty air,
 in his heart, he's always there."""
     )
     assert (
