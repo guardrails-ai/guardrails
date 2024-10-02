@@ -14,7 +14,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY") or "some key"
     [
         (
             "France is wonderful in the spring",
-            "France is wonderful in the spring",
+            "France is",
             True,
             False,
         ),
@@ -37,7 +37,7 @@ def test_guard_validation(mock_llm_output, validation_output, validation_passed,
     [
         (
             "Tell me about Oranges in 5 words",
-            "Citrus fruit, sweet, nutritious, vibrant.",
+            "Citrus fruit",
             True,
             False,
         ),
@@ -69,10 +69,9 @@ def test_server_guard_llm_integration(
 @pytest.mark.parametrize(
     "message_content, output, validation_passed, error",
     [
-        ("Tell me about Paris in 5 words", "doesnt matter this errors", True, True),
         (
             "Write 5 words of prose.",
-            "Whispers of dawn kissed the horizon.",
+            "Whispers of",
             True,
             False,
         ),

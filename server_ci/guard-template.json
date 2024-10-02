@@ -9,12 +9,9 @@
             "name": "test-guard",
             "validators": [
                 {
-                    "id": "guardrails/detect_pii",
-                    "on": "msg_history",
-                    "onFail": "fix",
-                    "kwargs": {
-                        "pii_entities": ["PERSON","PHONE_NUMBER","LOCATION"]
-                    }
+                    "id": "guardrails/two_words",
+                    "on": "$",
+                    "onFail": "fix"
                 }
             ]
         }
