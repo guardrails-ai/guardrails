@@ -1,0 +1,22 @@
+{
+    "name": "server-ci",
+    "description": "basic guard template for oss server ci",
+    "template_version": "0.0.1",
+    "namespace": "guardrails",
+    "guards": [
+        {
+            "id": "test-guard",
+            "name": "test-guard",
+            "validators": [
+                {
+                    "id": "guardrails/detect_pii",
+                    "on": "msg_history",
+                    "onFail": "fix",
+                    "kwargs": {
+                        "pii_entities": ["PERSON","PHONE_NUMBER","LOCATION"]
+                    }
+                }
+            ]
+        }
+    ]
+}

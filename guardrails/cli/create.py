@@ -22,7 +22,7 @@ def create_command(
         default="",
         help="A comma-separated list of validator hub URIs.",
     ),
-    name: Optional[str] = typer.Option(
+    guard_name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
     ),
     local_models: Optional[bool] = typer.Option(
@@ -78,13 +78,15 @@ def create_command(
             local_models,
             dry_run,
         )
-        if name is None and validators:
-            name = "Guard"
+        if guard_name is None and validators:
+            guard_name = "Guard"
             if len(installed_validators) > 0:
-                name = installed_validators[0] + "Guard"
+                guard_name = installed_validators[0] + "Guard"
 
-            console.print(f"No name provided for guard. Defaulting to {name}")
-        new_config_file = generate_config_file(installed_validators, name)
+            console.print(
+                "No guard name provided for guard. Defaulting to {guard_name}"
+            )
+        new_config_file = generate_config_file(installed_validators, guard_name)
 
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
