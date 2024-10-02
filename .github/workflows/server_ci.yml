@@ -31,7 +31,7 @@ jobs:
             - name: Build Docker image
               uses: docker/build-push-action@v6
               with:
-                context: guard
+                context: .
                 file: server_ci/Dockerfile
                 platforms: linux/amd64
                 push: false
