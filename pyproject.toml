@@ -43,7 +43,7 @@ nbdoc = {version = "^0.0.82", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
-langchain-core = ">=0.1,<0.3"
+langchain-core = ">=0.1,<0.4"
 coloredlogs = "^15.0.1"
 requests = "^2.31.0"
 faker = "^25.2.0"
