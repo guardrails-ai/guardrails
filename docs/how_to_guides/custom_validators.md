@@ -286,7 +286,7 @@ class MyModel(BaseModel):
     a_string: Field(validators=[toxic_words()])
     custom_string: Field(validators=[ToxicLanguage(threshold=0.8)])
 
-guard = Guard.from_pydantic(MyModel)
+guard = Guard.for_pydantic(MyModel)
 ```
 
 ### RAIL Example

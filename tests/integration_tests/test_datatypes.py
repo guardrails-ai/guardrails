@@ -21,7 +21,7 @@ Dummy prompt.
 </rail>
 """
 
-    guard = Guard.from_rail_string(rail_spec)
+    guard = Guard.for_rail_string(rail_spec)
     guard.parse(llm_output='{"name": "John Doe", "dob": "2021-01-01"}', num_reasks=0)
 
 
@@ -50,7 +50,7 @@ Dummy prompt.
 </rail>
 """
 
-    guard = Guard.from_rail_string(rail_spec)
+    guard = Guard.for_rail_string(rail_spec)
     # This should not raise an exception
     guard.parse(
         llm_output='{"name": "John Doe", "dob": "' + date_string + '"}', num_reasks=0
@@ -86,7 +86,7 @@ Dummy prompt.
 </rail>
 """
 
-    guard = Guard.from_rail_string(rail_spec)
+    guard = Guard.for_rail_string(rail_spec)
     with pytest.raises(Exception) as excinfo:
         guard.parse(
             llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',

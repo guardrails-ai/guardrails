@@ -88,7 +88,7 @@ def merge(
                 advance = True
                 composed_text.append(source_text)
                 tempdiff = DIFFER.diff_main(target_text, source_text)
-                _, invariant = tempdiff[1]
+                _, invariant = tempdiff[1] if len(tempdiff) > 1 else tempdiff[0]
                 # _, (_, invariant) = DIFFER.diff_main(source_text, target_text)
                 prev_source_text = source[1]
                 source = next(diff1, None)  # type: ignore

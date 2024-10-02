@@ -212,19 +212,19 @@ JSON_LLM_CHUNKS = [
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
     ],
@@ -268,19 +268,19 @@ def test_streaming_with_openai_callable(
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
     ],

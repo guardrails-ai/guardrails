@@ -20,7 +20,8 @@ TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails confi
 to update your token.
 {FIND_NEW_TOKEN}"""
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
-to update your token.
+to update your token. The token is only required to install validators and run remote \
+inference. It is not needed for local validation.
 {FIND_NEW_TOKEN}"""
 
 VALIDATOR_HUB_SERVICE = os.getenv(

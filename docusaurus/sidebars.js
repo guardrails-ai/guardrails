@@ -81,6 +81,7 @@ const sidebars = {
         "how_to_guides/enable_streaming",
         "how_to_guides/generate_structured_data",
         "how_to_guides/custom_validators",
+        "how_to_guides/use_on_fail_actions",
         "how_to_guides/hosting_validator_models",
         "how_to_guides/hosting_with_docker",
         "how_to_guides/continuous_integration_continuous_deployment",

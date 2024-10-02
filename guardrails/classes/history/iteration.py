@@ -98,7 +98,7 @@ class Iteration(IIteration, ArbitraryModel):
     def raw_output(self) -> Optional[str]:
         """The exact output from the LLM."""
         response = self.outputs.llm_response_info
-        if response is not None:
+        if response is not None and response.output:
             return response.output
         elif self.outputs.raw_output is not None:
             return self.outputs.raw_output

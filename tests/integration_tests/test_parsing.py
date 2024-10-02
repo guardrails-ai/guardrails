@@ -30,7 +30,7 @@ def test_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
 
@@ -81,7 +81,7 @@ async def test_async_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.AsyncGuard.from_pydantic(
+    guard = gd.AsyncGuard.for_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
 
