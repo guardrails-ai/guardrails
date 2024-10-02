@@ -34,7 +34,7 @@ RUN pip install "gunicorn" "guardrails-api"
 
 WORKDIR /app/guardrails
 
-RUN poetry install --all-extras
+RUN poetry install
 
 RUN pip install ./
 
