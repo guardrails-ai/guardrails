@@ -16,6 +16,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import deprecated
 import warnings
 from langchain_core.runnables import Runnable
 
@@ -106,10 +107,10 @@ class Guard(IGuard, Generic[OT]):
 
     - `Guard().use(...)`
     - `Guard().use_many(...)`
-    - `Guard.from_string(...)`
-    - `Guard.from_pydantic(...)`
-    - `Guard.from_rail(...)`
-    - `Guard.from_rail_string(...)`
+    - `Guard.for_string(...)`
+    - `Guard.for_pydantic(...)`
+    - `Guard.for_rail(...)`
+    - `Guard.for_rail_string(...)`
 
     The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an LLM
@@ -370,7 +371,7 @@ class Guard(IGuard, Generic[OT]):
             self._exec_opts.reask_instructions = reask_instructions
 
     @classmethod
-    def _from_rail_schema(
+    def _for_rail_schema(
         cls,
         schema: ProcessedSchema,
         rail: str,
@@ -400,8 +401,15 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
+    @deprecated(
+        "Use `for_rail` instead. This method will be removed in 0.6.x.", category=None
+    )
     @classmethod
-    def from_rail(
+    def from_rail(cls, rail_file: str, *args, **kwargs):
+        return cls.for_rail(rail_file, *args, **kwargs)
+
+    @classmethod
+    def for_rail(
         cls,
         rail_file: str,
         *,
@@ -440,7 +448,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_file_to_schema(rail_file)
-        return cls._from_rail_schema(
+        return cls._for_rail_schema(
             schema,
             rail=rail_file,
             num_reasks=num_reasks,
@@ -449,8 +457,21 @@ class Guard(IGuard, Generic[OT]):
             description=description,
         )
 
+    @deprecated(
+        "Use `for_rail_string` instead. This method will be removed in 0.6.x.",
+        category=None,
+    )
     @classmethod
     def from_rail_string(
+        cls,
+        rail_string: str,
+        *args,
+        **kwargs,
+    ):
+        return cls.for_rail_string(rail_string, *args, **kwargs)
+
+    @classmethod
+    def for_rail_string(
         cls,
         rail_string: str,
         *,
@@ -489,7 +510,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_string_to_schema(rail_string)
-        return cls._from_rail_schema(
+        return cls._for_rail_schema(
             schema,
             rail=rail_string,
             num_reasks=num_reasks,
@@ -498,8 +519,16 @@ class Guard(IGuard, Generic[OT]):
             description=description,
         )
 
+    @deprecated(
+        "Use `for_pydantic` instead. This method will be removed in 0.6.x.",
+        category=None,
+    )
     @classmethod
-    def from_pydantic(
+    def from_pydantic(cls, output_class: ModelOrListOfModels, *args, **kwargs):
+        return cls.for_pydantic(output_class, **kwargs)
+
+    @classmethod
+    def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
         *,
@@ -598,8 +627,22 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
+    @deprecated(
+        """Use `use`, `use_many`, or `for_string` instead.
+                This method will be removed in 0.6.x.""",
+        category=None,
+    )
     @classmethod
     def from_string(
+        cls,
+        validators: Sequence[Validator],
+        *args,
+        **kwargs,
+    ):
+        return cls.for_string(validators, *args, **kwargs)
+
+    @classmethod
+    def for_string(
         cls,
         validators: Sequence[Validator],
         *,
@@ -866,7 +909,11 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
@@ -885,7 +932,11 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)

@@ -57,7 +57,6 @@ class HubTelemetry:
         """Initializes a tracer for Guardrails Hub."""
         if enabled is None:
             enabled = settings.rc.enable_metrics or False
-
         self._enabled = enabled
         self._carrier = {}
         self._service_name = service_name
@@ -105,7 +104,14 @@ class HubTelemetry:
         context = self._prop.extract(carrier=self._carrier)
         return context
 
-    def create_new_span(self, span_name: str, attributes: list):
+    def create_new_span(
+        self,
+        span_name: str,
+        attributes: list,
+        # todo deprecate these in 060
+        is_parent: bool,  #
+        has_parent: bool,  # no-qa
+    ):
         """Creates a new span within the tracer with the given name and
         attributes.
 

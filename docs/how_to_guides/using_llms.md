@@ -58,7 +58,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
@@ -170,7 +170,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
@@ -235,7 +235,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
