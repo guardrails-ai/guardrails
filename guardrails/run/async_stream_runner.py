@@ -8,7 +8,6 @@ from typing import (
     cast,
 )
 
-from guardrails.merge import merge
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.actions.reask import SkeletonReAsk
 from guardrails.classes import ValidationOutcome
@@ -31,7 +30,9 @@ from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 from guardrails.types import OnFailAction
 from guardrails.classes.validation.validation_result import (
     PassResult,
+    FailResult,
 )
+
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
     # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
@@ -138,71 +139,86 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         validation_response = ""
         validation_progress = {}
         refrain_triggered = False
+        validation_passed = True
+
         if self.output_type == OutputTypes.STRING:
+            validator_service = AsyncValidatorService(self.disable_tracer)
             async for chunk in stream_output:
                 chunk_text = self.get_chunk_text(chunk, api)
                 _ = self.is_last_chunk(chunk, api)
-                parsed_chunk, move_to_next = self.parse(
-                    chunk_text, output_schema, verified=verified
-                )
-                if move_to_next:
-                    continue
+
                 fragment += chunk_text
-
-                validator_service = AsyncValidatorService(self.disable_tracer)
                 results = await validator_service.async_partial_validate(
-                    chunk_text, self.metadata, self.validation_map, iteration, "$", "$", True,
+                    chunk_text,
+                    self.metadata,
+                    self.validation_map,
+                    iteration,
+                    "$",
+                    "$",
+                    True,
                 )
-
-                # collect the result validated_chunk into validation progress per validator
+                validators = self.validation_map["$"] or []
+                # collect the result validated_chunk into validation progress
+                # per validator
                 for result in results:
-                    validator_log = result.validator_logs
-                    validators = self.validation_map["$"]
-                    validator = next(filter(lambda x: x.rail_alias == validator_log.registered_name, validators), None)
-
-                    if (validator_log.validation_result and validator_log.validation_result.validated_chunk):
-                        is_filter = validator.on_fail_descriptor is OnFailAction.FILTER
-                        is_refrain = validator.on_fail_descriptor is OnFailAction.REFRAIN
-
-                        reasks, valid_op = self.introspect(validator_log.validation_result)
-
-                        if is_filter or is_refrain:
-                            refrain_triggered = True
-                            chunk = ""
-
+                    validator_log = result.validator_logs  # type: ignore
+                    validator = next(
+                        filter(
+                            lambda x: x.rail_alias == validator_log.registered_name,
+                            validators,
+                        ),
+                        None,
+                    )
+                    if (
+                        validator_log.validation_result
+                        and validator_log.validation_result.validated_chunk
+                    ):
+                        is_filter = validator.on_fail_descriptor is OnFailAction.FILTER  # type: ignore
+                        is_refrain = (
+                            validator.on_fail_descriptor is OnFailAction.REFRAIN  # type: ignore
+                        )
+                        if validator_log.validation_result.outcome == "fail":
+                            validation_passed = False
+                        reasks, valid_op = self.introspect(
+                            validator_log.validation_result
+                        )
                         if reasks:
                             raise ValueError(
                                 "Reasks are not yet supported with streaming. Please "
                                 "remove reasks from schema or disable streaming."
                             )
-                        elif isinstance(validator_log.validation_result, PassResult):
-                            chunk = validator_log.validation_result.validated_chunk
-                        else:
-                            chunk = validator_service.perform_correction(
-                                validator_log.validation_result,
-                                validator_log.validation_result.validated_chunk,
-                                validator,
-                                rechecked_value=None,
-                            )
-                        if not hasattr(validation_progress, validator_log.validator_name):
-                            validation_progress[validator_log.validator_name] = ""
-                        
-                        validation_progress[validator_log.validator_name] += chunk
 
+                        if isinstance(validator_log.validation_result, PassResult):
+                            chunk = validator_log.validation_result.validated_chunk
+                        elif isinstance(validator_log.validation_result, FailResult):
+                            if is_filter or is_refrain:
+                                refrain_triggered = True
+                                chunk = ""
+                            else:
+                                chunk = validator_service.perform_correction(
+                                    validator_log.validation_result,
+                                    validator_log.validation_result.validated_chunk,
+                                    validator,  # type: ignore
+                                    rechecked_value=None,
+                                )  # type: ignore
+
+                        if not hasattr(
+                            validation_progress, validator_log.validator_name
+                        ):
+                            validation_progress[validator_log.validator_name] = ""
+
+                        validation_progress[validator_log.validator_name] += chunk
                 # if there is an entry for every validator
                 # run a merge and emit a validation outcome
                 if len(validation_progress) == len(validators):
                     if refrain_triggered:
                         current = ""
-                    else:q
+                    else:
                         merge_chunks = []
                         for piece in validation_progress:
                             merge_chunks.append(validation_progress[piece])
 
-                        current = merge_chunks.pop()
-                        while len(merge_chunks) > 0:
-                            nextval = merge_chunks.pop()
-                            current = merge(current, nextval, fragment)
+                        current = validator_service.multi_merge(fragment, merge_chunks)
 
                     vo = ValidationOutcome(
                         call_id=call_log.id,  # type: ignore
@@ -216,6 +232,19 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
 
                     yield vo
 
+            # if theres anything left merge and emit a chunk
+            if len(validation_progress) > 0:
+                merge_chunks = []
+                for piece in validation_progress:
+                    merge_chunks.append(validation_progress[piece])
+
+                current = validator_service.multi_merge(fragment, merge_chunks)
+                yield ValidationOutcome(
+                    call_id=call_log.id,  # type: ignore
+                    raw_llm_output=fragment,
+                    validated_output=current,
+                    validation_passed=validation_passed,
+                )
         else:
             async for chunk in stream_output:
                 chunk_text = self.get_chunk_text(chunk, api)

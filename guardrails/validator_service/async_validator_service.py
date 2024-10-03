@@ -263,7 +263,7 @@ class AsyncValidatorService(ValidatorServiceBase):
         reference_path: str,
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> Tuple[Any, dict]:
+    ) -> list[ValidatorRun]:
         # Then validate the parent value
         validators = validator_map.get(reference_path, [])
         coroutines: List[Coroutine[Any, Any, ValidatorRun]] = []

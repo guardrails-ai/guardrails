@@ -21,6 +21,18 @@ from guardrails.validator_base import (
 )
 from tests.integration_tests.test_assets.validators import LowerCase, MockDetectPII
 
+POETRY_CHUNKS = [
+    "John, under ",
+    "GOLDEN bridges",
+    ", roams,\n",
+    "SAN Francisco's ",
+    "hills, his HOME.\n",
+    "Dreams of",
+    " FOG, and salty AIR,\n",
+    "In his HEART",
+    ", he's always THERE.",
+]
+
 
 @register_validator(name="minsentencelength", data_type=["string", "list"])
 class MinSentenceLengthValidator(Validator):
@@ -131,21 +143,54 @@ class Response:
         self.completion_stream = gen()
 
 
-POETRY_CHUNKS = [
-    "John, under ",
-    "GOLDEN bridges",
-    ", roams,\n",
-    "SAN Francisco's ",
-    "hills, his HOME.\n",
-    "Dreams of",
-    " FOG, and salty AIR,\n",
-    "In his HEART",
-    ", he's always THERE.",
-]
+@pytest.mark.asyncio
+async def test_async_streaming_fix_behavior_two_validators(mocker):
+    mocker.patch(
+        "litellm.acompletion",
+        return_value=Response(POETRY_CHUNKS),
+    )
+
+    guard = gd.AsyncGuard().use_many(
+        MockDetectPII(
+            on_fail=OnFailAction.FIX,
+            pii_entities="pii",
+            replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
+        ),
+        LowerCase(on_fail=OnFailAction.FIX),
+    )
+    prompt = """Write me a 4 line poem about John in San Francisco. 
+    Make every third word all caps."""
+    gen = await guard(
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        temperature=0,
+        stream=True,
+        prompt=prompt,
+    )
+    text = ""
+    original = ""
+    async for res in gen:
+        original = original + res.raw_llm_output
+        text = text + res.validated_output
+
+    assert (
+        text
+        == """<PERSON>, under golden bridges, roams,
+<LOCATION> hills, his home.
+dreams of fog, and salty air,
+in his heart, he's always there."""
+    )
+    assert (
+        original
+        == """John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+Dreams of FOG, and salty AIR,
+In his HEART, he's always THERE."""
+    )
 
 
 @pytest.mark.asyncio
-async def test_filter_behavior(mocker):
+async def test_async_streaming_filter_behavior(mocker):
     mocker.patch(
         "litellm.acompletion",
         return_value=Response(POETRY_CHUNKS),
