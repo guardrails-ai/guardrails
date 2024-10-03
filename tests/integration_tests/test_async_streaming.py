@@ -169,16 +169,18 @@ async def test_filter_behavior(mocker):
         prompt=prompt,
     )
 
-    text = ""
-    final_res = None
-    async for res in gen:
-        final_res = res
-        text += res.validated_output
+    validated = ""
+    raw_llm_output = ""
 
-    assert final_res.raw_llm_output == ", he's always THERE."
-    # TODO deep dive this
-    assert text == (
-        "John, under GOLDEN bridges, roams,\n"
-        "SAN Francisco's Dreams of FOG, and salty AIR,\n"
-        "In his HEART"
+    async for res in gen:
+        validated += res.validated_output
+        raw_llm_output += res.raw_llm_output
+
+    assert validated == ""
+    assert (
+        raw_llm_output
+        == """John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+Dreams of FOG, and salty AIR,
+In his HEART, he's always THERE."""
     )
