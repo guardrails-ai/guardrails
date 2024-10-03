@@ -35,6 +35,7 @@ from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
 from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
+from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
@@ -1217,6 +1218,13 @@ class Guard(IGuard, Generic[OT]):
             )
             self.history.extend([Call.from_interface(call) for call in guard_history])
 
+            validation_summaries = []
+            if self.history.last and self.history.last.iterations.last:
+                validator_logs = self.history.last.iterations.last.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+                    validator_logs
+                )
+
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
@@ -1232,6 +1240,7 @@ class Guard(IGuard, Generic[OT]):
                 raw_llm_output=validation_output.raw_llm_output,
                 validated_output=validated_output,
                 validation_passed=(validation_output.validation_passed is True),
+                validation_summaries=validation_summaries,
             )
         else:
             raise ValueError("Guard does not have an api client!")

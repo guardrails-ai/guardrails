@@ -512,17 +512,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.31"
+version = "1.35.32"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.31-py3-none-any.whl", hash = "sha256:2e9af74d10d8af7610a8d8468d2914961f116912a024fce17351825260385a52"},
-    {file = "boto3-1.35.31.tar.gz", hash = "sha256:8c593af260c4ea3eb6f079c09908f94494ca2222aa4e40a7ff490fab1cee8b39"},
+    {file = "boto3-1.35.32-py3-none-any.whl", hash = "sha256:786a243f4b4827c6ae149442bf544c2ae449570cf23616a5d386f7a2633e0e08"},
+    {file = "boto3-1.35.32.tar.gz", hash = "sha256:a7652962897340d34bc930ffc9311dcc441da975dd1b904d0172b06adbea3601"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.31,<1.36.0"
+botocore = ">=1.35.32,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -531,13 +531,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.31"
+version = "1.35.32"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.31-py3-none-any.whl", hash = "sha256:4cee814875bc78656aef4011d3d6b2231e96f53ea3661ee428201afb579d5c31"},
-    {file = "botocore-1.35.31.tar.gz", hash = "sha256:f7bfa910cf2cbcc8c2307c1cf7b93495d614c2d699883417893e0a337fe4eb63"},
+    {file = "botocore-1.35.32-py3-none-any.whl", hash = "sha256:2c0c2b62dd156daf904525f3f523ae22bf34ac109d727acf0bbfbca291440fc3"},
+    {file = "botocore-1.35.32.tar.gz", hash = "sha256:5ecbcd2f112e991b1f95c88ebb0f8df1a7c4ad9681aff80ec77e67cc4836eaa9"},
 ]
 
 [package.dependencies]
@@ -2191,20 +2191,6 @@ Werkzeug = ">=3.0.3,<4"
 
 [package.extras]
 dev = ["coverage", "gunicorn (>=22.0.0,<23)", "pytest", "pytest-mock", "ruff"]
-
-[[package]]
-name = "guardrails-api-client"
-version = "0.3.9"
-description = "Guardrails API Client."
-optional = false
-python-versions = "<4,>=3.8"
-files = [
-    {file = "guardrails_api_client-0.3.9-py3-none-any.whl", hash = "sha256:f24110690669007ca276ddfea928770c9e1ba360e4a70b06cb6e63aceffd0d4f"},
-    {file = "guardrails_api_client-0.3.9.tar.gz", hash = "sha256:dac110182381cd779579c217028534db20168dd659f2484c5c2d21aa9560d2fc"},
-]
-
-[package.extras]
-dev = ["pyright", "pytest", "pytest-cov", "ruff"]
 
 [[package]]
 name = "guardrails-api-client"
@@ -7971,18 +7957,18 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "urllib3"
-version = "2.2.3"
+version = "2.0.7"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.2.3-py3-none-any.whl", hash = "sha256:ca899ca043dcb1bafa3e262d73aa25c465bfb49e0bd9dd5d59f1d0acba2f8fac"},
-    {file = "urllib3-2.2.3.tar.gz", hash = "sha256:e7d814a81dad81e6caf2ec9fdedb284ecc9c73076b62654547cc64ccdcae26e9"},
+    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
+    {file = "urllib3-2.0.7.tar.gz", hash = "sha256:c97dfde1f7bd43a71c8d2a58e369e9b2bf692d1334ea9f9cae55add7d0dd0f84"},
 ]
 
 [package.extras]
 brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
-h2 = ["h2 (>=4,<5)"]
+secure = ["certifi", "cryptography (>=1.9)", "idna (>=2.0.0)", "pyopenssl (>=17.1.0)", "urllib3-secure-extra"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
@@ -8553,4 +8539,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "96293d271b0c1be36b7544ce23261cab6b8a0546e1530f5044e6daace3c335e2"
+content-hash = "75778b3799a2c211eac627d23d0d9dd78a5ee578eabc8ade3a713f6a70a81314"
