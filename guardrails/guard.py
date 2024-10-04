@@ -226,6 +226,8 @@ class Guard(IGuard, Generic[OT]):
                     )
             if not _loaded:
                 self._save()
+        else:
+            self.configure()
 
     @field_validator("output_schema")
     @classmethod
