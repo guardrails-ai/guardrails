@@ -281,7 +281,7 @@ class AsyncRunner(Runner):
         return llm_response
 
     # TODO: Refactor this to use inheritance and overrides
-    # @async_trace(name="/validation", origin="AsyncRunner.async_validate")
+    @async_trace(name="/validation", origin="AsyncRunner.async_validate")
     async def async_validate(
         self,
         iteration: Iteration,
