@@ -8,7 +8,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Expo
 )
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.trace.propagation import set_span_in_context
 
@@ -74,9 +74,9 @@ class HubTelemetry:
         self._tracer_provider = TracerProvider(resource=self._resource)
 
         if export_locally:
-            self._processor = SimpleSpanProcessor(ConsoleSpanExporter())
+            self._processor = BatchSpanProcessor(ConsoleSpanExporter())
         else:
-            self._processor = SimpleSpanProcessor(
+            self._processor = BatchSpanProcessor(
                 OTLPSpanExporter(endpoint=self._endpoint)
             )
 
