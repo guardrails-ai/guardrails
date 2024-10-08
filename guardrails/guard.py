@@ -1285,9 +1285,10 @@ class Guard(IGuard, Generic[OT]):
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+                # TODO renable this. doesnt work in a multiple server environment
+                # self.history.extend(
+                #     [Call.from_interface(call) for call in guard_history]
+                # )
         else:
             raise ValueError("Guard does not have an api client!")
 

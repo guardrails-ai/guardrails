@@ -498,6 +498,9 @@ class LiteLLMCallable(PromptCallableBase):
             ),
         )
 
+        kwargs.pop("reask_prompt", None)
+        kwargs.pop("reask_instructions", None)
+
         response = completion(
             model=model,
             *args,
@@ -1087,6 +1090,9 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "function_call", safe_get(function_calling_tools, 0)
             ),
         )
+
+        kwargs.pop("reask_prompt", None)
+        kwargs.pop("reask_instructions", None)
 
         response = await acompletion(
             *args,
