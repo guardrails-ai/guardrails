@@ -167,6 +167,14 @@ class ValidatorServiceBase:
     ) -> ValidatorRun:
         raise NotImplementedError
 
+    # requires at least 2 validators
+    def multi_merge(self, original: str, new_values: list[str]) -> Optional[str]:
+        current = new_values.pop()
+        while len(new_values) > 0:
+            nextval = new_values.pop()
+            current = merge(current, nextval, original)
+        return current
+
     def merge_results(self, original_value: Any, new_values: list[Any]) -> Any:
         new_vals = deepcopy(new_values)
         current = new_values.pop()
