@@ -1215,6 +1215,7 @@ class Guard(IGuard, Generic[OT]):
                     error="The response from the server was empty!",
                 )
 
+            # TODO renable this when we have history support in multi-node server environments
             # guard_history = self._api_client.get_history(
             #     self.name, validation_output.call_id
             # )
@@ -1281,14 +1282,15 @@ class Guard(IGuard, Generic[OT]):
                         validated_output=validated_output,
                         validation_passed=(validation_output.validation_passed is True),
                     )
-            if validation_output:
-                guard_history = self._api_client.get_history(
-                    self.name, validation_output.call_id
-                )
-                # TODO renable this. doesnt work in a multiple server environment
-                # self.history.extend(
-                #     [Call.from_interface(call) for call in guard_history]
-                # )
+
+            # TODO reenable this when sever supports multi-node history
+            # if validation_output:
+            #     guard_history = self._api_client.get_history(
+            #         self.name, validation_output.call_id
+            #     )
+            # self.history.extend(
+            #     [Call.from_interface(call) for call in guard_history]
+            # )
         else:
             raise ValueError("Guard does not have an api client!")
 
@@ -1370,7 +1372,7 @@ class Guard(IGuard, Generic[OT]):
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            history=[],  # type: ignore
+            history=[c.to_interface() for c in self.history],  # type: ignore
         )
 
         return i_guard.to_dict()
