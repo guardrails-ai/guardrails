@@ -11,10 +11,12 @@
     on-fail-length="reask"
 />
 
-<prompt>
+<messages>
+<message role="user">
 Say hullo to my little friend
 
 ${gr.complete_string_suffix}
-</prompt>
+</message>
+</messages>
 
 </rail>

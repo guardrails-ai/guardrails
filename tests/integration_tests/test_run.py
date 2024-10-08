@@ -4,9 +4,7 @@ from guardrails.classes.history.call import Call
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.output_type import OutputTypes
-from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
+from guardrails.llm_providers import AsyncLiteLLMCallable, LiteLLMCallable
 from guardrails.run import AsyncRunner, Runner
 from guardrails.types.on_fail import OnFailAction
 
@@ -33,10 +31,11 @@ def runner_instance(is_sync: bool):
             output_schema=OUTPUT_SCHEMA,
             num_reasks=0,
             validation_map=validation_map,
-            prompt=PROMPT,
-            instructions=INSTRUCTIONS,
-            msg_history=None,
-            api=OpenAICallable,
+            messages=[
+                {"role": "system", "content": INSTRUCTIONS},
+                {"role": "user", "content": PROMPT},
+            ],
+            api=LiteLLMCallable,
         )
     else:
         return AsyncRunner(
@@ -44,17 +43,18 @@ def runner_instance(is_sync: bool):
             output_schema=OUTPUT_SCHEMA,
             num_reasks=0,
             validation_map=validation_map,
-            prompt=PROMPT,
-            instructions=INSTRUCTIONS,
-            msg_history=None,
-            api=AsyncOpenAICallable,
+            messages=[
+                {"role": "system", "content": INSTRUCTIONS},
+                {"role": "user", "content": PROMPT},
+            ],
+            api=AsyncLiteLLMCallable,
         )
 
 
 @pytest.mark.asyncio
 async def test_sync_async_validate_equivalence(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+        "guardrails.llm_providers.AsyncLiteLLMCallable.invoke_llm",
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -86,7 +86,7 @@ async def test_sync_async_validate_equivalence(mocker):
 @pytest.mark.asyncio
 async def test_sync_async_step_equivalence(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+        "guardrails.llm_providers.AsyncLiteLLMCallable.invoke_llm",
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -103,9 +103,11 @@ async def test_sync_async_step_equivalence(mocker):
         1,
         OUTPUT_SCHEMA,
         call_log,
-        api=OpenAICallable(**{"temperature": 0}),
-        instructions=Instructions(INSTRUCTIONS),
-        prompt=Prompt(PROMPT),
+        api=LiteLLMCallable(**{"temperature": 0}),
+        messages=[
+            {"role": "system", "content": INSTRUCTIONS},
+            {"role": "user", "content": PROMPT},
+        ],
         prompt_params={},
         output=OUTPUT,
     )
@@ -115,9 +117,11 @@ async def test_sync_async_step_equivalence(mocker):
         1,
         OUTPUT_SCHEMA,
         call_log,
-        api=AsyncOpenAICallable(**{"temperature": 0}),
-        instructions=Instructions(INSTRUCTIONS),
-        prompt=Prompt(PROMPT),
+        api=AsyncLiteLLMCallable(**{"temperature": 0}),
+        messages=[
+            {"role": "system", "content": INSTRUCTIONS},
+            {"role": "user", "content": PROMPT},
+        ],
         prompt_params={},
         output=OUTPUT,
     )

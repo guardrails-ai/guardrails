@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails import AsyncGuard, Prompt
+from guardrails import AsyncGuard
 from guardrails.utils import docs_utils
 from guardrails.classes.llm.llm_response import LLMResponse
 from tests.integration_tests.test_assets.custom_llm import mock_async_llm
@@ -37,18 +37,11 @@ async def test_entity_extraction_with_reask(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
 
-    from guardrails.run import async_runner
-
-    preprocess_prompt_spy = mocker.spy(async_runner, "preprocess_prompt")
-
     final_output = await guard(
         llm_api=mock_async_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
-
-    # Check that the preprocess_prompt method was called.
-    preprocess_prompt_spy.assert_called()
 
     # Assertions are made on the guard state object.
     assert final_output.validation_passed is True
@@ -64,9 +57,15 @@ async def test_entity_extraction_with_reask(mocker):
 
     # For orginal prompt and output
     first = call.iterations.first
-    assert first.inputs.prompt == Prompt(entity_extraction.NON_OPENAI_COMPILED_PROMPT)
+    assert (
+        first.inputs.messages[0]["content"]._source
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     # Same as above
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
@@ -74,11 +73,15 @@ async def test_entity_extraction_with_reask(mocker):
 
     # For re-asked prompt and output
     final = call.iterations.last
-    assert final.inputs.prompt == Prompt(
-        entity_extraction.NON_OPENAI_COMPILED_PROMPT_REASK
+    assert (
+        final.inputs.messages[1]["content"]._source
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT_REASK
     )
     # Same as above
-    assert call.reask_prompts.last == entity_extraction.NON_OPENAI_COMPILED_PROMPT_REASK
+    assert (
+        call.reask_messages[0][1]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT_REASK
+    )
 
     # TODO: Re-enable once field level reasking is supported
     # assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
@@ -125,7 +128,10 @@ async def test_entity_extraction_with_noop(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
@@ -145,7 +151,12 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_pydantic(
         entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
-        prompt=entity_extraction.PYDANTIC_PROMPT,
+        messages=[
+            {
+                "role": "user",
+                "content": entity_extraction.PYDANTIC_PROMPT,
+            }
+        ],
     )
     final_output = await guard(
         llm_api=mock_async_llm,
@@ -167,7 +178,10 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
@@ -205,7 +219,10 @@ async def test_entity_extraction_with_filter(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_FILTER
     assert call.guarded_output is None
@@ -244,7 +261,10 @@ async def test_entity_extraction_with_fix(mocker):
     assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
@@ -281,7 +301,10 @@ async def test_entity_extraction_with_refrain(mocker):
     assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.NON_OPENAI_COMPILED_PROMPT
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
