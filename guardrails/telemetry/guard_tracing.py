@@ -179,10 +179,11 @@ def trace_guard_execution(
                 if isinstance(result, Iterator) and not isinstance(
                     result, ValidationOutcome
                 ):
-                    return trace_stream_guard(guard_span, result, history)
-                add_guard_attributes(guard_span, history, result)
-                add_user_attributes(guard_span)
-                return result
+                    for res in trace_stream_guard(guard_span, result, history):
+                        yield res
+                else:
+                    add_guard_attributes(guard_span, history, result)
+                    add_user_attributes(guard_span)
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
                 raise e
