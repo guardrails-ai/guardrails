@@ -12,10 +12,11 @@ class ValidationSummary(IValidationSummary, ArbitraryModel):
     def _generate_summaries_from_validator_logs(
         validator_logs: List[ValidatorLogs],
     ) -> Iterator["ValidationSummary"]:
-        """
-        Generate a list of ValidationSummary objects from a list of
-        ValidatorLogs objects. Using an iterator to allow serializing
-        the summaries to other formats.
+        """Generate a list of ValidationSummary objects from a list of
+        ValidatorLogs objects.
+
+        Using an iterator to allow serializing the summaries to other
+        formats.
         """
         for log in validator_logs:
             validation_result = log.validation_result
