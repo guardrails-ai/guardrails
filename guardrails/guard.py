@@ -1370,7 +1370,7 @@ class Guard(IGuard, Generic[OT]):
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            history=[c.to_interface() for c in self.history],  # type: ignore
+            history=[],  # type: ignore
         )
 
         return i_guard.to_dict()
