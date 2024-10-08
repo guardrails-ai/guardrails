@@ -1215,10 +1215,10 @@ class Guard(IGuard, Generic[OT]):
                     error="The response from the server was empty!",
                 )
 
-            guard_history = self._api_client.get_history(
-                self.name, validation_output.call_id
-            )
-            self.history.extend([Call.from_interface(call) for call in guard_history])
+            # guard_history = self._api_client.get_history(
+            #     self.name, validation_output.call_id
+            # )
+            # self.history.extend([Call.from_interface(call) for call in guard_history])
 
             validation_summaries = []
             if self.history.last and self.history.last.iterations.last:
