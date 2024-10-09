@@ -574,7 +574,8 @@ class AsyncGuard(Guard, Generic[OT]):
                         validated_output=validated_output,
                         validation_passed=(validation_output.validation_passed is True),
                     )
-            # TODO re-enable this once we have a way to get history from a multi-node server
+            # TODO re-enable this once we have a way to get history
+            # from a multi-node server
             # if validation_output:
             #     guard_history = self._api_client.get_history(
             #         self.name, validation_output.call_id

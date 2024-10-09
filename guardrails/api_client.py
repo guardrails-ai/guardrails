@@ -104,7 +104,7 @@ class GuardrailsApiClient:
                     )
                 if line:
                     json_output = json.loads(line)
-                    if(json_output.get("error")):
+                    if json_output.get("error"):
                         raise Exception(json_output.get("error").get("message"))
                     yield IValidationOutcome.from_dict(json_output)
 

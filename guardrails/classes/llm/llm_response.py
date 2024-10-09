@@ -47,7 +47,8 @@ class LLMResponse(ILLMResponse):
             stream_output = [str(so) for so in copy_2]
 
         async_stream_output = None
-        # dont do this again if already aiter-able were updating ourselves here so in memory
+        # dont do this again if already aiter-able were updating
+        # ourselves here so in memory
         # this can cause issues
         if self.async_stream_output and not hasattr(
             self.async_stream_output, "__aiter__"

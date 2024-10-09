@@ -1215,7 +1215,8 @@ class Guard(IGuard, Generic[OT]):
                     error="The response from the server was empty!",
                 )
 
-            # TODO renable this when we have history support in multi-node server environments
+            # TODO renable this when we have history support in
+            # multi-node server environments
             # guard_history = self._api_client.get_history(
             #     self.name, validation_output.call_id
             # )
