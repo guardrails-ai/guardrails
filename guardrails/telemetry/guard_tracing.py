@@ -190,8 +190,8 @@ def trace_guard_execution(
                 ):
                     return trace_stream_guard(guard_span, result, history)
 
-                # add_guard_attributes(guard_span, history, result)
-                # add_user_attributes(guard_span)
+                add_guard_attributes(guard_span, history, result)
+                add_user_attributes(guard_span)
                 return result
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
