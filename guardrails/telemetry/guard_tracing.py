@@ -11,7 +11,7 @@ from typing import (
 )
 
 from opentelemetry import context, trace
-from opentelemetry.trace import StatusCode, Tracer, Span
+from opentelemetry.trace import StatusCode, Tracer, Span, Link, get_tracer
 
 from guardrails.settings import settings
 from guardrails.classes.generic.stack import Stack
@@ -145,18 +145,18 @@ def trace_stream_guard(
             res = next(result)  # type: ignore
             # FIXME: This should only be called once;
             # Accumulate the validated output and call at the end
-            # if not guard_span.is_recording():
-            #     # Assuming you have a tracer instance
-            #     tracer = get_tracer(__name__)
-            #     # Create a new span and link it to the previous span
-            #     with tracer.start_as_current_span(
-            #         "new_guard_span",  # type: ignore
-            #         links=[Link(guard_span.get_span_context())],
-            #     ) as new_span:
-            #         guard_span = new_span
-            #         add_guard_attributes(guard_span, history, res)
-            #         add_user_attributes(guard_span)
-            yield res
+            if not guard_span.is_recording():
+                # Assuming you have a tracer instance
+                tracer = get_tracer(__name__)
+                # Create a new span and link it to the previous span
+                with tracer.start_as_current_span(
+                    "stream_guard_span",  # type: ignore
+                    links=[Link(guard_span.get_span_context())],
+                ) as new_span:
+                    guard_span = new_span
+                    add_guard_attributes(guard_span, history, res)
+                    add_user_attributes(guard_span)
+                    yield res
         except StopIteration:
             next_exists = False
 
@@ -209,19 +209,19 @@ async def trace_async_stream_guard(
     while next_exists:
         try:
             res = await anext(result)  # type: ignore
-            # if not guard_span.is_recording():
-            # Assuming you have a tracer instance
-            # tracer = get_tracer(__name__)
-            # # Create a new span and link it to the previous span
-            # with tracer.start_as_current_span(
-            #     "new_guard_span",  # type: ignore
-            #     links=[Link(guard_span.get_span_context())],
-            # ) as new_span:
-            #     guard_span = new_span
+            if not guard_span.is_recording():
+                # Assuming you have a tracer instance
+                tracer = get_tracer(__name__)
+                # Create a new span and link it to the previous span
+                with tracer.start_as_current_span(
+                    "async_stream_span",  # type: ignore
+                    links=[Link(guard_span.get_span_context())],
+                ) as new_span:
+                    guard_span = new_span
 
-            #     add_guard_attributes(guard_span, history, res)
-            #     add_user_attributes(guard_span)
-            yield res
+                    add_guard_attributes(guard_span, history, res)
+                    add_user_attributes(guard_span)
+                    yield res
         except StopIteration:
             next_exists = False
         except StopAsyncIteration:
