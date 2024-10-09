@@ -11,7 +11,7 @@ from typing import (
 )
 
 from opentelemetry import context, trace
-from opentelemetry.trace import StatusCode, Tracer, Span, Link, get_tracer
+from opentelemetry.trace import StatusCode, Tracer, Span
 
 from guardrails.settings import settings
 from guardrails.classes.generic.stack import Stack
@@ -188,11 +188,11 @@ def trace_guard_execution(
                 if isinstance(result, Iterator) and not isinstance(
                     result, ValidationOutcome
                 ):
-                    for res in trace_stream_guard(guard_span, result, history):
-                        yield res
-                else:
-                    add_guard_attributes(guard_span, history, result)
-                    add_user_attributes(guard_span)
+                    return trace_stream_guard(guard_span, result, history)
+
+                # add_guard_attributes(guard_span, history, result)
+                # add_user_attributes(guard_span)
+                return result
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
                 raise e
@@ -210,17 +210,17 @@ async def trace_async_stream_guard(
         try:
             res = await anext(result)  # type: ignore
             # if not guard_span.is_recording():
-                # Assuming you have a tracer instance
-                # tracer = get_tracer(__name__)
-                # # Create a new span and link it to the previous span
-                # with tracer.start_as_current_span(
-                #     "new_guard_span",  # type: ignore
-                #     links=[Link(guard_span.get_span_context())],
-                # ) as new_span:
-                #     guard_span = new_span
+            # Assuming you have a tracer instance
+            # tracer = get_tracer(__name__)
+            # # Create a new span and link it to the previous span
+            # with tracer.start_as_current_span(
+            #     "new_guard_span",  # type: ignore
+            #     links=[Link(guard_span.get_span_context())],
+            # ) as new_span:
+            #     guard_span = new_span
 
-                #     add_guard_attributes(guard_span, history, res)
-                #     add_user_attributes(guard_span)
+            #     add_guard_attributes(guard_span, history, res)
+            #     add_user_attributes(guard_span)
             yield res
         except StopIteration:
             next_exists = False

@@ -498,6 +498,7 @@ class LiteLLMCallable(PromptCallableBase):
             ),
         )
 
+        # these are gr only and should not be getting passed to llms
         kwargs.pop("reask_prompt", None)
         kwargs.pop("reask_instructions", None)
 
@@ -1091,6 +1092,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             ),
         )
 
+        # these are gr only and should not be getting passed to llms
         kwargs.pop("reask_prompt", None)
         kwargs.pop("reask_instructions", None)
 
