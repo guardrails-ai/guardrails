@@ -1,0 +1,19 @@
+{
+    "name": "server-ci",
+    "description": "basic guard template for oss server ci",
+    "template_version": "0.0.1",
+    "namespace": "guardrails",
+    "guards": [
+        {
+            "id": "test-guard",
+            "name": "test-guard",
+            "validators": [
+                {
+                    "id": "guardrails/two_words",
+                    "on": "$",
+                    "onFail": "fix"
+                }
+            ]
+        }
+    ]
+}

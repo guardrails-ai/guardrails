@@ -56,7 +56,7 @@ class LLMResponse(ILLMResponse):
                 async_stream_output.append(so)
                 awaited_stream_output.append(str(async_to_sync(so)))
 
-            self.async_stream_output = aiter(async_stream_output)  # type: ignore
+            self.async_stream_output = aiter(async_stream_output)  # type: ignore  # noqa: F821
 
         return ILLMResponse(
             prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases

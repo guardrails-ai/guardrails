@@ -13,10 +13,10 @@ This is a comprehensive guide on integrating Guardrails with [LangChain](https:/
 
 ## Prerequisites
 
-1. Ensure you have the following langchain packages installed:
+1. Ensure you have the following langchain packages installed. Also install Guardrails
 
     ```bash
-    pip install langchain langchain_openai
+    pip install "guardrails-ai>=0.5.13" langchain langchain_openai
     ```
 
 2. As a prerequisite we install the necessary validators from the Guardrails Hub:

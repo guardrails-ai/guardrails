@@ -81,6 +81,12 @@ class TestTelemetry:
             "guardrails.utils.hub_telemetry_utils.OTLPSpanExporter",
             return_value=hub_exporter,
         )
+        hub_processor = SimpleSpanProcessor(hub_exporter)
+
+        mocker.patch(
+            "guardrails.utils.hub_telemetry_utils.BatchSpanProcessor",
+            return_value=hub_processor,
+        )
 
         from guardrails import Guard
         from tests.integration_tests.test_assets.validators import LowerCase
@@ -125,6 +131,13 @@ class TestTelemetry:
             "guardrails.utils.hub_telemetry_utils.OTLPSpanExporter"
         )
         mock_hub_otlp_span_exporter.return_value = hub_exporter
+
+        hub_processor = SimpleSpanProcessor(hub_exporter)
+
+        mocker.patch(
+            "guardrails.utils.hub_telemetry_utils.BatchSpanProcessor",
+            return_value=hub_processor,
+        )
 
         from guardrails.telemetry import default_otel_collector_tracer
         from guardrails import Guard

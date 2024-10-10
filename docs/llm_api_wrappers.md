@@ -49,7 +49,7 @@ raw_llm_output, guardrail_output, *rest = guard(
 
 ## Cohere
 
-### Generate (e.g. GPT-3)
+### Generate (e.g. command)
 
 ```python
 import cohere

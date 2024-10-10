@@ -292,7 +292,10 @@ See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for
 
 ## Custom LLM Wrappers
 In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that accepts a positional argument for the prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
-
+Install ProfanityFree from hub:
+```
+guardrails hub install hub://guardrails/profanity_free
+```
 ```python
 from guardrails import Guard
 from guardrails.hub import ProfanityFree

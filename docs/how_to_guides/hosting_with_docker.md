@@ -28,7 +28,7 @@ First, we need to install any validators we want to use from the hub. In this ex
 
 
 ```
-guardrails create --validators=hub://guardrails/regex_match --name=title-case
+guardrails create --validators=hub://guardrails/regex_match --guard-name=title-case
 ```
 
 

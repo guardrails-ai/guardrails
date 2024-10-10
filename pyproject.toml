@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.5.11"
+version = "0.5.14"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -43,7 +43,7 @@ nbdoc = {version = "^0.0.82", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
-langchain-core = ">=0.1,<0.3"
+langchain-core = ">=0.1,<0.4"
 coloredlogs = "^15.0.1"
 requests = "^2.31.0"
 faker = "^25.2.0"
@@ -56,7 +56,7 @@ opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
 guardrails-hub-types = "^0.0.4"
-guardrails-api-client = ">=0.3.8"
+guardrails-api-client = ">=0.3.13"
 diff-match-patch = "^20230430"
 guardrails-api = ">=0.0.1"
 mlflow = {version = ">=2.0.1", optional = true}
