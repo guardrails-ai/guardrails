@@ -198,7 +198,10 @@ class Iteration(IIteration, ArbitraryModel):
             table.add_column("Content")
 
             for msg in messages:
-                table.add_row(str(msg["role"]), msg["content"])  # type: ignore
+                if hasattr(msg["content"], "source"):
+                    table.add_row(str(msg["role"]), msg["content"].source)  # type: ignore
+                else:
+                    table.add_row(str(msg["role"]), msg["content"])  # type: ignore
 
             return table
 

@@ -20,6 +20,7 @@ def messages_source(messages: MessageHistory) -> MessageHistory:
         content = (
             msg["content"].source
             if isinstance(msg["content"], Prompt)
+            or isinstance(msg["content"], Instructions)
             else msg["content"]
         )
         msg_copy["content"] = content
