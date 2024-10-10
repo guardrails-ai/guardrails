@@ -1,6 +1,6 @@
 import json
 import os
-from guardrails import Guard
+from guardrails import AsyncGuard, Guard
 from guardrails.hub import {VALIDATOR_IMPORTS}
 
 try:

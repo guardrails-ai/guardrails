@@ -118,7 +118,7 @@ def generate_template_config(
     guard_instantiations = []
 
     for i, guard in enumerate(template["guards"]):
-        guard_instantiations.append(f"guard{i} = Guard.from_dict(guards[{i}])")
+        guard_instantiations.append(f"guard{i} = AsyncGuard.from_dict(guards[{i}])")
     guard_instantiations = "\n".join(guard_instantiations)
     # Interpolate variables
     output_content = template_content.format(
