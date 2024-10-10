@@ -336,7 +336,8 @@ class Runner:
         # Format any variables in the message history with the prompt params.
         for msg in messages:
             msg_copy = copy.deepcopy(msg)
-            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            if attempt_number == 0:
+                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
             formatted_messages.append(msg_copy)
 
         # validate messages

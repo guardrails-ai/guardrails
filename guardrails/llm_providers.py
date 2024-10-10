@@ -217,7 +217,8 @@ class LiteLLMCallable(PromptCallableBase):
                 "function_call", safe_get(function_calling_tools, 0)
             ),
         )
-
+        kwargs.pop("instructions", None)
+        kwargs.pop("prompt", None)
         response = completion(
             model=model,
             *args,
