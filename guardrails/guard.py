@@ -979,7 +979,12 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or kwargs.get("messages", None) or []
+        msg_history = (
+            msg_history
+            or kwargs.get("messages", None)
+            or self._exec_opts.messages
+            or []
+        )
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
