@@ -1,0 +1,77 @@
+name: Publish Validator PyPi
+description: Re-Usable action to publish a Validator to Guardrails PyPi
+inputs:
+  github_token:
+    description: 'GitHub Token'
+    required: true
+  guardrails_token:
+    description: 'Guardrails Token'
+    required: true
+  pypi_repository_url:
+    description: 'PyPi Repository URL'
+    required: false
+    default: 'https://pypi.guardrailsai.com'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout "Validator" Repository
+      uses: actions/checkout@v3
+      with:
+        path: 'validator'
+
+    - name: Checkout "Action" repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ inputs.github_token }}
+        repository: guardrails-ai/shared-ci
+        ref: main
+        path: shared-ci-scripts
+        sparse-checkout: |
+          .github
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Twine & Build
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install twine build toml
+
+    - name: Create .pypirc
+      shell: bash
+      run: |
+        touch ~/.pypirc
+        echo "[distutils]" >> ~/.pypirc
+        echo "index-servers =" >> ~/.pypirc
+        echo "    private-repository" >> ~/.pypirc
+        echo "" >> ~/.pypirc
+        echo "[private-repository]" >> ~/.pypirc
+        echo "repository = ${{ inputs.pypi_repository_url }}" >> ~/.pypirc
+        echo "username = __token__" >> ~/.pypirc
+        echo "password = ${{ inputs.guardrails_token }}" >> ~/.pypirc
+
+    - name: Move CI Scripts to Validator
+      shell: bash
+      run: |
+        mv shared-ci-scripts/.github/actions/validator_pypi_publish/add_build_prefix.py ./validator/__shared_ci_script__.py
+
+    - name: Add Package Prefix
+      shell: bash
+      run: |
+        cd validator
+        python __shared_ci_script__.py  ./pyproject.toml
+        echo "===== pyproject.toml file after edits ===="
+        cat ./pyproject.toml
+        echo "=========================================="
+
+    - name: Build & Upload
+      shell: bash
+      run: |
+        cd validator
+        python -m build
+        twine upload dist/* -u __token__ -p ${{ inputs.guardrails_token }} -r private-repository
+        
