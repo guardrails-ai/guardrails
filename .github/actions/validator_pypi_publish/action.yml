@@ -1,9 +1,6 @@
 name: Publish Validator PyPi
 description: Re-Usable action to publish a Validator to Guardrails PyPi
 inputs:
-  github_token:
-    description: 'GitHub Token'
-    required: true
   guardrails_token:
     description: 'Guardrails Token'
     required: true
@@ -23,8 +20,7 @@ runs:
     - name: Checkout "Action" repository
       uses: actions/checkout@v3
       with:
-        token: ${{ inputs.github_token }}
-        repository: guardrails-ai/shared-ci
+        repository: guardrails-ai/guardrails
         ref: main
         path: shared-ci-scripts
         sparse-checkout: |
