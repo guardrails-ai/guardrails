@@ -305,20 +305,16 @@ guard = Guard().use(ProfanityFree())
 
 # Function that takes the prompt as a string and returns the LLM output as string
 def my_llm_api(
-    prompt: Optional[str] = None,
     *,
-    instructions: Optional[str] = None,
-    msg_history: Optional[list[dict]] = None,
+    messages: Optional[list[dict]] = None,
     **kwargs
 ) -> str:
     """Custom LLM API wrapper.
 
-    At least one of prompt, instruction or msg_history should be provided.
+    At least one of messages should be provided.
 
     Args:
-        prompt (str): The prompt to be passed to the LLM API
-        instruction (str): The instruction to be passed to the LLM API
-        msg_history (list[dict]): The message history to be passed to the LLM API
+        messages (list[dict]): The message history to be passed to the LLM API
         **kwargs: Any additional arguments to be passed to the LLM API
 
     Returns:
@@ -327,14 +323,14 @@ def my_llm_api(
 
     # Call your LLM API here
     # What you pass to the llm will depend on what arguments it accepts.
-    llm_output = some_llm(prompt, instructions, msg_history, **kwargs)
+    llm_output = some_llm(messages, **kwargs)
 
     return llm_output
 
 # Wrap your LLM API call
 validated_response = guard(
     my_llm_api,
-    prompt="Can you generate a list of 10 things that are not food?",
+    messages=[{"role":"user","content":"Can you generate a list of 10 things that are not food?"}],
     **kwargs,
 )
 ```
