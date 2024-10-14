@@ -5,7 +5,7 @@
 If you see an exception that looks like this
 
 ```
-PromptCallableException: The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `custom_llm_func() got an unexpected keyword argument 'messages'`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
+PromptCallableException: The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `custom_llm_func() got an unexpected keyword argument 'messages'`. Make sure that `fn` can be called as a function and returns a string.
 ```
 
 It means that the call to the LLM failed. This is usually triggered for one of the following reasons:
@@ -13,7 +13,7 @@ It means that the call to the LLM failed. This is usually triggered for one of t
 1. An API key is not present or not passed correctly to the LLM
 1. The LLM API was passed arguments it doesn't expect. Our recommendation is to use the LiteLLM standard, and pass arguments that conform to that standard directly in the guard callable. It's helpful as a debugging step to remove all other arguments or to try and use the same arguments in a LiteLLM client directly.
 1. The LLM API is down or experiencing issues. This is usually temporary, and you can use LiteLLM or the LLM client directly to verify if the API is working as expected.
-1. You passed a custom LLM callable, and it either doesn't conform to the expected signature or it throws an error during execution. Make sure that the custom LLM callable can be called as a function that takes in a single prompt string and returns a string.
+1. You passed a custom LLM callable, and it either doesn't conform to the expected signature or it throws an error during execution. Make sure that the custom LLM callable can be called as a function and returns a string.
 
 ## How can I host Guardrails as its own server
 
@@ -73,20 +73,24 @@ print(res.validated_output) # Validated outputs
 
 ## I'm encountering an XMLSyntaxError when creating a `Guard` object from a `RAIL` specification. What should I do?
 
-Make sure that you are escaping the `&` character in your `RAIL` specification. The `&` character has a special meaning in XML, and so you need to escape it with `&amp;`. For example, if you have a prompt like this:
+Make sure that you are escaping the `&` character in your `RAIL` specification. The `&` character has a special meaning in XML, and so you need to escape it with `&amp;`. For example, if you have a message like this:
 
 ```xml
-<prompt>
+<messages>
+<message role="user">
     This is a prompt with an & character.
-</prompt>
+</message>
+</messages>
 ```
 
 You need to escape the `&` character like this:
 
 ```xml
-<prompt>
+<messages>
+<message role="user">
     This is a prompt with an &amp; character.
-</prompt>
+</message>
+</messages>
 ```
 
 ## Are validators all model-based? Are they proprietary to Guardrails?

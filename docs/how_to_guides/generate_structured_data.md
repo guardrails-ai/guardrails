@@ -108,7 +108,7 @@ from transformers import pipeline
 pipe = pipeline("text-generation", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 # Inference is straightforward:
-out = g(pipe, prompt=prompt).validated_output
+out = g(pipe, messages=[{"role":"user","content":prompt}]).validated_output
 
 # `out` is a dict.  Format it as JSON for readability:
 import json

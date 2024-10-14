@@ -25,10 +25,6 @@ def get_guard_call_attributes(
     if guard_self is not None:
         attrs["guard_id"] = guard_self.id
         attrs["user_id"] = guard_self._user_id
-        attrs["custom_reask_prompt"] = guard_self._exec_opts.reask_prompt is not None
-        attrs["custom_reask_instructions"] = (
-            guard_self._exec_opts.reask_instructions is not None
-        )
         attrs["custom_reask_messages"] = (
             guard_self._exec_opts.reask_messages is not None
         )
