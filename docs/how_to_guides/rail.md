@@ -78,15 +78,17 @@ Let's see an example of an `RAIL` specification in action:
 </output>
 
 
-<prompt> <!-- (2)! -->
+<messages> <!-- (2)! -->
+<message role="user">
 ...
-</prompt>
+</message>
+</message>
 
 </rail>
 ```
 
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
-2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-prompt-element) page for more details.
+2. The `messages` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-message-element) page for more details.
 
 ## 📖 How to use `RAIL` in Guardrails?
 
@@ -110,124 +112,57 @@ _, validated_output, *rest = guard(
 1. A `Guard` object is created from a `RAIL` specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.
 2. Wrap the LLM API call (`openai.Completion.create`) with the `Guard` object, and add any additional arguments that you want to pass to the LLM API call. Instead of returning the raw text object, the `Guard` object will return a JSON object that is validated and corrected according to the `RAIL` specification.
 
-# `Instructions` Element
+# `Messages` Element
 
-The `<instructions></instructions>` element is passed to the LLM as secondary input. Different model may use these differently. For example, chat models may receive instructions in the system-prompt.
+The `<messages></messages>` element contains instructions and the query that describes the high level task.
 
-## Components of an Instructions Element
+## 📚 Components of a Prompt Element
 
-In addition to any static text describing the context of the task, instructions can also contain any of the following:
-
-| Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
-|-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Variables         | `${variable_name}`        | These are provided by the user at runtime, and substituted in the instructions.                                                                                                                                                                                                                                                             |
-| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the instructions, check out [`output` element compilation](#adding-compiled-output-element-to-prompt)                                                                    |
-| Prompt Primitives | `${gr.prompt_primitive_name}` | These are pre-constructed blocks of text that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out [`guardrails/constants.xml`](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml). |
-
-
-Here's an example of how you could compose instructions using RAIL xml:
-```xml
-<rail version="0.1">
-<instructions>
-<!-- (1)! -->
-You are a helpful assistant only capable of communicating with valid JSON, and no other text.
-
-${gr.json_suffix_prompt_examples}  <!-- (2)! -->
-</instructions>
-</rail>
-```
-
-1. The instructions element contains high level background information for the LLM containing textual context and constraints.
-2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the instructions:
-````
-ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
-
-Here are examples of simple (XML, JSON) pairs that show the expected behavior:
-- `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
-- `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
-- `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-````
-
-Or if you prefer Pydantic:
-```py
-# <!-- (1)! -->
-instructions = """You are a helpful assistant only capable of communicating with valid JSON, and no other text.
-
-    ${gr.json_suffix_prompt_examples}""" # <!-- (2)! -->
-```
-
-
-1. The instructions element contains high level background information for the LLM containing textual context and constraints.
-2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the instructions:
-````
-ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
-
-Here are examples of simple (XML, JSON) pairs that show the expected behavior:
-- `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
-- `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
-- `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-````
-
-When either of the above are compiled, it would looks like this:
-```
-You are a helpful assistant only capable of communicating with valid JSON, and no other text.
-
-ONLY return a valid JSON object (no other text is necessary).
-The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types.
-Be correct and concise. If you are unsure anywhere, enter `null`.
-
-Here are examples of simple (XML, JSON) pairs that show the expected behavior:
-- `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`
-- `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
-- `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-```
-
-
-For an example of using instructions alongside a prompt see [this example for using chat models](/docs/examples/guardrails_with_chat_models).
-
-# `Prompt` Element
-
-The `<prompt></prompt>` element contains the query that describes the high level task.
-
-## Components of a Prompt Element
-
-In addition to the high level task description, the prompt also contains the following:
+In addition to the high level task description, messages also contains the following:
 
 | Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
 |-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Variables         | `${variable_name}`        | These are provided by the user at runtime, and substituted in the prompt.                                                                                                                                                                                                                                                               |
-| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](#adding-compiled-output-element-to-prompt).                                                                    |
+| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](/docs/concepts/output/#adding-compiled-output-element-to-prompt).                                                                    |
 | Prompt Primitives | `${gr.prompt_primitive_name}` | These are pre-constructed prompts that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out [`guardrails/constants.xml`](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml). |
 
 ```xml
 <rail version="0.1">
-<prompt>
+<messages>
+<message role="system">
 <!-- (1)! -->
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+</message>
+<message role="user">
+<!-- (2)! -->
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-${document} <!-- (2)! -->
+${document} <!-- (3)! -->
 
 
-${gr.xml_prefix_prompt}  <!-- (3)! -->
+${gr.xml_prefix_prompt}  <!-- (4)! -->
 
 
-${output_schema}  <!-- (4)! -->
+${output_schema}  <!-- (5)! -->
 
 
-${gr.json_suffix_prompt}  <!-- (5)! -->
-
-</prompt>
+${gr.json_suffix_prompt}  <!-- (6)! -->
+</message>
+</message>
 </rail>
 ```
 
-1. The prompt contains high level task information.
-2. The variable `${document}` is provided by the user at runtime.
-3. `${gr.xml_prefix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
-4. `${output_schema}` is the output schema and contains information about , which is compiled based on the `output` element.
-5. `${gr.json_suffix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
+1. The instructions element contains high level background information for the LLM containing textual context and constraints.
+2. The prompt contains high level task information.
+3. The variable `${document}` is provided by the user at runtime.
+4. `${gr.xml_prefix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
+5. `${output_schema}` is the output schema and contains information about , which is compiled based on the `output` element.
+6. `${gr.json_suffix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
 ```
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 ```
+
+The messages element is made up of message elements with role attributes. Messages with the role system are intended to be system level prompt. Messages with the role assistant are intended to be messages from the llm to be repassed to itself as additional context and history. Messages with role user are input from the user and also convey history of the conversation.
 
 # `Output` Element
 
