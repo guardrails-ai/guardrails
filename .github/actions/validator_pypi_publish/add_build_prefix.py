@@ -3,7 +3,7 @@ import re
 import sys
 
 
-def add_package_name_prefix(pyproject_path):
+def add_package_name_prefix(pyproject_path, validator_name):
     with open(pyproject_path, "r") as f:
         content = f.read()
 
@@ -15,10 +15,11 @@ def add_package_name_prefix(pyproject_path):
 
     existing_name = toml_data.get("project", {}).get("name")
     if not existing_name:
-        print("Could not find the 'project.name' in pyproject.toml.")
+        print(f"Could not find the 'project.name' in {pyproject_path}.")
         sys.exit(1)
 
-    new_name = f"guardrails-ai-validator-{existing_name}"
+    validator_name = validator_name.split("/")
+    new_name = f"{validator_name[0]}-grhub-{validator_name[1]}"
 
     updated_content = re.sub(
         rf'(^name\s*=\s*")({re.escape(existing_name)})(")',
@@ -34,4 +35,11 @@ def add_package_name_prefix(pyproject_path):
 
 
 if __name__ == "__main__":
-    add_package_name_prefix("pyproject.toml")
+    if len(sys.argv) < 3:
+        print("Usage: python script.py <pyproject_path> <validator-name>")
+        sys.exit(1)
+
+    pyproject_path = sys.argv[1]
+    validator_name = sys.argv[2]
+
+    add_package_name_prefix(pyproject_path, validator_name)

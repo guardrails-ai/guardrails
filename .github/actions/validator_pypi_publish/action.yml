@@ -1,6 +1,9 @@
 name: Publish Validator PyPi
 description: Re-Usable action to publish a Validator to Guardrails PyPi
 inputs:
+  validator:
+    description: 'Validator Name ex. guardrails/detect_pii'
+    required: true
   guardrails_token:
     description: 'Guardrails Token'
     required: true
@@ -59,10 +62,7 @@ runs:
       shell: bash
       run: |
         cd validator
-        python __shared_ci_script__.py  ./pyproject.toml
-        echo "===== pyproject.toml file after edits ===="
-        cat ./pyproject.toml
-        echo "=========================================="
+        python __shared_ci_script__.py ./pyproject.toml ${{ inputs.validator }}
 
     - name: Build & Upload
       shell: bash
