@@ -75,7 +75,7 @@ class Runner:
     disable_tracer: Optional[bool] = True
 
     # QUESTION: Are any of these init args actually necessary for initialization?
-    # ANSWER: _Maybe_ prompt, instructions, and messages for Prompt initialization
+    # ANSWER: _Maybe_ messages for Prompt initialization
     #   but even that can happen at execution time.
     # TODO: In versions >=0.6.x, remove this class and just execute a Guard functionally
     def __init__(

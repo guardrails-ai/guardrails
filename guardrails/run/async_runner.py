@@ -296,7 +296,7 @@ class AsyncRunner(Runner):
         """Prepare by running pre-processing and input validation.
 
         Returns:
-            The instructions, prompt, and message history.
+            The messages.
         """
         prompt_params = prompt_params or {}
         if api is None:

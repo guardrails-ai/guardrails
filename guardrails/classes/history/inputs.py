@@ -98,7 +98,7 @@ class Inputs(IInputs, ArbitraryModel):
     @classmethod
     def from_interface(cls, i_inputs: IInputs) -> "Inputs":
         deserialized_messages = None
-        if i_inputs.messages:  # type: ignore
+        if hasattr(i_inputs, "messages") and i_inputs.messages:  # type: ignore
             deserialized_messages = []
             for msg in i_inputs.messages:  # type: ignore
                 ser_msg = {**msg}
