@@ -159,7 +159,7 @@ class OpenAIChatCallable(OpenAIModel):
             text=...,
             instructions=...,
             msg_history=...,
-            =...,
+            temperature=...,
             ...
         )
         ```
