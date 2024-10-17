@@ -455,7 +455,7 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
                 role = message.attrib.get("role")
                 content = message.text
                 extracted_reask_messages.append({"role": role, "content": content})
-        processed_schema.exec_opts.messages = extracted_reask_messages
+        processed_schema.exec_opts.reask_messages = extracted_reask_messages
 
     return processed_schema
 
