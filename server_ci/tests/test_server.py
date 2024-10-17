@@ -1,7 +1,7 @@
 import openai
 import os
 import pytest
-from guardrails import Guard, settings
+from guardrails import AsyncGuard, Guard, settings
 
 # OpenAI compatible Guardrails API Guard
 openai.base_url = "http://127.0.0.1:8000/guards/test-guard/openai/v1/"
@@ -30,6 +30,59 @@ def test_guard_validation(mock_llm_output, validation_output, validation_passed,
         validation_outcome = guard.validate(mock_llm_output)
         assert validation_outcome.validation_passed == validation_passed
         assert validation_outcome.validated_output == validation_output
+
+
+@pytest.mark.asyncio
+async def test_async_guard_validation():
+    settings.use_server = True
+    guard = AsyncGuard(name="test-guard")
+
+    validation_outcome = await guard(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Tell me about Oranges in 5 words"}],
+        temperature=0.0,
+    )
+
+    assert validation_outcome.validation_passed is True  # noqa: E712
+    assert validation_outcome.validated_output == "Citrus fruit,"
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_guard_validation():
+    settings.use_server = True
+    guard = AsyncGuard(name="test-guard")
+
+    async_iterator = await guard(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Tell me about Oranges in 5 words"}],
+        stream=True,
+        temperature=0.0,
+    )
+
+    full_output = ""
+    async for validation_chunk in async_iterator:
+        full_output += validation_chunk.validated_output
+
+    assert full_output == "Citrus fruit,Citrus fruit,"
+
+
+@pytest.mark.asyncio
+async def test_sync_streaming_guard_validation():
+    settings.use_server = True
+    guard = Guard(name="test-guard")
+
+    iterator = guard(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Tell me about Oranges in 5 words"}],
+        stream=True,
+        temperature=0.0,
+    )
+
+    full_output = ""
+    for validation_chunk in iterator:
+        full_output += validation_chunk.validated_output
+
+    assert full_output == "Citrus fruit,Citrus fruit,"
 
 
 @pytest.mark.parametrize(
