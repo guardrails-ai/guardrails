@@ -22,7 +22,3 @@ Your generated response should satisfy the following properties:
 - length: min=1 max=10
 
 Don't talk; just go.
-
-
-String Output:
-

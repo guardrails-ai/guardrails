@@ -85,7 +85,7 @@ ApiKeyAuth, BearerAuth
     "validators": [
       {
         "id": "string",
-        "on": "prompt",
+        "on": "messages",
         "onFail": "exception",
         "args": [
           true
@@ -186,9 +186,7 @@ ApiKeyAuth, BearerAuth
         "inputs": {
           "llmApi": "string",
           "llmOutput": "string",
-          "instructions": "string",
-          "prompt": "string",
-          "msgHistory": [
+          "messages": [
             {
               "property1": null,
               "property2": null
@@ -241,7 +239,7 @@ Status Code **200**
 |»» validators|[allOf]|false|none|none|
 |»»» ValidatorReference|[ValidatorReference](#schemavalidatorreference)|false|none|none|
 |»»»» id|string|true|none|The unique identifier for this Validator.  Often the hub id; e.g. guardrails/regex_match|
-|»»»» on|any|false|none|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "prompt" or "output"|
+|»»»» on|any|false|none|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "messages" or "output"|
 
 *anyOf*
 
@@ -408,9 +406,7 @@ Status Code **200**
 |»»»»»» inputs|[inputs](#schemainputs)|false|none|none|
 |»»»»»»» llmApi|string|false|none|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»»» llmOutput|string|false|none|The string output from an external LLM call provided by the user via Guard.parse.|
-|»»»»»»» instructions|string|false|none|The instructions for chat models.|
-|»»»»»»» prompt|string|false|none|The prompt for the LLM.|
-|»»»»»»» msgHistory|[object]|false|none|The message history for chat models.|
+|»»»»»»» messages|[object]|false|none|The message history for chat models.|
 |»»»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»»»» promptParams|object|false|none|Parameters to be formatted into the prompt.|
 |»»»»»»»» **additionalProperties**|any|false|none|none|
@@ -666,9 +662,6 @@ Status Code **200**
 
 |Property|Value|
 |---|---|
-|*anonymous*|prompt|
-|*anonymous*|instructions|
-|*anonymous*|msg_history|
 |*anonymous*|messages|
 |*anonymous*|output|
 |onFail|exception|
@@ -710,7 +703,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -910,9 +903,7 @@ ApiKeyAuth, BearerAuth
 |»»»»» inputs|body|[inputs](#schemainputs)|false|none|
 |»»»»»» llmApi|body|string|false|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»» llmOutput|body|string|false|The string output from an external LLM call provided by the user via Guard.parse.|
-|»»»»»» instructions|body|string|false|The instructions for chat models.|
-|»»»»»» prompt|body|string|false|The prompt for the LLM.|
-|»»»»»» msgHistory|body|[object]|false|The message history for chat models.|
+|»»»»»» messages|body|[object]|false|The message history for chat models.|
 |»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»» promptParams|body|object|false|Parameters to be formatted into the prompt.|
 |»»»»»»» **additionalProperties**|body|any|false|none|
@@ -1008,9 +999,6 @@ ApiKeyAuth, BearerAuth
 
 |Parameter|Value|
 |---|---|
-|»»»» *anonymous*|prompt|
-|»»»» *anonymous*|instructions|
-|»»»» *anonymous*|msg_history|
 |»»»» *anonymous*|messages|
 |»»»» *anonymous*|output|
 |»»» onFail|exception|
@@ -1048,7 +1036,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -1149,9 +1137,7 @@ ApiKeyAuth, BearerAuth
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null
@@ -1221,7 +1207,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -1322,9 +1308,7 @@ ApiKeyAuth, BearerAuth
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null
@@ -1385,7 +1369,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -1586,9 +1570,7 @@ ApiKeyAuth, BearerAuth
 |»»»»» inputs|body|[inputs](#schemainputs)|false|none|
 |»»»»»» llmApi|body|string|false|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»» llmOutput|body|string|false|The string output from an external LLM call provided by the user via Guard.parse.|
-|»»»»»» instructions|body|string|false|The instructions for chat models.|
-|»»»»»» prompt|body|string|false|The prompt for the LLM.|
-|»»»»»» msgHistory|body|[object]|false|The message history for chat models.|
+|»»»»»» messages|body|[object]|false|The message history for chat models.|
 |»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»» promptParams|body|object|false|Parameters to be formatted into the prompt.|
 |»»»»»»» **additionalProperties**|body|any|false|none|
@@ -1684,9 +1666,6 @@ ApiKeyAuth, BearerAuth
 
 |Parameter|Value|
 |---|---|
-|»»»» *anonymous*|prompt|
-|»»»» *anonymous*|instructions|
-|»»»» *anonymous*|msg_history|
 |»»»» *anonymous*|messages|
 |»»»» *anonymous*|output|
 |»»» onFail|exception|
@@ -1724,7 +1703,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -1825,9 +1804,7 @@ ApiKeyAuth, BearerAuth
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null
@@ -1896,7 +1873,7 @@ ApiKeyAuth, BearerAuth
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -1997,9 +1974,7 @@ ApiKeyAuth, BearerAuth
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null
@@ -2069,9 +2044,7 @@ ApiKeyAuth, BearerAuth
     "inputs": {
       "llmApi": "string",
       "llmOutput": "string",
-      "instructions": "string",
-      "prompt": "string",
-      "msgHistory": [
+      "messages": [
         {
           "property1": null,
           "property2": null
@@ -2125,9 +2098,7 @@ Status Code **200**
 |»»»» inputs|[inputs](#schemainputs)|false|none|none|
 |»»»»» llmApi|string|false|none|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»» llmOutput|string|false|none|The string output from an external LLM call provided by the user via Guard.parse.|
-|»»»»» instructions|string|false|none|The instructions for chat models.|
-|»»»»» prompt|string|false|none|The prompt for the LLM.|
-|»»»»» msgHistory|[object]|false|none|The message history for chat models.|
+|»»»»» messages|[object]|false|none|The message history for chat models.|
 |»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»» promptParams|object|false|none|Parameters to be formatted into the prompt.|
 |»»»»»» **additionalProperties**|any|false|none|none|
@@ -3101,7 +3072,7 @@ continued
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -3202,9 +3173,7 @@ continued
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null
@@ -3369,9 +3338,7 @@ Information from the LLM response.
 {
   "llmApi": "string",
   "llmOutput": "string",
-  "instructions": "string",
-  "prompt": "string",
-  "msgHistory": [
+  "messages": [
     {
       "property1": null,
       "property2": null
@@ -3425,7 +3392,7 @@ and
 ```json
 {
   "id": "string",
-  "on": "prompt",
+  "on": "messages",
   "onFail": "exception",
   "args": [
     true
@@ -3471,8 +3438,6 @@ continued
 |Property|Value|
 |---|---|
 |*anonymous*|prompt|
-|*anonymous*|instructions|
-|*anonymous*|msg_history|
 |*anonymous*|messages|
 |*anonymous*|output|
 |onFail|exception|
@@ -3981,9 +3946,7 @@ and
 {
   "llmApi": "string",
   "llmOutput": "string",
-  "instructions": "string",
-  "prompt": "string",
-  "msgHistory": [
+  "messages": [
     {
       "property1": null,
       "property2": null
@@ -4012,9 +3975,7 @@ Inputs
 |---|---|---|---|---|
 |llmApi|string|false|none|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |llmOutput|string|false|none|The string output from an external LLM call provided by the user via Guard.parse.|
-|instructions|string|false|none|The instructions for chat models.|
-|prompt|string|false|none|The prompt for the LLM.|
-|msgHistory|[object]|false|none|The message history for chat models.|
+|messages|[object]|false|none|The message history for chat models.|
 |» **additionalProperties**|any|false|none|none|
 |promptParams|object|false|none|Parameters to be formatted into the prompt.|
 |» **additionalProperties**|any|false|none|none|
@@ -4318,9 +4279,7 @@ continued
   "inputs": {
     "llmApi": "string",
     "llmOutput": "string",
-    "instructions": "string",
-    "prompt": "string",
-    "msgHistory": [
+    "messages": [
       {
         "property1": null,
         "property2": null
@@ -4433,9 +4392,7 @@ Iteration
   "inputs": {
     "llmApi": "string",
     "llmOutput": "string",
-    "instructions": "string",
-    "prompt": "string",
-    "msgHistory": [
+    "messages": [
       {
         "property1": null,
         "property2": null
@@ -4491,7 +4448,7 @@ Call
   "validators": [
     {
       "id": "string",
-      "on": "prompt",
+      "on": "messages",
       "onFail": "exception",
       "args": [
         true
@@ -4592,9 +4549,7 @@ Call
       "inputs": {
         "llmApi": "string",
         "llmOutput": "string",
-        "instructions": "string",
-        "prompt": "string",
-        "msgHistory": [
+        "messages": [
           {
             "property1": null,
             "property2": null

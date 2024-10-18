@@ -101,12 +101,14 @@ class JsonFormatter(BaseFormatter):
             model = llm_callable.init_kwargs["pipeline"]
 
             def fn(
-                prompt: str,
                 *args,
-                instructions: Optional[str] = None,
-                msg_history: Optional[List[Dict[str, str]]] = None,
+                messages: Optional[List[Dict[str, str]]] = None,
                 **kwargs,
             ) -> str:
+                prompt = ""
+                for msg in messages:  # type: ignore
+                    prompt += msg["content"]
+
                 return json.dumps(
                     Jsonformer(
                         model=model.model,
@@ -125,12 +127,14 @@ class JsonFormatter(BaseFormatter):
             tokenizer = llm_callable.init_kwargs["tokenizer"]
 
             def fn(
-                prompt: str,
                 *args,
-                instructions: Optional[str] = None,
-                msg_history: Optional[List[Dict[str, str]]] = None,
+                messages: Optional[List[Dict[str, str]]] = None,
                 **kwargs,
             ) -> str:
+                prompt = ""
+                for msg in messages:  # type: ignore
+                    prompt += msg["content"]
+
                 return json.dumps(
                     Jsonformer(
                         model=model,
