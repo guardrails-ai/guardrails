@@ -43,6 +43,8 @@ def save_configuration_file(
         rc_file.writelines(lines)
         rc_file.close()
 
+    settings._initialize()
+
 
 def _get_default_token() -> str:
     """Get the default token from the configuration file."""
@@ -106,6 +108,7 @@ def configure(
 
     try:
         save_configuration_file(token, enable_metrics, remote_inferencing)
+        # update setting singleton
         logger.info("Configuration saved.")
     except Exception as e:
         logger.error("An unexpected error occured saving configuration!")
