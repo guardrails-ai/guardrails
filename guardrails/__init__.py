@@ -10,6 +10,7 @@ from guardrails.types.on_fail import OnFailAction
 from guardrails.validator_base import Validator, register_validator
 from guardrails.settings import settings
 from guardrails.hub.install import install
+from guardrails.classes.validation_outcome import ValidationOutcome
 
 __all__ = [
     "Guard",
@@ -25,4 +26,5 @@ __all__ = [
     "Instructions",
     "settings",
     "install",
+    "ValidationOutcome",
 ]

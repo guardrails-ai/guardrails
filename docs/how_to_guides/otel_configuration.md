@@ -40,18 +40,20 @@ OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic%20... # Optional for auth
 
 ### Usage
 
-Once the above env vars have been set you can configure each guard to use a specified tracer:
+Once the above env vars have been set, you can configure the tracer and traceprovider and init the guard:
 
 ```python
 # load .env file & place on top of file
 from dotenv import load_dotenv
 load_dotenv()
 
-from guardrails.utils.telemetry_utils import default_otlp_tracer
+from guardrails.telemetry import default_otlp_tracer
+
+# Configure the TracerPovider
+default_otlp_tracer("my-schema-guard")
 
 # Define guard
-# guard = ...
-guard.configure(tracer=default_otlp_tracer("my-schema-guard"))
+guard = Guard().use(...)
 ```
 
 
@@ -135,9 +137,11 @@ At which point you should see traces relating to endpoints being hit on the Guar
 `config.py`
 
 ```python
-from guardrails.utils.telemetry_utils import default_otlp_tracer
+from guardrails.telemetry import default_otlp_tracer
+
+# Configure the TracerPovider
+default_otlp_tracer("my-schema-guard")
 
 # Define guard
-# guard = ...
-guard.configure(tracer=default_otlp_tracer("my-schema-guard"))
+guard = Guard().use(...)
 ```

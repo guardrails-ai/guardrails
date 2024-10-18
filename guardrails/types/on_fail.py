@@ -37,9 +37,9 @@ class OnFailAction(str, Enum):
                 return default
             if isinstance(key, OnFailAction):
                 return key
-            return OnFailAction[key]
+            return OnFailAction[key.upper()]
 
         except Exception as e:
-            logger.debug("Failed to get OnFailAction for key ", key)
-            logger.debug(e)
+            logger.warn("Failed to get OnFailAction for key ", key)
+            logger.warn(e)
             return default

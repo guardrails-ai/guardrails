@@ -44,7 +44,7 @@ Create a Pydantic `Guard` object and pass the `Data` model to it.
 ```py
 from guardrails import Guard
 
-guard = Guard.from_pydantic(Data)
+guard = Guard.for_pydantic(Data)
 ```
 
 ## Validate the Structured Data

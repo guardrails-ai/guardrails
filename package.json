@@ -11,7 +11,7 @@
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
+    "serve": "docusaurus serve --config docusaurus/docusaurus.config.js",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
     "restart": "rm -rf docs/api_reference_markdown; rm -rf docs-build; npm run start"

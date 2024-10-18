@@ -97,7 +97,7 @@ After creating a `RAIL` specification, you can use it to get corrected output fr
 import guardrails as gd
 
 # Create a Guard object
-guard = gd.Guard.from_rail('path/to/rail/spec.xml')  # (1)!
+guard = gd.Guard.for_rail('path/to/rail/spec.xml')  # (1)!
 _, validated_output, *rest = guard(
     openai.Completion.create,  # (2)!
     **prompt_args,

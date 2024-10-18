@@ -9,6 +9,8 @@ on:
 jobs:
   install_from_hub:
     runs-on: ubuntu-latest
+    env:
+      GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY }}
     steps:
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -17,6 +19,8 @@ jobs:
     - name: pip install from main
       run: pip install git+https://github.com/guardrails-ai/guardrails.git@main
     - name: Install PII validator
-      run: guardrails hub install hub://guardrails/detect_pii
+      run: |
+        guardrails configure --token $GUARDRAILS_API_KEY --disable-metrics --enable-remote-inferencing;
+        guardrails hub install hub://guardrails/detect_pii;
     - name: Verify PII validator is addressable
       run: echo 'from guardrails.hub import DetectPII' | python 

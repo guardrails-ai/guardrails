@@ -15,7 +15,7 @@ Occasionally, validators need addtional metadata that is only available during r
 As an example, the `ExtractedSummarySentencesMatch` validator accepts a `filepaths` property in the metadata dictionary to specify what source files to compare the summary against to ensure similarity.  Unlike arguments which are specified at validator initialization, metadata is specified when calling `guard.validate`. For more information on how to use metadata, see [How to use Metadata](/docs/hub/how_to_guides/metadata.md).
 
 ```python
-guard = Guard.from_rail("my_railspec.rail")
+guard = Guard.for_rail("my_railspec.rail")
 
 outcome = guard(
     llm_api=openai.chat.completions.create,

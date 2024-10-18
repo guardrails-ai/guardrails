@@ -4,6 +4,9 @@ import typer
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.hub.utils import pip_process
 from guardrails.cli.logger import logger
+from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.cli.version import version_warnings_if_applicable
+from guardrails.cli.hub.console import console
 
 
 def api_is_installed() -> bool:
@@ -38,4 +41,6 @@ def start(
     from guardrails_api.cli.start import start  # type: ignore
 
     logger.info("Starting Guardrails server")
+    version_warnings_if_applicable(console)
+    trace_if_enabled("start")
     start(env, config, port)

@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Guardrails Server
+# Quickstart: Guardrails Server
 
 # Overview
 
@@ -12,6 +12,13 @@ Together, these features make it easier to get started, and make it possible to 
 This document will overview a few of the key features of the Guardrails Server, and how to get started.
 
 # Walkthrough
+
+## 0. Configure Guardrails
+First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
+
+```bash
+guardrails configure
+```
 
 ## 1. Install the Guardrails Server
 This is done by simply installing the `guardrails-ai` package. See the [installation guide](./quickstart.md) for more information.

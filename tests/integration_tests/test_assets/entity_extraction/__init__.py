@@ -33,10 +33,12 @@ reader = (
 
 # Compiled prompts
 COMPILED_PROMPT = reader("compiled_prompt.txt")
+NON_OPENAI_COMPILED_PROMPT = reader("non_openai_compiled_prompt.txt")
 COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_without_instructions.txt"
 )
 COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
+NON_OPENAI_COMPILED_PROMPT_REASK = reader("non_openai_compiled_prompt_reask.txt")
 COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_reask_without_instructions.txt"
 )
@@ -82,8 +84,10 @@ PYDANTIC_INSTRUCTIONS_CHAT_MODEL = INSTRUCTIONS_CHAT_MODEL
 
 __all__ = [
     "COMPILED_PROMPT",
+    "NON_OPENAI_COMPILED_PROMPT",
     "COMPILED_PROMPT_WITHOUT_INSTRUCTIONS",
     "COMPILED_PROMPT_REASK",
+    "NON_OPENAI_COMPILED_PROMPT_REASK",
     "COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS_REASK",

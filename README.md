@@ -147,7 +147,7 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
 raw_output, validated_output, *rest = guard(
     llm_api=openai.completions.create,
@@ -164,6 +164,43 @@ This prints:
     "name": "Buddy
 }
 ```
+
+### Guardrails Server
+
+Guardrails can be set up as a standalone service served by Flask with `guardrails start`, allowing you to interact with it via a REST API. This approach simplifies development and deployment of Guardrails-powered applications.
+
+1. Install: `pip install "guardrails-ai"`
+2. Configure: `guardrails configure`
+3. Create a config: `guardrails create --validators=hub://guardrails/two_words --name=two-word-guard`
+4. Start the dev server: `guardrails start --config=./config.py`
+5. Interact with the dev server via the snippets below
+```
+# with the guardrails client
+import guardrails as gr
+
+gr.settings.use_server = True
+guard = gr.Guard(name='two-word-guard')
+guard.validate('this is more than two words')
+
+# or with the openai sdk
+import openai
+openai.base_url = "http://localhost:8000/guards/two-word-guard/openai/v1/"
+os.environ["OPENAI_API_KEY"] = "youropenaikey"
+
+messages = [
+        {
+            "role": "user",
+            "content": "tell me about an apple with 3 words exactly",
+        },
+    ]
+
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+)
+```
+
+For production deployments, we recommend using Docker with Gunicorn as the WSGI server for improved performance and scalability. 
 
 ## FAQ
 

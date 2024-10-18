@@ -1,6 +1,6 @@
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Dict,
     List,
     Optional,
@@ -26,12 +26,15 @@ from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
+from guardrails.telemetry import trace_async_stream_step
+from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
+    # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
 
         (
@@ -46,7 +49,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
             self.output_schema,
         )
 
-        result = self.async_step(
+        result = await self.async_step(
             0,
             output_schema,
             call_log,
@@ -62,7 +65,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         async for call in result:
             yield call
 
-    # @async_trace(name="step")
+    @async_trace_stream(name="/step", origin="AsyncStreamRunner.async_step")
+    @trace_async_stream_step
     async def async_step(
         self,
         index: int,
@@ -75,7 +79,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         msg_history: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
-    ) -> AsyncIterable[ValidationOutcome]:
+    ) -> AsyncIterator[ValidationOutcome]:
         prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,
@@ -149,6 +153,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     validate_subschema=True,
                     stream=True,
                 )
+                # TODO why? how does it happen in the other places we handle streams
+                if validated_fragment is None:
+                    validated_fragment = ""
+
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -161,7 +169,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
-                validation_response += cast(str, validated_fragment)
+                validation_response += validated_fragment
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore

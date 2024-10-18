@@ -9,7 +9,7 @@ Calls can be further decomposed into a stack of `Iteration` objects. These are s
 ## General Access
 Given:
 ```py
-my_guard = Guard.from_pydantic(...)
+my_guard = Guard.for_pydantic(...)
 
 response_1 = my_guard(...)
 

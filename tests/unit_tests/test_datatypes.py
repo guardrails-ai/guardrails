@@ -22,7 +22,7 @@ class TestValidator(Validator):
         ("test-validator: a", ["a"]),
         ("test-validator: a b", ["a", "b"]),
         (
-            "test-validator: {list(range(5))} a b",
+            "test-validator: {[0,1,2,3,4]} a b",
             [[0, 1, 2, 3, 4], "a", "b"],
         ),
         ("test-validator: {[1, 2, 3]} a b", [[1, 2, 3], "a", "b"]),
@@ -31,7 +31,7 @@ class TestValidator(Validator):
             [{"a": 1, "b": 2}, "c", "d"],
         ),
         (
-            "test-validator: {1 + 2} {{'a': 1, 'b': 2}} c d",
+            "test-validator: {3} {{'a': 1, 'b': 2}} c d",
             [3, {"a": 1, "b": 2}, "c", "d"],
         ),
     ],

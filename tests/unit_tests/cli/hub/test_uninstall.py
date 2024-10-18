@@ -2,10 +2,10 @@ from unittest.mock import mock_open, call
 
 import pytest
 
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.cli.hub.uninstall import remove_from_hub_inits
 
-manifest_mock = ModuleManifest(
+manifest_mock = Manifest(
     encoder="some_encoder",
     id="module_id",
     name="test_module",
@@ -14,6 +14,7 @@ manifest_mock = ModuleManifest(
     repository={"url": "https://github.com/example/repo"},
     namespace="guardrails",
     package_name="test_package",
+    description="Test module",
     module_name="test_module",
     exports=["Validator", "Helper"],
 )

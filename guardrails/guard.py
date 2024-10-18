@@ -7,7 +7,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -16,6 +16,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import deprecated
 import warnings
 from langchain_core.runnables import Runnable
 
@@ -32,9 +33,9 @@ from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
+from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
@@ -60,15 +61,20 @@ from guardrails.stores.context import (
     get_call_kwarg,
     get_tracer_context,
     set_call_kwargs,
+    set_guard_name,
     set_tracer,
     set_tracer_context,
 )
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.telemetry_utils import wrap_with_otel_context
+from guardrails.telemetry import (
+    trace_guard_execution,
+    wrap_with_otel_context,
+)
 from guardrails.utils.validator_utils import (
     get_validator,
     parse_validator_reference,
@@ -82,11 +88,14 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import (
+from guardrails.utils.structured_data_utils import (
     # Prevent duplicate declaration in the docs
     json_function_calling_tool as json_function_calling_tool_util,
+    output_format_json_schema as output_format_json_schema,
 )
+
 from guardrails.settings import settings
+from guardrails.decorators.experimental import experimental
 
 
 class Guard(IGuard, Generic[OT]):
@@ -97,10 +106,10 @@ class Guard(IGuard, Generic[OT]):
 
     - `Guard().use(...)`
     - `Guard().use_many(...)`
-    - `Guard.from_string(...)`
-    - `Guard.from_pydantic(...)`
-    - `Guard.from_rail(...)`
-    - `Guard.from_rail_string(...)`
+    - `Guard.for_string(...)`
+    - `Guard.for_pydantic(...)`
+    - `Guard.for_rail(...)`
+    - `Guard.for_rail_string(...)`
 
     The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an LLM
@@ -209,6 +218,11 @@ class Guard(IGuard, Generic[OT]):
                     )
                     self.output_schema = loaded_output_schema
                     _loaded = True
+                else:
+                    logger.warning(
+                        f"use_server is True and Guard '{self.name}' "
+                        "not found on the server. Creating a new empty Guard."
+                    )
             if not _loaded:
                 self._save()
 
@@ -231,12 +245,24 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         allow_metrics_collection: Optional[bool] = None,
     ):
-        """Configure the Guard."""
+        """Configure the Guard.
+
+        Args:
+            num_reasks (int, optional): The max times to re-ask the LLM
+                if validation fails. Defaults to None.
+            tracer (Tracer, optional): An OpenTelemetry tracer to use for
+                sending traces to your OpenTelemetry sink. Defaults to None.
+            allow_metrics_collection (bool, optional): Whether to allow
+                Guardrails to collect anonymous metrics.
+                Defaults to None, and falls back to waht is
+                    set via the `guardrails configure` command.
+        """
         if num_reasks:
             self._set_num_reasks(num_reasks)
         if tracer:
             self._set_tracer(tracer)
-        self._configure_telemtry(allow_metrics_collection)
+        self._load_rc()
+        self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
         # Configure may check if num_reasks is none, but this method still needs to be
@@ -249,29 +275,41 @@ class Guard(IGuard, Generic[OT]):
             self._num_reasks = num_reasks
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
+        if tracer is not None:
+            warnings.warn(
+                "Setting tracer during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "Configure a TracerProvider instead and we will"
+                " obtain a tracer from it via the Tracer API.",
+                DeprecationWarning,
+            )
         self._tracer = tracer
         set_tracer(tracer)
         set_tracer_context()
         self._tracer_context = get_tracer_context()
 
-    def _configure_telemtry(
+    def _load_rc(self) -> None:
+        rc = RC.load(logger)
+        settings.rc = rc
+
+    def _configure_hub_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
-        credentials = None
-        if allow_metrics_collection is None:
-            credentials = Credentials.from_rc_file(logger)
-            # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.enable_metrics is True
+        allow_metrics_collection = (
+            settings.rc.enable_metrics is True
+            if allow_metrics_collection is None
+            else allow_metrics_collection
+        )
 
         self._allow_metrics_collection = allow_metrics_collection
 
-        if allow_metrics_collection:
-            if not credentials:
-                credentials = Credentials.from_rc_file(logger)
-            # Get unique id of user from credentials
-            self._user_id = credentials.id or ""
-            # Initialize Hub Telemetry singleton and get the tracer
-            self._hub_telemetry = HubTelemetry()
+        # Initialize Hub Telemetry singleton and get the tracer
+        self._hub_telemetry = HubTelemetry()
+        self._hub_telemetry._enabled = allow_metrics_collection
+
+        if allow_metrics_collection is True:
+            # Get unique id of user from rc file
+            self._user_id = settings.rc.id or ""
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
@@ -332,7 +370,7 @@ class Guard(IGuard, Generic[OT]):
             self._exec_opts.reask_instructions = reask_instructions
 
     @classmethod
-    def _from_rail_schema(
+    def _for_rail_schema(
         cls,
         schema: ProcessedSchema,
         rail: str,
@@ -362,8 +400,15 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
+    @deprecated(
+        "Use `for_rail` instead. This method will be removed in 0.6.x.", category=None
+    )
     @classmethod
-    def from_rail(
+    def from_rail(cls, rail_file: str, *args, **kwargs):
+        return cls.for_rail(rail_file, *args, **kwargs)
+
+    @classmethod
+    def for_rail(
         cls,
         rail_file: str,
         *,
@@ -402,7 +447,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_file_to_schema(rail_file)
-        return cls._from_rail_schema(
+        return cls._for_rail_schema(
             schema,
             rail=rail_file,
             num_reasks=num_reasks,
@@ -411,8 +456,21 @@ class Guard(IGuard, Generic[OT]):
             description=description,
         )
 
+    @deprecated(
+        "Use `for_rail_string` instead. This method will be removed in 0.6.x.",
+        category=None,
+    )
     @classmethod
     def from_rail_string(
+        cls,
+        rail_string: str,
+        *args,
+        **kwargs,
+    ):
+        return cls.for_rail_string(rail_string, *args, **kwargs)
+
+    @classmethod
+    def for_rail_string(
         cls,
         rail_string: str,
         *,
@@ -451,7 +509,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_string_to_schema(rail_string)
-        return cls._from_rail_schema(
+        return cls._for_rail_schema(
             schema,
             rail=rail_string,
             num_reasks=num_reasks,
@@ -460,8 +518,16 @@ class Guard(IGuard, Generic[OT]):
             description=description,
         )
 
+    @deprecated(
+        "Use `for_pydantic` instead. This method will be removed in 0.6.x.",
+        category=None,
+    )
     @classmethod
-    def from_pydantic(
+    def from_pydantic(cls, output_class: ModelOrListOfModels, *args, **kwargs):
+        return cls.for_pydantic(output_class, **kwargs)
+
+    @classmethod
+    def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
         *,
@@ -560,8 +626,22 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
+    @deprecated(
+        """Use `use`, `use_many`, or `for_string` instead.
+                This method will be removed in 0.6.x.""",
+        category=None,
+    )
     @classmethod
     def from_string(
+        cls,
+        validators: Sequence[Validator],
+        *args,
+        **kwargs,
+    ):
+        return cls.for_string(validators, *args, **kwargs)
+
+    @classmethod
+    def for_string(
         cls,
         validators: Sequence[Validator],
         *,
@@ -661,7 +741,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
         self._fill_exec_opts(
@@ -704,45 +784,10 @@ class Guard(IGuard, Generic[OT]):
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
 
-            if self._allow_metrics_collection and self._hub_telemetry:
-                # Create a new span for this guard call
-                llm_api_str = ""
-                if llm_api:
-                    llm_api_module_name = (
-                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                    )
-                    llm_api_name = (
-                        llm_api.__name__
-                        if hasattr(llm_api, "__name__")
-                        else type(llm_api).__name__
-                    )
-                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_call",
-                    attributes=[
-                        ("guard_id", self.id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api_str if llm_api_str else "None"),
-                        (
-                            "custom_reask_prompt",
-                            self._exec_opts.reask_prompt is not None,
-                        ),
-                        (
-                            "custom_reask_instructions",
-                            self._exec_opts.reask_instructions is not None,
-                        ),
-                        (
-                            "custom_reask_messages",
-                            self._exec_opts.reask_messages is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
-
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
             set_tracer_context(self._tracer_context)
+            set_guard_name(self.name)
 
             self._set_num_reasks(num_reasks=num_reasks)
             if self._num_reasks is None:
@@ -776,9 +821,6 @@ class Guard(IGuard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
                     *args,
                     **kwargs,
                 )
@@ -840,7 +882,7 @@ class Guard(IGuard, Generic[OT]):
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         api = None
 
         if llm_api is not None or kwargs.get("model") is not None:
@@ -866,7 +908,11 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
@@ -885,12 +931,17 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @trace(name="/guard_call", origin="Guard.__call__")
     def __call__(
         self,
         llm_api: Optional[Callable] = None,
@@ -903,7 +954,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output.
 
         Args:
@@ -932,8 +983,11 @@ class Guard(IGuard, Generic[OT]):
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
-
-        return self._execute(
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -946,6 +1000,7 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
+    @trace(name="/guard_call", origin="Guard.parse")
     def parse(
         self,
         llm_output: str,
@@ -990,7 +1045,11 @@ class Guard(IGuard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return self._execute(  # type: ignore # streams are supported for parse
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,  # type: ignore # streams are supported for parse
+            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
@@ -1118,6 +1177,7 @@ class Guard(IGuard, Generic[OT]):
         self._save()
         return self
 
+    @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
         return self.parse(llm_output=llm_output, *args, **kwargs)
 
@@ -1180,7 +1240,7 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         payload: Dict[str, Any],
-    ) -> Iterable[ValidationOutcome[OT]]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         if settings.use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
@@ -1230,7 +1290,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
+    ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         if settings.use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),
@@ -1303,6 +1363,10 @@ class Guard(IGuard, Generic[OT]):
 
         return i_guard.to_dict()
 
+    @experimental
+    def response_format_json_schema(self) -> Dict[str, Any]:
+        return output_format_json_schema(schema=self._base_model)  # type: ignore
+
     def json_function_calling_tool(
         self,
         tools: Optional[list] = None,
@@ -1343,3 +1407,25 @@ class Guard(IGuard, Generic[OT]):
         )
         guard.history = Stack(*history)
         return guard
+
+    # attempts to get a guard from the server
+    # if a name is unspecified, the guard will be created on the client
+    # in the future, this may create a guard on the server
+    @experimental
+    @staticmethod
+    def fetch_guard(
+        name: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
+        if not name:
+            raise ValueError("Name must be specified to fetch a guard")
+
+        settings.use_server = True
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        api_client = GuardrailsApiClient(api_key=api_key)
+        guard = api_client.fetch_guard(name)
+        if guard:
+            return Guard(name=name, *args, **kwargs)
+
+        raise ValueError(f"Guard with name {name} not found")

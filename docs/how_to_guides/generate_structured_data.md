@@ -29,7 +29,7 @@ class Delivery(BaseModel):
 class Schedule(BaseModel):
     deliveries: List[Delivery]
 
-guard = Guard.from_pydantic(Schedule)
+guard = Guard.for_pydantic(Schedule)
 chat_history="""
 nelson and murdock: i need a pickup 797 9th Avenue, manila envelope, June 3 10:00am with dropoff 10:30am Courthouse, 61 Center Street C/O frank james
 operator: quote - $23.00
@@ -101,7 +101,7 @@ response = guard(
 For Hugging Face models structured JSON output maybe returned utilizing constrained decoding. Constrained decoding is a technique that allows you to guide the model to generate a specific type of output, a little bit like JSON ad-libs. Learn more about constrained decoding [here](https://www.guardrailsai.com/blog/json-with-open-source-models).
 
 ```python
-g = Guard.from_pydantic(NewFriends, output_formatter="jsonformer")
+g = Guard.for_pydantic(NewFriends, output_formatter="jsonformer")
 
 # JSONFormer is only compatible with HF Pipelines and HF Models:
 from transformers import pipeline

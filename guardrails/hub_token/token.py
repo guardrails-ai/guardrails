@@ -1,8 +1,9 @@
 import os
-from guardrails.classes.credentials import Credentials
 import jwt
 from jwt import ExpiredSignatureError, DecodeError
 from typing import Optional
+
+from guardrails.classes.rc import RC
 
 FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
 
@@ -32,12 +33,12 @@ class HttpError(Exception):
 
 
 VALIDATOR_HUB_SERVICE = os.getenv(
-    "GR_VALIDATOR_HUB_SERVICE", "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+    "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 
 
-def get_jwt_token(creds: Credentials) -> Optional[str]:
-    token = creds.token
+def get_jwt_token(rc: RC) -> Optional[str]:
+    token = rc.token
 
     # check for jwt expiration
     if token:

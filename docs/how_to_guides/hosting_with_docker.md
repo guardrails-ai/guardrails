@@ -66,7 +66,7 @@ Now that we have Guardrails installed and defined in our config file, we just ne
 
 You can then access documentation for the Guardrails API by navigating in your browser to [http://localhost:8000/docs](http://localhost:8000/docs). 
 
-![alt_text](./assets/openapi_server_docs.png "image_tooltip")
+![openapi server docs](./assets/openapi_server_docs.png "image_tooltip")
 
 
 You can use the interactive Swagger page to test calls to Guardrails Server, which you can then implement as REST API calls in your own app.

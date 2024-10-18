@@ -1,5 +1,21 @@
 # Frequently Asked Questions
 
+## I get an "Unauthorized" error when installing validators from the Guardrails Hub. What should I do?
+
+If you see an "Unauthorized" error when installing validators from the Guardrails hub, it means that the API key you are using is not authorized to access the Guardrails hub. It may be unset or expired. 
+
+To fix this, first generate a new API key from the [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the new API key.
+
+```bash
+guardrails configure
+```
+
+There is also a headless option to configure the CLI with the token.
+
+```bash
+guardrails configure --token <your_token>
+```
+
 ## I'm seeing a PromptCallableException when invoking my Guard. What should I do?
 
 If you see an exception that looks like this
@@ -58,7 +74,7 @@ You can override the `fix` behavior by passing it as a function to the Guard obj
 ```python
 from guardrails import Guard
 
-def fix_is_cake(value, metadata):
+def fix_is_cake(value, fail_result: FailResult):
     return "IT IS cake"
 
 guard = Guard().use(is_cake, on_fail=fix_is_cake)

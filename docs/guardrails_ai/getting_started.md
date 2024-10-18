@@ -84,7 +84,7 @@ prompt = """
 
     ${gr.complete_xml_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet)
+guard = Guard.for_pydantic(output_class=Pet)
 
 res = guard(
     messages=[{"role": "user", "content": prompt}],

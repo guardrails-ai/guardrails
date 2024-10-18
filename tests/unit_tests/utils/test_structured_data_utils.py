@@ -3,7 +3,11 @@ from typing import List
 
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 
-from guardrails.utils.tools_utils import json_function_calling_tool, schema_to_tool
+from guardrails.utils.structured_data_utils import (
+    json_function_calling_tool,
+    schema_to_tool,
+    output_format_json_schema,
+)
 
 
 class Delivery(BaseModel):
@@ -141,3 +145,89 @@ def test_json_function_calling_tool():
             },
         }
     ]
+
+
+def test_output_format_json_schema():
+    schema = output_format_json_schema(Schedule)
+    assert schema == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "Schedule",
+            "schema": {
+                "additionalProperties": False,
+                "$defs": {
+                    "Delivery": {
+                        "additionalProperties": False,
+                        "properties": {
+                            "customer": {
+                                "description": "customer name",
+                                "title": "Customer",
+                                "type": "string",
+                            },
+                            "pickup_time": {
+                                "description": "date and time of pickup",
+                                "title": "Pickup Time",
+                                "type": "string",
+                            },
+                            "pickup_location": {
+                                "description": "address of pickup",
+                                "title": "Pickup Location",
+                                "type": "string",
+                            },
+                            "dropoff_time": {
+                                "description": "date and time of dropoff",
+                                "title": "Dropoff Time",
+                                "type": "string",
+                            },
+                            "dropoff_location": {
+                                "description": "address of dropoff",
+                                "title": "Dropoff Location",
+                                "type": "string",
+                            },
+                            "price": {
+                                "description": "price of delivery with"
+                                " currency symbol included",
+                                "title": "Price",
+                                "type": "string",
+                            },
+                            "items": {
+                                "description": "items for pickup/delivery typically"
+                                " something a single person can carry on a bike",
+                                "title": "Items",
+                                "type": "string",
+                            },
+                            "number_items": {
+                                "description": "number of items",
+                                "title": "Number Items",
+                                "type": "integer",
+                            },
+                        },
+                        "required": [
+                            "customer",
+                            "pickup_time",
+                            "pickup_location",
+                            "dropoff_time",
+                            "dropoff_location",
+                            "price",
+                            "items",
+                            "number_items",
+                        ],
+                        "title": "Delivery",
+                        "type": "object",
+                    }
+                },
+                "properties": {
+                    "deliveries": {
+                        "description": "deliveries for messenger",
+                        "items": {"$ref": "#/$defs/Delivery"},
+                        "title": "Deliveries",
+                        "type": "array",
+                    }
+                },
+                "required": ["deliveries"],
+                "title": "Schedule",
+                "type": "object",
+            },
+            "strict": True,
+        },
+    }

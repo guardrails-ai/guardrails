@@ -47,7 +47,7 @@ def test_empty_initialization():
 
 def test_non_empty_initialization():
     # Call input
-    def custom_llm():
+    def custom_llm(prompt, *args, instructions=None, msg_history=None, **kwargs):
         return "Hello there!"
 
     llm_api = custom_llm

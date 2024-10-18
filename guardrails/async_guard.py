@@ -4,7 +4,7 @@ import inspect
 from opentelemetry import context as otel_context
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -37,9 +37,10 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
-from guardrails.utils.telemetry_utils import wrap_with_otel_context
+from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 
@@ -50,10 +51,10 @@ class AsyncGuard(Guard, Generic[OT]):
     This class one of the main entry point for using Guardrails. It is
     initialized from one of the following class methods:
 
-    - `from_rail`
-    - `from_rail_string`
-    - `from_pydantic`
-    - `from_string`
+    - `for_rail`
+    - `for_rail_string`
+    - `for_pydantic`
+    - `for_string`
 
     The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an Async LLM
@@ -62,7 +63,7 @@ class AsyncGuard(Guard, Generic[OT]):
     """
 
     @classmethod
-    def _from_rail_schema(
+    def _for_rail_schema(
         cls,
         schema: ProcessedSchema,
         rail: str,
@@ -72,7 +73,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super()._from_rail_schema(
+        guard = super()._for_rail_schema(
             schema,
             rail,
             num_reasks=num_reasks,
@@ -88,7 +89,7 @@ class AsyncGuard(Guard, Generic[OT]):
             return cast(AsyncGuard[Dict], guard)
 
     @classmethod
-    def from_pydantic(
+    def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
         *,
@@ -102,7 +103,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super().from_pydantic(
+        guard = super().for_pydantic(
             output_class,
             prompt=prompt,
             instructions=instructions,
@@ -120,7 +121,7 @@ class AsyncGuard(Guard, Generic[OT]):
             return cast(AsyncGuard[Dict], guard)
 
     @classmethod
-    def from_string(
+    def for_string(
         cls,
         validators: Sequence[Validator],
         *,
@@ -134,7 +135,7 @@ class AsyncGuard(Guard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = super().from_string(
+        guard = super().for_string(
             validators,
             string_description=string_description,
             prompt=prompt,
@@ -187,7 +188,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         self._fill_validator_map()
         self._fill_validators()
@@ -219,48 +220,12 @@ class AsyncGuard(Guard, Generic[OT]):
         ) -> Union[
             ValidationOutcome[OT],
             Awaitable[ValidationOutcome[OT]],
-            AsyncIterable[ValidationOutcome[OT]],
+            AsyncIterator[ValidationOutcome[OT]],
         ]:
             prompt_params = prompt_params or {}
             metadata = metadata or {}
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
-
-            if self._allow_metrics_collection:
-                llm_api_str = ""
-                if llm_api:
-                    llm_api_module_name = (
-                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                    )
-                    llm_api_name = (
-                        llm_api.__name__
-                        if hasattr(llm_api, "__name__")
-                        else type(llm_api).__name__
-                    )
-                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
-                # Create a new span for this guard call
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_call",
-                    attributes=[
-                        ("guard_id", self.id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api_str),
-                        (
-                            "custom_reask_prompt",
-                            self._exec_opts.reask_prompt is not None,
-                        ),
-                        (
-                            "custom_reask_instructions",
-                            self._exec_opts.reask_instructions is not None,
-                        ),
-                        (
-                            "custom_reask_messages",
-                            self._exec_opts.reask_messages is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -369,7 +334,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         """Call the LLM asynchronously and validate the output.
 
@@ -404,7 +369,11 @@ class AsyncGuard(Guard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             # Here we have an async generator
@@ -426,7 +395,11 @@ class AsyncGuard(Guard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(not self._allow_metrics_collection),
+                disable_tracer=(
+                    not self._allow_metrics_collection
+                    if isinstance(self._allow_metrics_collection, bool)
+                    else None
+                ),
                 exec_options=self._exec_opts,
             )
             # Why are we using a different method here instead of just overriding?
@@ -435,6 +408,7 @@ class AsyncGuard(Guard, Generic[OT]):
             )
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @async_trace(name="/guard_call", origin="AsyncGuard.__call__")
     async def __call__(
         self,
         llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
@@ -450,7 +424,7 @@ class AsyncGuard(Guard, Generic[OT]):
     ) -> Union[
         ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
-        AsyncIterable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
     ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
@@ -484,7 +458,11 @@ class AsyncGuard(Guard, Generic[OT]):
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
 
-        return await self._execute(
+        return await trace_async_guard_execution(
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -497,6 +475,7 @@ class AsyncGuard(Guard, Generic[OT]):
             **kwargs,
         )
 
+    @async_trace(name="/guard_call", origin="AsyncGuard.parse")
     async def parse(
         self,
         llm_output: str,
@@ -543,7 +522,11 @@ class AsyncGuard(Guard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return await self._execute(  # type: ignore
+        return await trace_async_guard_execution(  # type: ignore
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
@@ -559,7 +542,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
     async def _stream_server_call(
         self, *, payload: Dict[str, Any]
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterator[ValidationOutcome[OT]]:
         # TODO: Once server side supports async streaming, this function will need to
         # yield async generators, not generators
         if self._api_client:
@@ -601,6 +584,7 @@ class AsyncGuard(Guard, Generic[OT]):
         else:
             raise ValueError("AsyncGuard does not have an api client!")
 
+    @async_trace(name="/guard_call", origin="AsyncGuard.validate")
     async def validate(
         self, llm_output: str, *args, **kwargs
     ) -> Awaitable[ValidationOutcome[OT]]:
