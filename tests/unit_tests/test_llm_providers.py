@@ -258,7 +258,9 @@ def test_hugging_face_pipeline_callable():
     from guardrails.llm_providers import HuggingFacePipelineCallable
 
     hf_model_callable = HuggingFacePipelineCallable()
-    response = hf_model_callable("Hello", pipeline=pipeline)
+    response = hf_model_callable(
+        pipeline=pipeline, messages=[{"role": "user", "content": "Hello"}]
+    )
 
     assert isinstance(response, LLMResponse) is True
     assert response.output == "Hello there!"

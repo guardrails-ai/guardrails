@@ -379,7 +379,15 @@ class HuggingFaceModelCallable(PromptCallableBase):
 
 
 class HuggingFacePipelineCallable(PromptCallableBase):
-    def _invoke_llm(self, prompt: str, pipeline: Any, *args, **kwargs) -> LLMResponse:
+    def _invoke_llm(
+        self,
+        pipeline: Any,
+        *args,
+        messages: Union[
+            list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory
+        ],
+        **kwargs,
+    ) -> LLMResponse:
         try:
             import transformers  # noqa: F401 # type: ignore
         except ImportError:
@@ -400,7 +408,7 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         temperature = kwargs.pop("temperature", None)
         if temperature == 0:
             temperature = None
-
+        prompt = messages_string(messages)
         trace_operation(
             input_mime_type="application/json",
             input_value={

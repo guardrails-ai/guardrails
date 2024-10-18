@@ -994,7 +994,7 @@ def test_enum_datatype(mocker):
     guard = gd.Guard.for_pydantic(Task)
     _, dict_o, *rest = guard(
         custom_llm,
-        prompt="What is the status of this task?",
+        messages=[{"role": "user", "content": "What is the status of this task?"}],
     )
     assert dict_o == {"status": "not started"}
 
@@ -1002,7 +1002,9 @@ def test_enum_datatype(mocker):
     guard = gd.Guard.for_pydantic(Task)
     result = guard(
         custom_llm,
-        prompt="What is the status of this task REALLY?",
+        messages=[
+            {"role": "user", "content": "What is the status of this task REALLY?"}
+        ],
         num_reasks=0,
     )
 
@@ -1351,7 +1353,9 @@ def test_guard_for_pydantic_with_mock_hf_pipeline():
 
     pipe = make_mock_pipeline()
     guard = Guard()
-    _ = guard(pipe, prompt="Don't care about the output.")
+    _ = guard(
+        pipe, messages=[{"role": "user", "content": "Don't care about the output."}]
+    )
 
 
 @pytest.mark.skipif(
