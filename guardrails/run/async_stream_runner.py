@@ -125,6 +125,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                 _ = self.is_last_chunk(chunk, api)
 
                 fragment += chunk_text
+
                 results = await validator_service.async_partial_validate(
                     chunk_text,
                     self.metadata,
@@ -134,7 +135,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     "$",
                     True,
                 )
-                validators = self.validation_map["$"] or []
+                validators = self.validation_map.get("$", [])
+
                 # collect the result validated_chunk into validation progress
                 # per validator
                 for result in results:
@@ -187,7 +189,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         validation_progress[validator_log.validator_name] += chunk
                 # if there is an entry for every validator
                 # run a merge and emit a validation outcome
-                if len(validation_progress) == len(validators):
+                if len(validation_progress) == len(validators) or len(validators) == 0:
                     if refrain_triggered:
                         current = ""
                     else:

@@ -265,6 +265,11 @@ def trace_call(fn: Callable[..., LLMResponse]):
             ) as call_span:
                 try:
                     response = fn(*args, **kwargs)
+                    if isinstance(response, LLMResponse) and (
+                        response.async_stream_output or response.stream_output
+                    ):
+                        # TODO: Iterate, add a call attr each time
+                        return response
                     add_call_attributes(call_span, response, *args, **kwargs)
                     return response
                 except Exception as e:

@@ -142,9 +142,18 @@ def trace_stream_guard(
             res = next(result)  # type: ignore
             # FIXME: This should only be called once;
             # Accumulate the validated output and call at the end
-            add_guard_attributes(guard_span, history, res)
-            add_user_attributes(guard_span)
-            yield res
+            if not guard_span.is_recording():
+                # Assuming you have a tracer instance
+                tracer = get_tracer(__name__)
+                # Create a new span and link it to the previous span
+                with tracer.start_as_current_span(
+                    "stream_guard_span",  # type: ignore
+                    links=[Link(guard_span.get_span_context())],
+                ) as new_span:
+                    guard_span = new_span
+                    add_guard_attributes(guard_span, history, res)
+                    add_user_attributes(guard_span)
+                    yield res
         except StopIteration:
             next_exists = False
 
@@ -177,6 +186,7 @@ def trace_guard_execution(
                     result, ValidationOutcome
                 ):
                     return trace_stream_guard(guard_span, result, history)
+
                 add_guard_attributes(guard_span, history, result)
                 add_user_attributes(guard_span)
                 return result
@@ -201,14 +211,14 @@ async def trace_async_stream_guard(
                 tracer = get_tracer(__name__)
                 # Create a new span and link it to the previous span
                 with tracer.start_as_current_span(
-                    "new_guard_span",  # type: ignore
+                    "async_stream_span",  # type: ignore
                     links=[Link(guard_span.get_span_context())],
                 ) as new_span:
                     guard_span = new_span
 
                     add_guard_attributes(guard_span, history, res)
                     add_user_attributes(guard_span)
-            yield res
+                    yield res
         except StopIteration:
             next_exists = False
         except StopAsyncIteration:

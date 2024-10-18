@@ -529,13 +529,15 @@ class AsyncGuard(Guard, Generic[OT]):
                         validated_output=validated_output,
                         validation_passed=(validation_output.validation_passed is True),
                     )
-            if validation_output:
-                guard_history = self._api_client.get_history(
-                    self.name, validation_output.call_id
-                )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+            # TODO re-enable this once we have a way to get history
+            # from a multi-node server
+            # if validation_output:
+            #     guard_history = self._api_client.get_history(
+            #         self.name, validation_output.call_id
+            #     )
+            #     self.history.extend(
+            #         [Call.from_interface(call) for call in guard_history]
+            #     )
         else:
             raise ValueError("AsyncGuard does not have an api client!")
 
