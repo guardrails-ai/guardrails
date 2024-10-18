@@ -1,6 +1,6 @@
 import json
 import os
-from guardrails import AsyncGuard
+from guardrails import Guard
 
 try:
     file_path = os.path.join(os.getcwd(), "guard-template.json")
@@ -11,4 +11,4 @@ except json.JSONDecodeError:
     SystemExit(1)
 
 # instantiate guards
-guard0 = AsyncGuard.from_dict(guards[0])
+guard0 = Guard.from_dict(guards[0])
