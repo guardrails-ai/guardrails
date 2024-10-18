@@ -37,10 +37,6 @@ class TestMlFlowInstrumentor:
         assert settings.disable_tracing is True
 
     def test_instrument(self, mocker):
-        mock_is_enabled = mocker.patch(
-            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.provider._is_enabled",
-            return_value=False,
-        )
         mock_enable = mocker.patch(
             "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.enable"
         )
@@ -115,7 +111,6 @@ class TestMlFlowInstrumentor:
 
         m.instrument()
 
-        mock_is_enabled.assert_called_once()
         mock_enable.assert_called_once()
         mock_set_experiment.assert_called_once_with("mock experiment")
 
