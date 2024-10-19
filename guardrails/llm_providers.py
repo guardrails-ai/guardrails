@@ -498,6 +498,10 @@ class LiteLLMCallable(PromptCallableBase):
             ),
         )
 
+        # these are gr only and should not be getting passed to llms
+        kwargs.pop("reask_prompt", None)
+        kwargs.pop("reask_instructions", None)
+
         response = completion(
             model=model,
             *args,
@@ -1087,6 +1091,10 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "function_call", safe_get(function_calling_tools, 0)
             ),
         )
+
+        # these are gr only and should not be getting passed to llms
+        kwargs.pop("reask_prompt", None)
+        kwargs.pop("reask_instructions", None)
 
         response = await acompletion(
             *args,

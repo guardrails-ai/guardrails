@@ -35,6 +35,7 @@ from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
 from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
+from guardrails.classes.validation.validation_summary import ValidationSummary
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
@@ -225,6 +226,8 @@ class Guard(IGuard, Generic[OT]):
                     )
             if not _loaded:
                 self._save()
+        else:
+            self.configure()
 
     @field_validator("output_schema")
     @classmethod
@@ -976,7 +979,12 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or kwargs.get("messages", None) or []
+        msg_history = (
+            msg_history
+            or kwargs.get("messages", None)
+            or self._exec_opts.messages
+            or []
+        )
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
@@ -1212,10 +1220,19 @@ class Guard(IGuard, Generic[OT]):
                     error="The response from the server was empty!",
                 )
 
-            guard_history = self._api_client.get_history(
-                self.name, validation_output.call_id
-            )
-            self.history.extend([Call.from_interface(call) for call in guard_history])
+            # TODO reenable this when we have history support in
+            # multi-node server environments
+            # guard_history = self._api_client.get_history(
+            #     self.name, validation_output.call_id
+            # )
+            # self.history.extend([Call.from_interface(call) for call in guard_history])
+
+            validation_summaries = []
+            if self.history.last and self.history.last.iterations.last:
+                validator_logs = self.history.last.iterations.last.validator_logs
+                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
+                    validator_logs
+                )
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
@@ -1232,6 +1249,7 @@ class Guard(IGuard, Generic[OT]):
                 raw_llm_output=validation_output.raw_llm_output,
                 validated_output=validated_output,
                 validation_passed=(validation_output.validation_passed is True),
+                validation_summaries=validation_summaries,
             )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1270,13 +1288,15 @@ class Guard(IGuard, Generic[OT]):
                         validated_output=validated_output,
                         validation_passed=(validation_output.validation_passed is True),
                     )
-            if validation_output:
-                guard_history = self._api_client.get_history(
-                    self.name, validation_output.call_id
-                )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+
+            # TODO reenable this when sever supports multi-node history
+            # if validation_output:
+            #     guard_history = self._api_client.get_history(
+            #         self.name, validation_output.call_id
+            #     )
+            # self.history.extend(
+            #     [Call.from_interface(call) for call in guard_history]
+            # )
         else:
             raise ValueError("Guard does not have an api client!")
 

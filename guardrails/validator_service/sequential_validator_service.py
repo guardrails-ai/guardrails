@@ -10,7 +10,6 @@ from guardrails.classes.validation.validation_result import (
     StreamValidationResult,
     ValidationResult,
 )
-from guardrails.merge import merge
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.validation.validator_logs import ValidatorLogs
@@ -107,14 +106,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             reference_property_path,
             **kwargs,
         )
-
-    # requires at least 2 validators
-    def multi_merge(self, original: str, new_values: list[str]) -> Optional[str]:
-        current = new_values.pop()
-        while len(new_values) > 0:
-            nextval = new_values.pop()
-            current = merge(current, nextval, original)
-        return current
 
     def run_validators_stream_fix(
         self,

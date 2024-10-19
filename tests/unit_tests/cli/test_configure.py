@@ -64,6 +64,9 @@ def test_save_configuration_file(mocker):
     expanduser_mock = mocker.patch("guardrails.cli.configure.expanduser")
     expanduser_mock.return_value = "/Home"
 
+    rcexpanduser_mock = mocker.patch("guardrails.classes.rc.expanduser")
+    rcexpanduser_mock.return_value = "/Home"
+
     import os
 
     join_spy = mocker.spy(os.path, "join")
@@ -83,7 +86,9 @@ def test_save_configuration_file(mocker):
     save_configuration_file("token", True)
 
     assert expanduser_mock.called is True
-    join_spy.assert_called_once_with("/Home", ".guardrailsrc")
+    assert rcexpanduser_mock.called is True
+    join_spy.assert_called_with("/Home", ".guardrailsrc")
+    assert join_spy.call_count == 2
 
     assert mock_open.call_count == 1
     writelines_spy.assert_called_once_with(

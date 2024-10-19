@@ -54,8 +54,7 @@ class MlFlowInstrumentor:
         settings.disable_tracing = True
 
     def instrument(self):
-        if not mlflow.tracing.provider._is_enabled():
-            mlflow.tracing.enable()
+        mlflow.tracing.enable()
         mlflow.set_experiment(self.experiment_name)
 
         wrapped_guard_execute = self._instrument_guard(Guard._execute)

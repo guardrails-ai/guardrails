@@ -47,7 +47,12 @@ class LLMResponse(ILLMResponse):
             stream_output = [str(so) for so in copy_2]
 
         async_stream_output = None
-        if self.async_stream_output:
+        # dont do this again if already aiter-able were updating
+        # ourselves here so in memory
+        # this can cause issues
+        if self.async_stream_output and not hasattr(
+            self.async_stream_output, "__aiter__"
+        ):
             # tee doesn't work with async iterators
             # This may be destructive
             async_stream_output = []
@@ -56,7 +61,7 @@ class LLMResponse(ILLMResponse):
                 async_stream_output.append(so)
                 awaited_stream_output.append(str(async_to_sync(so)))
 
-            self.async_stream_output = aiter(async_stream_output)  # type: ignore
+            self.async_stream_output = aiter(async_stream_output)  # type: ignore  # noqa: F821
 
         return ILLMResponse(
             prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases

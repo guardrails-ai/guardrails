@@ -35,7 +35,7 @@ We'll use the `create` command on the guardrails CLI to do this. We'll specify t
 
 
 ```bash
-guardrails create --validators hub://guardrails/gibberish_text --name gibberish_guard
+guardrails create --validators hub://guardrails/gibberish_text --guard-name gibberish_guard
 ```
 
 :::note
