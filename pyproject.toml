@@ -55,7 +55,7 @@ opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
 guardrails-hub-types = "^0.0.4"
-guardrails-api-client = "^0.3.13"
+guardrails-api-client = "^0.4.0a1"
 diff-match-patch = "^20230430"
 guardrails-api = ">=0.1.0a1,<0.2.0"
 mlflow = {version = "^2.0.1", optional = true}
