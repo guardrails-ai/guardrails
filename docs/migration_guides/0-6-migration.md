@@ -91,3 +91,23 @@ These callables are being removed in favor of support through passing no callabl
 
 ### Prompt no longer a required positional argument on custom callables
 Custom callables will no longer throw an error if the prompt arg is missing in their declaration and guardrails will no longer pass prompt as the first argument. They need to be updated to the messages kwarg to get text input. If a custom callables underlying llm only accepts a single string a helper exists that can compose messages into one otherwise some code to adapt them will be required. 
+
+```py
+from guardrails import messages_to_prompt_string
+
+class CustomCallableCallable(PromptCallableBase):
+    def llm_api(
+        self,
+        *args,
+        **kwargs,
+    ) -> str:
+        messages = kwargs.pop("messages", [])
+        prompt = messages_to_prompt_string(messages)
+
+        llm_string_output = some_llm_call_requiring_prompt(
+            prompt,
+            *args,
+            **kwargs,
+        )
+        return llm_string_output
+````

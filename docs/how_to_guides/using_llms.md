@@ -306,7 +306,6 @@ guard = Guard().use(ProfanityFree())
 # Function that takes the prompt as a string and returns the LLM output as string
 def my_llm_api(
     *,
-    messages: Optional[list[dict]] = None,
     **kwargs
 ) -> str:
     """Custom LLM API wrapper.
@@ -314,16 +313,16 @@ def my_llm_api(
     At least one of messages should be provided.
 
     Args:
-        messages (list[dict]): The message history to be passed to the LLM API
         **kwargs: Any additional arguments to be passed to the LLM API
 
     Returns:
         str: The output of the LLM API
     """
-
+    messages = kwargs.pop("messages", [])
+    updated_messages = some_message_processing(messages)
     # Call your LLM API here
     # What you pass to the llm will depend on what arguments it accepts.
-    llm_output = some_llm(messages, **kwargs)
+    llm_output = some_llm(updated_messages, **kwargs)
 
     return llm_output
 

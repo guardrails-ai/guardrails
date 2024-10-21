@@ -31,22 +31,7 @@ import warnings
 from guardrails.utils.safe_get import safe_get
 from guardrails.telemetry import trace_llm_call, trace_operation
 
-
-# todo fix circular import
-def messages_string(
-    messages: Union[list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory],
-) -> str:
-    messages_copy = ""
-    for msg in messages:
-        content = (
-            msg["content"].source  # type: ignore
-            if isinstance(msg["content"], Prompt)
-            or isinstance(msg["content"], Instructions)  # type: ignore
-            else msg["content"]  # type: ignore
-        )
-        messages_copy += content
-    return messages_copy
-
+from guardrails.utils.prompt_utils import messages_to_prompt_string
 
 ###
 # Synchronous wrappers
@@ -296,7 +281,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
                 "The `torch` package is not installed. "
                 "Install with `pip install torch`"
             )
-        prompt = messages_string(messages)
+        prompt = messages_to_prompt_string(messages)
         tokenizer = kwargs.pop("tokenizer")
         if not tokenizer:
             raise UserFacingException(
@@ -408,7 +393,7 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         temperature = kwargs.pop("temperature", None)
         if temperature == 0:
             temperature = None
-        prompt = messages_string(messages)
+        prompt = messages_to_prompt_string(messages)
         trace_operation(
             input_mime_type="application/json",
             input_value={

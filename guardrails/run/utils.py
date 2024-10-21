@@ -28,18 +28,6 @@ def messages_source(messages: MessageHistory) -> MessageHistory:
     return messages_copy
 
 
-def messages_string(messages: MessageHistory) -> str:
-    messages_copy = ""
-    for msg in messages:
-        content = (
-            msg["content"].source
-            if isinstance(msg["content"], Prompt)
-            else msg["content"]
-        )
-        messages_copy += content
-    return messages_copy
-
-
 def preprocess_prompt_for_string_output(
     prompt_callable: PromptCallableBase,
     instructions: Optional[Instructions],

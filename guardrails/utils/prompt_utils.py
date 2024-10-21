@@ -1,10 +1,13 @@
 import json
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from guardrails.classes.output_type import OutputTypes
 
 from guardrails.types.validator import ValidatorMap
+from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.instructions import Instructions
+from guardrails.types.inputs import MessageHistory
 
 
 def prompt_uses_xml(prompt: str) -> bool:
@@ -47,3 +50,18 @@ def prompt_content_for_schema(
     if output_type == OutputTypes.STRING:
         return prompt_content_for_string_schema(output_schema, validator_map, json_path)
     return json.dumps(output_schema)
+
+
+def messages_to_prompt_string(
+    messages: Union[list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory],
+) -> str:
+    messages_copy = ""
+    for msg in messages:
+        content = (
+            msg["content"].source  # type: ignore
+            if isinstance(msg["content"], Prompt)
+            or isinstance(msg["content"], Instructions)  # type: ignore
+            else msg["content"]  # type: ignore
+        )
+        messages_copy += content
+    return messages_copy
