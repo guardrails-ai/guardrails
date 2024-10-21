@@ -56,13 +56,16 @@ runs:
     - name: Move CI Scripts to Validator
       shell: bash
       run: |
-        mv shared-ci-scripts/.github/actions/validator_pypi_publish/add_build_prefix.py ./validator/__shared_ci_script__.py
+        mv shared-ci-scripts/.github/actions/validator_pypi_publish/*.py ./validator
 
-    - name: Add Package Prefix
+    - name: Rename Package 
       shell: bash
       run: |
         cd validator
-        python __shared_ci_script__.py ./pyproject.toml ${{ inputs.validator }}
+        CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator }})
+        NEW_PEP_PACKAGE_NAME=$(python package_name_normalization.py $CONCATANATED_NAME)
+        python add_build_prefix.py ./pyproject.toml $CONCATANATED_NAME
+        mv ./validator ./$NEW_PEP_PACKAGE_NAME
 
     - name: Build & Upload
       shell: bash
