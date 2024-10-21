@@ -1183,15 +1183,14 @@ class Guard(IGuard, Generic[OT]):
                         validation_passed=(validation_output.validation_passed is True),
                     )
 
-            # TODO reenable this when sever supports multi-node history
             if os.environ.get("GUARD_HISTORY_ENABLED", "true").lower() == "true":
                 if validation_output:
                     guard_history = self._api_client.get_history(
                         self.name, validation_output.call_id
                     )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+                    self.history.extend(
+                        [Call.from_interface(call) for call in guard_history]
+                    )
         else:
             raise ValueError("Guard does not have an api client!")
 
