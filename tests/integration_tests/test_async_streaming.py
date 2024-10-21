@@ -176,8 +176,7 @@ async def test_async_streaming_fix_behavior_two_validators(mocker):
     assert (
         text
         == """<PERSON>, under golden bridges, roams,
-<LOCATION> hills, his home.
-dreams of fog, and salty air,
+<LOCATION> hills, his home.dreams of fog, and salty air,
 in his heart, he's always there."""
     )
     assert (
