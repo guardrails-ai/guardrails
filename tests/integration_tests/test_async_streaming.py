@@ -165,7 +165,12 @@ async def test_async_streaming_fix_behavior_two_validators(mocker):
         max_tokens=10,
         temperature=0,
         stream=True,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
     )
     text = ""
     original = ""
@@ -210,7 +215,12 @@ async def test_async_streaming_filter_behavior(mocker):
         max_tokens=10,
         temperature=0,
         stream=True,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
     )
 
     validated = ""

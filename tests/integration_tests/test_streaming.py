@@ -1,5 +1,5 @@
 # 3 tests
-# 1. Test streaming with OpenAICallable (mock openai.Completion.create)
+# 1. Test streaming with LiteLLMCallable (mock openai.Completion.create)
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # 3. Test string schema streaming
 # Using the LowerCase Validator, and a custom validator to show new streaming behavior
@@ -125,7 +125,7 @@ def mock_openai_completion_create(chunks):
                 choices=[
                     Choice(
                         text=chunk,
-                        delta=Delta(content=""),
+                        delta=None,
                         finish_reason=None,
                     )
                 ],
@@ -142,7 +142,7 @@ def mock_openai_chat_completion_create(chunks):
             yield MockOpenAIV1ChunkResponse(
                 choices=[
                     Choice(
-                        text="",
+                        text=None,
                         delta=Delta(content=chunk),
                         finish_reason=None,
                     )
@@ -207,24 +207,38 @@ JSON_LLM_CHUNKS = [
     ' too."}',
 ]
 
+MESSAGES = [
+    {
+        "role": "user",
+        "content": PROMPT,
+    }
+]
+
+STR_MESSAGES = [
+    {
+        "role": "user",
+        "content": STR_PROMPT,
+    }
+]
+
 
 @pytest.mark.parametrize(
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -234,7 +248,7 @@ def test_streaming_with_openai_callable(
     guard,
     expected_validated_output,
 ):
-    """Test streaming with OpenAICallable.
+    """Test streaming with LiteLLMCallable.
 
     Mocks openai.Completion.create.
     """
@@ -268,19 +282,19 @@ def test_streaming_with_openai_callable(
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.for_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -340,12 +354,12 @@ STR_LLM_CHUNKS = [
     "guard, expected_error_spans",
     [
         (
-            gd.Guard.from_string(
+            gd.Guard.for_string(
                 # only the middle sentence should pass
                 validators=[
                     MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)
                 ],
-                prompt=STR_PROMPT,
+                messages=STR_MESSAGES,
             ),
             # each value is a tuple
             # first is expected text inside span
@@ -437,7 +451,12 @@ def test_noop_behavior_two_validators(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )
@@ -475,7 +494,12 @@ def test_fix_behavior_one_validator(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )
@@ -517,7 +541,12 @@ def test_fix_behavior_two_validators(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )
@@ -569,7 +598,12 @@ def test_fix_behavior_three_validators(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )
@@ -623,7 +657,7 @@ In his HEART, he's always THERE."""
 #     Make every third word all caps."""
 #     gen = guard(
 #         llm_api=openai.chat.completions.create,
-#         prompt=prompt,
+#         messages=MESSAGES,
 #         model="gpt-4",
 #         stream=True,
 #     )
@@ -668,7 +702,12 @@ def test_refrain_behavior(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )
@@ -704,7 +743,12 @@ def test_filter_behavior(mocker):
     Make every third word all caps."""
     gen = guard(
         llm_api=openai.chat.completions.create,
-        prompt=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
         model="gpt-4",
         stream=True,
     )

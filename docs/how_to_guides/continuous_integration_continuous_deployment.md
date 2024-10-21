@@ -58,7 +58,7 @@ A template can also be a local json file with the format above. A config for it 
 guardrails create --template chatbot.json
 ```
 
-The validator arguments and entries can be updated manually or programatically. 
+The validator arguments and entries can be updated manually or programmatically. 
 
 For example we could update kwargs to only identify and fix location.
 
