@@ -1270,9 +1270,9 @@ class TestSerizlizationAndDeserialization:
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
         ).use_many(
-            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
-            ValidLength(1, 100),
-            ValidChoices(["Some Name", "Some Other Name"]),
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
+            ValidLength(1, 100, on_fail="noop"),
+            ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
         )
 
         response = guard.parse("Some Name")
@@ -1315,9 +1315,9 @@ class TestSerizlizationAndDeserialization:
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
         ).use_many(
-            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
-            ValidLength(1, 100),
-            ValidChoices(["Some Name", "Some Other Name"]),
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
+            ValidLength(1, 100, on_fail="noop"),
+            ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
         )
 
         response = guard.parse("Some Name")
@@ -1379,7 +1379,9 @@ class TestValidatorInitializedOnce:
     def test_guard_init(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
-        guard = Guard(validators=[ValidatorReference(id="lower-case", on="$")])
+        guard = Guard(
+            validators=[ValidatorReference(id="lower-case", on="$", onFail="noop")]
+        )
 
         # Validator is not initialized until the guard is used
         assert init_spy.call_count == 0

@@ -165,12 +165,12 @@ def test_use():
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
     assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
@@ -265,12 +265,12 @@ def test_use_many_instances():
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
     assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
@@ -317,12 +317,12 @@ def test_use_many_instances():
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
     assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
@@ -385,7 +385,7 @@ def test_use_many_tuple():
 
     assert isinstance(guard._validators[0], OneLine)
     assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     assert isinstance(guard._validators[1], EndsWith)
@@ -431,7 +431,7 @@ def test_use_many_tuple():
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
     )  # bc this is the default
 
     # Test with an unrecognized "on" parameter, should warn with a UserWarning
@@ -468,11 +468,11 @@ class TestValidate:
     async def test_output_only_failure(self):
         guard: AsyncGuard = (
             AsyncGuard()
-            .use(OneLine)
+            .use(OneLine, on_fail=OnFailAction.NOOP)
             .use(
                 LowerCase(on_fail=OnFailAction.FIX), on="output"
             )  # default on="output", still explicitly set
-            .use(TwoWords)
+            .use(TwoWords, on_fail=OnFailAction.NOOP)
             .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
@@ -509,11 +509,11 @@ class TestValidate:
     async def test_on_many_failure(self):
         guard: AsyncGuard = (
             AsyncGuard()
-            .use(OneLine, on="messages")
-            .use(LowerCase, on="messages")
-            .use(UpperCase, on="messages")
+            .use(OneLine, on="messages", on_fail=OnFailAction.NOOP)
+            .use(LowerCase, on="messages", on_fail=OnFailAction.NOOP)
+            .use(UpperCase, on="messages", on_fail=OnFailAction.NOOP)
             .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
-            .use(TwoWords)
+            .use(TwoWords, on_fail=OnFailAction.NOOP)
             .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
