@@ -587,12 +587,6 @@ resource "aws_eip" "backend" {
   depends_on = [aws_internet_gateway.backend]
 }
 
-resource "aws_nat_gateway" "backend" {
-  count         = 2
-  subnet_id     = aws_subnet.backend_public_subnets[count.index].id
-  allocation_id = aws_eip.backend[count.index].id
-}
-
 resource "aws_internet_gateway" "backend" {
   vpc_id = aws_vpc.backend.id
 
