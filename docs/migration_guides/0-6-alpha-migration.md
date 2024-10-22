@@ -16,7 +16,7 @@ pip install --pre guardrails-ai
 1. The default on_fail action for validators will change from noop to exception.
 1. In cases where we try and generate structured data, Guardrails will no longer automatically attempt to try and coerce the LLM into giving correctly formatted information.
 1. Guardrails will no longer automatically set a tool selection in the OpenAI callable when initialized using pydantic for initial prompts or reasks
-1. Guard.from_stringis being removed in favor of Guard()
+1. Guard.from_string is being removed in favor of Guard()
 1. Guard.from_pydantic is renamed to Guard.for_pydantic
 1. Guard.from_rail is renamed to Guard.for_rail
 1. Guard.from_rail_string is renamed to guard.for_rail_string
