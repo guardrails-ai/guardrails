@@ -465,7 +465,6 @@ graph TD
     
     %% Public Subnet Group
     subgraph PublicSubnets["Public Subnets x3"]
-        NATGateway[NAT Gateway x2]
         NLB[Network Load Balancer]
         TG[Target Group<br/>TCP:80]
         SG[Security Group<br/>Ingress: 8000<br/>Egress: All]
