@@ -2,7 +2,9 @@ import re
 import sys
 
 
-def add_package_name_prefix(pyproject_path, pep_503_new_package_name):
+def add_package_name_prefix(
+    pyproject_path, pep_503_new_package_name, validator_folder_name
+):
     # Read the existing pyproject.toml file
     with open(pyproject_path, "r") as f:
         content = f.read()
@@ -21,6 +23,8 @@ def add_package_name_prefix(pyproject_path, pep_503_new_package_name):
         sys.exit(1)
 
     # Update the project name to the new PEP 503-compliant name
+    # The package name would've been converted to PEP 503-compliant anyways
+    # But we use this name since it's been concatenated with the seperator
     updated_content = re.sub(
         rf'(^name\s*=\s*")({re.escape(existing_name)})(")',
         rf"\1{pep_503_new_package_name}\3",
@@ -33,7 +37,7 @@ def add_package_name_prefix(pyproject_path, pep_503_new_package_name):
     setuptools_section = f"""
 
 [tool.setuptools]
-packages = ["{pep_503_new_package_name}"]
+packages = ["{validator_folder_name}"]
 
 """
 
@@ -42,7 +46,7 @@ packages = ["{pep_503_new_package_name}"]
         # If it exists, update the packages value
         updated_content = re.sub(
             r"(^\[tool\.setuptools\].*?^packages\s*=\s*\[.*?\])",
-            f'[tool.setuptools]\npackages = ["{pep_503_new_package_name}"]',
+            f'[tool.setuptools]\npackages = ["{validator_folder_name}"]',
             updated_content,
             flags=re.DOTALL | re.MULTILINE,
         )
@@ -54,18 +58,22 @@ packages = ["{pep_503_new_package_name}"]
     with open(pyproject_path, "w") as f:
         f.write(updated_content)
 
-    print(
-        "Updated project name to "
-        "'{pep_503_new_package_name}' and added package folder in {pyproject_path}"
-    )
+    print(f"Updated project name to '{pep_503_new_package_name}'.")
+    print(f"Added package folder '{validator_folder_name}' in {pyproject_path}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python script.py <pyproject_path> <pep_503_new_package_name>")
+        print(
+            "Usage: python script.py <pyproject_path> "
+            "<pep_503_new_package_name> <validator-folder-name>"
+        )
         sys.exit(1)
 
     pyproject_path = sys.argv[1]
     pep_503_new_package_name = sys.argv[2]
+    validator_folder_name = sys.argv[3]
 
-    add_package_name_prefix(pyproject_path, pep_503_new_package_name)
+    add_package_name_prefix(
+        pyproject_path, pep_503_new_package_name, validator_folder_name
+    )

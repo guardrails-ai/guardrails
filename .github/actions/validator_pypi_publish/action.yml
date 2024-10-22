@@ -64,8 +64,9 @@ runs:
         cd validator
         CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator }})
         NEW_PEP_PACKAGE_NAME=$(python package_name_normalization.py $CONCATANATED_NAME)
-        mv ./validator ./$NEW_PEP_PACKAGE_NAME
-        python add_build_prefix.py ./pyproject.toml $NEW_PEP_PACKAGE_NAME
+        VALIDATOR_FOLDER_NAME=$(echo $NEW_PEP_PACKAGE_NAME | tr - _)
+        mv ./validator ./$VALIDATOR_FOLDER_NAME
+        python add_build_prefix.py ./pyproject.toml $NEW_PEP_PACKAGE_NAME $VALIDATOR_FOLDER_NAME
 
     - name: Build & Upload
       shell: bash
