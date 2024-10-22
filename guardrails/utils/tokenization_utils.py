@@ -17,11 +17,9 @@ def replace_til_no_change(input_text, pattern, replacement):
 
 
 def postproc_splits(sentences, separator):
-    """
-    Applies heuristic rules to repair sentence splitting errors.
-    Developed for use as postprocessing for the GENIA sentence
-    splitter on PubMed abstracts, with minor tweaks for
-    full-text documents.
+    """Applies heuristic rules to repair sentence splitting errors. Developed
+    for use as postprocessing for the GENIA sentence splitter on PubMed
+    abstracts, with minor tweaks for full-text documents.
 
     `sentences` should be a string, with line breaks on sentence boundaries.
     Returns a similar string, but more correct.

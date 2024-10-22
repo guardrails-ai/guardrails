@@ -49,9 +49,9 @@ def split_sentence_str(chunk: str):
 def split_sentence_word_tokenizers_jl_separator(
     chunk: str, separator: str = "abcdsentenceseperatordcba"
 ):
-    """
-    Use a sentence tokenizer to detect if at least one sentence is present in the chunk.
-    We return the first sentence and the remaining chunks without the first sentence.
+    """Use a sentence tokenizer to detect if at least one sentence is present
+    in the chunk. We return the first sentence and the remaining chunks without
+    the first sentence.
 
     We perform the first step of WordTokenizers.jl's split_sentences function to
     detect possible sentence boundaries before calling the sentence tokenizer.
@@ -142,7 +142,7 @@ class Validator:
         self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
-            on_fail = OnFailAction.NOOP
+            on_fail = OnFailAction.EXCEPTION
         if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
