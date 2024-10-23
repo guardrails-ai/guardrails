@@ -487,53 +487,6 @@ class TestValidatorPackageService:
 
         mock_reload_module.assert_called_once_with("guardrails_grhub_id")
 
-    @pytest.mark.parametrize(
-        "manifest,expected",
-        [
-            (
-                Manifest.from_dict(
-                    {
-                        "id": "guardrails-ai/id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "some-repo"},
-                        "namespace": "guardrails-ai",
-                        "packageName": "test-validator",
-                        "moduleName": "test_validator",
-                        "description": "description",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                    }
-                ),
-                ["guardrails_ai", "test_validator"],
-            ),
-            (
-                Manifest.from_dict(
-                    {
-                        "id": "guardrails-ai/id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "some-repo"},
-                        "namespace": "",
-                        "packageName": "test-validator",
-                        "moduleName": "test_validator",
-                        "description": "description",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                    }
-                ),
-                ["test_validator"],
-            ),
-        ],
-    )
-    def test_get_org_and_package_dirs(self, manifest, expected):
-        from guardrails.hub.validator_package_service import ValidatorPackageService
-
-        actual = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        assert actual == expected
-
     def test_get_module_name_valid(self):
         module_name, module_version = ValidatorPackageService.get_validator_id(
             "hub://test-module>=1.0.0"

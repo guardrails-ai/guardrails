@@ -7,7 +7,6 @@ import sys
 
 from typing import List, Literal, Optional
 from types import ModuleType
-from pydash.strings import snake_case
 from packaging.utils import canonicalize_name  # PEP 503
 
 from guardrails.logger import logger as guardrails_logger
@@ -105,19 +104,8 @@ class ValidatorPackageService:
         return ValidatorPackageService.reload_module(import_line)
 
     @staticmethod
-    def get_org_and_package_dirs(
-        manifest: Manifest,
-    ) -> List[str]:
-        org_name = manifest.namespace
-        package_name = manifest.package_name
-        org = snake_case(org_name if len(org_name) > 1 else "")
-        package = snake_case(package_name if len(package_name) > 1 else package_name)
-        return list(filter(None, [org, package]))
-
-    @staticmethod
     def add_to_hub_inits(manifest: Manifest, site_packages: str):
         validator_id = manifest.id
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         exports: List[str] = manifest.exports or []
         sorted_exports = sorted(exports, reverse=True)
 
@@ -140,27 +128,6 @@ class ValidatorPackageService:
                     hub_init.write("\n")
                 hub_init.write(import_line)
                 hub_init.close()
-
-        namespace = org_package[0]
-        namespace_init_location = os.path.join(
-            site_packages, "guardrails", "hub", namespace, "__init__.py"
-        )
-        if os.path.isfile(namespace_init_location):
-            with open(namespace_init_location, "a+") as namespace_init:
-                namespace_init.seek(0, 0)
-                content = namespace_init.read()
-                if import_line in content:
-                    namespace_init.close()
-                else:
-                    namespace_init.seek(0, 2)
-                    if len(content) > 0:
-                        namespace_init.write("\n")
-                    namespace_init.write(import_line)
-                    namespace_init.close()
-        else:
-            with open(namespace_init_location, "w") as namespace_init:
-                namespace_init.write(import_line)
-                namespace_init.close()
 
     @staticmethod
     def get_module_path(package_name):
