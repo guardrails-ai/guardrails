@@ -73,8 +73,8 @@ def pip_process(
             (
                 f"Failed to {action} {package}\n"
                 f"Exit code: {exc.returncode}\n"
-                f"stderr: {(exc.stderr or "").strip()}\n"
-                f"stdout: {(exc.stdout or "").strip()}"
+                f"stderr: {(exc.stderr or '').strip()}\n"
+                f"stdout: {(exc.stdout or '').strip()}"
             )
         )
         # Re-raise the error or handle it accordingly
