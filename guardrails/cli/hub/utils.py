@@ -58,7 +58,7 @@ def pip_process(
             except Exception:
                 logger.debug(
                     f"JSON parse exception in decoding output from pip {action}"
-                    f"{package}. Falling back to accumulating the byte stream",
+                    f" {package}. Falling back to accumulating the byte stream",
                 )
             accumulator = {}
             parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
@@ -77,20 +77,13 @@ def pip_process(
                 f"stdout: {(exc.stdout or '').strip()}"
             )
         )
-        # Re-raise the error or handle it accordingly
-        raise
+        sys.exit(1)
     except Exception as e:
         logger.error(
             f"An unexpected exception occurred while trying to {action} {package}!",
             e,
         )
-        raise
-
-
-def get_site_packages_location() -> str:
-    output = pip_process("show", "pip", format=json_format)
-    pip_location = output["Location"]  # type: ignore
-    return pip_location
+        sys.exit(1)
 
 
 def get_org_and_package_dirs(manifest: Manifest) -> List[str]:
