@@ -289,7 +289,7 @@ class ValidatorPackageService:
         guardrails_token = settings.rc.token
 
         pip_flags = [
-            f"--index-url=https://__token__:{guardrails_token}@e4c4zula06.execute-api.us-east-1.amazonaws.com/simple",
+            f"--index-url=https://__token__:{guardrails_token}@pypi.guardrailsai.com/simple",
             "--extra-index-url=https://pypi.org/simple",
         ]
 

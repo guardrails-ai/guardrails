@@ -48,7 +48,7 @@ class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
         manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
@@ -69,14 +69,18 @@ class TestAddToHubInits:
         mock_open.side_effect = [hub_init_file, ns_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
-        mock_hub_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import helper, TestValidator"  # noqa
+        mock_hub_read.return_value = (
+            "from guardrails_ai_grhub_id import helper, TestValidator"  # noqa
+        )
 
         hub_seek_spy = mocker.spy(hub_init_file, "seek")
         hub_write_spy = mocker.spy(hub_init_file, "write")
         hub_close_spy = mocker.spy(hub_init_file, "close")
 
         mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import helper, TestValidator"  # noqa
+        mock_ns_read.return_value = (
+            "from guardrails_ai_grhub_id import helper, TestValidator"  # noqa
+        )
 
         ns_seek_spy = mocker.spy(ns_init_file, "seek")
         ns_write_spy = mocker.spy(ns_init_file, "write")
@@ -115,7 +119,7 @@ class TestAddToHubInits:
     def test_appends_import_line_if_not_present(self, mocker):
         manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
@@ -176,7 +180,7 @@ class TestAddToHubInits:
         hub_write_calls = [
             call("\n"),
             call(
-                "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
+                "from guardrails_ai_grhub_id import TestValidator"  # noqa
             ),
         ]
         hub_write_spy.assert_has_calls(hub_write_calls)
@@ -194,14 +198,14 @@ class TestAddToHubInits:
         assert mock_ns_read.call_count == 1
         assert ns_write_spy.call_count == 1
         ns_write_spy.assert_called_once_with(
-            "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
+            "from guardrails_ai_grhub_id import TestValidator"  # noqa
         )
         assert ns_close_spy.call_count == 1
 
     def test_creates_namespace_init_if_not_exists(self, mocker):
         manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
@@ -222,7 +226,7 @@ class TestAddToHubInits:
         mock_open.side_effect = [hub_init_file, ns_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
-        mock_hub_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
+        mock_hub_read.return_value = "from guardrails_ai_grhub_id import TestValidator"  # noqa
 
         mock_ns_read = mocker.patch.object(ns_init_file, "read")
         mock_ns_read.return_value = ""
@@ -256,7 +260,7 @@ class TestAddToHubInits:
         assert mock_ns_read.call_count == 0
         assert ns_write_spy.call_count == 1
         ns_write_spy.assert_called_once_with(
-            "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
+            "from guardrails_ai_grhub_id import TestValidator"  # noqa
         )
         assert ns_close_spy.call_count == 1
 
@@ -417,7 +421,7 @@ class TestRunPostInstall:
         mock_subprocess_check_output.assert_called_once_with(
             [
                 mock_sys_executable,
-                "./site_packages/guardrails/hub/guardrails_ai/test_validator/validator/post_install.py",  # noqa
+                "./site_packages/guardrails_ai_grhub_id/post_install.py",  # noqa
             ]
         )
 
@@ -512,7 +516,7 @@ class TestValidatorPackageService:
                         "author": {"name": "me", "email": "me@me.me"},
                         "maintainers": [],
                         "repository": {"url": "some-repo"},
-                        "namespace": "guardrails-ai",
+                        "namespace": "",
                         "packageName": "test-validator",
                         "moduleName": "test_validator",
                         "description": "description",
@@ -545,6 +549,11 @@ class TestValidatorPackageService:
         mock_pip_process = mocker.patch(
             "guardrails.hub.validator_package_service.pip_process"
         )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
         inspect_report = {
             "installed": [
                 {
@@ -589,8 +598,11 @@ class TestValidatorPackageService:
         pip_calls = [
             call(
                 "install",
-                "mock-install-url",
-                ["--target=mock/install/directory", "--no-deps"],
+                "guardrails-ai-grhub-id",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
                 quiet=False,
             ),
         ]
