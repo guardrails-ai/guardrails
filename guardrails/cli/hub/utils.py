@@ -3,16 +3,23 @@ import os
 import re
 import subprocess
 import sys
+
+from typing import Literal
+import logging
+
 from email.parser import BytesHeaderParser
-from typing import List, Literal, Union
+from typing import List, Union
 from pydash.strings import snake_case
 
 from guardrails_hub_types import Manifest
-from guardrails.cli.logger import logger
-
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
+logger = logging.getLogger(__name__)
+
+json_format = "json"
+string_format = "string"
 
 
 def pip_process(
@@ -34,47 +41,50 @@ def pip_process(
         env = dict(os.environ)
         if no_color:
             env["NO_COLOR"] = "true"
-        if not quiet:
-            logger.debug(f"decoding output from pip {action} {package}")
-            output = subprocess.check_output(command, env=env)
-        else:
-            output = subprocess.check_output(
-                command, stderr=subprocess.DEVNULL, env=env
-            )
+
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,  # Capture both stdout and stderr
+            text=True,  # Automatically decode to strings
+            check=True,  # Automatically raise error on non-zero exit code
+        )
 
         if format == json_format:
-            parsed = BytesHeaderParser().parsebytes(output)
             try:
                 remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
-                parsed_as_string = re.sub(
-                    remove_color_codes, "", parsed.as_string().strip()
-                )
+                parsed_as_string = re.sub(remove_color_codes, "", result.stdout.strip())
                 return json.loads(parsed_as_string)
             except Exception:
                 logger.debug(
-                    f"JSON parse exception in decoding output from pip \
-{action} {package}. Falling back to accumulating the byte stream",
+                    f"JSON parse exception in decoding output from pip {action}"
+                    "{package}. Falling back to accumulating the byte stream",
                 )
             accumulator = {}
+            parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
             for key, value in parsed.items():
                 accumulator[key] = value
             return accumulator
-        return str(output.decode())
+
+        return result.stdout
+
     except subprocess.CalledProcessError as exc:
         logger.error(
             (
                 f"Failed to {action} {package}\n"
                 f"Exit code: {exc.returncode}\n"
-                f"stdout: {exc.output}"
+                f"stderr: {(exc.stderr or "").strip()}\n"
+                f"stdout: {(exc.stdout or "").strip()}"
             )
         )
-        sys.exit(1)
+        # Re-raise the error or handle it accordingly
+        raise
     except Exception as e:
         logger.error(
-            f"An unexpected exception occurred while try to {action} {package}!",
+            f"An unexpected exception occurred while trying to {action} {package}!",
             e,
         )
-        sys.exit(1)
+        raise
 
 
 def get_site_packages_location() -> str:
