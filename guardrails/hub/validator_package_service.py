@@ -209,21 +209,6 @@ class ValidatorPackageService:
         return (validator_id, validator_version)
 
     @staticmethod
-    def get_install_url(manifest: Manifest) -> str:
-        repo = manifest.repository
-        repo_url = repo.url
-        branch = repo.branch
-
-        git_url = repo_url
-        if not repo_url.startswith("git+"):
-            git_url = f"git+{repo_url}"
-
-        if branch is not None:
-            git_url = f"{git_url}@{branch}"
-
-        return git_url
-
-    @staticmethod
     def run_post_install(
         manifest: Manifest, site_packages: str, logger=guardrails_logger
     ):
@@ -270,11 +255,6 @@ class ValidatorPackageService:
                     script for {manifest.id}!
                     """
                 )
-
-    @staticmethod
-    def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
     @staticmethod
     def get_normalized_package_name(validator_id: str):
