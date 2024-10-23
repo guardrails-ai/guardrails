@@ -9,9 +9,7 @@ import logging
 
 from email.parser import BytesHeaderParser
 from typing import List, Union
-from pydash.strings import snake_case
 
-from guardrails_hub_types import Manifest
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
@@ -84,16 +82,3 @@ def pip_process(
             e,
         )
         sys.exit(1)
-
-
-def get_org_and_package_dirs(manifest: Manifest) -> List[str]:
-    org_name = manifest.namespace
-    package_name = manifest.package_name
-    org = snake_case(org_name if len(org_name) > 1 else "")
-    package = snake_case(package_name if len(package_name) > 1 else package_name)
-    return list(filter(None, [org, package]))
-
-
-def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
-    org_package = get_org_and_package_dirs(manifest)
-    return os.path.join(site_packages, "guardrails", "hub", *org_package)
