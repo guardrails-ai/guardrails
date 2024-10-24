@@ -1,5 +1,6 @@
 import re
 import sys
+import toml
 
 
 def add_package_name_prefix(
@@ -8,19 +9,10 @@ def add_package_name_prefix(
     # Read the existing pyproject.toml file
     with open(pyproject_path, "r") as f:
         content = f.read()
+        parsed_toml = toml.loads(content)
 
-    try:
-        # Check for the presence of the project.name key using a regular expression
-        project_name_match = re.search(
-            r'^name\s*=\s*"(.*?)"', content, flags=re.MULTILINE
-        )
-        if not project_name_match:
-            print(f"Could not find the 'project.name' in {pyproject_path}.")
-            sys.exit(1)
-        existing_name = project_name_match.group(1)
-    except Exception as e:
-        print(f"Failed to parse project name in {pyproject_path}: {e}")
-        sys.exit(1)
+    # get the existing package name
+    existing_name = parsed_toml.get("project", {}).get("name")
 
     # Update the project name to the new PEP 503-compliant name
     # The package name would've been converted to PEP 503-compliant anyways
@@ -65,8 +57,8 @@ packages = ["{validator_folder_name}"]
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(
-            "Usage: python script.py <pyproject_path> "
-            "<pep_503_new_package_name> <validator-folder-name>"
+            "Usage: python script.py <pyproject_path>"
+            " <pep_503_new_package_name> <validator-folder-name>"
         )
         sys.exit(1)
 
