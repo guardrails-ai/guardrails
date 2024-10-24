@@ -1,8 +1,8 @@
 name: Publish Validator PyPi
 description: Re-Usable action to publish a Validator to Guardrails PyPi
 inputs:
-  validator:
-    description: 'Validator Name ex. guardrails/detect_pii'
+  validator_id:
+    description: 'Validator ID ex. guardrails/detect_pii'
     required: true
   guardrails_token:
     description: 'Guardrails Token'
@@ -62,7 +62,7 @@ runs:
       shell: bash
       run: |
         cd validator
-        CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator }})
+        CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator_id }})
         NEW_PEP_PACKAGE_NAME=$(python package_name_normalization.py $CONCATANATED_NAME)
         VALIDATOR_FOLDER_NAME=$(echo $NEW_PEP_PACKAGE_NAME | tr - _)
         mv ./validator ./$VALIDATOR_FOLDER_NAME
