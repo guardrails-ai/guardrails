@@ -1,4 +1,4 @@
-name: Publish Validator PyPi
+name: Publish to Guardrails Hub
 description: Re-Usable action to publish a Validator to Guardrails PyPi
 inputs:
   validator_id:
