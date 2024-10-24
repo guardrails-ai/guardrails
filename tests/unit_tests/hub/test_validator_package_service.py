@@ -64,9 +64,8 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
         mock_hub_read.return_value = (
@@ -77,29 +76,14 @@ class TestAddToHubInits:
         hub_write_spy = mocker.spy(hub_init_file, "write")
         hub_close_spy = mocker.spy(hub_init_file, "close")
 
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = (
-            "from guardrails_ai_grhub_id import helper, TestValidator"  # noqa
-        )
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
-
-        mock_is_file = mocker.patch(
-            "guardrails.hub.validator_package_service.os.path.isfile"
-        )
-        mock_is_file.return_value = True
-
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
         manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "a+"),
         ]
         mock_open.assert_has_calls(open_calls)
 
@@ -107,14 +91,6 @@ class TestAddToHubInits:
         assert mock_hub_read.call_count == 1
         assert hub_write_spy.call_count == 0
         assert hub_close_spy.call_count == 1
-
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-        assert ns_seek_spy.call_count == 1
-        assert mock_ns_read.call_count == 1
-        assert ns_write_spy.call_count == 0
-        assert ns_close_spy.call_count == 1
 
     def test_appends_import_line_if_not_present(self, mocker):
         manifest = Manifest.from_dict(
@@ -135,9 +111,8 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
         mock_hub_read.return_value = "from guardrails.hub.other_org.other_validator.validator import OtherValidator"  # noqa
@@ -146,27 +121,14 @@ class TestAddToHubInits:
         hub_write_spy = mocker.spy(hub_init_file, "write")
         hub_close_spy = mocker.spy(hub_init_file, "close")
 
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = ""
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
-
-        mock_is_file = mocker.patch(
-            "guardrails.hub.validator_package_service.os.path.isfile"
-        )
-        mock_is_file.return_value = True
-
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
         manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "a+"),
         ]
         mock_open.assert_has_calls(open_calls)
 
@@ -187,21 +149,6 @@ class TestAddToHubInits:
 
         assert hub_close_spy.call_count == 1
 
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-
-        assert ns_seek_spy.call_count == 2
-        ns_seek_calls = [call(0, 0), call(0, 2)]
-        ns_seek_spy.assert_has_calls(ns_seek_calls)
-
-        assert mock_ns_read.call_count == 1
-        assert ns_write_spy.call_count == 1
-        ns_write_spy.assert_called_once_with(
-            "from guardrails_ai_grhub_id import TestValidator"  # noqa
-        )
-        assert ns_close_spy.call_count == 1
-
     def test_creates_namespace_init_if_not_exists(self, mocker):
         manifest = Manifest.from_dict(
             {
@@ -221,19 +168,11 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
         mock_hub_read.return_value = "from guardrails_ai_grhub_id import TestValidator"  # noqa
-
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = ""
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
 
         mock_is_file = mocker.patch(
             "guardrails.hub.validator_package_service.os.path.isfile"
@@ -245,24 +184,11 @@ class TestAddToHubInits:
         manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "w"),
         ]
         mock_open.assert_has_calls(open_calls)
-
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-
-        assert ns_seek_spy.call_count == 0
-        assert mock_ns_read.call_count == 0
-        assert ns_write_spy.call_count == 1
-        ns_write_spy.assert_called_once_with(
-            "from guardrails_ai_grhub_id import TestValidator"  # noqa
-        )
-        assert ns_close_spy.call_count == 1
 
 
 class TestReloadModule:
