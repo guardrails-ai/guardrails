@@ -14,15 +14,10 @@ from guardrails.classes import ValidationOutcome
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.llm_providers import (
-    AsyncLiteLLMCallable,
     AsyncPromptCallableBase,
-    LiteLLMCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
@@ -42,14 +37,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         prompt_params = prompt_params or {}
 
         (
-            instructions,
-            prompt,
-            msg_history,
+            messages,
             output_schema,
         ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
+            self.messages,
             self.output_schema,
         )
 
@@ -58,9 +49,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
             output_schema,
             call_log,
             api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             output=self.output,
         )
@@ -78,9 +67,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         call_log: Call,
         *,
         api: Optional[AsyncPromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> AsyncIterator[ValidationOutcome]:
@@ -88,9 +75,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -104,27 +89,19 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
         if output is not None:
-            instructions = None
-            prompt = None
-            msg_history = None
+            messages = None
         else:
-            instructions, prompt, msg_history = await self.async_prepare(
+            messages = await self.async_prepare(
                 call_log,
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                messages=messages,
                 prompt_params=prompt_params,
                 api=api,
                 attempt_number=index,
             )
 
-        iteration.inputs.prompt = prompt
-        iteration.inputs.instructions = instructions
-        iteration.inputs.msg_history = msg_history
+        iteration.inputs.messages = messages
 
-        llm_response = await self.async_call(
-            instructions, prompt, msg_history, api, output
-        )
+        llm_response = await self.async_call(messages, api, output)
         iteration.outputs.llm_response_info = llm_response
         stream_output = llm_response.async_stream_output
         if not stream_output:
@@ -297,33 +274,25 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
-        if isinstance(api, OpenAICallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].text
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, OpenAIChatCallable):
+
+        try:
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].delta.content
             if not finished and content:
                 chunk_text = content
-        elif isinstance(api, LiteLLMCallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, AsyncLiteLLMCallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
-            if not finished and content:
-                chunk_text = content
-        else:
+        except Exception:
             try:
-                chunk_text = chunk
-            except Exception as e:
-                raise ValueError(
-                    f"Error getting chunk from stream: {e}. "
-                    "Non-OpenAI API callables expected to return "
-                    "a generator of strings."
-                ) from e
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].text
+                if not finished and content:
+                    chunk_text = content
+            except Exception:
+                try:
+                    chunk_text = chunk
+                except Exception as e:
+                    raise ValueError(
+                        f"Error getting chunk from stream: {e}. "
+                        "Non-OpenAI API callables expected to return "
+                        "a generator of strings."
+                    ) from e
         return chunk_text

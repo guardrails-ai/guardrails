@@ -625,7 +625,7 @@ class TestMlFlowInstrumentor:
             validator_span=mock_span,  # type: ignore
             validator_name="mock-validator",
             obj_id=id(mock_validator),
-            on_fail_descriptor="noop",
+            on_fail_descriptor="exception",
             result=resp,
             init_kwargs={},
             validation_session_id="unknown",

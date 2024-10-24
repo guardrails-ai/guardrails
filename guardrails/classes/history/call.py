@@ -15,9 +15,8 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.messages import Messages
+from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import (
     ReAsk,
@@ -73,65 +72,41 @@ class Call(ICall, ArbitraryModel):
         self.exception = exception
 
     @property
-    def prompt(self) -> Optional[str]:
-        """The prompt as provided by the user when initializing or calling the
-        Guard."""
-        return self.inputs.prompt
-
-    @property
     def prompt_params(self) -> Optional[Dict]:
         """The prompt parameters as provided by the user when initializing or
         calling the Guard."""
         return self.inputs.prompt_params
 
     @property
-    def compiled_prompt(self) -> Optional[str]:
-        """The initial compiled prompt that was passed to the LLM on the first
-        call."""
-        if self.iterations.empty():
-            return None
-        initial_inputs = self.iterations.first.inputs  # type: ignore
-        prompt: Prompt = initial_inputs.prompt  # type: ignore
-        prompt_params = initial_inputs.prompt_params or {}
-        if initial_inputs.prompt is not None:
-            return prompt.format(**prompt_params).source
+    def messages(self) -> Optional[Union[Messages, list[dict[str, str]]]]:
+        """The messages as provided by the user when initializing or calling
+        the Guard."""
+        return self.inputs.messages
 
     @property
-    def reask_prompts(self) -> Stack[Optional[str]]:
-        """The compiled prompts used during reasks.
-
-        Does not include the initial prompt.
-        """
-        if self.iterations.length > 0:
-            reasks = self.iterations.copy()
-            initial_prompt = reasks.first
-            reasks.remove(initial_prompt)  # type: ignore
-            return Stack(
-                *[
-                    r.inputs.prompt.source if r.inputs.prompt is not None else None
-                    for r in reasks
-                ]
-            )
-
-        return Stack()
-
-    @property
-    def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when initializing or
-        calling the Guard."""
-        return self.inputs.instructions
-
-    @property
-    def compiled_instructions(self) -> Optional[str]:
-        """The initial compiled instructions that were passed to the LLM on the
+    def compiled_messages(self) -> Optional[list[dict[str, str]]]:
+        """The initial compiled messages that were passed to the LLM on the
         first call."""
         if self.iterations.empty():
             return None
         initial_inputs = self.iterations.first.inputs  # type: ignore
-        instructions: Instructions = initial_inputs.instructions  # type: ignore
+        messages = initial_inputs.messages
         prompt_params = initial_inputs.prompt_params or {}
-        if instructions is not None:
-            return instructions.format(**prompt_params).source
+        compiled_messages = []
+        if messages is None:
+            return None
+        for message in messages:
+            content = message["content"].format(**prompt_params)
+            if isinstance(content, (Prompt, Instructions)):
+                content = content._source
+            compiled_messages.append(
+                {
+                    "role": message["role"],
+                    "content": content,
+                }
+            )
+
+        return compiled_messages
 
     @property
     def reask_messages(self) -> Stack[Messages]:
@@ -143,32 +118,28 @@ class Call(ICall, ArbitraryModel):
             reasks = self.iterations.copy()
             initial_messages = reasks.first
             reasks.remove(initial_messages)  # type: ignore
-            return Stack(
-                *[
-                    r.inputs.messages if r.inputs.messages is not None else None
-                    for r in reasks
-                ]
-            )
+            initial_inputs = self.iterations.first.inputs  # type: ignore
+            prompt_params = initial_inputs.prompt_params or {}
+            compiled_reasks = []
+            for reask in reasks:
+                messages = reask.inputs.messages
 
-        return Stack()
-
-    @property
-    def reask_instructions(self) -> Stack[str]:
-        """The compiled instructions used during reasks.
-
-        Does not include the initial instructions.
-        """
-        if self.iterations.length > 0:
-            reasks = self.iterations.copy()
-            reasks.remove(reasks.first)  # type: ignore
-            return Stack(
-                *[
-                    r.inputs.instructions.source
-                    if r.inputs.instructions is not None
-                    else None
-                    for r in reasks
-                ]
-            )
+                if messages is None:
+                    compiled_reasks.append(None)
+                else:
+                    compiled_messages = []
+                    for message in messages:
+                        content = message["content"].format(**prompt_params)
+                        if isinstance(content, (Prompt, Instructions)):
+                            content = content._source
+                        compiled_messages.append(
+                            {
+                                "role": message["role"],
+                                "content": content,
+                            }
+                        )
+                    compiled_reasks.append(compiled_messages)
+            return Stack(*compiled_reasks)
 
         return Stack()
 

@@ -1,20 +1,19 @@
 from guardrails.llm_providers import (
     ArbitraryCallable,
     AsyncArbitraryCallable,
-    AsyncOpenAICallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    AsyncLiteLLMCallable,
+    LiteLLMCallable,
 )
 from guardrails.classes.llm.llm_response import LLMResponse
 
 from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
 
 
-class MockOpenAICallable(OpenAICallable):
-    # NOTE: this class normally overrides `llm_providers.OpenAICallable`,
+class MockLiteLLMCallableOther(LiteLLMCallable):
+    # NOTE: this class normally overrides `llm_providers.LiteLLMCallable`,
     # which compiles instructions and prompt into a single prompt;
     # here the instructions are passed into kwargs and ignored
-    def _invoke_llm(self, prompt, *args, **kwargs):
+    def _invoke_llm(self, messages, *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
 
         _rail_to_compiled_prompt = {  # noqa
@@ -44,30 +43,30 @@ class MockOpenAICallable(OpenAICallable):
         }
 
         try:
-            output = mock_llm_responses[prompt]
+            output = mock_llm_responses[messages[0]["content"]]
             return LLMResponse(
                 output=output,
                 prompt_token_count=123,
                 response_token_count=1234,
             )
         except KeyError:
-            print("Unrecognized prompt!")
-            print(prompt)
-            raise ValueError("Compiled prompt not found")
+            print("Unrecognized messages!")
+            print(messages)
+            raise ValueError("Compiled messages not found")
 
 
-class MockAsyncOpenAICallable(AsyncOpenAICallable):
+class MockAsyncLiteLLMCallable(AsyncLiteLLMCallable):
     async def invoke_llm(self, prompt, *args, **kwargs):
-        sync_mock = MockOpenAICallable()
+        sync_mock = MockLiteLLMCallable()
         return sync_mock._invoke_llm(prompt, *args, **kwargs)
 
 
-class MockOpenAIChatCallable(OpenAIChatCallable):
+class MockLiteLLMCallable(LiteLLMCallable):
     def _invoke_llm(
         self,
         prompt=None,
         instructions=None,
-        msg_history=None,
+        messages=None,
         base_model=None,
         *args,
         **kwargs,
@@ -129,23 +128,18 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
         }
 
         try:
-            if prompt and instructions and not msg_history:
-                out_text = mock_llm_responses[(prompt, instructions)]
-            elif msg_history and not prompt and not instructions:
-                if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
-                    out_text = entity_extraction.LLM_OUTPUT
-                elif (
-                    msg_history == string.MOVIE_MSG_HISTORY
-                    and base_model == pydantic.WITH_MSG_HISTORY
-                ):
-                    out_text = pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-                elif msg_history == string.MOVIE_MSG_HISTORY:
-                    out_text = string.MSG_LLM_OUTPUT_INCORRECT
-                else:
-                    raise ValueError("msg_history not found")
+            out_text = None
+            if messages:
+                if len(messages) == 2:
+                    key = (messages[0]["content"], messages[1]["content"])
+                elif len(messages) == 1:
+                    key = (messages[0]["content"], None)
+
+                if hasattr(mock_llm_responses[key], "read"):
+                    out_text = mock_llm_responses[key]
             else:
                 raise ValueError(
-                    "specify either prompt and instructions " "or msg_history"
+                    "specify either prompt and instructions " "or messages"
                 )
             return LLMResponse(
                 output=out_text,
@@ -156,8 +150,9 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
             print("Unrecognized prompt!")
             print("\n prompt: \n", prompt)
             print("\n instructions: \n", instructions)
-            print("\n msg_history: \n", msg_history)
-            raise ValueError("Compiled prompt not found")
+            print("\n messages: \n", messages)
+            print("\n base_model: \n", base_model)
+            raise ValueError("Compiled prompt not found in mock llm response")
 
 
 class MockArbitraryCallable(ArbitraryCallable):

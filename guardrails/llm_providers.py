@@ -9,15 +9,12 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Type,
     Union,
     cast,
 )
 
-import warnings
-
+from guardrails.prompt import Prompt, Instructions
 from guardrails_api_client.models import LLMResource
-from pydantic import BaseModel
 
 from guardrails.errors import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -26,18 +23,15 @@ from guardrails.classes.llm.prompt_callable import (
     PromptCallableBase,
     PromptCallableException,
 )
-from guardrails.utils.openai_utils import (
-    AsyncOpenAIClient,
-    OpenAIClient,
-    is_static_openai_acreate_func,
-    is_static_openai_chat_acreate_func,
-    is_static_openai_chat_create_func,
-    is_static_openai_create_func,
-)
-from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
+
+from guardrails.types.inputs import MessageHistory
+
+import warnings
+
 from guardrails.utils.safe_get import safe_get
 from guardrails.telemetry import trace_llm_call, trace_operation
 
+from guardrails.utils.prompt_utils import messages_to_prompt_string
 
 ###
 # Synchronous wrappers
@@ -54,14 +48,14 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
 def chat_prompt(
     prompt: Optional[str],
     instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
+    messages: Optional[List[Dict]] = None,
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
-    if msg_history:
-        return msg_history
+    if messages:
+        return messages
     if prompt is None:
         raise PromptCallableException(
-            "You must pass in either `text` or `msg_history` to `guard.__call__`."
+            "You must pass in either `text` or `messages` to `guard.__call__`."
         )
 
     if not instructions:
@@ -76,142 +70,20 @@ def chat_prompt(
 def litellm_messages(
     prompt: Optional[str],
     instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
+    messages: Optional[List[Dict]] = None,
 ) -> List[Dict[str, str]]:
     """Prepare messages for LiteLLM."""
-    if msg_history:
-        return msg_history
+    if messages:
+        return messages
     if prompt is None:
         raise PromptCallableException(
-            "Either `text` or `msg_history` required for `guard.__call__`."
+            "Either `text` or `messages` required for `guard.__call__`."
         )
 
     if instructions:
         prompt = "\n\n".join([instructions, prompt])
 
     return [{"role": "user", "content": prompt}]
-
-
-class OpenAIModel(PromptCallableBase):
-    pass
-
-
-class OpenAICallable(OpenAIModel):
-    def _invoke_llm(
-        self,
-        text: str,
-        engine: str = "text-davinci-003",
-        instructions: Optional[str] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='gpt-4.o', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        if "model" in kwargs:
-            engine = kwargs.pop("model")
-
-        client = OpenAIClient(api_key=api_key)
-        trace_llm_call(
-            input_messages=[
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": text},
-            ],
-            model_name=engine,
-        )
-        return client.create_completion(
-            engine=engine,
-            prompt=nonchat_prompt(prompt=text, instructions=instructions),
-            *args,
-            **kwargs,
-        )
-
-
-class OpenAIChatCallable(OpenAIModel):
-    supports_base_model = True
-
-    def _invoke_llm(
-        self,
-        text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
-        function_call: Optional[Any] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for OpenAI chat engines.
-
-        Use Guardrails with OpenAI chat engines by doing
-        ```
-        raw_llm_response, validated_response, *rest = guard(
-            openai.chat.completions.create,
-            prompt_params={...},
-            text=...,
-            instructions=...,
-            msg_history=...,
-            temperature=...,
-            ...
-        )
-        ```
-
-        If `base_model` is passed, the chat engine will be used as a function
-        on the base model.
-        """
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='gpt-4.o', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        if msg_history is None and text is None:
-            raise PromptCallableException(
-                "You must pass in either `text` or `msg_history` to `guard.__call__`."
-            )
-
-        # TODO: Update this to tools
-        # Configure function calling if applicable (only for non-streaming)
-        fn_kwargs = {}
-        if (
-            base_model
-            and not kwargs.get("stream", False)
-            and not kwargs.get("tools", False)
-        ):
-            function_params = convert_pydantic_model_to_openai_fn(base_model)
-            if function_call is None and function_params:
-                function_call = {"name": function_params["name"]}
-                fn_kwargs = {
-                    "functions": [function_params],
-                    "function_call": function_call,
-                }
-
-        # Call OpenAI
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        client = OpenAIClient(api_key=api_key)
-        return client.create_chat_completion(
-            model=model,
-            messages=chat_prompt(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            ),
-            *args,
-            **fn_kwargs,
-            **kwargs,
-        )
 
 
 class ManifestCallable(PromptCallableBase):
@@ -271,177 +143,12 @@ class ManifestCallable(PromptCallableBase):
         )
 
 
-class CohereCallable(PromptCallableBase):
-    def _invoke_llm(
-        self, prompt: str, client_callable: Any, model: str, *args, **kwargs
-    ) -> LLMResponse:
-        """To use cohere for guardrails, do ``` client =
-        cohere.Client(api_key=...)
-
-        raw_llm_response, validated_response, *rest = guard(
-            client.generate,
-            prompt_params={...},
-            model="command-nightly",
-            ...
-        )
-        ```
-        """  # noqa
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='command-r', messages=[...], ...)",
-            DeprecationWarning,
-        )
-
-        trace_input_messages = chat_prompt(prompt, kwargs.get("instructions"))
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        def is_base_cohere_chat(func):
-            try:
-                return (
-                    func.__closure__[1].cell_contents.__func__.__qualname__
-                    == "BaseCohere.chat"
-                )
-            except (AttributeError, IndexError):
-                return False
-
-        # TODO: When cohere totally gets rid of `generate`,
-        #       remove this cond and the final return
-        if is_base_cohere_chat(client_callable):
-            trace_operation(
-                input_mime_type="application/json",
-                input_value={**kwargs, "message": prompt, "args": args, "model": model},
-            )
-
-            trace_llm_call(
-                input_messages=trace_input_messages,
-                invocation_parameters={**kwargs, "message": prompt, "model": model},
-            )
-            cohere_response = client_callable(
-                message=prompt, model=model, *args, **kwargs
-            )
-            trace_operation(
-                output_mime_type="application/json", output_value=cohere_response
-            )
-            trace_llm_call(
-                output_messages=[{"role": "assistant", "content": cohere_response.text}]
-            )
-            return LLMResponse(
-                output=cohere_response.text,
-            )
-
-        trace_operation(
-            input_mime_type="application/json",
-            input_value={**kwargs, "prompt": prompt, "args": args, "model": model},
-        )
-
-        trace_llm_call(
-            input_messages=trace_input_messages,
-            invocation_parameters={**kwargs, "prompt": prompt, "model": model},
-        )
-        cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
-        trace_operation(
-            output_mime_type="application/json", output_value=cohere_response
-        )
-        trace_llm_call(
-            output_messages=[{"role": "assistant", "content": cohere_response[0].text}]
-        )
-        return LLMResponse(
-            output=cohere_response[0].text,
-        )
-
-
-class AnthropicCallable(PromptCallableBase):
-    def _invoke_llm(
-        self,
-        prompt: str,
-        client_callable: Any,
-        model: str = "claude-instant-1",
-        max_tokens_to_sample: int = 100,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for Anthropic Completions.
-
-        To use Anthropic for guardrails, do
-        ```
-        client = anthropic.Anthropic(api_key=...)
-
-        raw_llm_response, validated_response = guard(
-            client,
-            model="claude-2",
-            max_tokens_to_sample=200,
-            prompt_params={...},
-            ...
-        ```
-        """
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='claude-3-opus-20240229', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        try:
-            import anthropic
-        except ImportError:
-            raise PromptCallableException(
-                "The `anthropic` package is not installed. "
-                "Install with `pip install anthropic`"
-            )
-
-        trace_input_messages = chat_prompt(prompt, kwargs.get("instructions"))
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
-
-        trace_operation(
-            input_mime_type="application/json",
-            input_value={
-                **kwargs,
-                "model": model,
-                "prompt": anthropic_prompt,
-                "max_tokens_to_sample": max_tokens_to_sample,
-                "args": args,
-            },
-        )
-
-        trace_llm_call(
-            input_messages=trace_input_messages,
-            invocation_parameters={
-                **kwargs,
-                "model": model,
-                "prompt": anthropic_prompt,
-                "max_tokens_to_sample": max_tokens_to_sample,
-            },
-        )
-
-        anthropic_response = client_callable(
-            model=model,
-            prompt=anthropic_prompt,
-            max_tokens_to_sample=max_tokens_to_sample,
-            *args,
-            **kwargs,
-        )
-        trace_operation(
-            output_mime_type="application/json", output_value=anthropic_response
-        )
-        trace_llm_call(
-            output_messages=[
-                {"role": "assistant", "content": anthropic_response.completion}
-            ]
-        )
-        return LLMResponse(output=anthropic_response.completion)
-
-
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
         text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -467,10 +174,8 @@ class LiteLLMCallable(PromptCallableBase):
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             ) from e
-        if text is not None or instructions is not None or msg_history is not None:
-            messages = litellm_messages(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            )
+        if messages is not None:
+            messages = litellm_messages(prompt=text, messages=messages)
             kwargs["messages"] = messages
 
         trace_operation(
@@ -554,7 +259,13 @@ class LiteLLMCallable(PromptCallableBase):
 
 class HuggingFaceModelCallable(PromptCallableBase):
     def _invoke_llm(
-        self, prompt: str, model_generate: Any, *args, **kwargs
+        self,
+        model_generate: Any,
+        *args,
+        messages: Union[
+            list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory
+        ],
+        **kwargs,
     ) -> LLMResponse:
         try:
             import transformers  # noqa: F401 # type: ignore
@@ -570,7 +281,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
                 "The `torch` package is not installed. "
                 "Install with `pip install torch`"
             )
-
+        prompt = messages_to_prompt_string(messages)
         tokenizer = kwargs.pop("tokenizer")
         if not tokenizer:
             raise UserFacingException(
@@ -622,7 +333,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
         )
 
         trace_llm_call(
-            input_messages=chat_prompt(prompt, kwargs.get("instructions")),
+            input_messages=messages,
             invocation_parameters={
                 **model_inputs,
                 **kwargs,
@@ -653,7 +364,15 @@ class HuggingFaceModelCallable(PromptCallableBase):
 
 
 class HuggingFacePipelineCallable(PromptCallableBase):
-    def _invoke_llm(self, prompt: str, pipeline: Any, *args, **kwargs) -> LLMResponse:
+    def _invoke_llm(
+        self,
+        pipeline: Any,
+        *args,
+        messages: Union[
+            list[dict[str, Union[str, Prompt, Instructions]]], MessageHistory
+        ],
+        **kwargs,
+    ) -> LLMResponse:
         try:
             import transformers  # noqa: F401 # type: ignore
         except ImportError:
@@ -674,7 +393,7 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         temperature = kwargs.pop("temperature", None)
         if temperature == 0:
             temperature = None
-
+        prompt = messages_to_prompt_string(messages)
         trace_operation(
             input_mime_type="application/json",
             input_value={
@@ -718,22 +437,13 @@ class HuggingFacePipelineCallable(PromptCallableBase):
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Optional[Callable] = None, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
-        if not llm_api_args.args:
-            raise ValueError(
-                "Custom LLM callables must accept"
-                " at least one positional argument for prompt!"
-            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
-        if (
-            not llm_api_args.kwonlyargs
-            or "instructions" not in llm_api_args.kwonlyargs
-            or "msg_history" not in llm_api_args.kwonlyargs
-        ):
+        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
             warnings.warn(
-                "We recommend including 'instructions' and 'msg_history'"
+                "We recommend including 'messages'"
                 " as keyword-only arguments for custom LLM callables."
-                " Doing so ensures these arguments are not uninentionally"
+                " Doing so ensures these arguments are not unintentionally"
                 " passed through to other calls via **kwargs.",
                 UserWarning,
             )
@@ -810,38 +520,11 @@ def get_llm_ask(
     except ImportError:
         pass
 
-    if is_static_openai_create_func(llm_api):
-        return OpenAICallable(*args, **kwargs)
-    if is_static_openai_chat_create_func(llm_api):
-        return OpenAIChatCallable(*args, **kwargs)
-
     try:
         import manifest  # noqa: F401 # type: ignore
 
         if isinstance(llm_api, manifest.Manifest):
             return ManifestCallable(*args, client=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import cohere  # noqa: F401 # type: ignore
-
-        if (
-            isinstance(getattr(llm_api, "__self__", None), cohere.Client)
-            and getattr(llm_api, "__name__", None) == "generate"
-        ) or getattr(llm_api, "__module__", None) == "cohere.client":
-            return CohereCallable(*args, client_callable=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import anthropic.resources  # noqa: F401 # type: ignore
-
-        if isinstance(
-            getattr(llm_api, "__self__", None),
-            anthropic.resources.completions.Completions,
-        ):
-            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
 
@@ -918,125 +601,12 @@ class AsyncPromptCallableBase(PromptCallableBase):
         return result
 
 
-class AsyncOpenAIModel(AsyncPromptCallableBase):
-    pass
-
-
-class AsyncOpenAICallable(AsyncOpenAIModel):
-    async def invoke_llm(
-        self,
-        text: str,
-        engine: str = "text-davinci-003",
-        instructions: Optional[str] = None,
-        *args,
-        **kwargs,
-    ):
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='gpt-4.o', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        if "model" in kwargs:
-            engine = kwargs.pop("model")
-
-        aclient = AsyncOpenAIClient(api_key=api_key)
-        return await aclient.create_completion(
-            engine=engine,
-            prompt=nonchat_prompt(prompt=text, instructions=instructions),
-            *args,
-            **kwargs,
-        )
-
-
-class AsyncOpenAIChatCallable(AsyncOpenAIModel):
-    supports_base_model = True
-
-    async def invoke_llm(
-        self,
-        text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
-        function_call: Optional[Any] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for OpenAI chat engines.
-
-        Use Guardrails with OpenAI chat engines by doing
-        ```
-        raw_llm_response, validated_response, *rest = guard(
-            openai.chat.completions.create,
-            prompt_params={...},
-            text=...,
-            instructions=...,
-            msg_history=...,
-            temperature=...,
-            ...
-        )
-        ```
-
-        If `base_model` is passed, the chat engine will be used as a function
-        on the base model.
-        """
-        warnings.warn(
-            "This callable  is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='gpt-4.o', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        if msg_history is None and text is None:
-            raise PromptCallableException(
-                "You must pass in either `text` or `msg_history` to `guard.__call__`."
-            )
-
-        # TODO: Update this to tools
-        # Configure function calling if applicable
-        fn_kwargs = {}
-        kwargs_tools = kwargs.get("tools", False)
-        if base_model:
-            function_params = convert_pydantic_model_to_openai_fn(base_model)
-            if function_call is None and function_params and not kwargs_tools:
-                function_call = {"name": function_params["name"]}
-                fn_kwargs = {
-                    "functions": [function_params],
-                    "function_call": function_call,
-                }
-
-        # Call OpenAI
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        aclient = AsyncOpenAIClient(api_key=api_key)
-        # FIXME: OpenAI async streaming seems to be broken
-        return await aclient.create_chat_completion(
-            model=model,
-            messages=chat_prompt(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            ),
-            *args,
-            **fn_kwargs,
-            **kwargs,
-        )
-
-
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
         text: Optional[str] = None,
         instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ):
@@ -1063,11 +633,11 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-        if text is not None or instructions is not None or msg_history is not None:
+        if text is not None or instructions is not None or messages is not None:
             messages = litellm_messages(
                 prompt=text,
                 instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
             )
             kwargs["messages"] = messages
 
@@ -1215,22 +785,13 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
 class AsyncArbitraryCallable(AsyncPromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         llm_api_args = inspect.getfullargspec(llm_api)
-        if not llm_api_args.args:
-            raise ValueError(
-                "Custom LLM callables must accept"
-                " at least one positional argument for prompt!"
-            )
         if not llm_api_args.varkw:
             raise ValueError("Custom LLM callables must accept **kwargs!")
-        if (
-            not llm_api_args.kwonlyargs
-            or "instructions" not in llm_api_args.kwonlyargs
-            or "msg_history" not in llm_api_args.kwonlyargs
-        ):
+        if not llm_api_args.kwonlyargs or "messages" not in llm_api_args.kwonlyargs:
             warnings.warn(
-                "We recommend including 'instructions' and 'msg_history'"
+                "We recommend including 'messages'"
                 " as keyword-only arguments for custom LLM callables."
-                " Doing so ensures these arguments are not uninentionally"
+                " Doing so ensures these arguments are not unintentionally"
                 " passed through to other calls via **kwargs.",
                 UserWarning,
             )
@@ -1295,15 +856,6 @@ def get_async_llm_ask(
     except ImportError:
         pass
 
-    # these only work with openai v0 (None otherwise)
-    # We no longer support OpenAI v0
-    # We should drop these checks or update the logic to support
-    #   OpenAI v1 clients instead of just static methods
-    if is_static_openai_acreate_func(llm_api):
-        return AsyncOpenAICallable(*args, **kwargs)
-    if is_static_openai_chat_acreate_func(llm_api):
-        return AsyncOpenAIChatCallable(*args, **kwargs)
-
     try:
         import manifest  # noqa: F401 # type: ignore
 
@@ -1327,12 +879,7 @@ def model_is_supported_server_side(
     model = get_llm_ask(llm_api, *args, **kwargs)
     if asyncio.iscoroutinefunction(llm_api):
         model = get_async_llm_ask(llm_api, *args, **kwargs)
-    return (
-        issubclass(type(model), OpenAIModel)
-        or issubclass(type(model), AsyncOpenAIModel)
-        or isinstance(model, LiteLLMCallable)
-        or isinstance(model, AsyncLiteLLMCallable)
-    )
+    return isinstance(model, LiteLLMCallable) or isinstance(model, AsyncLiteLLMCallable)
 
 
 # CONTINUOUS FIXME: Update with newly supported LLMs
@@ -1341,15 +888,7 @@ def get_llm_api_enum(
 ) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
-    if is_static_openai_create_func(llm_api):
-        return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
-    elif is_static_openai_chat_create_func(llm_api):
-        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
-    elif is_static_openai_acreate_func(llm_api):  # This is always False
-        return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
-    elif is_static_openai_chat_acreate_func(llm_api):  # This is always False
-        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
-    elif isinstance(model, LiteLLMCallable):
+    if isinstance(model, LiteLLMCallable):
         return LLMResource.LITELLM_DOT_COMPLETION
     elif isinstance(model, AsyncLiteLLMCallable):
         return LLMResource.LITELLM_DOT_ACOMPLETION

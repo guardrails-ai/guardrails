@@ -4,11 +4,6 @@ from tests.unit_tests.mocks.mock_file import MockFile
 
 class TestRC:
     def test_load(self, mocker):
-        # TODO: Re-enable this once we move nltk.download calls to individual validator repos.  # noqa
-        # Right now, it fires during our import chain, causing this to blow up
-        mocker.patch("nltk.data.find")
-        mocker.patch("nltk.download")
-
         expanduser_mock = mocker.patch("guardrails.classes.rc.expanduser")
         expanduser_mock.return_value = "/Home"
 

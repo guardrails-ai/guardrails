@@ -1,13 +1,13 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
 
 from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.llm.prompt_callable import PromptCallableBase
-from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.messages import Messages
+from guardrails.prompt.instructions import Instructions
 
 
 class Inputs(IInputs, ArbitraryModel):
@@ -18,10 +18,7 @@ class Inputs(IInputs, ArbitraryModel):
             for calling the LLM.
         llm_output (Optional[str]): The string output from an
             external LLM call provided by the user via Guard.parse.
-        instructions (Optional[Instructions]): The constructed
-            Instructions class for chat model calls.
-        prompt (Optional[Prompt]): The constructed Prompt class.
-        msg_history (Optional[List[Dict]]): The message history
+        messages (Optional[List[Dict]]): The message history
             provided by the user for chat model calls.
         prompt_params (Optional[Dict]): The parameters provided
             by the user that will be formatted into the final LLM prompt.
@@ -42,18 +39,9 @@ class Inputs(IInputs, ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    instructions: Optional[Instructions] = Field(
-        description="The constructed Instructions class for chat model calls.",
-        default=None,
-    )
-    prompt: Optional[Prompt] = Field(
-        description="The constructed Prompt class.", default=None
-    )
-    msg_history: Optional[List[Dict]] = Field(
-        description="The message history provided by the user for chat model calls.",
-        default=None,
-    )
-    messages: Optional[List[Messages]] = Field(
+    messages: Optional[
+        Union[List[Dict[str, Union[str, Prompt, Instructions]]], Messages]
+    ] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )
@@ -81,32 +69,22 @@ class Inputs(IInputs, ArbitraryModel):
     )
 
     def to_interface(self) -> IInputs:
-        serialized_msg_history = None
-        if self.msg_history:
-            serialized_msg_history = []
-            for msg in self.msg_history:
+        serialized_messages = None
+        if self.messages:
+            serialized_messages = []
+            for msg in self.messages:
                 ser_msg = {**msg}
                 content = ser_msg.get("content")
                 if content:
                     ser_msg["content"] = (
                         content.source if isinstance(content, Prompt) else content
                     )
-                serialized_msg_history.append(ser_msg)
-
-        instructions = (
-            self.instructions.source
-            if isinstance(self.instructions, Instructions)
-            else self.instructions
-        )
-
-        prompt = self.prompt.source if isinstance(self.prompt, Prompt) else self.prompt
+                serialized_messages.append(ser_msg)
 
         return IInputs(
             llm_api=str(self.llm_api) if self.llm_api else None,  # type: ignore - pyright doesn't understand aliases
             llm_output=self.llm_output,  # type: ignore - pyright doesn't understand aliases
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=serialized_msg_history,  # type: ignore - pyright doesn't understand aliases
+            messages=serialized_messages,  # type: ignore - pyright doesn't understand aliases
             prompt_params=self.prompt_params,  # type: ignore - pyright doesn't understand aliases
             num_reasks=self.num_reasks,  # type: ignore - pyright doesn't understand aliases
             metadata=self.metadata,
@@ -119,30 +97,23 @@ class Inputs(IInputs, ArbitraryModel):
 
     @classmethod
     def from_interface(cls, i_inputs: IInputs) -> "Inputs":
-        deserialized_msg_history = None
-        if i_inputs.msg_history:
-            deserialized_msg_history = []
-            for msg in i_inputs.msg_history:
+        deserialized_messages = None
+        if hasattr(i_inputs, "messages") and i_inputs.messages:  # type: ignore
+            deserialized_messages = []
+            for msg in i_inputs.messages:  # type: ignore
                 ser_msg = {**msg}
                 content = ser_msg.get("content")
                 if content:
                     ser_msg["content"] = Prompt(content)
-                deserialized_msg_history.append(ser_msg)
+                deserialized_messages.append(ser_msg)
 
-        instructions = (
-            Instructions(i_inputs.instructions) if i_inputs.instructions else None
-        )
-
-        prompt = Prompt(i_inputs.prompt) if i_inputs.prompt else None
         num_reasks = (
             int(i_inputs.num_reasks) if i_inputs.num_reasks is not None else None
         )
         return cls(
             llm_api=None,
             llm_output=i_inputs.llm_output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=deserialized_msg_history,
+            messages=deserialized_messages,
             prompt_params=i_inputs.prompt_params,
             num_reasks=num_reasks,
             metadata=i_inputs.metadata,

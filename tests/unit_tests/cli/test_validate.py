@@ -2,9 +2,6 @@ from tests.unit_tests.mocks.mock_file import MockFile
 
 
 def test_validate(mocker):
-    mocker.patch("nltk.data.find")
-    mocker.patch("nltk.download")
-
     mock_validate_llm_output = mocker.patch(
         "guardrails.cli.validate.validate_llm_output"
     )

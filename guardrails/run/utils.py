@@ -4,10 +4,8 @@ from typing import Dict, cast, Optional, Tuple
 
 from guardrails.classes.output_type import OutputTypes
 from guardrails.llm_providers import (
-    AsyncOpenAICallable,
-    AsyncOpenAIChatCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    LiteLLMCallable,
+    AsyncLiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.prompt.prompt import Prompt
@@ -15,30 +13,19 @@ from guardrails.types.inputs import MessageHistory
 from guardrails.prompt.instructions import Instructions
 
 
-def msg_history_source(msg_history: MessageHistory) -> MessageHistory:
-    msg_history_copy = []
-    for msg in msg_history:
+def messages_source(messages: MessageHistory) -> MessageHistory:
+    messages_copy = []
+    for msg in messages:
         msg_copy = copy.deepcopy(msg)
         content = (
             msg["content"].source
             if isinstance(msg["content"], Prompt)
+            or isinstance(msg["content"], Instructions)
             else msg["content"]
         )
         msg_copy["content"] = content
-        msg_history_copy.append(cast(Dict[str, str], msg_copy))
-    return msg_history_copy
-
-
-def msg_history_string(msg_history: MessageHistory) -> str:
-    msg_history_copy = ""
-    for msg in msg_history:
-        content = (
-            msg["content"].source
-            if isinstance(msg["content"], Prompt)
-            else msg["content"]
-        )
-        msg_history_copy += content
-    return msg_history_copy
+        messages_copy.append(cast(Dict[str, str], msg_copy))
+    return messages_copy
 
 
 def preprocess_prompt_for_string_output(
@@ -46,13 +33,13 @@ def preprocess_prompt_for_string_output(
     instructions: Optional[Instructions],
     prompt: Prompt,
 ) -> Tuple[Optional[Instructions], Prompt]:
-    if isinstance(prompt_callable, OpenAICallable) or isinstance(
-        prompt_callable, AsyncOpenAICallable
+    if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+        prompt_callable, AsyncLiteLLMCallable
     ):
         prompt.source += "\n\nString Output:\n\n"
     if (
-        isinstance(prompt_callable, OpenAIChatCallable)
-        or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        isinstance(prompt_callable, LiteLLMCallable)
+        or isinstance(prompt_callable, AsyncLiteLLMCallable)
     ) and not instructions:
         instructions = Instructions(
             "You are a helpful assistant, expressing yourself through a string."
@@ -67,13 +54,13 @@ def preprocess_prompt_for_json_output(
     prompt: Prompt,
     use_xml: bool,
 ) -> Tuple[Optional[Instructions], Prompt]:
-    if isinstance(prompt_callable, OpenAICallable) or isinstance(
-        prompt_callable, AsyncOpenAICallable
+    if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+        prompt_callable, AsyncLiteLLMCallable
     ):
         prompt.source += "\n\nJson Output:\n\n"
     if (
-        isinstance(prompt_callable, OpenAIChatCallable)
-        or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        isinstance(prompt_callable, LiteLLMCallable)
+        or isinstance(prompt_callable, AsyncLiteLLMCallable)
     ) and not instructions:
         schema_type = "XML schemas" if use_xml else "JSON schema"
         instructions = Instructions(
