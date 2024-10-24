@@ -122,18 +122,29 @@ A `guardrails` key is added to the response object, which includes the validatio
 ### Advanced Client Usage
 Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object.
 
-To do this, you must first set a `use_server` flag in Guardrails settings.
+```python
+# Client code
+from guardrails import Guard
+
+name_guard = Guard.fetch_guard(name="gibberish_guard")
+
+validation_outcome = name_guard.validate("floofy doopy boopy")
+```
+
+
+#### Guardrails < v0.5.9
+In older versions of Guardrails, you need to set the `use_server` var in settings to True.
 
 ```python
 # Client code
 from guardrails import Guard, settings
 
 settings.use_server = True
-
 name_guard = Guard(name="gibberish_guard")
 
 validation_outcome = name_guard.validate("floofy doopy boopy")
 ```
+
 
 
 ## Learn More
