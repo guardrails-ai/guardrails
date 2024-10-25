@@ -1,4 +1,4 @@
-from unittest.mock import ANY, call
+from unittest.mock import ANY, MagicMock, call
 from typer.testing import CliRunner
 from guardrails.cli.hub.install import hub_command
 
@@ -140,25 +140,27 @@ class TestPipProcess:
 
         mock_sys_executable = mocker.patch("guardrails.cli.hub.utils.sys.executable")
 
-        mock_subprocess_check_output = mocker.patch(
-            "guardrails.cli.hub.utils.subprocess.check_output"
-        )
-        mock_subprocess_check_output.return_value = str.encode("string output")
+        mock_subprocess_run = mocker.patch("guardrails.cli.hub.utils.subprocess.run")
+        subprocess_result_mock = MagicMock()
+        subprocess_result_mock.stdout = "string output"
+        mock_subprocess_run.return_value = subprocess_result_mock
 
         from guardrails.cli.hub.utils import pip_process
 
         response = pip_process("inspect", flags=["--path=./install-here"])
 
-        assert mock_logger_debug.call_count == 2
+        assert mock_logger_debug.call_count == 1
         debug_calls = [
             call("running pip inspect --path=./install-here "),
-            call("decoding output from pip inspect "),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
 
-        mock_subprocess_check_output.assert_called_once_with(
+        mock_subprocess_run.assert_called_once_with(
             [mock_sys_executable, "-m", "pip", "inspect", "--path=./install-here"],
             env={},
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         assert response == "string output"
@@ -169,10 +171,11 @@ class TestPipProcess:
 
         mock_sys_executable = mocker.patch("guardrails.cli.hub.utils.sys.executable")
 
-        mock_subprocess_check_output = mocker.patch(
-            "guardrails.cli.hub.utils.subprocess.check_output"
-        )
-        mock_subprocess_check_output.return_value = str.encode("json output")
+        mock_subprocess_run = mocker.patch("guardrails.cli.hub.utils.subprocess.run")
+        subprocess_result_mock = MagicMock()
+        subprocess_result_mock.stdout = "json outout"
+
+        mock_subprocess_run.return_value = subprocess_result_mock
 
         class MockBytesHeaderParser:
             def parsebytes(self, *args):
@@ -186,18 +189,21 @@ class TestPipProcess:
 
         response = pip_process("show", "pip", format="json")
 
-        assert mock_logger_debug.call_count == 3
+        assert mock_logger_debug.call_count == 2
         debug_calls = [
             call("running pip show  pip"),
-            call("decoding output from pip show pip"),
             call(
                 "JSON parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
             ),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
 
-        mock_subprocess_check_output.assert_called_once_with(
-            [mock_sys_executable, "-m", "pip", "show", "pip"], env={}
+        mock_subprocess_run.assert_called_once_with(
+            [mock_sys_executable, "-m", "pip", "show", "pip"],
+            env={},
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         assert response == {"output": "json"}
@@ -271,16 +277,3 @@ class TestPipProcess:
         )
 
         assert result.exit_code == 0
-
-
-def test_get_site_packages_location(mocker):
-    mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
-    mock_pip_process.return_value = {"Location": "/site-packages"}
-
-    from guardrails.cli.hub.utils import get_site_packages_location
-
-    response = get_site_packages_location()
-
-    mock_pip_process.assert_called_once_with("show", "pip", format="json")
-
-    assert response == "/site-packages"

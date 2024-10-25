@@ -13,7 +13,7 @@ class TestListCommand:
     @pytest.fixture(autouse=True)
     def setup(self, mocker):
         mocker.patch(
-            "guardrails.cli.hub.utils.get_site_packages_location",
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages",
             return_value="/test/site-packages",
         )
 

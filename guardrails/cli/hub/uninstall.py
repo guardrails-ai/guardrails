@@ -1,5 +1,4 @@
 import os
-import shutil
 import sys
 from typing import List, Literal
 
@@ -10,9 +9,7 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails_hub_types import Manifest
 
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.hub.utils import get_org_and_package_dirs
-from guardrails.cli.hub.utils import get_hub_directory
+from guardrails.cli.hub.utils import pip_process
 from guardrails.hub_telemetry.hub_tracing import trace
 
 from .console import console
@@ -32,46 +29,28 @@ def remove_line(file_path: str, line_content: str):
 
 
 def remove_from_hub_inits(manifest: Manifest, site_packages: str):
-    org_package = get_org_and_package_dirs(manifest)
+    from guardrails.hub.validator_package_service import ValidatorPackageService
+
     exports: List[str] = manifest.exports or []
     sorted_exports = sorted(exports, reverse=True)
-    module_name = manifest.module_name
-    relative_path = ".".join([*org_package, module_name])
-    import_line = (
-        f"from guardrails.hub.{relative_path} import {', '.join(sorted_exports)}"
+
+    validator_id = manifest.id
+    import_path = ValidatorPackageService.get_import_path_from_validator_id(
+        validator_id
     )
+    import_line = f"from {import_path} import {', '.join(sorted_exports)}"
 
     # Remove import line from main __init__.py
     hub_init_location = os.path.join(site_packages, "guardrails", "hub", "__init__.py")
     remove_line(hub_init_location, import_line)
 
-    # Remove import line from namespace __init__.py
-    namespace = org_package[0]
-    namespace_init_location = os.path.join(
-        site_packages, "guardrails", "hub", namespace, "__init__.py"
-    )
-    lines = remove_line(namespace_init_location, import_line)
 
-    # remove namespace pkg if namespace __init__.py is empty
-    if (len(lines) == 0) and (namespace != "hub"):
-        logger.info(f"Removing namespace package {namespace} as it is now empty")
-        try:
-            shutil.rmtree(os.path.join(site_packages, "guardrails", "hub", namespace))
-        except Exception as e:
-            logger.error(f"Error removing namespace package {namespace}")
-            logger.error(e)
-            sys.exit(1)
+def uninstall_hub_module(manifest: Manifest):
+    from guardrails.hub.validator_package_service import ValidatorPackageService
 
-
-def uninstall_hub_module(manifest: Manifest, site_packages: str):
-    uninstall_directory = get_hub_directory(manifest, site_packages)
-    logger.info(f"Removing directory {uninstall_directory}")
-    try:
-        shutil.rmtree(uninstall_directory)
-    except Exception as e:
-        logger.error("Error removing directory")
-        logger.error(e)
-        sys.exit(1)
+    validator_id = manifest.id
+    package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
+    pip_process("uninstall", package_name, flags=["-y"], quiet=True)
 
 
 @hub_command.command()
@@ -82,6 +61,9 @@ def uninstall(
     ),
 ):
     """Uninstall a validator from the Hub."""
+    from guardrails.hub.validator_package_service import ValidatorPackageService
+
+    print(f"ValidatorPackageService: {ValidatorPackageService}")
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
@@ -98,11 +80,11 @@ def uninstall(
     # Prep
     with console.status("Fetching manifest", spinner="bouncingBar"):
         module_manifest = get_validator_manifest(module_name)
-        site_packages = get_site_packages_location()
+        site_packages = ValidatorPackageService.get_site_packages_location()
 
     # Uninstall
     with console.status("Removing module", spinner="bouncingBar"):
-        uninstall_hub_module(module_manifest, site_packages)
+        uninstall_hub_module(module_manifest)
 
     # Cleanup
     with console.status("Cleaning up", spinner="bouncingBar"):
