@@ -63,7 +63,6 @@ def uninstall(
     """Uninstall a validator from the Hub."""
     from guardrails.hub.validator_package_service import ValidatorPackageService
 
-    print(f"ValidatorPackageService: {ValidatorPackageService}")
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
