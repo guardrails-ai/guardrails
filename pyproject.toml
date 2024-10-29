@@ -23,7 +23,6 @@ pydantic = ">=2.0.0, <3.0"
 typer = {extras = ["all"],  version = ">=0.9.0, <0.13"}
 griffe = "^0.36.9"
 tenacity = ">=8.1.0"
-regex = "^2023.10.3"
 rstr = "^3.2.2"
 typing-extensions = "^4.8.0"
 python-dateutil = "^2.8.2"
