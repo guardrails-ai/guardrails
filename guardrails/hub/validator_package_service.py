@@ -296,9 +296,11 @@ class ValidatorPackageService:
                         f"stdout: {(stdout or '').strip()}"
                     )
                 )
+                raise
             except Exception as e:
                 logger.error(
                     "An unexpected exception occurred while "
                     f"installing {validator_id}: ",
                     e,
                 )
+                raise
