@@ -1233,10 +1233,6 @@ class TestSerizlizationAndDeserialization:
 
         deser_guard = Guard.from_dict(ser_guard)
 
-        # from rich import print
-        # print("guard: ", guard)
-        # print("deser_guard: ", deser_guard)
-
         assert deser_guard == guard
 
         response = deser_guard.parse("Some Name")
