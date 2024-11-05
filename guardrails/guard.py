@@ -22,7 +22,6 @@ from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
-    ValidatorReference,
     ValidatePayload,
     SimpleTypes,
     ValidationOutcome as IValidationOutcome,
@@ -36,6 +35,7 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation.validation_summary import ValidationSummary
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
