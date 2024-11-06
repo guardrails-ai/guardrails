@@ -5,6 +5,7 @@ import sys
 from unittest.mock import call, patch, MagicMock
 
 from guardrails_hub_types import Manifest
+from guardrails.cli.hub.utils import PipProcessError
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
@@ -424,9 +425,97 @@ class TestValidatorPackageService:
         with pytest.raises(InvalidHubInstallURL):
             ValidatorPackageService.get_validator_id("invalid-uri")
 
+    def test_install_hub_module_when_exception(self, mocker):
+        mock_pip_process = mocker.patch(
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
+        mock_pip_process.side_effect = [Exception()]
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails-ai/id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        with pytest.raises(Exception):
+            ValidatorPackageService.install_hub_module(manifest.id)
+
+        assert mock_pip_process.call_count == 1
+
+    def test_install_hub_module_when_no_validators_extras(self, mocker):
+        mock_pip_process = mocker.patch(
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
+        mock_pip_process.side_effect = [
+            PipProcessError("install", "guardrails-ai-grhub-id"),
+            "Sucessfully installed guardrails-ai-grhub-id",
+        ]
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails-ai/id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+        ValidatorPackageService.install_hub_module(manifest.id)
+
+        assert mock_pip_process.call_count == 2
+        pip_calls = [
+            call(
+                "install",
+                "guardrails-ai-grhub-id[validators]",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
+                quiet=False,
+            ),
+            call(
+                "install",
+                "guardrails-ai-grhub-id",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
+                quiet=False,
+            ),
+        ]
+        mock_pip_process.assert_has_calls(pip_calls)
+
     def test_install_hub_module(self, mocker):
         mock_pip_process = mocker.patch(
-            "guardrails.hub.validator_package_service.pip_process"
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
         )
         mock_settings = mocker.patch(
             "guardrails.hub.validator_package_service.settings"
@@ -477,7 +566,7 @@ class TestValidatorPackageService:
         pip_calls = [
             call(
                 "install",
-                "guardrails-ai-grhub-id",
+                "guardrails-ai-grhub-id[validators]",
                 [
                     "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
                     "--extra-index-url=https://pypi.org/simple",
