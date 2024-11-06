@@ -23,9 +23,6 @@ pip install --upgrade guardrails-ai
 1. The guardrails server will change from using Flask to FastAPI. We recommend serving uvicorn runners via a gunicorn WSGI.
 1. OpenAI, Cohere and Anthropic **callables are being removed in favor of support through passing no callable and setting the appropriate api key and model argument.
 
-
-## How to migrate
-
 ### Messages support for reask and RAILS
 `Guard.__call` and rails now fully support `reask_messages` as an argument.
 
@@ -97,6 +94,7 @@ guard(
     instructions="you are a funny assistant",
     prompt="tell me a joke"
 )
+
 # version >= 0.6.0
 guard(
     messages=[
@@ -108,6 +106,7 @@ guard(
 
 ### Removal of guardrails OpenAI, Cohere, Anthropic Callables
 These callables are being removed in favor of support through passing no callable and setting the appropriate api key and model argument.
+
 
 ### Prompt no longer a required positional argument on custom callables
 Custom callables will no longer throw an error if the prompt arg is missing in their declaration and guardrails will no longer pass prompt as the first argument. They need to be updated to the messages kwarg to get text input. If a custom callables underlying llm only accepts a single string a helper exists that can compose messages into one otherwise some code to adapt them will be required. 

@@ -5,12 +5,8 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
-    LiteLLMCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
     PromptCallableBase,
 )
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.hub_telemetry.hub_tracing import trace_stream
 from guardrails.utils.parsing_utils import (
@@ -44,32 +40,21 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
-        # This is only used during ReAsks and ReAsks
-        #   are not yet supported for streaming.
-        # Figure out if we need to include instructions in the prompt.
-        # include_instructions = not (
-        #     self.instructions is None and self.msg_history is None
-        # )
+
         prompt_params = prompt_params or {}
 
         (
-            instructions,
-            prompt,
-            msg_history,
+            messages,
             output_schema,
         ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
+            self.messages,
             self.output_schema,
         )
 
         return self.step(
             index=0,
             api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             output_schema=output_schema,
             output=self.output,
@@ -82,9 +67,7 @@ class StreamRunner(Runner):
         self,
         index: int,
         api: Optional[PromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
         output_schema: Dict[str, Any],
         call_log: Call,
@@ -94,9 +77,7 @@ class StreamRunner(Runner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -111,26 +92,20 @@ class StreamRunner(Runner):
 
         # Prepare: run pre-processing, and input validation.
         if output is not None:
-            instructions = None
-            prompt = None
-            msg_history = None
+            messages = None
         else:
-            instructions, prompt, msg_history = self.prepare(
+            messages = self.prepare(
                 call_log,
                 index,
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                messages=messages,
                 prompt_params=prompt_params,
                 api=api,
             )
 
-        iteration.inputs.prompt = prompt
-        iteration.inputs.instructions = instructions
-        iteration.inputs.msg_history = msg_history
+        iteration.inputs.messages = messages
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(instructions, prompt, msg_history, api, output)
+        llm_response = self.call(messages, api, output)
 
         iteration.outputs.llm_response_info = llm_response
 
@@ -273,25 +248,26 @@ class StreamRunner(Runner):
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
-        if isinstance(api, OpenAICallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].text
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, OpenAIChatCallable) or isinstance(api, LiteLLMCallable):
+        try:
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].delta.content
             if not finished and content:
                 chunk_text = content
-        else:
+        except Exception:
             try:
-                chunk_text = chunk
-            except Exception as e:
-                raise ValueError(
-                    f"Error getting chunk from stream: {e}. "
-                    "Non-OpenAI API callables expected to return "
-                    "a generator of strings."
-                ) from e
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].text
+                if not finished and content:
+                    chunk_text = content
+            except Exception:
+                try:
+                    chunk_text = chunk
+                except Exception as e:
+                    raise ValueError(
+                        f"Error getting chunk from stream: {e}. "
+                        "Non-OpenAI API callables expected to return "
+                        "a generator of strings."
+                    ) from e
         return chunk_text
 
     def parse(

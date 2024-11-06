@@ -14,7 +14,3 @@ Your generated response should satisfy the following properties:
 
 Don't talk; just go.
 
-
-
-String Output:
-

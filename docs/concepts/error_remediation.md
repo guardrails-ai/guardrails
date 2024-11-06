@@ -18,7 +18,6 @@ Note that this list is not exhaustive of the possible errors that could occur.  
 ```log
 The callable `fn` passed to `Guard(fn, ...)` failed with the following error:
   {Root error message here!}.
-Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
 ```
 
 

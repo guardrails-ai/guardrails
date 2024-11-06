@@ -21,11 +21,11 @@ from guardrails.hub import RegexMatch
 
 name_case = Guard(
     name="name-case", description="Checks that a string is in Name Case format."
-).use(RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"))
+).use(RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail=OnFailAction.NOOP))
 
 all_caps = Guard(
     name="all-caps", description="Checks that a string is all capital."
-).use(RegexMatch(regex="^[A-Z\\s]*$"))
+).use(RegexMatch(regex="^[A-Z\\s]*$", on_fail=OnFailAction.NOOP))
 
 
 @register_validator(name="custom/dynamic-enum", data_type="all")
@@ -67,4 +67,4 @@ def custom_enum_fetcher(*args):
 custom_code_guard = Guard(
     name="custom",
     description="Uses a custom callable init argument for dynamic enum checks",
-).use(DynamicEnum(custom_enum_fetcher))
+).use(DynamicEnum(custom_enum_fetcher, on_fail=OnFailAction.NOOP))

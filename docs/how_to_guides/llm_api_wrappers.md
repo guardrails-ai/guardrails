@@ -86,7 +86,7 @@ validated_response = guard(
     model="ollama/llama2",
     max_tokens=500,
     api_base="http://localhost:11434",
-    msg_history=[{"role": "user", "content": "hello"}]
+    messages=[{"role": "user", "content": "hello"}]
 )
 ```
 
@@ -106,7 +106,7 @@ validated_response = guard(
     api_base=os.environ.get("AZURE_OPENAI_API_BASE"),
     api_version="2023-05-15",
     api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-    msg_history=[{"role": "user", "content": "hello"}]
+    messages=[{"role": "user", "content": "hello"}]
 )
 ```
 
@@ -123,27 +123,22 @@ guard = Guard().use(ProfanityFree())
 
 # Function that takes the prompt as a string and returns the LLM output as string
 def my_llm_api(
-    prompt: Optional[str] = None,
-    instruction: Optional[str] = None,
-    msg_history: Optional[list[dict]] = None,
     **kwargs
 ) -> str:
     """Custom LLM API wrapper.
 
-    At least one of prompt, instruction or msg_history should be provided.
+    At least messages should be provided.
 
     Args:
-        prompt (str): The prompt to be passed to the LLM API
-        instruction (str): The instruction to be passed to the LLM API
-        msg_history (list[dict]): The message history to be passed to the LLM API
+        messages (list[dict]): The message history to be passed to the LLM API
         **kwargs: Any additional arguments to be passed to the LLM API
 
     Returns:
         str: The output of the LLM API
     """
-
+    messages=kwargs.get("messages")
     # Call your LLM API here
-    llm_output = some_llm(prompt, instruction, msg_history, **kwargs)
+    llm_output = some_llm(messages, **kwargs)
 
     return llm_output
 
