@@ -131,3 +131,17 @@ response = guard(
     response_format={ "type": "json_object" }
 )
 ```
+
+
+### Strict JSON Mode
+For models that support strict JSON mode, 
+
+
+```py
+response = guard(
+    model="gpt-4o",
+    messages=messages,
+    prompt_params={"chat_history": chat_history},
+    response_format=g.response_format_json_schema()
+)
+```

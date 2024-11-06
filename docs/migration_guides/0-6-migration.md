@@ -1,6 +1,27 @@
 # Migrating to 0.6.0
 
-## New Features
+## Summary
+This guide will help you migrate your codebase from 0.5.X to 0.6.0.
+
+## Installation
+```bash
+pip install --upgrade guardrails-ai
+```
+
+## List of backwards incompatible changes
+
+1. All validators will require authentication with a guardrails token. This will also apply to all versions >=0.4.x of the guardrails-ai package.
+1. prompt, msg_history, instructions, reask_messages, reask_instructions, and will be removed from the `Guard.__call__` function and will instead be supported by a single messages argument, and a reask_messages argument for reasks.
+1. Custom callables now need to expect `messages`, as opposed to `prompt` to come in as a keyword argument.
+1. The default on_fail action for validators will change from noop to exception.
+1. In cases where we try and generate structured data, Guardrails will no longer automatically attempt to try and coerce the LLM into giving correctly formatted information.
+1. Guardrails will no longer automatically set a tool selection in the OpenAI callable when initialized using pydantic for initial prompts or reasks
+1. Guard.from_string is being removed in favor of Guard()
+1. Guard.from_pydantic is renamed to Guard.for_pydantic
+1. Guard.from_rail is renamed to Guard.for_rail
+1. Guard.from_rail_string is renamed to guard.for_rail_string
+1. The guardrails server will change from using Flask to FastAPI. We recommend serving uvicorn runners via a gunicorn WSGI.
+1. OpenAI, Cohere and Anthropic **callables are being removed in favor of support through passing no callable and setting the appropriate api key and model argument.
 
 ### Messages support for reask and RAILS
 `Guard.__call` and rails now fully support `reask_messages` as an argument.
@@ -25,16 +46,13 @@ response = guard(
 <messages>
     <message role="system">
         Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
-
         ${document}
-
         ${gr.xml_prefix_prompt}
     </message>
     <message role="user">
         ${question}
     </message>
 </messages>
-
 <reask_messages>
     <message="system">
         You were asked ${question} and it was not correct can you try again?
@@ -87,7 +105,8 @@ guard(
 ```
 
 ### Removal of guardrails OpenAI, Cohere, Anthropic Callables
-These callables are being removed in favor of support through passing no callable and setting the appropriate api key and model argument. See LINK TO DOCS for more info.
+These callables are being removed in favor of support through passing no callable and setting the appropriate api key and model argument.
+
 
 ### Prompt no longer a required positional argument on custom callables
 Custom callables will no longer throw an error if the prompt arg is missing in their declaration and guardrails will no longer pass prompt as the first argument. They need to be updated to the messages kwarg to get text input. If a custom callables underlying llm only accepts a single string a helper exists that can compose messages into one otherwise some code to adapt them will be required. 
@@ -110,4 +129,4 @@ class CustomCallableCallable(PromptCallableBase):
             **kwargs,
         )
         return llm_string_output
-````
+```
