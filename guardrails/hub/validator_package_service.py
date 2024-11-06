@@ -12,7 +12,7 @@ from packaging.utils import canonicalize_name  # PEP 503
 from guardrails.logger import logger as guardrails_logger
 
 
-from guardrails.cli.hub.utils import pip_process
+from guardrails.cli.hub.utils import PipProcessError, pip_process_with_custom_exception
 from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.settings import settings
@@ -251,7 +251,6 @@ class ValidatorPackageService:
             validator_id
         )
         validator_version = validator_version if validator_version else ""
-        full_package_name = f"{pep_503_package_name}{validator_version}"
 
         guardrails_token = settings.rc.token
 
@@ -267,8 +266,41 @@ class ValidatorPackageService:
             pip_flags.append("-q")
 
         # Install from guardrails hub pypi server with public pypi index as fallback
-        download_output = pip_process(
-            "install", full_package_name, pip_flags, quiet=quiet
-        )
-        if not quiet:
-            logger.info(download_output)
+
+        try:
+            full_package_name = f"{pep_503_package_name}[validators]{validator_version}"
+            download_output = pip_process_with_custom_exception(
+                "install", full_package_name, pip_flags, quiet=quiet
+            )
+            if not quiet:
+                logger.info(download_output)
+        except PipProcessError:
+            try:
+                full_package_name = f"{pep_503_package_name}{validator_version}"
+                download_output = pip_process_with_custom_exception(
+                    "install", full_package_name, pip_flags, quiet=quiet
+                )
+                if not quiet:
+                    logger.info(download_output)
+            except PipProcessError as e:
+                action = e.action
+                package = e.package
+                stderr = e.stderr
+                stdout = e.stdout
+                returncode = e.returncode
+                logger.error(
+                    (
+                        f"Failed to {action} {package}\n"
+                        f"Exit code: {returncode}\n"
+                        f"stderr: {(stderr or '').strip()}\n"
+                        f"stdout: {(stdout or '').strip()}"
+                    )
+                )
+                raise
+            except Exception as e:
+                logger.error(
+                    "An unexpected exception occurred while "
+                    f"installing {validator_id}: ",
+                    e,
+                )
+                raise

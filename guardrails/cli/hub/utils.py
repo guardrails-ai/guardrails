@@ -20,6 +20,87 @@ json_format = "json"
 string_format = "string"
 
 
+class PipProcessError(Exception):
+    action: str
+    package: str
+    stderr: str = ""
+    stdout: str = ""
+    returncode: int = 1
+
+    def __init__(
+        self,
+        action: str,
+        package: str,
+        stderr: str = "",
+        stdout: str = "",
+        returncode: int = 1,
+    ):
+        self.action = action
+        self.package = package
+        self.stderr = stderr
+        self.stdout = stdout
+        self.returncode = returncode
+        message = (
+            f"PipProcessError: {action} on '{package}' failed with"
+            "return code {returncode}.\n"
+            f"Stdout:\n{stdout}\n"
+            f"Stderr:\n{stderr}"
+        )
+        super().__init__(message)
+
+
+def pip_process_with_custom_exception(
+    action: str,
+    package: str = "",
+    flags: List[str] = [],
+    format: Union[Literal["string"], Literal["json"]] = string_format,
+    quiet: bool = False,
+    no_color: bool = False,
+) -> Union[str, dict]:
+    try:
+        if not quiet:
+            logger.debug(f"running pip {action} {' '.join(flags)} {package}")
+        command = [sys.executable, "-m", "pip", action]
+        command.extend(flags)
+        if package:
+            command.append(package)
+
+        env = dict(os.environ)
+        if no_color:
+            env["NO_COLOR"] = "true"
+
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,  # Capture both stdout and stderr
+            text=True,  # Automatically decode to strings
+            check=True,  # Automatically raise error on non-zero exit code
+        )
+
+        if format == json_format:
+            try:
+                remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
+                parsed_as_string = re.sub(remove_color_codes, "", result.stdout.strip())
+                return json.loads(parsed_as_string)
+            except Exception:
+                logger.debug(
+                    f"JSON parse exception in decoding output from pip {action}"
+                    f" {package}. Falling back to accumulating the byte stream",
+                )
+            accumulator = {}
+            parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
+
+        return result.stdout
+
+    except subprocess.CalledProcessError as exc:
+        raise PipProcessError(action, package, exc.stderr, exc.stdout, exc.returncode)
+    except Exception as e:
+        raise PipProcessError(action, package, stderr=str(e), stdout="", returncode=1)
+
+
 def pip_process(
     action: str,
     package: str = "",
