@@ -1,11 +1,11 @@
-# Migrating to 0.6.0-alpha
+# Migrating to 0.6.0
 
 ## Summary
-This guide will help you migrate your codebase from 0.5.X to 0.6.0-alpha.
+This guide will help you migrate your codebase from 0.5.X to 0.6.0.
 
 ## Installation
 ```bash
-pip install --pre guardrails-ai
+pip install --upgrade guardrails-ai
 ```
 
 ## List of backwards incompatible changes
