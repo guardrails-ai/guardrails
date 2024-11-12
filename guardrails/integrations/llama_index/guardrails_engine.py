@@ -56,12 +56,14 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
     def guard(self) -> Guard:
         return self._guard
 
-    def engine_api(self, prompt: str, **kwargs) -> str:
+    def engine_api(self, messages: List[Dict[str, str]], **kwargs) -> str:
+        user_messages = [m for m in messages if m["role"] == "user"]
+        query = user_messages[-1]["content"]
         if isinstance(self._engine, BaseQueryEngine):
-            response = self._engine.query(prompt)
+            response = self._engine.query(query)
         elif isinstance(self._engine, BaseChatEngine):
             chat_history = kwargs.get("chat_history", [])
-            response = self._engine.chat(prompt, chat_history)
+            response = self._engine.chat(query, chat_history)
         else:
             raise ValueError("Unsupported engine type")
 
@@ -77,9 +79,15 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         if isinstance(query_bundle, str):
             query_bundle = QueryBundle(query_bundle)
         try:
+            messages = [
+                {
+                    "role": "user",
+                    "content": query_bundle.query_str,
+                }
+            ]
             validated_output = self.guard(
                 llm_api=self.engine_api,
-                prompt=query_bundle.query_str,
+                messages=messages,
                 **self._guard_kwargs,
             )
 
@@ -128,9 +136,15 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         if chat_history is None:
             chat_history = []
         try:
+            messages = [
+                {
+                    "role": "user",
+                    "content": message,
+                }
+            ]
             validated_output = self.guard(
                 llm_api=self.engine_api,
-                prompt=message,
+                messages=messages,
                 chat_history=chat_history,
                 **self._guard_kwargs,
             )
