@@ -22,7 +22,6 @@ from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
-    ValidatorReference,
     ValidatePayload,
     SimpleTypes,
     ValidationOutcome as IValidationOutcome,
@@ -36,6 +35,7 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation.validation_summary import ValidationSummary
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
@@ -166,7 +166,7 @@ class Guard(IGuard, Generic[OT]):
             id=id,
             name=name,
             description=description,
-            validators=validators,
+            validators=[],
             output_schema=model_schema,
             history=history,  # type: ignore - pyright doesn't understand pydantic overrides
         )
@@ -179,6 +179,9 @@ class Guard(IGuard, Generic[OT]):
         # self.validators: Optional[List[ValidatorReference]] = []
         # self.output_schema: Optional[ModelSchema] = None
         # self.history = history
+
+        ### Overrides ###
+        self.validators = validators
 
         ### Legacy ##
         self._num_reasks = None
@@ -208,7 +211,10 @@ class Guard(IGuard, Generic[OT]):
                 if loaded_guard:
                     self.id = loaded_guard.id
                     self.description = loaded_guard.description
-                    self.validators = loaded_guard.validators or []
+                    self.validators = [  # type: ignore
+                        ValidatorReference.from_interface(v)
+                        for v in loaded_guard.validators or []
+                    ]
 
                     loaded_output_schema = (
                         ModelSchema.from_dict(  # trims out extra keys
@@ -1264,7 +1270,7 @@ class Guard(IGuard, Generic[OT]):
             id=self.id,
             name=self.name,
             description=self.description,
-            validators=self.validators,
+            validators=self.validators,  # type: ignore
             output_schema=self.output_schema,
             history=[c.to_interface() for c in self.history],  # type: ignore
         )
@@ -1304,7 +1310,10 @@ class Guard(IGuard, Generic[OT]):
             id=i_guard.id,
             name=i_guard.name,
             description=i_guard.description,
-            validators=i_guard.validators,
+            validators=[
+                ValidatorReference.from_interface(i_val)
+                for i_val in i_guard.validators or []
+            ],
             output_schema=output_schema,
         )
 

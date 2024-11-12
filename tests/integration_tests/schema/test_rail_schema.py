@@ -3,7 +3,7 @@ import pytest
 
 from xml.etree.ElementTree import canonicalize
 
-from guardrails_api_client.models.validator_reference import ValidatorReference
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.schema.rail_schema import (
     rail_file_to_schema,

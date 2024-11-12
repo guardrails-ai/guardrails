@@ -6,10 +6,11 @@ from guardrails_api_client.models.validation_type import ValidationType
 from lxml import etree as ET
 from lxml.etree import _Element, Element, SubElement, XMLParser
 from xml.etree.ElementTree import canonicalize
-from guardrails_api_client import ModelSchema, SimpleTypes, ValidatorReference
+from guardrails_api_client import ModelSchema, SimpleTypes
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.logger import logger
 from guardrails.types import RailTypes
 from guardrails.types.validator import ValidatorMap

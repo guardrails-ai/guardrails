@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
-from guardrails_api_client import Guard as IGuard, ValidatorReference
+from guardrails_api_client import Guard as IGuard
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
@@ -14,6 +14,7 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.validation.validation_result import FailResult
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.guard import Guard
 from guardrails.actions.reask import FieldReAsk
 from tests.integration_tests.test_assets.validators import (

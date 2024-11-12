@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
-from guardrails_api_client import ValidatorReference
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.types.validator import ValidatorMap
 
 
