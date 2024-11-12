@@ -31,7 +31,7 @@ class TestPrimitiveSchema:
             ValidatorReference(
                 id="valid-choices",
                 on="$",
-                on_fail=OnFailAction.NOOP,
+                on_fail=OnFailAction.EXCEPTION,
                 kwargs={"choices": ["north", "south", "east", "west"]},
             ),
             ValidatorReference(

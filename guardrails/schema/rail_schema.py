@@ -1,5 +1,4 @@
 import jsonref
-import warnings
 from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
@@ -22,10 +21,6 @@ from guardrails.validator_base import OnFailAction, Validator
 
 ### RAIL to JSON Schema ###
 STRING_TAGS = [
-    "instructions",
-    "prompt",
-    "reask_instructions",
-    "reask_prompt",
     "messages",
     "reask_messages",
 ]
@@ -392,51 +387,9 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
             ' "string", "object", or "list"'
         )
 
-    # Parse instructions for the LLM. These are optional but if given,
-    # LLMs can use them to improve their output. Commonly these are
-    # prepended to the prompt.
-    instructions_tag = rail_xml.find("instructions")
-    if instructions_tag is not None:
-        parse_element(instructions_tag, processed_schema, "instructions")
-        processed_schema.exec_opts.instructions = instructions_tag.text
-        warnings.warn(
-            "The instructions tag has been deprecated"
-            " in favor of messages. Please use messages instead.",
-            DeprecationWarning,
-        )
-
-    # Load <prompt />
-    prompt_tag = rail_xml.find("prompt")
-    if prompt_tag is not None:
-        parse_element(prompt_tag, processed_schema, "prompt")
-        processed_schema.exec_opts.prompt = prompt_tag.text
-        warnings.warn(
-            "The prompt tag has been deprecated"
-            " in favor of messages. Please use messages instead.",
-            DeprecationWarning,
-        )
-
-    # If reasking prompt and instructions are provided, add them to the schema.
-    reask_prompt = rail_xml.find("reask_prompt")
-    if reask_prompt is not None:
-        processed_schema.exec_opts.reask_prompt = reask_prompt.text
-        warnings.warn(
-            "The reask_prompt tag has been deprecated"
-            " in favor of reask_messages. Please use reask_messages instead.",
-            DeprecationWarning,
-        )
-
-    reask_instructions = rail_xml.find("reask_instructions")
-    if reask_instructions is not None:
-        processed_schema.exec_opts.reask_instructions = reask_instructions.text
-        warnings.warn(
-            "The reask_instructions tag has been deprecated"
-            " in favor of reask_messages. Please use reask_messages instead.",
-            DeprecationWarning,
-        )
-
     messages = rail_xml.find("messages")
     if messages is not None:
+        parse_element(messages, processed_schema, "messages")
         extracted_messages = []
         for msg in messages:
             if msg.tag == "message":
@@ -455,7 +408,7 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
                 role = message.attrib.get("role")
                 content = message.text
                 extracted_reask_messages.append({"role": role, "content": content})
-        processed_schema.exec_opts.messages = extracted_reask_messages
+        processed_schema.exec_opts.reask_messages = extracted_reask_messages
 
     return processed_schema
 

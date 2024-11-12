@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 import typer
 import json
@@ -9,26 +9,26 @@ from rich.console import Console
 from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
-from guardrails.cli.hub.install import (  # JC: I don't like this import. Move fns?
-    install_hub_module,
-    add_to_hub_inits,
-    run_post_install,
-)
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.hub.template import get_template
+from guardrails.hub_telemetry.hub_tracing import trace
 
 console = Console()
 
 
 @gr_cli.command(name="create")
+@trace(name="guardrails-cli/create")
 def create_command(
     validators: Optional[str] = typer.Option(
         default="",
         help="A comma-separated list of validator hub URIs.",
     ),
-    name: Optional[str] = typer.Option(
+    guard_name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
+    ),
+    local_models: Optional[bool] = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
     ),
     filepath: str = typer.Option(
         default="config.py",
@@ -47,6 +47,8 @@ def create_command(
         help="Print out the validators to be installed without making any changes.",
     ),
 ):
+    # fix pyright typing issue
+    validators = cast(str, validators)
     filepath = check_filename(filepath)
 
     if not validators and template is not None:
@@ -56,7 +58,11 @@ def create_command(
             for validator in guard["validators"]:
                 validators_map[f"hub://{validator['id']}"] = True
         validators = ",".join(validators_map.keys())
-        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
+        installed_validators = split_and_install_validators(
+            validators,
+            local_models,
+            dry_run,
+        )
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
         )
@@ -67,14 +73,20 @@ def create_command(
         )
         sys.exit(1)
     else:
-        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
-        if name is None and validators:
-            name = "Guard"
+        installed_validators = split_and_install_validators(
+            validators,
+            local_models,
+            dry_run,
+        )
+        if guard_name is None and validators:
+            guard_name = "Guard"
             if len(installed_validators) > 0:
-                name = installed_validators[0] + "Guard"
+                guard_name = installed_validators[0] + "Guard"
 
-            console.print(f"No name provided for guard. Defaulting to {name}")
-        new_config_file = generate_config_file(installed_validators, name)
+            console.print(
+                "No guard name provided for guard. Defaulting to {guard_name}"
+            )
+        new_config_file = generate_config_file(installed_validators, guard_name)
 
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
@@ -137,53 +149,52 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
     return filename  # type: ignore
 
 
-def split_and_install_validators(validators: str, dry_run: bool = False):
+def split_and_install_validators(
+    validators: str, local_models: Union[bool, None], dry_run: bool = False
+):
     """Given a comma-separated list of validators, check the hub to make sure
     all of them exist, install them, and return a list of 'imports'.
 
     If validators is empty, returns an empty list.
     """
+    from guardrails.hub.install import install
+
+    def install_local_models_confirm():
+        return typer.confirm(
+            "This validator has a Guardrails AI inference endpoint available. "
+            "Would you still like to install the"
+            " local models for local inference?",
+        )
+
     if not validators:
         return []
 
-    stripped_validators = list()
-    manifests = list()
-    site_packages = get_site_packages_location()
+    manifest_exports = list()
 
     # Split by comma, strip start and end spaces, then make sure there's a hub prefix.
     # If all that passes, download the manifest file so we know where to install.
     # hub://blah -> blah, then download the manifest.
-    console.print("Checking validators...")
-    with console.status("Checking validator manifests") as status:
-        for v in validators.split(","):
-            v = v.strip()
-            status.update(f"Prefetching {v}")
-            if not v.startswith("hub://"):
-                console.print(
-                    f"WARNING: Validator {v} does not appear to be a valid URI."
-                )
-                sys.exit(-1)
-            stripped_validator = v.lstrip("hub://")
-            stripped_validators.append(stripped_validator)
-            manifests.append(get_validator_manifest(stripped_validator))
-    console.print("Success!")
-
-    # We should make sure they exist.
     console.print("Installing...")
     with console.status("Installing validators") as status:
-        for manifest, validator in zip(manifests, stripped_validators):
-            status.update(f"Installing {validator}")
+        for v in validators.split(","):
+            validator_hub_uri = v.strip()
+            status.update(f"Installing {v}")
             if not dry_run:
-                install_hub_module(manifest, site_packages, quiet=True)
-                run_post_install(manifest, site_packages)
-                add_to_hub_inits(manifest, site_packages)
+                module = install(
+                    package_uri=validator_hub_uri,
+                    install_local_models=local_models,
+                    quiet=True,
+                    install_local_models_confirm=install_local_models_confirm,
+                )
+                exports = module.__validator_exports__
+                manifest_exports.append(exports[0])
             else:
-                console.print(f"Fake installing {validator}")
+                console.print(f"Fake installing {validator_hub_uri}")
                 time.sleep(1)
     console.print("Success!")
 
     # Pull the hub information from each of the installed validators and return it.
-    return [manifest.exports[0] for manifest in manifests]
+    return manifest_exports
 
 
 def generate_config_file(validators: List[str], name: Optional[str] = None) -> str:

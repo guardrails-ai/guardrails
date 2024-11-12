@@ -9,7 +9,7 @@ Calls can be further decomposed into a stack of `Iteration` objects. These are s
 ## General Access
 Given:
 ```py
-my_guard = Guard.from_pydantic(...)
+my_guard = Guard.for_pydantic(...)
 
 response_1 = my_guard(...)
 
@@ -33,17 +33,17 @@ docs/html/single-step-history.html
 
 ## Calls
 ### Initial Input
-Inital inputs like prompt and instructions from a call are available on each call. 
+Initial inputs like messages from a call are available on each call. 
 
 ```py
 first_call = my_guard.history.first
-print("prompt\n-----")
-print(first_call.prompt)
+print("message\n-----")
+print(first_call.messages[0]["content"])
 print("prompt params\n------------- ")
 print(first_call.prompt_params)
 ```
 ```log
-prompt
+message
 -----
 
 You are a human in an enchanted forest. You come across opponents of different types. You should fight smaller opponents, run away from bigger ones, and freeze if the opponent is a bear.
@@ -66,18 +66,6 @@ prompt params
 ------------- 
 {'opp_type': 'grizzly'}
 ```
-
-Note: Input messages and msg_history currently can be accessed through iterations
-```py
-print(guard.history.last.iterations.last.inputs.msg_history)
-```
-```log
-[
-  {"role":"system","content":"You are a helpful assistant."},
-  {"role":"user","content":"Tell me a joke"}
-]
-```
-
 
 ### Final Output
 Final output of call is accessible on a call. 

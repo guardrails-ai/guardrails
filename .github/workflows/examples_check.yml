@@ -21,6 +21,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
       MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY }}
       NLTK_DATA: /tmp/nltk_data
     steps:
     - name: Checkout repository
@@ -58,6 +59,10 @@ jobs:
         source .venv/bin/activate
         mkdir /tmp/nltk_data;
         python -m nltk.downloader -d /tmp/nltk_data punkt;
+    - name: Login to Guardrails
+      run: |
+        source .venv/bin/activate
+        guardrails configure --token $GUARDRAILS_API_KEY --disable-metrics --enable-remote-inferencing
     - name: Execute notebooks and check for errors
       run: |
         source .venv/bin/activate

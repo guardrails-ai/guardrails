@@ -15,7 +15,7 @@ import guardrails as gd
 
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Wrap openai API call
 raw_llm_output, guardrail_output, *rest = guard(
@@ -34,7 +34,7 @@ import openai
 import guardrails as gd
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Wrap openai API call
 raw_llm_output, guardrail_output, *rest = guard(
@@ -49,14 +49,14 @@ raw_llm_output, guardrail_output, *rest = guard(
 
 ## Cohere
 
-### Generate (e.g. GPT-3)
+### Generate (e.g. command)
 
 ```python
 import cohere
 import guardrails as gd
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Create a Cohere client
 cohere_client = cohere.Client(api_key="my_api_key")
@@ -80,7 +80,7 @@ from anthropic import Anthropic
 import guardrails as gd
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Create an Anthropic client
 anthropic_client = Anthropic(api_key="my_api_key")
@@ -130,7 +130,7 @@ model_inputs = tokenizer(prompt, return_tensors="pt").to(torch_device)
 
 
 # Create the Guard
-guard = Guard.from_string(
+guard = Guard.for_string(
     validators=[
         ValidLength(
             min=48,
@@ -175,7 +175,7 @@ generator = pipeline("text-generation", model="facebook/opt-350m")
 
 
 # Create the Guard
-guard = Guard.from_string(
+guard = Guard.for_string(
     validators=[
         ValidLength(
             min=48,
@@ -210,7 +210,7 @@ import guardrails as gd
 import manifest
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Create a Manifest client - this one points to GPT-4
 # and caches responses in SQLLite
@@ -237,7 +237,7 @@ raw_llm_output, guardrail_output, *rest = guard(
 import guardrails as gd
 
 # Create a Guard class
-guard = gd.Guard.from_rail(...)
+guard = gd.Guard.for_rail(...)
 
 # Function that takes the prompt as a string and returns the LLM output as string
 def my_llm_api(prompt: str, **kwargs) -> str:

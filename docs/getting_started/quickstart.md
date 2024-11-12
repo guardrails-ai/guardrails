@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Quickstart
+# Quickstart: In-Application
 
 ## Introduction
 
@@ -17,6 +17,8 @@ pip install guardrails-ai
 ```
 
 ### Configure the Guardrails CLI (required)
+
+First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
     
 ```bash
 guardrails configure
@@ -104,7 +106,7 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet)
+guard = Guard.for_pydantic(output_class=Pet)
 
 res = guard(
     model="gpt-3.5-turbo",
@@ -129,7 +131,7 @@ This prints:
 
 ### Install the Javascript library
 
-**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.16 or greater installed on your system to use the Javascript library. 
+**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.9 or greater installed on your system to use the Javascript library. 
 
 
 ```bash

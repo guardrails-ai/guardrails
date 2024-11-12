@@ -8,10 +8,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 import guardrails as gd
 from guardrails import Validator, register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import (
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
-)
 from guardrails.types import OnFailAction
 from guardrails.classes.validation.validation_result import (
     FailResult,
@@ -20,7 +16,6 @@ from guardrails.classes.validation.validation_result import (
 )
 from tests.integration_tests.test_assets.validators import ValidLength, TwoWords
 
-from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail, string
 
 
@@ -102,7 +97,7 @@ class Director(BaseModel):
 
 def test_python_rail(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -117,21 +112,30 @@ def test_python_rail(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.Guard.for_pydantic(
         output_class=Director,
-        prompt=(
-            "Provide detailed information about the top 5 grossing movies from"
-            " ${director} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n"
-            "${gr.xml_suffix_without_examples}"
-        ),
-        instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
+        messages=[
+            {
+                "role": "system",
+                "content": "\nYou are a helpful assistant"
+                " only capable of communicating"
+                " with valid JSON, and no other"
+                " text.\n${gr.xml_suffix_prompt_examples}",
+            },
+            {
+                "role": "user",
+                "content": "Provide detailed information"
+                " about the top 5 grossing movies from"
+                " ${director} including release date, duration, budget, whether "
+                "it's a sequel, website, and contact email.\n"
+                "${gr.xml_suffix_without_examples}",
+            },
+        ],
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
     final_output = guard(
-        get_static_openai_chat_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
         full_schema_reask=False,
@@ -149,7 +153,7 @@ def test_python_rail(mocker):
     assert call.iterations.length == 2
 
     assert (
-        call.compiled_prompt
+        call.compiled_messages[1]["content"]
         == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
     )
 
@@ -158,11 +162,14 @@ def test_python_rail(mocker):
         == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
     # Same as above
-    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+    assert (
+        call.reask_messages[0][1]["content"]
+        == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+    )
     assert (
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
@@ -179,8 +186,22 @@ def test_python_rail(mocker):
 
 def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
-
+    # mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=string.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=string.LLM_OUTPUT_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
     validators = [TwoWords(on_fail=OnFailAction.REASK)]
     description = "Name for the pizza"
     instructions = """
@@ -198,11 +219,13 @@ ${ingredients}
     guard = gd.Guard.from_string(
         validators,
         string_description=description,
-        prompt=prompt,
-        instructions=instructions,
+        messages=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt},
+        ],
     )
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
@@ -216,14 +239,17 @@ ${ingredients}
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    assert (
+        call.iterations.last.inputs.messages[1]["content"]
+        == string.COMPILED_PROMPT_REASK
+    )
     # Same as above
-    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+    assert call.reask_messages.last[-1]["content"] == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.guarded_output == string.LLM_OUTPUT_REASK

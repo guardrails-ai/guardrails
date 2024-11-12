@@ -1,6 +1,8 @@
 import typing as t
 
-from guardrails.prompt import Prompt
+from guardrails.prompt import Prompt, Instructions
+
+from guardrails.types.inputs import MessageHistory
 
 try:
     import tiktoken
@@ -17,6 +19,23 @@ if nltk is not None:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         nltk.download("punkt")
+
+
+def messages_to_prompt_string(
+    messages: t.Union[
+        list[dict[str, t.Union[str, Prompt, Instructions]]], MessageHistory
+    ],
+) -> str:
+    messages_copy = ""
+    for msg in messages:
+        content = (
+            msg["content"].source  # type: ignore
+            if isinstance(msg["content"], Prompt)
+            or isinstance(msg["content"], Instructions)  # type: ignore
+            else msg["content"]  # type: ignore
+        )
+        messages_copy += content
+    return messages_copy
 
 
 class TextSplitter:
@@ -145,6 +164,8 @@ def get_chunks_from_text(
             raise ImportError(tiktoken_error)
         # FIXME is this the correct way to use tiktoken?
         atomic_chunks = tiktoken(text)  # type: ignore
+    elif chunk_strategy == "full":
+        atomic_chunks = [text]
     else:
         raise ValueError(
             "chunk_strategy must be 'sentence', 'word', 'char', or 'token'."

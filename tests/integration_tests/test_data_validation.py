@@ -60,14 +60,14 @@ def test_choice_validation(llm_output, raises, fails, has_error):
     </choice>
 </output>
 
-
-<prompt>
+<messages>
+    <message role="user">
 Dummy prompt.
-</prompt>
-
+    </message>
+</messages>
 </rail>
 """
-    guard = Guard.from_rail_string(rail_spec)
+    guard = Guard.for_rail_string(rail_spec)
 
     # If raises is True, then the test should raise an exception.
     # For our existing test cases this will always be a ValidationError
@@ -117,7 +117,9 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
     class Choice(BaseModel):
         choice: Union[Fight, Flight] = Field(..., discriminator="action")
 
-    guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
+    guard = Guard.for_pydantic(
+        output_class=Choice, messages=[{"role": "user", "content": "Dummy prompt."}]
+    )
 
     # If raises is True, then the test should raise an exception.
     # For our existing test cases this will always be a ValidationError

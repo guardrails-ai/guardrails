@@ -1,23 +1,29 @@
 import importlib
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
-from typing import List, Literal
-from pydash.strings import snake_case
+from typing import List, Literal, Optional
+from types import ModuleType
+from packaging.utils import canonicalize_name  # PEP 503
 
-from guardrails.classes.generic.stack import Stack
 from guardrails.logger import logger as guardrails_logger
 
 
-from guardrails.cli.hub.utils import pip_process
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails.cli.hub.utils import PipProcessError, pip_process_with_custom_exception
+from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
+from guardrails.settings import settings
 
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
+
+class ValidatorModuleType(ModuleType):
+    __validator_exports__: List[str]
 
 
 class FailedPackageInspection(Exception):
@@ -42,7 +48,7 @@ class InvalidHubInstallURL(Exception):
 
 class ValidatorPackageService:
     @staticmethod
-    def get_manifest_and_site_packages(module_name: str) -> tuple[ModuleManifest, str]:
+    def get_manifest_and_site_packages(module_name: str) -> tuple[Manifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
         return (module_manifest, site_packages)
@@ -55,7 +61,7 @@ class ValidatorPackageService:
         return site_packages_path
 
     @staticmethod
-    def reload_module(module_path):
+    def reload_module(module_path) -> ModuleType:
         try:
             reloaded_module = None
             # Dynamically import the module based on its path
@@ -75,46 +81,38 @@ class ValidatorPackageService:
             raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):
+    def get_validator_from_manifest(manifest: Manifest) -> ModuleType:
         """
         Get Validator class from the installed module based on the manifest.
         Note: manifest.exports yields a list of exported Validator classes.
 
         Args:
-            manifest (ModuleManifest): The manifest of the installed module
+            manifest (Manifest): The manifest of the installed module
 
         Returns:
             Any: The Validator class from the installed module
         """
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        module_name = manifest.module_name
 
-        _relative_path = ".".join([*org_package, module_name])
-        import_line = f"guardrails.hub.{_relative_path}"
+        validator_id = manifest.id
+        import_path = ValidatorPackageService.get_import_path_from_validator_id(
+            validator_id
+        )
+
+        import_line = f"{import_path}"
 
         # Reload or import the module
         return ValidatorPackageService.reload_module(import_line)
 
     @staticmethod
-    def get_org_and_package_dirs(
-        manifest: ModuleManifest,
-    ) -> List[str]:
-        org_name = manifest.namespace
-        package_name = manifest.package_name
-        org = snake_case(org_name if len(org_name) > 1 else "")
-        package = snake_case(package_name if len(package_name) > 1 else package_name)
-        return list(filter(None, [org, package]))
-
-    @staticmethod
-    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
+    def add_to_hub_inits(manifest: Manifest, site_packages: str):
+        validator_id = manifest.id
         exports: List[str] = manifest.exports or []
         sorted_exports = sorted(exports, reverse=True)
-        module_name = manifest.module_name
-        relative_path = ".".join([*org_package, module_name])
-        import_line = (
-            f"from guardrails.hub.{relative_path} import {', '.join(sorted_exports)}"
+
+        import_path = ValidatorPackageService.get_import_path_from_validator_id(
+            validator_id
         )
+        import_line = f"from {import_path} import {', '.join(sorted_exports)}"
 
         hub_init_location = os.path.join(
             site_packages, "guardrails", "hub", "__init__.py"
@@ -130,27 +128,6 @@ class ValidatorPackageService:
                     hub_init.write("\n")
                 hub_init.write(import_line)
                 hub_init.close()
-
-        namespace = org_package[0]
-        namespace_init_location = os.path.join(
-            site_packages, "guardrails", "hub", namespace, "__init__.py"
-        )
-        if os.path.isfile(namespace_init_location):
-            with open(namespace_init_location, "a+") as namespace_init:
-                namespace_init.seek(0, 0)
-                content = namespace_init.read()
-                if import_line in content:
-                    namespace_init.close()
-                else:
-                    namespace_init.seek(0, 2)
-                    if len(content) > 0:
-                        namespace_init.write("\n")
-                    namespace_init.write(import_line)
-                    namespace_init.close()
-        else:
-            with open(namespace_init_location, "w") as namespace_init:
-                namespace_init.write(import_line)
-                namespace_init.close()
 
     @staticmethod
     def get_module_path(package_name):
@@ -174,46 +151,47 @@ class ValidatorPackageService:
         return package_path
 
     @staticmethod
-    def get_module_name(package_uri: str):
-        if not package_uri.startswith("hub://"):
+    def get_validator_id(validator_uri: str):
+        if not validator_uri.startswith("hub://"):
             raise InvalidHubInstallURL(
                 "Invalid URI! The package URI must start with 'hub://'"
             )
 
-        module_name = package_uri.replace("hub://", "")
-        return module_name
+        validator_uri_with_version = validator_uri.replace("hub://", "")
 
-    @staticmethod
-    def get_install_url(manifest: ModuleManifest) -> str:
-        repo = manifest.repository
-        repo_url = repo.url
-        branch = repo.branch
+        validator_id_version_regex = (
+            r"(?P<validator_id>[\/a-zA-Z0-9\-_]+)(?P<version>.*)"
+        )
+        match = re.match(validator_id_version_regex, validator_uri_with_version)
+        validator_version = None
 
-        git_url = repo_url
-        if not repo_url.startswith("git+"):
-            git_url = f"git+{repo_url}"
+        if match:
+            validator_id = match.group("validator_id")
+            validator_version = (
+                match.group("version").strip() if match.group("version") else None
+            )
+        else:
+            validator_id = validator_uri_with_version
 
-        if branch is not None:
-            git_url = f"{git_url}@{branch}"
-
-        return git_url
+        return (validator_id, validator_version)
 
     @staticmethod
     def run_post_install(
-        manifest: ModuleManifest, site_packages: str, logger=guardrails_logger
+        manifest: Manifest, site_packages: str, logger=guardrails_logger
     ):
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
+        validator_id = manifest.id
         post_install_script = manifest.post_install
+
         if not post_install_script:
             return
 
-        module_name = manifest.module_name
+        import_path = ValidatorPackageService.get_import_path_from_validator_id(
+            validator_id
+        )
+
         relative_path = os.path.join(
             site_packages,
-            "guardrails",
-            "hub",
-            *org_package,
-            module_name,
+            import_path,
             post_install_script,
         )
 
@@ -246,66 +224,83 @@ class ValidatorPackageService:
                 )
 
     @staticmethod
-    def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
-        org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        return os.path.join(site_packages, "guardrails", "hub", *org_package)
+    def get_normalized_package_name(validator_id: str):
+        validator_id_parts = validator_id.split("/")
+        concatanated_package_name = (
+            f"{validator_id_parts[0]}-grhub-{validator_id_parts[1]}"
+        )
+        pep_503_package_name = canonicalize_name(concatanated_package_name)
+        return pep_503_package_name
+
+    @staticmethod
+    def get_import_path_from_validator_id(validator_id):
+        pep_503_package_name = ValidatorPackageService.get_normalized_package_name(
+            validator_id
+        )
+        return pep_503_package_name.replace("-", "_")
 
     @staticmethod
     def install_hub_module(
-        module_manifest: ModuleManifest,
-        site_packages: str,
+        validator_id: str,
+        validator_version: Optional[str] = "",
         quiet: bool = False,
+        upgrade: bool = False,
         logger=guardrails_logger,
     ):
-        install_url = ValidatorPackageService.get_install_url(module_manifest)
-        install_directory = ValidatorPackageService.get_hub_directory(
-            module_manifest, site_packages
+        pep_503_package_name = ValidatorPackageService.get_normalized_package_name(
+            validator_id
         )
+        validator_version = validator_version if validator_version else ""
 
-        pip_flags = [f"--target={install_directory}", "--no-deps"]
+        guardrails_token = settings.rc.token
+
+        pip_flags = [
+            f"--index-url=https://__token__:{guardrails_token}@pypi.guardrailsai.com/simple",
+            "--extra-index-url=https://pypi.org/simple",
+        ]
+
+        if upgrade:
+            pip_flags.append("--upgrade")
+
         if quiet:
             pip_flags.append("-q")
 
-        # Install validator module in namespaced directory under guardrails.hub
-        download_output = pip_process("install", install_url, pip_flags, quiet=quiet)
-        if not quiet:
-            logger.info(download_output)
+        # Install from guardrails hub pypi server with public pypi index as fallback
 
-        # Install validator module's dependencies in normal site-packages directory
-        inspect_output = pip_process(
-            "inspect",
-            flags=[f"--path={install_directory}"],
-            format=json_format,
-            quiet=quiet,
-            no_color=True,
-        )
-
-        # throw if inspect_output is a string. Mostly for pyright
-        if isinstance(inspect_output, str):
-            logger.error("Failed to inspect the installed package!")
-            raise FailedPackageInspection
-
-        dependencies = (
-            Stack(*inspect_output.get("installed", []))
-            .at(0, {})
-            .get("metadata", {})  # type: ignore
-            .get("requires_dist", [])  # type: ignore
-        )
-        requirements = list(filter(lambda dep: "extra" not in dep, dependencies))
-        for req in requirements:
-            if "git+" in req:
-                install_spec = req.replace(" ", "")
-                dep_install_output = pip_process("install", install_spec, quiet=quiet)
+        try:
+            full_package_name = f"{pep_503_package_name}[validators]{validator_version}"
+            download_output = pip_process_with_custom_exception(
+                "install", full_package_name, pip_flags, quiet=quiet
+            )
+            if not quiet:
+                logger.info(download_output)
+        except PipProcessError:
+            try:
+                full_package_name = f"{pep_503_package_name}{validator_version}"
+                download_output = pip_process_with_custom_exception(
+                    "install", full_package_name, pip_flags, quiet=quiet
+                )
                 if not quiet:
-                    logger.info(dep_install_output)
-            else:
-                req_info = Stack(*req.split(" "))
-                name = req_info.at(0, "").strip()  # type: ignore
-                versions = req_info.at(1, "").strip("()")  # type: ignore
-                if name:
-                    install_spec = name if not versions else f"{name}{versions}"
-                    dep_install_output = pip_process(
-                        "install", install_spec, quiet=quiet
+                    logger.info(download_output)
+            except PipProcessError as e:
+                action = e.action
+                package = e.package
+                stderr = e.stderr
+                stdout = e.stdout
+                returncode = e.returncode
+                logger.error(
+                    (
+                        f"Failed to {action} {package}\n"
+                        f"Exit code: {returncode}\n"
+                        f"stderr: {(stderr or '').strip()}\n"
+                        f"stdout: {(stdout or '').strip()}"
                     )
-                    if not quiet:
-                        logger.info(dep_install_output)
+                )
+                raise
+            except Exception as e:
+                logger.error(
+                    "An unexpected exception occurred while "
+                    f"installing {validator_id}: ",
+                    e,
+                )
+                raise

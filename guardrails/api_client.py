@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Iterable, Optional
+from typing import Any, Iterator, Optional
 
 import requests
 from guardrails_api_client.configuration import Configuration
@@ -12,6 +12,9 @@ from guardrails_api_client.models import (
     ValidatePayload,
     ValidationOutcome as IValidationOutcome,
 )
+
+from guardrails_api_client.exceptions import BadRequestException
+from guardrails.errors import ValidationError
 
 from guardrails.logger import logger
 
@@ -58,23 +61,26 @@ class GuardrailsApiClient:
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
     ):
-        _openai_api_key = (
-            openai_api_key
-            if openai_api_key is not None
-            else os.environ.get("OPENAI_API_KEY")
-        )
-        return self._validate_api.validate(
-            guard_name=guard.name,
-            validate_payload=payload,
-            x_openai_api_key=_openai_api_key,
-        )
+        try:
+            _openai_api_key = (
+                openai_api_key
+                if openai_api_key is not None
+                else os.environ.get("OPENAI_API_KEY")
+            )
+            return self._validate_api.validate(
+                guard_name=guard.name,
+                validate_payload=payload,
+                x_openai_api_key=_openai_api_key,
+            )
+        except BadRequestException as e:
+            raise ValidationError(f"{e.body}")
 
     def stream_validate(
         self,
         guard: Guard,
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
-    ) -> Iterable[Any]:
+    ) -> Iterator[Any]:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None
@@ -98,6 +104,8 @@ class GuardrailsApiClient:
                     )
                 if line:
                     json_output = json.loads(line)
+                    if json_output.get("error"):
+                        raise Exception(json_output.get("error").get("message"))
                     yield IValidationOutcome.from_dict(json_output)
 
     def get_history(self, guard_name: str, call_id: str):

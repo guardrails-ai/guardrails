@@ -1,5 +1,8 @@
 # `Prompt` Element
 
+
+**Note**: Prompt element support has been dropped in 0.6.0 in support of [messages](./messages).
+
 The `<prompt></prompt>` element contains the query that describes the high level task.
 
 ## 📚 Components of a Prompt Element

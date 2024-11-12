@@ -5,16 +5,18 @@ import typer
 
 from guardrails import Guard
 from guardrails.cli.guardrails import guardrails
+from guardrails.hub_telemetry.hub_tracing import trace
 
 
 def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, None]:
     """Validate guardrails.yml file."""
-    guard = Guard.from_rail(rail)
+    guard = Guard.for_rail(rail)
     result = guard.parse(llm_output)
     return result.validated_output
 
 
 @guardrails.command()
+@trace(name="guardrails-cli/validate")
 def validate(
     rail: str = typer.Argument(
         ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False

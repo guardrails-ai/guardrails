@@ -9,6 +9,7 @@ Generate a new response that corrects your old response such that the following 
 - must be exactly two words
 - Value Hello a you
 and me is not lower case.
+- Value has length greater than 10. Please return a shorter output, that is shorter than 10 characters.
 
 
 
@@ -21,7 +22,3 @@ Your generated response should satisfy the following properties:
 - length: min=1 max=10
 
 Don't talk; just go.
-
-
-String Output:
-

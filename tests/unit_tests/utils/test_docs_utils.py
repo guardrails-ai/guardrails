@@ -48,19 +48,6 @@ def test_text_splitter_split(mock_tokenizer):
     assert chunks[3] == "10 11 12 13 14 15 16 17"
 
 
-# @patch('nltk.data.find', side_effect=LookupError)
-# def test_sentence_split_nltk_download_error(mock_nltk_find):
-#     with pytest.raises(ImportError):
-#         sentence_split("This is a test sentence.")
-
-# @patch('nltk.data.find')
-# def test_sentence_split(mock_nltk_find):
-#     mock_nltk_find.return_value = True
-#     result = sentence_split("This is a test sentence.")
-#     assert len(result) == 1
-#     assert result[0] == "This is a test sentence."
-
-
 def test_prompt_template_token_length(mock_tokenizer, mock_prompt_template):
     text_splitter = TextSplitter()
     length = text_splitter.prompt_template_token_length(mock_prompt_template)

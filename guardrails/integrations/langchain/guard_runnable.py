@@ -15,7 +15,7 @@ class GuardRunnable(BaseRunnable):
     def _validate(self, input: str) -> OT:
         response: ValidationOutcome[OT] = self.guard.validate(input)
         validated_output = response.validated_output
-        if not validated_output or response.validation_passed is False:
+        if validated_output is None or response.validation_passed is False:
             raise ValidationError(
                 (
                     "The response from the LLM failed validation!"

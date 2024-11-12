@@ -2,48 +2,38 @@ from unittest.mock import mock_open, call
 
 import pytest
 
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
 from guardrails.cli.hub.uninstall import remove_from_hub_inits
 
-manifest_mock = ModuleManifest(
-    encoder="some_encoder",
-    id="module_id",
-    name="test_module",
-    author={"name": "Author Name", "email": "author@example.com"},
-    maintainers=[{"name": "Maintainer Name", "email": "maintainer@example.com"}],
-    repository={"url": "https://github.com/example/repo"},
-    namespace="guardrails",
-    package_name="test_package",
-    module_name="test_module",
-    exports=["Validator", "Helper"],
+manifest_mock = Manifest.from_dict(
+    {
+        "id": "guardrails/test_package",
+        "name": "test_module",
+        "author": {"name": "Author Name", "email": "author@example.com"},
+        "maintainers": [{"name": "Maintainer Name", "email": "maintainer@example.com"}],
+        "repository": {"url": "https://github.com/example/repo"},
+        "packageName": "test_package",
+        "moduleName": "test_module",
+        "namespace": "guardrails",
+        "description": "Test module",
+        "exports": ["Validator", "Helper"],
+    }
 )
 
 
 def test_remove_from_hub_inits(mocker):
-    mocker.patch(
-        "guardrails.cli.hub.uninstall.get_org_and_package_dirs",
-        return_value=["guardrails", "test_package"],
-    )
     mock_remove_line = mocker.patch("guardrails.cli.hub.uninstall.remove_line")
-    mock_remove_dirs = mocker.patch("shutil.rmtree")
 
     remove_from_hub_inits(manifest_mock, "/site-packages")
 
     expected_calls = [
         call(
             "/site-packages/guardrails/hub/__init__.py",
-            "from guardrails.hub.guardrails.test_package.test_module import "
-            "Validator, Helper",
-        ),
-        call(
-            "/site-packages/guardrails/hub/guardrails/__init__.py",
-            "from guardrails.hub.guardrails.test_package.test_module import "
-            "Validator, Helper",
+            "from guardrails_grhub_test_package import " "Validator, Helper",
         ),
     ]
 
     mock_remove_line.assert_has_calls(expected_calls, any_order=True)
-    mock_remove_dirs.assert_called_once_with("/site-packages/guardrails/hub/guardrails")
 
 
 def test_uninstall_invalid_uri(mocker):
@@ -80,10 +70,7 @@ def test_uninstall_valid_uri(mocker):
         "guardrails.cli.hub.uninstall.get_validator_manifest",
         return_value=manifest_mock,
     )
-    mocker.patch(
-        "guardrails.cli.hub.uninstall.get_site_packages_location",
-        return_value="/site-packages",
-    )
+
     mock_uninstall_hub_module = mocker.patch(
         "guardrails.cli.hub.uninstall.uninstall_hub_module"
     )
@@ -92,9 +79,27 @@ def test_uninstall_valid_uri(mocker):
     )
     mocker.patch("guardrails.cli.hub.uninstall.console")
 
+    validator_package_service_mock = mocker.patch(
+        "guardrails.hub.validator_package_service.ValidatorPackageService",
+    )
+    validator_package_service_mock.get_site_packages_location.return_value = (
+        "/site-packages"
+    )
+
     from guardrails.cli.hub.uninstall import uninstall
 
     uninstall("hub://guardrails/test-validator")
 
-    mock_uninstall_hub_module.assert_called_once_with(manifest_mock, "/site-packages")
+    mock_uninstall_hub_module.assert_called_once_with(manifest_mock)
     mock_remove_from_hub_inits.assert_called_once_with(manifest_mock, "/site-packages")
+
+
+def test_uninstall_hub_module(mocker):
+    mock_pip_process = mocker.patch("guardrails.cli.hub.uninstall.pip_process")
+    from guardrails.cli.hub.uninstall import uninstall_hub_module
+
+    uninstall_hub_module(manifest_mock)
+
+    mock_pip_process.assert_called_once_with(
+        "uninstall", "guardrails-grhub-test-package", flags=["-y"], quiet=True
+    )

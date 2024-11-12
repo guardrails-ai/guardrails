@@ -7,6 +7,7 @@ from guardrails_api_client import (
     ErrorSpan as IErrorSpan,
 )
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from pydantic import BaseModel
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
@@ -47,7 +48,7 @@ class ValidationResult(IValidationResult, ArbitraryModel):
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "ValidationResult":
         i_validation_result = IValidationResult.from_dict(obj) or IValidationResult(
-            outcome="pail"
+            outcome="fail"
         )
         return cls.from_interface(i_validation_result)
 
@@ -185,3 +186,9 @@ class ErrorSpan(IErrorSpan, ArbitraryModel):
     end: int
     # reason validation failed, specific to this chunk
     reason: str
+
+
+class StreamValidationResult(BaseModel):
+    chunk: Any
+    original_text: str
+    metadata: Dict[str, Any]

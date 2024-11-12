@@ -3,34 +3,38 @@
 #   - [ ] Maintain validator_base.py for exports but deprecate them
 #   - [ ] Remove validator_base.py in 0.6.x
 
+import asyncio
+import contextlib
+from functools import partial
 import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+import re
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing_extensions import deprecated
 from warnings import warn
+import warnings
 
-import nltk
 import requests
 from langchain_core.runnables import Runnable
 
+from guardrails.settings import settings
 from guardrails.classes import ErrorSpan  # noqa
 from guardrails.classes import PassResult  # noqa
 from guardrails.classes import FailResult, ValidationResult
-from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
+from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-
-#   See: https://github.com/guardrails-ai/guardrails/issues/829
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
+from guardrails.utils.tokenization_utils import (
+    postproc_splits,
+)
 
 
 ### functions to get chunks ###
@@ -42,21 +46,46 @@ def split_sentence_str(chunk: str):
     return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
-def split_sentence_nltk(chunk: str):
-    """
-    NOTE: this approach currently does not work
-    Use a sentence tokenizer to split the chunk into sentences.
+def split_sentence_word_tokenizers_jl_separator(
+    chunk: str, separator: str = "abcdsentenceseperatordcba"
+):
+    """Use a sentence tokenizer to detect if at least one sentence is present
+    in the chunk. We return the first sentence and the remaining chunks without
+    the first sentence.
 
-    Because using the tokenizer is expensive, we only use it if there
-    is a period present in the chunk.
+    We perform the first step of WordTokenizers.jl's split_sentences function to
+    detect possible sentence boundaries before calling the sentence tokenizer.
+
+    Args:
+        chunk (str): The text to split into sentences.
+
+    Returns:
+        List[str]: A list of two strings. The first string is the first sentence
+            in the chunk. The second string is the remaining text in the chunk.
     """
     # using the sentence tokenizer is expensive
     # we check for a . to avoid wastefully calling the tokenizer
-    if "." not in chunk:
+
+    # check at least 3 characters have been accumulated before splitting
+    is_minimum_length = False
+    with contextlib.suppress(IndexError):
+        chunk[2]
+        is_minimum_length = True
+
+    # check for potential line endings, which is what split_sentences does
+    chunk_with_potential_line_endings, count = re.subn(
+        r"([?!.])(?=\s|$)", rf"\1{separator}", chunk
+    )
+    any_potential_line_endings = count > 0
+    if not is_minimum_length or not any_potential_line_endings:
         return []
-    sentences = nltk.sent_tokenize(chunk)
-    if len(sentences) == 0:
+
+    sentences = postproc_splits(chunk_with_potential_line_endings, separator)
+    sentences = re.split(rf"\n?{separator} ?\n?", sentences)
+    # if not more than one sentence, we haven't accumulated enough for a validation
+    if len(sentences) <= 1:
         return []
+
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
@@ -76,25 +105,28 @@ class Validator:
 
     def __init__(
         self,
-        on_fail: Optional[Union[Callable, OnFailAction]] = None,
+        on_fail: Optional[Union[Callable[[Any, FailResult], Any], OnFailAction]] = None,
         **kwargs,
     ):
-        self.creds = Credentials.from_rc_file()
-        self._disable_telemetry = self.creds.enable_metrics is not True
+        self._disable_telemetry = settings.rc.enable_metrics is not True
         if not self._disable_telemetry:
-            self._hub_telemetry = HubTelemetry()
+            self._hub_telemetry = HubTelemetry(enabled=settings.rc.enable_metrics)
 
         self.use_local = kwargs.get("use_local", None)
         self.validation_endpoint = kwargs.get("validation_endpoint", None)
-        if not self.creds:
+        # NOTE: I think this is an evergreen check
+        # We should test w/o an rc file,
+        #   and if this doesn't raise then we should remove this.
+        if not settings.rc:
             raise ValueError(
-                "No credentials found. Please run `guardrails configure` and try again."
+                "No .guardrailsrc file found."
+                " Please run `guardrails configure` and try again."
             )
-        self.hub_jwt_token = get_jwt_token(self.creds)
+        self.hub_jwt_token = get_jwt_token(settings.rc)
 
         # If use_local is not set, we can fall back to the setting determined in CLI
         if self.use_local is None:
-            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+            self.use_local = not remote_inference.get_use_remote_inference(settings.rc)
 
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
@@ -110,7 +142,7 @@ class Validator:
         self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
-            on_fail = OnFailAction.NOOP
+            on_fail = OnFailAction.EXCEPTION
         if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
@@ -124,7 +156,8 @@ class Validator:
             )
             self.on_fail_method = None
         else:
-            self.on_fail_method = on_fail
+            self.on_fail_descriptor = OnFailAction.CUSTOM
+            self._set_on_fail_method(on_fail)
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -132,6 +165,43 @@ class Validator:
         assert (
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
+
+    @property
+    @deprecated(
+        (
+            "The `creds` attribute is deprecated and will be removed in version 0.6.x."
+            " Use `settings.rc` instead."
+        )
+    )
+    def creds(self):
+        from guardrails.classes.credentials import Credentials  # type: ignore
+
+        return Credentials.from_rc_file()  # type: ignore
+
+    def _set_on_fail_method(self, on_fail: Callable[[Any, FailResult], Any]):
+        """Set the on_fail method for the validator."""
+        on_fail_args = inspect.getfullargspec(on_fail)
+        second_arg = safe_get(on_fail_args.args, 1)
+        if second_arg is None:
+            raise ValueError(
+                "The on_fail method must take two arguments: "
+                "the value being validated and the FailResult."
+            )
+        second_arg_type = on_fail_args.annotations.get(second_arg)
+        if second_arg_type == List[FailResult]:
+            warnings.warn(
+                "Specifying a List[FailResult] as the second argument"
+                " for a custom on_fail handler is deprecated. "
+                "Please use FailResult instead.",
+                DeprecationWarning,
+            )
+
+            def on_fail_wrapper(value: Any, fail_result: FailResult) -> Any:
+                return on_fail(value, [fail_result])  # type: ignore
+
+            self.on_fail_method = on_fail_wrapper
+        else:
+            self.on_fail_method = on_fail
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.
@@ -171,9 +241,22 @@ class Validator:
         validation requirements, logic, or pre/post processing.
         """
         validation_result = self._validate(value, metadata)
-        self._log_telemetry()
         return validation_result
 
+    async def async_validate(
+        self, value: Any, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        """Use this function if your validation logic requires asyncio.
+
+        Guaranteed to work with AsyncGuard
+
+        May not work with synchronous Guards if they are used within an
+        async context     due to lack of available event loops.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.validate, value, metadata)
+
+    @trace(name="/validator_inference", origin="Validator._inference")
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
         validation call.
@@ -206,7 +289,7 @@ class Validator:
         Returns:
             list[str]: The text chunked into some subset.
         """
-        return split_sentence_str(chunk)
+        return split_sentence_word_tokenizers_jl_separator(chunk)
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
@@ -233,8 +316,9 @@ class Validator:
         remainder = kwargs.get("remainder", False)
         if remainder:
             split_contents = [accumulated_text, ""]
+        # if no chunks are returned, we haven't accumulated enough
         if len(split_contents) == 0:
-            return PassResult()
+            return None
         [chunk_to_validate, new_accumulated_chunks] = split_contents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
@@ -254,8 +338,17 @@ class Validator:
 
         return validation_result
 
+    async def async_validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Optional[ValidationResult]:
+        loop = asyncio.get_event_loop()
+        validate_stream_partial = partial(
+            self.validate_stream, chunk, metadata, **kwargs
+        )
+        return await loop.run_in_executor(None, validate_stream_partial)
+
     def _hub_inference_request(
-        self, request_body: dict, validation_endpoint: str
+        self, request_body: Union[dict, str], validation_endpoint: str
     ) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation
         model. This request is authed through the hub and rerouted to a hosted
@@ -279,7 +372,14 @@ class Validator:
         }
         req = requests.post(validation_endpoint, data=request_body, headers=headers)
         if not req.ok:
-            logging.error(req.status_code)
+            if req.status_code == 401:
+                raise Exception(
+                    "401: Remote Inference Unauthorized. Please run "
+                    "`guardrails configure`. You can find a new"
+                    " token at https://hub.guardrailsai.com/keys"
+                )
+            else:
+                logging.error(req.status_code)
 
         return req.json()
 
@@ -335,12 +435,12 @@ class Validator:
     def __call__(self, value):
         result = self.validate(value, {})
         if isinstance(result, FailResult):
-            from guardrails.validator_service import ValidatorServiceBase
+            from guardrails.validator_service.validator_service_base import (
+                ValidatorServiceBase,
+            )
 
             validator_service = ValidatorServiceBase()
-            return validator_service.perform_correction(
-                [result], value, self, self.on_fail_descriptor
-            )
+            return validator_service.perform_correction(result, value, self)
         return value
 
     def __eq__(self, other):
@@ -402,29 +502,6 @@ class Validator:
         )
 
         return ValidatorRunnable(self)
-
-    def _log_telemetry(self) -> None:
-        """Logs telemetry after the validator is called."""
-
-        if not self._disable_telemetry:
-            # Get HubTelemetry singleton and create a new span to
-            # log the validator inference
-            used_guardrails_endpoint = (
-                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
-            )
-            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
-            self._hub_telemetry.create_new_span(
-                span_name="/validator_inference",
-                attributes=[
-                    ("validator_name", self.rail_alias),
-                    ("used_remote_inference", not self.use_local),
-                    ("used_local_inference", self.use_local),
-                    ("used_guardrails_endpoint", used_guardrails_endpoint),
-                    ("used_custom_endpoint", used_custom_endpoint),
-                ],
-                is_parent=False,  # This span will have no children
-                has_parent=True,  # This span has a parent
-            )
 
 
 V = TypeVar("V", bound=Validator, covariant=True)

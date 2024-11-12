@@ -13,15 +13,13 @@
     <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
 </output>
 
-
-<instructions>
+<messages>
+    <message role="system">
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
 ${gr.xml_suffix_prompt_examples}
-</instructions>
-
-
-<prompt>
+</message>
+    <message role="user">
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
 ${document}
@@ -31,6 +29,7 @@ Extract information from this document and return a JSON that follows the correc
 ${gr.xml_prefix_prompt}
 
 ${xml_output_schema}
-</prompt>
+</message>
+</messages>
 
 </rail>
