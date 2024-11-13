@@ -56,7 +56,7 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
     def guard(self) -> Guard:
         return self._guard
 
-    def engine_api(self, messages: List[Dict[str, str]], **kwargs) -> str:
+    def engine_api(self, *, messages: List[Dict[str, str]], **kwargs) -> str:
         user_messages = [m for m in messages if m["role"] == "user"]
         query = user_messages[-1]["content"]
         if isinstance(self._engine, BaseQueryEngine):
