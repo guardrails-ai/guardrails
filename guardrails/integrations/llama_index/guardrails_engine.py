@@ -1,15 +1,12 @@
-# pyright: reportMissingImports=false
-
-from typing import Any, Optional, Dict, List, Union, TYPE_CHECKING, cast
+from typing import Any, Optional, Dict, List, Union, cast
 from guardrails import Guard
 from guardrails.errors import ValidationError
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.decorators.experimental import experimental
-import importlib.util
 
-LLAMA_INDEX_AVAILABLE = importlib.util.find_spec("llama_index") is not None
 
-if TYPE_CHECKING or LLAMA_INDEX_AVAILABLE:
+try:
+    import llama_index  # noqa: F401
     from llama_index.core.query_engine import BaseQueryEngine
     from llama_index.core.chat_engine.types import (
         BaseChatEngine,
@@ -28,6 +25,11 @@ if TYPE_CHECKING or LLAMA_INDEX_AVAILABLE:
     )
     from llama_index.core.base.llms.types import ChatMessage
     from llama_index.core.prompts.mixin import PromptMixinType
+except ImportError:
+    raise ImportError(
+        "llama_index is not installed. Please install it with "
+        "`pip install llama-index` to use GuardrailsEngine."
+    )
 
 
 class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
@@ -38,14 +40,6 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
         guard_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional["CallbackManager"] = None,
     ):
-        try:
-            import llama_index  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "llama_index is not installed. Please install it with "
-                "`pip install llama-index` to use GuardrailsEngine."
-            )
-
         self._engine = engine
         self._guard = guard
         self._guard_kwargs = guard_kwargs or {}
@@ -196,12 +190,15 @@ class GuardrailsEngine(BaseQueryEngine, BaseChatEngine):
             if self._engine_response.metadata is None:
                 self._engine_response.metadata = {}
             self._engine_response.metadata.update(metadata_update)
+            # Repeat for typing purposes
+            self._engine_response.response = content
+            return self._engine_response
         elif isinstance(self._engine_response, StreamingAgentChatResponse):
             for key, value in metadata_update.items():
                 setattr(self._engine_response, key, value)
-
-        self._engine_response.response = content
-        return self._engine_response
+            # Repeat for typing purposes
+            self._engine_response.response = content
+            return self._engine_response
 
     async def _aquery(self, query_bundle: "QueryBundle") -> "RESPONSE_TYPE":
         """Async version of _query."""

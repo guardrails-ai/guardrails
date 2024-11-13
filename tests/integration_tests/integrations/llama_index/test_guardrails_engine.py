@@ -108,4 +108,6 @@ def test_guardrails_engine_unsupported_engine(guard):
     guardrails_engine = GuardrailsEngine(engine, guard)
 
     with pytest.raises(ValueError, match="Unsupported engine type"):
-        guardrails_engine.engine_api("Test prompt")
+        guardrails_engine.engine_api(
+            messages=[{"role": "user", "content": "Test prompt"}]
+        )
