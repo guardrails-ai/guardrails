@@ -589,6 +589,10 @@ class TestMlFlowInstrumentor:
     def test__instrument_validator_validate(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.get_current_active_span",
+            return_value=mock_span,
+        )
+        mock_start_span = mocker.patch(
             "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
@@ -614,6 +618,55 @@ class TestMlFlowInstrumentor:
             attributes={
                 "guardrails.version": GUARDRAILS_VERSION,
                 "type": "guardrails/guard/step/validator",
+            },
+        )
+
+        # Internally called, not the wrapped call above
+        mock_add_validator_attributes.assert_called_once_with(
+            mock_validator,
+            True,
+            {},
+            validator_span=mock_span,  # type: ignore
+            validator_name="mock-validator",
+            obj_id=id(mock_validator),
+            on_fail_descriptor="exception",
+            result=resp,
+            init_kwargs={},
+            validation_session_id="unknown",
+        )
+
+    @pytest.mark.asyncio
+    async def test__instrument_validator_async_validate(self, mocker):
+        mock_span = MockSpan()
+        mock_start_span = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
+            return_value=mock_span,
+        )
+
+        mock_add_validator_attributes = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_validator_attributes"
+        )
+
+        from guardrails.integrations.databricks import MlFlowInstrumentor
+        from tests.unit_tests.mocks.mock_hub import MockValidator
+
+        m = MlFlowInstrumentor("mock experiment")
+
+        wrapped_async_validate = m._instrument_validator_async_validate(
+            MockValidator.async_validate
+        )
+
+        mock_validator = MockValidator()
+
+        resp = await wrapped_async_validate(mock_validator, True, {})
+
+        mock_start_span.assert_called_once_with(
+            name="mock-validator.validate",
+            span_type="validator",
+            attributes={
+                "guardrails.version": GUARDRAILS_VERSION,
+                "type": "guardrails/guard/step/validator",
+                "async": True,
             },
         )
 
