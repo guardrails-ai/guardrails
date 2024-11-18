@@ -105,6 +105,7 @@ const sidebars = {
   integrations: [
     // "integrations/azure_openai",
     "integrations/langchain",
+    "integrations/llamaindex",
     {
       type: "category",
       label: "Telemetry",
