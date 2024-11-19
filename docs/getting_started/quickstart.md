@@ -16,23 +16,40 @@ First, install Guardrails for your desired language:
 pip install guardrails-ai
 ```
 
+### Generate an API Key (required)
+Next, get a free API key from [Guardrails Hub](https://hub.guardrailsai.com/keys).  Copy and keep track of this API key because you'll use it in the next step to configure the CLI.
+
 ### Configure the Guardrails CLI (required)
 
-First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
+Configure the Guardrails CLI with the command:
     
 ```bash
 guardrails configure
 ```
 
+The configuration process will ask you three questions:
+
+1. Whether you want to enable metrics reporting.
+2. Whether you want to use our hosted remote inference endpoints for validators that utilize large ML models.
+3. To enter the API key you generated in the previous step.  This is required in order to install validators in the next step.
+
+
+### Install a Validator from the Guardrails Hub
+In order to perform any validation on LLM output with Guardrails, you will need to install an appropriate validator for your use case from the [Guardrails Hub](https://hub.guardrailsai.com).  Each validator has a unique and identifying Hub URI that can be used in the Guardrails CLI to install it into your current environment.  You can find the exact install command for a validator on it's details page in the [Guardrails Hub](https://hub.guardrailsai.com).  For example, the [Detect PII](https://hub.guardrailsai.com/validator/guardrails/detect_pii) validator can be installed via:
+
+    ```bash
+    guardrails hub install hub://guardrails/detect_pii
+    ```
+
 ## Usage
-
-1. Install a guardrail from [Guardrails Hub](https://hub.guardrailsai.com).
-
+1. Create a Guard with an installed validator.
+    First, install the validator you want to use from the Guardrails Hub:
+    
     ```bash
     guardrails hub install hub://guardrails/regex_match --quiet
     ```
-2. Create a Guard from the installed guardrail.
 
+    Next, you can import this validator from the `guardrails.hub` module and use it to construct a Guard.
     ```python
     # Import Guard and Validator
     from guardrails.hub import RegexMatch
@@ -49,14 +66,14 @@ guardrails configure
         .validation_passed
     )  # Guardrail Fails
     ```
-3. Run multiple guardrails within a Guard.
-    First, install the necessary guardrails from Guardrails Hub.
+2. Run multiple validators within a Guard.
+    First, install the necessary validators from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/valid_length --quiet
+    guardrails hub install hub://guardrails/regex_match hub://guardrails/valid_length --quiet
     ```
 
-    Then, create a Guard from the installed guardrails.
+    Then, create a Guard from the installed validators.
     
     ```python
     from guardrails.hub import RegexMatch, ValidLength
