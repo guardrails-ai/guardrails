@@ -28,7 +28,7 @@ def convert_pydantic_model_to_openai_fn(
     schema_model = model
 
     type_origin = get_origin(model)
-    if type_origin == list:
+    if type_origin is list:
         item_types = get_args(model)
         if len(item_types) > 1:
             raise ValueError("List data type must have exactly one child.")
@@ -41,7 +41,7 @@ def convert_pydantic_model_to_openai_fn(
     json_schema = schema_model.model_json_schema()
     json_schema["title"] = schema_model.__name__
 
-    if type_origin == list:
+    if type_origin is list:
         json_schema = {
             "title": f"Array<{json_schema.get('title')}>",
             "type": "array",

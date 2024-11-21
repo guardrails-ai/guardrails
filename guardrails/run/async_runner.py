@@ -1,28 +1,29 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 
 from guardrails import validator_service
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
-from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import AsyncPromptCallableBase
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.run.utils import msg_history_source, msg_history_string
+from guardrails.run.utils import messages_source
 from guardrails.schema.validator import schema_validation
+from guardrails.hub_telemetry.hub_tracing import async_trace
+from guardrails.types.inputs import MessageHistory
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import prompt_uses_xml
-from guardrails.run.utils import preprocess_prompt
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.telemetry import trace_async_call, trace_async_step
+
+from guardrails.constants import fail_status
+from guardrails.prompt import Prompt
 
 
 class AsyncRunner(Runner):
@@ -33,9 +34,7 @@ class AsyncRunner(Runner):
         num_reasks: int,
         validation_map: ValidatorMap,
         *,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         api: Optional[AsyncPromptCallableBase] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
@@ -49,9 +48,7 @@ class AsyncRunner(Runner):
             output_schema=output_schema,
             num_reasks=num_reasks,
             validation_map=validation_map,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             api=api,
             metadata=metadata,
             output=output,
@@ -60,10 +57,11 @@ class AsyncRunner(Runner):
             disable_tracer=disable_tracer,
             exec_options=exec_options,
         )
-        self.api: Optional[AsyncPromptCallableBase] = api
+        self.api = api
 
     # TODO: Refactor this to use inheritance and overrides
     # Why are we using a different method here instead of just overriding?
+    @async_trace(name="/reasks", origin="AsyncRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
@@ -79,20 +77,11 @@ class AsyncRunner(Runner):
         """
         prompt_params = prompt_params or {}
         try:
-            # Figure out if we need to include instructions in the prompt.
-            include_instructions = not (
-                self.instructions is None and self.msg_history is None
-            )
-
             (
-                instructions,
-                prompt,
-                msg_history,
+                messages,
                 output_schema,
             ) = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
+                self.messages,
                 self.output_schema,
             )
             index = 0
@@ -101,9 +90,7 @@ class AsyncRunner(Runner):
                 iteration = await self.async_step(
                     index=index,
                     api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
+                    messages=messages,
                     prompt_params=prompt_params,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
@@ -116,28 +103,16 @@ class AsyncRunner(Runner):
 
                 # Get new prompt and output schema.
                 (
-                    prompt,
-                    instructions,
                     output_schema,
-                    msg_history,
+                    messages,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,
                     parsed_output=iteration.outputs.parsed_output,
                     validated_output=call_log.validation_response,
                     prompt_params=prompt_params,
-                    include_instructions=include_instructions,
                 )
 
-            # Log how many times we reasked
-            # Use the HubTelemetry singleton
-            if not self._disable_tracer:
-                self._hub_telemetry.create_new_span(
-                    span_name="/reasks",
-                    attributes=[("reask_count", index)],
-                    is_parent=False,  # This span has no children
-                    has_parent=True,  # This span has a parent
-                )
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log.exception = e.original_exception
@@ -150,6 +125,7 @@ class AsyncRunner(Runner):
         return call_log
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/step", origin="AsyncRunner.async_step")
     @trace_async_step
     async def async_step(
         self,
@@ -158,9 +134,7 @@ class AsyncRunner(Runner):
         call_log: Call,
         *,
         api: Optional[AsyncPromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
@@ -169,9 +143,7 @@ class AsyncRunner(Runner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -187,28 +159,20 @@ class AsyncRunner(Runner):
         try:
             # Prepare: run pre-processing, and input validation.
             if output is not None:
-                instructions = None
-                prompt = None
-                msg_history = None
+                messages = None
             else:
-                instructions, prompt, msg_history = await self.async_prepare(
+                messages = await self.async_prepare(
                     call_log,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
+                    messages=messages,
                     prompt_params=prompt_params,
                     api=api,
                     attempt_number=index,
                 )
 
-            iteration.inputs.instructions = instructions
-            iteration.inputs.prompt = prompt
-            iteration.inputs.msg_history = msg_history
+            iteration.inputs.messages = messages
 
             # Call: run the API.
-            llm_response = await self.async_call(
-                instructions, prompt, msg_history, api, output
-            )
+            llm_response = await self.async_call(messages, api, output)
 
             iteration.outputs.llm_response_info = llm_response
             output = llm_response.output
@@ -247,12 +211,11 @@ class AsyncRunner(Runner):
         return iteration
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/llm_call", origin="AsyncRunner.async_call")
     @trace_async_call
     async def async_call(
         self,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         api: Optional[AsyncPromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
@@ -274,17 +237,14 @@ class AsyncRunner(Runner):
             )
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
-        elif msg_history:
-            llm_response = await api_fn(msg_history=msg_history_source(msg_history))
-        elif prompt and instructions:
-            llm_response = await api_fn(prompt.source, instructions=instructions.source)
-        elif prompt:
-            llm_response = await api_fn(prompt.source)
+        elif messages:
+            llm_response = await api_fn(messages=messages_source(messages))
         else:
             llm_response = await api_fn()
         return llm_response
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/validation", origin="AsyncRunner.async_validate")
     async def async_validate(
         self,
         iteration: Iteration,
@@ -323,169 +283,96 @@ class AsyncRunner(Runner):
         return validated_output
 
     # TODO: Refactor this to use inheritance and overrides
+    @async_trace(name="/input_prep", origin="AsyncRunner.async_prepare")
     async def async_prepare(
         self,
         call_log: Call,
         attempt_number: int,
         *,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Optional[Dict] = None,
-        api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
+        api: Optional[AsyncPromptCallableBase],
+    ) -> Optional[List[Dict]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
-            The instructions, prompt, and message history.
+            The messages.
         """
         prompt_params = prompt_params or {}
+        if api is None:
+            raise UserFacingException(ValueError("API must be provided."))
 
-        has_prompt_validation = "prompt" in self.validation_map
-        has_instructions_validation = "instructions" in self.validation_map
-        has_msg_history_validation = "msg_history" in self.validation_map
-        if msg_history:
-            if has_prompt_validation or has_instructions_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Prompt and instructions validation are "
-                        "not supported when using message history."
-                    )
-                )
-
-            prompt, instructions = None, None
-
-            # Runner.prepare_msg_history
-            formatted_msg_history = []
-
-            # Format any variables in the message history with the prompt params.
-            for msg in msg_history:
-                msg_copy = copy.deepcopy(msg)
-                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-                formatted_msg_history.append(msg_copy)
-
-            if "msg_history" in self.validation_map:
-                # Runner.validate_msg_history
-                msg_str = msg_history_string(formatted_msg_history)
-                inputs = Inputs(
-                    llm_output=msg_str,
-                )
-                iteration = Iteration(
-                    call_id=call_log.id, index=attempt_number, inputs=inputs
-                )
-                call_log.iterations.insert(0, iteration)
-                value, _metadata = await validator_service.async_validate(
-                    value=msg_str,
-                    metadata=self.metadata,
-                    validator_map=self.validation_map,
-                    iteration=iteration,
-                    disable_tracer=self._disable_tracer,
-                    path="msg_history",
-                )
-                validated_msg_history = validator_service.post_process_validation(
-                    value, attempt_number, iteration, OutputTypes.STRING
-                )
-                validated_msg_history = cast(str, validated_msg_history)
-
-                iteration.outputs.validation_response = validated_msg_history
-                if isinstance(validated_msg_history, ReAsk):
-                    raise ValidationError(
-                        f"Message history validation failed: "
-                        f"{validated_msg_history}"
-                    )
-                if validated_msg_history != msg_str:
-                    raise ValidationError("Message history validation failed")
-        elif prompt is not None:
-            if has_msg_history_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Message history validation is "
-                        "not supported when using prompt/instructions."
-                    )
-                )
-            msg_history = None
-
-            use_xml = prompt_uses_xml(prompt._source)
-            # Runner.prepare_prompt
-            prompt = prompt.format(**prompt_params)
-
-            # TODO(shreya): should there be any difference
-            #  to parsing params for prompt?
-            if instructions is not None and isinstance(instructions, Instructions):
-                instructions = instructions.format(**prompt_params)
-
-            instructions, prompt = preprocess_prompt(
-                prompt_callable=api,  # type: ignore
-                instructions=instructions,
-                prompt=prompt,
-                output_type=self.output_type,
-                use_xml=use_xml,
+        if messages:
+            # Runner.prepare_messages
+            messages = await self.prepare_messages(
+                call_log=call_log,
+                messages=messages,
+                prompt_params=prompt_params,
+                attempt_number=attempt_number,
             )
 
-            # validate prompt
-            if "prompt" in self.validation_map and prompt is not None:
-                # Runner.validate_prompt
-                inputs = Inputs(
-                    llm_output=prompt.source,
-                )
-                iteration = Iteration(
-                    call_id=call_log.id, index=attempt_number, inputs=inputs
-                )
-                call_log.iterations.insert(0, iteration)
-                value, _metadata = await validator_service.async_validate(
-                    value=prompt.source,
-                    metadata=self.metadata,
-                    validator_map=self.validation_map,
-                    iteration=iteration,
-                    disable_tracer=self._disable_tracer,
-                    path="prompt",
-                )
-                validated_prompt = validator_service.post_process_validation(
-                    value, attempt_number, iteration, OutputTypes.STRING
-                )
-
-                iteration.outputs.validation_response = validated_prompt
-                if isinstance(validated_prompt, ReAsk):
-                    raise ValidationError(
-                        f"Prompt validation failed: {validated_prompt}"
-                    )
-                elif not validated_prompt or iteration.status == fail_status:
-                    raise ValidationError("Prompt validation failed")
-                prompt = Prompt(cast(str, validated_prompt))
-
-            # validate instructions
-            if "instructions" in self.validation_map and instructions is not None:
-                # Runner.validate_instructions
-                inputs = Inputs(
-                    llm_output=instructions.source,
-                )
-                iteration = Iteration(
-                    call_id=call_log.id, index=attempt_number, inputs=inputs
-                )
-                call_log.iterations.insert(0, iteration)
-                value, _metadata = await validator_service.async_validate(
-                    value=instructions.source,
-                    metadata=self.metadata,
-                    validator_map=self.validation_map,
-                    iteration=iteration,
-                    disable_tracer=self._disable_tracer,
-                    path="instructions",
-                )
-                validated_instructions = validator_service.post_process_validation(
-                    value, attempt_number, iteration, OutputTypes.STRING
-                )
-
-                iteration.outputs.validation_response = validated_instructions
-                if isinstance(validated_instructions, ReAsk):
-                    raise ValidationError(
-                        f"Instructions validation failed: {validated_instructions}"
-                    )
-                elif not validated_instructions or iteration.status == fail_status:
-                    raise ValidationError("Instructions validation failed")
-                instructions = Instructions(cast(str, validated_instructions))
         else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
+            raise UserFacingException(ValueError("'messages' must be provided."))
+
+        return messages
+
+    async def prepare_messages(
+        self,
+        call_log: Call,
+        messages: MessageHistory,
+        prompt_params: Dict,
+        attempt_number: int,
+    ) -> MessageHistory:
+        formatted_messages = []
+
+        # Format any variables in the message history with the prompt params.
+        for msg in messages:
+            msg_copy = copy.deepcopy(msg)
+            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            formatted_messages.append(msg_copy)
+
+        if "messages" in self.validation_map:
+            await self.validate_messages(call_log, formatted_messages, attempt_number)
+
+        return formatted_messages
+
+    @async_trace(name="/input_validation", origin="AsyncRunner.validate_messages")
+    async def validate_messages(
+        self, call_log: Call, messages: MessageHistory, attempt_number: int
+    ):
+        for msg in messages:
+            content = (
+                msg["content"].source
+                if isinstance(msg["content"], Prompt)
+                else msg["content"]
+            )
+            inputs = Inputs(
+                llm_output=content,
+            )
+            iteration = Iteration(
+                call_id=call_log.id, index=attempt_number, inputs=inputs
+            )
+            call_log.iterations.insert(0, iteration)
+            value, _metadata = await validator_service.async_validate(
+                value=content,
+                metadata=self.metadata,
+                validator_map=self.validation_map,
+                iteration=iteration,
+                disable_tracer=self._disable_tracer,
+                path="messages",
             )
 
-        return instructions, prompt, msg_history
+            validated_msg = validator_service.post_process_validation(
+                value, attempt_number, iteration, OutputTypes.STRING
+            )
+
+            iteration.outputs.validation_response = validated_msg
+
+            if isinstance(validated_msg, ReAsk):
+                raise ValidationError(f"Messages validation failed: {validated_msg}")
+            elif not validated_msg or iteration.status == fail_status:
+                raise ValidationError("Messages validation failed")
+
+            msg["content"] = cast(str, validated_msg)
+
+        return messages  # type: ignore

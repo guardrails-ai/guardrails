@@ -12,7 +12,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
-from guardrails.prompt.prompt import Prompt
+from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
 from guardrails.classes.validation.validation_result import ErrorSpan
@@ -98,7 +98,7 @@ class Iteration(IIteration, ArbitraryModel):
     def raw_output(self) -> Optional[str]:
         """The exact output from the LLM."""
         response = self.outputs.llm_response_info
-        if response is not None:
+        if response is not None and response.output:
             return response.output
         elif self.outputs.raw_output is not None:
             return self.outputs.raw_output
@@ -188,63 +188,36 @@ class Iteration(IIteration, ArbitraryModel):
 
     @property
     def rich_group(self) -> Group:
-        def create_msg_history_table(
-            msg_history: Optional[List[Dict[str, Prompt]]],
+        def create_messages_table(
+            messages: Optional[List[Dict[str, Union[str, Prompt, Instructions]]]],
         ) -> Union[str, Table]:
-            if msg_history is None:
-                return "No message history."
+            if messages is None:
+                return "No messages."
             table = Table(show_lines=True)
             table.add_column("Role", justify="right", no_wrap=True)
             table.add_column("Content")
 
-            for msg in msg_history:
-                table.add_row(str(msg["role"]), msg["content"].source)
+            for msg in messages:
+                if hasattr(msg["content"], "source"):
+                    table.add_row(str(msg["role"]), msg["content"].source)  # type: ignore
+                else:
+                    table.add_row(str(msg["role"]), msg["content"])  # type: ignore
 
             return table
 
-        table = create_msg_history_table(self.inputs.msg_history)
+        table = create_messages_table(self.inputs.messages)  # type: ignore
 
-        if self.inputs.instructions is not None:
-            return Group(
-                Panel(
-                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
-                    title="Prompt",
-                    style="on #F0F8FF",
-                ),
-                Panel(
-                    self.inputs.instructions.source,
-                    title="Instructions",
-                    style="on #FFF0F2",
-                ),
-                Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(
-                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
-                ),
-                Panel(
-                    pretty_repr(self.validation_response),
-                    title="Validated Output",
-                    style="on #F0FFF0",
-                ),
-            )
-        else:
-            return Group(
-                Panel(
-                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
-                    title="Prompt",
-                    style="on #F0F8FF",
-                ),
-                Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(
-                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
-                ),
-                Panel(
-                    self.validation_response
-                    if isinstance(self.validation_response, str)
-                    else pretty_repr(self.validation_response),
-                    title="Validated Output",
-                    style="on #F0FFF0",
-                ),
-            )
+        return Group(
+            Panel(table, title="Messages", style="on #E7DFEB"),
+            Panel(self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"),
+            Panel(
+                self.validation_response
+                if isinstance(self.validation_response, str)
+                else pretty_repr(self.validation_response),
+                title="Validated Output",
+                style="on #F0FFF0",
+            ),
+        )
 
     def __str__(self) -> str:
         return pretty_repr(self)

@@ -6,7 +6,7 @@ Validators are how we apply quality controls to the outputs of LLMs.  They speci
 Each validator is a method that encodes some criteria, and checks if a given value meets that criteria.
 
 - If the value passes the criteria defined, the validator returns `PassResult`. In most cases this means returning that value unchanged. In very few advanced cases, there may be a a value override (the specific validator will document this).
-- If the value does not pass the criteria, a `FailResult` is returned.  In this case, the validator applies the user-configured `on_fail` policies (see [On-Fail Policies](/docs/how_to_guides/custom_validators#on-fail)).
+- If the value does not pass the criteria, a `FailResult` is returned.  In this case, the validator applies the user-configured `on_fail` policies (see [On-Fail Policies](/concepts/validator_on_fail_actions)).
 
 ## Runtime Metadata
 
@@ -15,7 +15,7 @@ Occasionally, validators need additional metadata that is only available during 
 As an example, the `ExtractedSummarySentencesMatch` validator accepts a `filepaths` property in the metadata dictionary to specify what source files to compare the summary against to ensure similarity.  Unlike arguments which are specified at validator initialization, metadata is specified when calling `guard.validate` or `guard.__call__` (this is the `guard()` function).
 
 ```python
-guard = Guard.from_rail("my_railspec.rail")
+guard = Guard.for_rail("my_railspec.rail")
 
 outcome = guard(
     llm_api=openai.chat.completions.create,

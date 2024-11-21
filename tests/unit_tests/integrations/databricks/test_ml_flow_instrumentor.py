@@ -37,10 +37,6 @@ class TestMlFlowInstrumentor:
         assert settings.disable_tracing is True
 
     def test_instrument(self, mocker):
-        mock_is_enabled = mocker.patch(
-            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.provider._is_enabled",
-            return_value=False,
-        )
         mock_enable = mocker.patch(
             "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.tracing.enable"
         )
@@ -115,7 +111,6 @@ class TestMlFlowInstrumentor:
 
         m.instrument()
 
-        mock_is_enabled.assert_called_once()
         mock_enable.assert_called_once()
         mock_set_experiment.assert_called_once_with("mock experiment")
 
@@ -194,9 +189,9 @@ class TestMlFlowInstrumentor:
 
         m = MlFlowInstrumentor("mock experiment")
 
-        mock_result = [
-            ValidationOutcome(call_id="mock call id", validation_passed=True)
-        ]
+        mock_result = iter(
+            [ValidationOutcome(call_id="mock call id", validation_passed=True)]
+        )
         mock_execute = MagicMock()
         mock_execute.return_value = mock_result
         mock_guard = MagicMock(spec=Guard)
@@ -594,6 +589,10 @@ class TestMlFlowInstrumentor:
     def test__instrument_validator_validate(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.get_current_active_span",
+            return_value=mock_span,
+        )
+        mock_start_span = mocker.patch(
             "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
             return_value=mock_span,
         )
@@ -630,7 +629,56 @@ class TestMlFlowInstrumentor:
             validator_span=mock_span,  # type: ignore
             validator_name="mock-validator",
             obj_id=id(mock_validator),
-            on_fail_descriptor="noop",
+            on_fail_descriptor="exception",
+            result=resp,
+            init_kwargs={},
+            validation_session_id="unknown",
+        )
+
+    @pytest.mark.asyncio
+    async def test__instrument_validator_async_validate(self, mocker):
+        mock_span = MockSpan()
+        mock_start_span = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.start_span",
+            return_value=mock_span,
+        )
+
+        mock_add_validator_attributes = mocker.patch(
+            "guardrails.integrations.databricks.ml_flow_instrumentor.add_validator_attributes"
+        )
+
+        from guardrails.integrations.databricks import MlFlowInstrumentor
+        from tests.unit_tests.mocks.mock_hub import MockValidator
+
+        m = MlFlowInstrumentor("mock experiment")
+
+        wrapped_async_validate = m._instrument_validator_async_validate(
+            MockValidator.async_validate
+        )
+
+        mock_validator = MockValidator()
+
+        resp = await wrapped_async_validate(mock_validator, True, {})
+
+        mock_start_span.assert_called_once_with(
+            name="mock-validator.validate",
+            span_type="validator",
+            attributes={
+                "guardrails.version": GUARDRAILS_VERSION,
+                "type": "guardrails/guard/step/validator",
+                "async": True,
+            },
+        )
+
+        # Internally called, not the wrapped call above
+        mock_add_validator_attributes.assert_called_once_with(
+            mock_validator,
+            True,
+            {},
+            validator_span=mock_span,  # type: ignore
+            validator_name="mock-validator",
+            obj_id=id(mock_validator),
+            on_fail_descriptor="exception",
             result=resp,
             init_kwargs={},
             validation_session_id="unknown",

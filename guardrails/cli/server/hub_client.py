@@ -9,7 +9,8 @@ import jwt
 from jwt import ExpiredSignatureError, DecodeError
 
 
-from guardrails.classes.credentials import Credentials
+from guardrails.settings import settings
+from guardrails.classes.rc import RC
 from guardrails.cli.logger import logger
 from guardrails.version import GUARDRAILS_VERSION
 
@@ -19,7 +20,8 @@ TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails confi
 to update your token.
 {FIND_NEW_TOKEN}"""
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
-to update your token.
+to update your token. The token is only required to install validators and run remote \
+inference. It is not needed for local validation.
 {FIND_NEW_TOKEN}"""
 
 VALIDATOR_HUB_SERVICE = os.getenv(
@@ -86,8 +88,8 @@ def fetch_module_manifest(
     return fetch(manifest_url, token, anonymousUserId)
 
 
-def get_jwt_token(creds: Credentials) -> Optional[str]:
-    token = creds.token
+def get_jwt_token(rc: RC) -> Optional[str]:
+    token = rc.token
 
     # check for jwt expiration
     if token:
@@ -101,23 +103,21 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
 
 
 def fetch_module(module_name: str) -> Optional[Manifest]:
-    creds = Credentials.from_rc_file(logger)
-    token = get_jwt_token(creds)
+    token = get_jwt_token(settings.rc)
 
-    module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
+    module_manifest_json = fetch_module_manifest(module_name, token, settings.rc.id)
     return Manifest.from_dict(module_manifest_json)
 
 
 def fetch_template(template_address: str) -> Dict[str, Any]:
-    creds = Credentials.from_rc_file(logger)
-    token = get_jwt_token(creds)
+    token = get_jwt_token(settings.rc)
 
     namespace, template_name = template_address.replace("hub:template://", "").split(
         "/", 1
     )
     template_path = f"guard-templates/{namespace}/{template_name}"
     template_url = f"{VALIDATOR_HUB_SERVICE}/{template_path}"
-    return fetch(template_url, token, creds.id)
+    return fetch(template_url, token, settings.rc.id)
 
 
 # GET /guard-templates/{namespace}/{guardTemplateName}
@@ -164,10 +164,9 @@ def get_validator_manifest(module_name: str):
 # GET /auth
 def get_auth():
     try:
-        creds = Credentials.from_rc_file(logger)
-        token = get_jwt_token(creds)
+        token = get_jwt_token(settings.rc)
         auth_url = f"{VALIDATOR_HUB_SERVICE}/auth"
-        response = fetch(auth_url, token, creds.id)
+        response = fetch(auth_url, token, settings.rc.id)
         if not response:
             raise AuthenticationError("Failed to authenticate!")
     except HttpError as http_error:
@@ -182,8 +181,7 @@ def get_auth():
 
 def post_validator_submit(package_name: str, content: str):
     try:
-        creds = Credentials.from_rc_file(logger)
-        token = get_jwt_token(creds)
+        token = get_jwt_token(settings.rc)
         submission_url = f"{VALIDATOR_HUB_SERVICE}/validator/submit"
 
         headers = {

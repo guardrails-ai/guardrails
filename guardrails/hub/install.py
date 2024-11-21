@@ -1,12 +1,15 @@
 from contextlib import contextmanager
+import contextlib
 from string import Template
 from typing import Callable, cast, List
+
+import pkg_resources
 
 from guardrails.hub.validator_package_service import (
     ValidatorPackageService,
     ValidatorModuleType,
 )
-from guardrails.classes.credentials import Credentials
+from guardrails.classes.rc import RC
 
 from guardrails.cli.hub.console import console
 from guardrails.cli.logger import LEVELS, logger as cli_logger
@@ -52,17 +55,21 @@ def install(
 
     Examples:
         >>> RegexMatch = install("hub://guardrails/regex_match").RegexMatch
+        >>> RegexMatch = install("hub://guardrails/regex_match~=1.4").RegexMatch
 
-        >>> install("hub://guardrails/regex_match);
-        >>> import guardrails.hub.regex_match as regex_match
+
+        >>> install("hub://guardrails/regex_match>=1.4,==1.*.")
+        >>> from guardrails.hub.regex_match import RegexMatch
     """
 
     verbose_printer = console.print
     quiet_printer = console.print if not quiet else lambda x: None
 
     # 1. Validation
-    has_rc_file = Credentials.has_rc_file()
-    module_name = ValidatorPackageService.get_module_name(package_uri)
+    rc_file_exists = RC.exists()
+    validator_id, validator_version = ValidatorPackageService.get_validator_id(
+        package_uri
+    )
 
     installing_msg = f"Installing {package_uri}..."
     cli_logger.log(
@@ -78,15 +85,15 @@ def install(
     fetch_manifest_msg = "Fetching manifest"
     with loader(fetch_manifest_msg, spinner="bouncingBar"):
         (module_manifest, site_packages) = (
-            ValidatorPackageService.get_manifest_and_site_packages(module_name)
+            ValidatorPackageService.get_manifest_and_site_packages(validator_id)
         )
 
     # 3. Install - Pip Installation of git module
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         ValidatorPackageService.install_hub_module(
-            module_manifest,
-            site_packages,
+            validator_id,
+            validator_version=validator_version,
             quiet=quiet,
             upgrade=upgrade,
             logger=cli_logger,
@@ -98,11 +105,10 @@ def install(
     )
 
     try:
-        if has_rc_file:
+        if rc_file_exists:
             # if we do want to remote then we don't want to install local models
             use_remote_endpoint = (
-                Credentials.from_rc_file(cli_logger).use_remote_inferencing
-                and module_has_endpoint
+                RC.load(cli_logger).use_remote_inferencing and module_has_endpoint
             )
         elif install_local_models is None and module_has_endpoint:
             install_local_models = install_local_models_confirm()
@@ -140,7 +146,16 @@ def install(
     # Print success messages
     cli_logger.info("Installation complete")
 
-    verbose_printer(f"✅Successfully installed {module_name}!\n\n")
+    installed_version_message = ""
+    with contextlib.suppress(Exception):
+        package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
+        installed_version = pkg_resources.get_distribution(package_name).version
+        if installed_version:
+            installed_version_message = f" version {installed_version}"
+
+    verbose_printer(
+        f"✅Successfully installed {validator_id}{installed_version_message}!\n\n"
+    )
     success_message_cli = Template(
         "[bold]Import validator:[/bold]\n"
         "from guardrails.hub import ${export}\n\n"

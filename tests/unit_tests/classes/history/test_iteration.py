@@ -3,9 +3,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, not_run_status
-from guardrails.llm_providers import OpenAICallable
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
+from guardrails.llm_providers import LiteLLMCallable
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk
@@ -38,12 +36,17 @@ def test_empty_initialization():
 
 def test_non_empty_initialization():
     # Inputs
-    llm_api = OpenAICallable(text="Respond with a greeting.")
+    llm_api = LiteLLMCallable(text="Respond with a greeting.")
     llm_output = "Hello there!"
-    instructions = Instructions(source="You are a greeting bot.")
-    prompt = Prompt(source="Respond with a ${greeting_type} greeting.")
-    msg_history = [
-        {"some_key": "doesn't actually matter because this isn't that strongly typed"}
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a greeting bot.",
+        },
+        {
+            "role": "user",
+            "content": "Respond with a ${greeting_type} greeting.",
+        },
     ]
     prompt_params = {"greeting_type": "friendly"}
     num_reasks = 0
@@ -53,9 +56,7 @@ def test_non_empty_initialization():
     inputs = Inputs(
         llm_api=llm_api,
         llm_output=llm_output,
-        instructions=instructions,
-        prompt=prompt,
-        msg_history=msg_history,
+        messages=messages,
         prompt_params=prompt_params,
         num_reasks=num_reasks,
         metadata=metadata,

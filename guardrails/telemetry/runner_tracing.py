@@ -1,10 +1,10 @@
 import json
 from functools import wraps
 from typing import (
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
-    Generator,
+    Iterator,
     Optional,
 )
 
@@ -17,10 +17,14 @@ from guardrails.settings import settings
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
-from guardrails.telemetry.common import get_tracer, serialize
+from guardrails.telemetry.common import get_tracer, add_user_attributes, serialize
 from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
 
+import sys
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 #########################################
 ### START Runner.step Instrumentation ###
@@ -72,10 +76,12 @@ def trace_step(fn: Callable[..., Iteration]):
                 try:
                     response = fn(*args, **kwargs)
                     add_step_attributes(step_span, response, *args, **kwargs)
+                    add_user_attributes(step_span)
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
                     add_step_attributes(step_span, None, *args, **kwargs)
+                    add_user_attributes(step_span)
                     raise e
         else:
             return fn(*args, **kwargs)
@@ -84,8 +90,8 @@ def trace_step(fn: Callable[..., Iteration]):
 
 
 def trace_stream_step_generator(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]], *args, **kwargs
-) -> Generator[ValidationOutcome[OT], None, None]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> Iterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -111,17 +117,16 @@ def trace_stream_step_generator(
             call = safe_get(args, 8, kwargs.get("call_log", None))
             iteration = call.iterations.last if call else None
             add_step_attributes(step_span, iteration, *args, **kwargs)
+            add_user_attributes(step_span)
             if exception:
                 raise exception
 
 
 def trace_stream_step(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]],
-) -> Callable[..., Generator[ValidationOutcome[OT], None, None]]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]],
+) -> Callable[..., Iterator[ValidationOutcome[OT]]]:
     @wraps(fn)
-    def trace_stream_step_wrapper(
-        *args, **kwargs
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    def trace_stream_step_wrapper(*args, **kwargs) -> Iterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_stream_step_generator(fn, *args, **kwargs)
         else:
@@ -144,10 +149,12 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
             ) as step_span:
                 try:
                     response = await fn(*args, **kwargs)
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, response, *args, **kwargs)
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, None, *args, **kwargs)
                     raise e
 
@@ -158,8 +165,8 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
 
 
 async def trace_async_stream_step_generator(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]], *args, **kwargs
-) -> AsyncIterable[ValidationOutcome[OT]]:
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> AsyncIterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -192,12 +199,12 @@ async def trace_async_stream_step_generator(
 
 
 def trace_async_stream_step(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]],
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]],
 ):
     @wraps(fn)
     async def trace_async_stream_step_wrapper(
         *args, **kwargs
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_async_stream_step_generator(fn, *args, **kwargs)
         else:
@@ -258,6 +265,11 @@ def trace_call(fn: Callable[..., LLMResponse]):
             ) as call_span:
                 try:
                     response = fn(*args, **kwargs)
+                    if isinstance(response, LLMResponse) and (
+                        response.async_stream_output or response.stream_output
+                    ):
+                        # TODO: Iterate, add a call attr each time
+                        return response
                     add_call_attributes(call_span, response, *args, **kwargs)
                     return response
                 except Exception as e:

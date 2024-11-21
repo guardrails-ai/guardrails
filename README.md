@@ -15,6 +15,7 @@
 [![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)](https://discord.gg/U9RKkZSBgx)
 [![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)](https://www.guardrailsai.com/docs)
 [![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)](https://www.guardrailsai.com/blog)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Guardrails%20Guru-006BFF)](https://gurubase.io/g/guardrails)
 
 </div>
 
@@ -147,7 +148,7 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.for_pydantic(output_class=Pet, prompt=prompt)
 
 raw_output, validated_output, *rest = guard(
     llm_api=openai.completions.create,

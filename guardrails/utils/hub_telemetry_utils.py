@@ -1,13 +1,21 @@
 # Imports
 import logging
-
+from typing import Optional
+from guardrails.settings import settings
+from guardrails.version import GUARDRAILS_VERSION
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
 )
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.resources import (
+    SERVICE_NAME,
+    Resource,
+    SERVICE_VERSION,
+    DEPLOYMENT_ENVIRONMENT,
+)
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.trace.propagation import set_span_in_context
 
 
 class HubTelemetry:
@@ -22,19 +30,23 @@ class HubTelemetry:
     _processor = None
     _tracer = None
     _prop = None
-    _carrier = {}
+    _enabled = False
 
     def __new__(
         cls,
         service_name: str = "guardrails-hub",
         tracer_name: str = "gr_hub",
         export_locally: bool = False,
+        *,
+        enabled: Optional[bool] = None,
     ):
         if cls._instance is None:
             logging.debug("Creating HubTelemetry instance...")
             cls._instance = super(HubTelemetry, cls).__new__(cls)
             logging.debug("Initializing HubTelemetry instance...")
-            cls._instance.initialize_tracer(service_name, tracer_name, export_locally)
+            cls._instance.initialize_tracer(
+                service_name, tracer_name, export_locally, enabled=enabled
+            )
         else:
             logging.debug("Returning existing HubTelemetry instance...")
         return cls._instance
@@ -44,11 +56,16 @@ class HubTelemetry:
         service_name: str,
         tracer_name: str,
         export_locally: bool,
+        *,
+        enabled: Optional[bool] = None,
     ):
         """Initializes a tracer for Guardrails Hub."""
-
+        if enabled is None:
+            enabled = settings.rc.enable_metrics or False
+        self._enabled = enabled
+        self._carrier = {}
         self._service_name = service_name
-        # self._endpoint = "http://localhost:4318/v1/traces"
+        # self._endpoint = "http://localhost:5318/v1/traces"
         self._endpoint = (
             "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
         )
@@ -56,15 +73,20 @@ class HubTelemetry:
 
         # Create a resource
         # Service name is required for most backends
-        self._resource = Resource(attributes={SERVICE_NAME: self._service_name})
+        attributes = {
+            SERVICE_NAME: self._service_name,
+            SERVICE_VERSION: GUARDRAILS_VERSION,
+            DEPLOYMENT_ENVIRONMENT: "production",
+        }
+        self._resource = Resource(attributes=attributes)
 
         # Create a tracer provider and a processor
         self._tracer_provider = TracerProvider(resource=self._resource)
 
         if export_locally:
-            self._processor = SimpleSpanProcessor(ConsoleSpanExporter())
+            self._processor = BatchSpanProcessor(ConsoleSpanExporter())
         else:
-            self._processor = SimpleSpanProcessor(
+            self._processor = BatchSpanProcessor(
                 OTLPSpanExporter(endpoint=self._endpoint)
             )
 
@@ -76,11 +98,14 @@ class HubTelemetry:
 
         self._prop = TraceContextTextMapPropagator()
 
-    def inject_current_context(self) -> None:
+    def inject_current_context(self, context=None) -> None:
         """Injects the current context into the carrier."""
         if not self._prop:
             return
-        self._prop.inject(carrier=self._carrier)
+        if context is not None:
+            self._prop.inject(carrier=self._carrier, context=context)
+        else:
+            self._prop.inject(carrier=self._carrier)
 
     def extract_current_context(self):
         """Extracts the current context from the carrier."""
@@ -93,8 +118,9 @@ class HubTelemetry:
         self,
         span_name: str,
         attributes: list,
-        is_parent: bool,  # Inject current context if IS a parent span
-        has_parent: bool,  # Extract current context if HAS a parent span
+        # todo deprecate these in 060
+        is_parent: bool,  #
+        has_parent: bool,  # no-qa
     ):
         """Creates a new span within the tracer with the given name and
         attributes.
@@ -112,13 +138,12 @@ class HubTelemetry:
         """
         if self._tracer is None:
             return
-        with self._tracer.start_as_current_span(
+        with self._tracer.start_span(
             span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
-            context=self.extract_current_context() if has_parent else None,
+            context=self.extract_current_context(),
         ) as span:
-            if is_parent:
-                # Inject the current context
-                self.inject_current_context()
+            context = set_span_in_context(span)
+            self.inject_current_context(context=context)
 
             for attribute in attributes:
                 span.set_attribute(attribute[0], attribute[1])

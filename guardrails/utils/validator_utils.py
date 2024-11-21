@@ -1,6 +1,7 @@
 # ruff: noqa
 """This module contains the constants and utils used by the validator.py."""
 
+from ast import literal_eval
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from guardrails_api_client import ValidatorReference
@@ -33,7 +34,7 @@ def parse_rail_arguments(arg_tokens: List[str]) -> List[Any]:
                 #   and be responsible for parsing them to the correct types.
                 # Option 2: We use something like the Validator Manifest that describes the arguments
                 #   to parse the values from the string WITHOUT an eval.
-                t = eval(t)
+                t = literal_eval(t)
             except (ValueError, SyntaxError, NameError) as e:
                 raise ValueError(
                     f"Python expression `{t}` is not valid, "
@@ -125,7 +126,7 @@ def get_validator(
     # Guard.use syntax
     elif isinstance(validator, Type) and issubclass(validator, Validator):
         return validator(*args, **kwargs)
-    # Guard.useMany or Guard.from_pydantic syntax
+    # Guard.useMany or Guard.for_pydantic syntax
     elif isinstance(validator, Tuple):
         first_arg = safe_get(validator, 0)
         # useMany Tuple Syntax
@@ -139,7 +140,7 @@ def get_validator(
             if v:
                 return v
         raise invalid_error
-    # Guard.from_rail or Guard.from_rail_string syntax
+    # Guard.for_rail or Guard.for_rail_string syntax
     elif isinstance(validator, str):
         v = parse_rail_validator(validator)
         if v:

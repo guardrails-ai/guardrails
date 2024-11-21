@@ -1,6 +1,12 @@
 from guardrails.classes.llm.llm_response import LLMResponse
 
 
+CALLABLE_FAILURE_SUFFIX = """Make sure that `fn` can be called as a function
+that accepts a prompt string, **kwargs, and returns a string.
+ If you're using a custom LLM callable, please see docs
+ here: https://go.guardrailsai.com/B1igEy3"""  # noqa
+
+
 class PromptCallableException(Exception):
     pass
 
@@ -29,17 +35,11 @@ class PromptCallableBase:
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
-                f" with the following error: `{e}`. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
+                f" with the following error: `{e}`. {CALLABLE_FAILURE_SUFFIX}"
             )
         if not isinstance(result, LLMResponse):
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` returned"
-                f" a non-string value: {result}. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
+                f" a non-string value: {result}. {CALLABLE_FAILURE_SUFFIX}"
             )
         return result
