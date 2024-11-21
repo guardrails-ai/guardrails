@@ -1,6 +1,7 @@
 from builtins import id as object_id
 import contextvars
 import inspect
+from guardrails.formatters.base_formatter import BaseFormatter
 from opentelemetry import context as otel_context
 from typing import (
     Any,
@@ -99,6 +100,8 @@ class AsyncGuard(Guard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        output_formatter: Optional[Union[str, BaseFormatter]] = None,
+        **kwargs,
     ):
         guard = super().for_pydantic(
             output_class,
@@ -108,6 +111,8 @@ class AsyncGuard(Guard, Generic[OT]):
             tracer=tracer,
             name=name,
             description=description,
+            output_formatter=output_formatter,
+            **kwargs,
         )
         if guard._output_type == OutputTypes.LIST:
             return cast(AsyncGuard[List], guard)

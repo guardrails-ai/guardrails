@@ -1,11 +1,25 @@
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, Union, cast
+import inspect
+from functools import partial
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Union,
+    cast,
+)
 from typing_extensions import deprecated
 
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.validation.validator_reference import ValidatorReference
 
-from guardrails import Guard
+from guardrails import Guard, AsyncGuard
 
 from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.types.pydantic import ModelOrListOfModels
@@ -20,6 +34,17 @@ except ImportError:
         "`pip install nemoguardrails`."
     )
 
+try:
+    import nest_asyncio
+
+    nest_asyncio.apply()
+    import asyncio
+except ImportError:
+    raise ImportError(
+        "Could not import nest_asyncio, please install it with "
+        "`pip install nest_asyncio`."
+    )
+
 
 class NemoguardrailsGuard(Guard, Generic[OT]):
     def __init__(
@@ -30,6 +55,28 @@ class NemoguardrailsGuard(Guard, Generic[OT]):
     ):
         super().__init__(*args, **kwargs)
         self._nemorails = nemorails
+        self._generate = self._nemorails.generate
+
+    def _custom_nemo_callable(self, *args, generate_kwargs, **kwargs):
+        # .generate doesn't like temp
+        kwargs.pop("temperature", None)
+
+        messages = kwargs.pop("messages", None)
+
+        if messages == [] or messages is None:
+            raise ValueError("messages must be passed during a call.")
+
+        if not generate_kwargs:
+            generate_kwargs = {}
+
+        response = self._generate(messages=messages, **generate_kwargs)
+
+        if inspect.iscoroutine(response):
+            response = asyncio.run(response)
+
+        return response[  # type: ignore
+            "content"
+        ]
 
     def __call__(
         self,
@@ -59,12 +106,9 @@ class NemoguardrailsGuard(Guard, Generic[OT]):
  dictionaries, where each dictionary has a 'role' key and a 'content' key."""
             )
 
-        def _custom_nemo_callable(*args, **kwargs):
-            return self._custom_nemo_callable(
-                *args, generate_kwargs=generate_kwargs, **kwargs
-            )
+        llm_api = partial(self._custom_nemo_callable, generate_kwargs=generate_kwargs)
 
-        return super().__call__(llm_api=_custom_nemo_callable, *args, **kwargs)
+        return super().__call__(llm_api=llm_api, *args, **kwargs)
 
     @classmethod
     def _init_guard_for_cls_method(
@@ -89,8 +133,8 @@ class NemoguardrailsGuard(Guard, Generic[OT]):
     def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
-        nemorails: LLMRails,
         *,
+        nemorails: LLMRails,
         num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,
         messages: Optional[List[Dict]] = None,
@@ -115,45 +159,6 @@ class NemoguardrailsGuard(Guard, Generic[OT]):
             return cast(NemoguardrailsGuard[List], guard)
         else:
             return cast(NemoguardrailsGuard[Dict], guard)
-
-    # create the callable
-    def _custom_nemo_callable(self, *args, generate_kwargs, **kwargs):
-        # .generate doesn't like temp
-        kwargs.pop("temperature", None)
-
-        # msg_history, messages, prompt, and instruction all may or may not be present.
-        # if none of them are present, raise an error
-        # if messages is present, use that
-        # if msg_history is present, use
-
-        msg_history = kwargs.pop("msg_history", None)
-        messages = kwargs.pop("messages", None)
-        prompt = kwargs.pop("prompt", None)
-        instructions = kwargs.pop("instructions", None)
-
-        if msg_history is not None and messages is None:
-            messages = msg_history
-
-        if messages is None and msg_history is None:
-            messages = []
-            if instructions is not None:
-                messages.append({"role": "system", "content": instructions})
-            if prompt is not None:
-                messages.append({"role": "system", "content": prompt})
-
-        if messages == [] or messages is None:
-            raise ValueError(
-                "messages, prompt, or instructions should be passed during a call."
-            )
-
-        # kwargs["messages"] = messages
-
-        # return (self._nemorails.generate(**kwargs))["content"]  # type: ignore
-        if not generate_kwargs:
-            generate_kwargs = {}
-        return (self._nemorails.generate(messages=messages, **generate_kwargs))[  # type: ignore
-            "content"
-        ]
 
     @deprecated(
         "Use `for_rail_string` instead. This method will be removed in 0.6.x.",
@@ -190,3 +195,34 @@ or the `from_pydantic` method.""")
 `for_rail` is not implemented for NemoguardrailsGuard.
 We recommend using the main constructor `NemoGuardrailsGuard(nemorails=nemorails)`
 or the `from_pydantic` method.""")
+
+
+class AsyncNemoguardrailsGuard(NemoguardrailsGuard, AsyncGuard, Generic[OT]):
+    def __init__(
+        self,
+        nemorails: LLMRails,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(nemorails, *args, **kwargs)
+        self._generate = self._nemorails.generate_async
+
+    async def _custom_nemo_callable(self, *args, generate_kwargs, **kwargs):
+        return super()._custom_nemo_callable(
+            *args, generate_kwargs=generate_kwargs, **kwargs
+        )
+
+    async def __call__(  # type: ignore
+        self,
+        llm_api: Optional[Callable] = None,
+        generate_kwargs: Optional[Dict] = None,
+        *args,
+        **kwargs,
+    ) -> Union[
+        ValidationOutcome[OT],
+        Awaitable[ValidationOutcome[OT]],
+        AsyncIterator[ValidationOutcome[OT]],
+    ]:
+        return await super().__call__(
+            llm_api=llm_api, generate_kwargs=generate_kwargs, *args, **kwargs
+        )  # type: ignore
