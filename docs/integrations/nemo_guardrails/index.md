@@ -1,8 +1,3 @@
-:::
-note: This will exist in the NeMo Guardrails docs
-:::
-
-
 # Guardrails AI & NeMo Guardrails
 
 Integrating Guardrails AI with NeMo Guardrails combines the strengths of both frameworks:
