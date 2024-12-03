@@ -4,7 +4,7 @@ LlamaIndex is an open source data orchestration framework that simplifies integr
 
 The sample below walks through setting up a single vector database for Retrieval-Augemnted Generation (RAG) and then querying the index, using Guardrails AI to ensure the answer doesn't contain [Personally Identifiable Information (PII)](https://www.investopedia.com/terms/p/personally-identifiable-information-pii.asp) and doesn't mention competitive products. 
 
-Guardrails AI works with both LlamaIndex's [query engine](https://docs.llamaindex.ai/en/stable/module_guides/deploying/query_engine/) and its chat engine. The query engine is a generic natural language interface for asking questions of data. The chat engine is a higher-level interface that enables a conversation around your data over time, leveraging both the general language capabilities of an LLM and your own private data to generate accurate, up-to-date responses.
+Guardrails AI works with both LlamaIndex's [query engine](https://docs.llamaindex.ai/en/stable/module_guides/deploying/query_engine/) and its [chat engine](https://docs.llamaindex.ai/en/stable/module_guides/deploying/chat_engines/). The query engine is a generic natural language interface for asking questions of data. The chat engine is a higher-level interface that enables a conversation around your data over time, leveraging both the general language capabilities of an LLM and your own private data to generate accurate, up-to-date responses.
 
 ## Prerequisites
 
@@ -94,7 +94,7 @@ print(response)
 You should get back a response like this: 
 
 ```bash
-The author worked on writing short stories and programming, starting with early attempts on an IBM 1401 using Fortran in 9th grade, and later transitioning to microcomputers like the TRS-80 and Apple II to write games, programs, and a word processor.
+The author is Paul Graham. Growing up, he worked on writing short stories and programming, starting with the IBM 1401 in 9th grade using an early version of Fortran. Later, he transitioned to microcomputers like the TRS-80 and began programming more extensively, creating simple games and a word processor.
 ```
 
 Now, run the same call using the PII and competitor check guards:
@@ -111,7 +111,7 @@ print(response)
 This replaces the call to LlamaIndex's query engine with the `guardrails.integrations.llama_index.GuardrailsQueryEngine` class, which is a thin wrapper around the LlamaIndex query engine. The response will look something like this: 
 
 ```
-TBD
+The author is <PERSON>. Growing up, he worked on writing short stories and programming, starting with the IBM 1401 in 9th grade using an early version of [COMPETITOR]. Later, he transitioned to microcomputers like the TRS-80 and Apple II, where he wrote simple games, programs, and a word processor.
 ```
 
 To use Guardrails AI validators with LlamaIndex's chat engine, use the `GuardrailsChatEngine` class instead: 
