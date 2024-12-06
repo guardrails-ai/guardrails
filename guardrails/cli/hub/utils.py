@@ -3,16 +3,102 @@ import os
 import re
 import subprocess
 import sys
-from email.parser import BytesHeaderParser
-from typing import List, Literal, Union
-from pydash.strings import snake_case
 
-from guardrails_hub_types import Manifest
-from guardrails.cli.logger import logger
+from typing import Literal
+import logging
+
+from email.parser import BytesHeaderParser
+from typing import List, Union
 
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
+logger = logging.getLogger(__name__)
+
+json_format = "json"
+string_format = "string"
+
+
+class PipProcessError(Exception):
+    action: str
+    package: str
+    stderr: str = ""
+    stdout: str = ""
+    returncode: int = 1
+
+    def __init__(
+        self,
+        action: str,
+        package: str,
+        stderr: str = "",
+        stdout: str = "",
+        returncode: int = 1,
+    ):
+        self.action = action
+        self.package = package
+        self.stderr = stderr
+        self.stdout = stdout
+        self.returncode = returncode
+        message = (
+            f"PipProcessError: {action} on '{package}' failed with"
+            "return code {returncode}.\n"
+            f"Stdout:\n{stdout}\n"
+            f"Stderr:\n{stderr}"
+        )
+        super().__init__(message)
+
+
+def pip_process_with_custom_exception(
+    action: str,
+    package: str = "",
+    flags: List[str] = [],
+    format: Union[Literal["string"], Literal["json"]] = string_format,
+    quiet: bool = False,
+    no_color: bool = False,
+) -> Union[str, dict]:
+    try:
+        if not quiet:
+            logger.debug(f"running pip {action} {' '.join(flags)} {package}")
+        command = [sys.executable, "-m", "pip", action]
+        command.extend(flags)
+        if package:
+            command.append(package)
+
+        env = dict(os.environ)
+        if no_color:
+            env["NO_COLOR"] = "true"
+
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,  # Capture both stdout and stderr
+            text=True,  # Automatically decode to strings
+            check=True,  # Automatically raise error on non-zero exit code
+        )
+
+        if format == json_format:
+            try:
+                remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
+                parsed_as_string = re.sub(remove_color_codes, "", result.stdout.strip())
+                return json.loads(parsed_as_string)
+            except Exception:
+                logger.debug(
+                    f"JSON parse exception in decoding output from pip {action}"
+                    f" {package}. Falling back to accumulating the byte stream",
+                )
+            accumulator = {}
+            parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
+
+        return result.stdout
+
+    except subprocess.CalledProcessError as exc:
+        raise PipProcessError(action, package, exc.stderr, exc.stdout, exc.returncode)
+    except Exception as e:
+        raise PipProcessError(action, package, stderr=str(e), stdout="", returncode=1)
 
 
 def pip_process(
@@ -34,63 +120,46 @@ def pip_process(
         env = dict(os.environ)
         if no_color:
             env["NO_COLOR"] = "true"
-        if not quiet:
-            logger.debug(f"decoding output from pip {action} {package}")
-            output = subprocess.check_output(command, env=env)
-        else:
-            output = subprocess.check_output(
-                command, stderr=subprocess.DEVNULL, env=env
-            )
+
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,  # Capture both stdout and stderr
+            text=True,  # Automatically decode to strings
+            check=True,  # Automatically raise error on non-zero exit code
+        )
 
         if format == json_format:
-            parsed = BytesHeaderParser().parsebytes(output)
             try:
                 remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
-                parsed_as_string = re.sub(
-                    remove_color_codes, "", parsed.as_string().strip()
-                )
+                parsed_as_string = re.sub(remove_color_codes, "", result.stdout.strip())
                 return json.loads(parsed_as_string)
             except Exception:
                 logger.debug(
-                    f"JSON parse exception in decoding output from pip \
-{action} {package}. Falling back to accumulating the byte stream",
+                    f"JSON parse exception in decoding output from pip {action}"
+                    f" {package}. Falling back to accumulating the byte stream",
                 )
             accumulator = {}
+            parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
             for key, value in parsed.items():
                 accumulator[key] = value
             return accumulator
-        return str(output.decode())
+
+        return result.stdout
+
     except subprocess.CalledProcessError as exc:
         logger.error(
             (
                 f"Failed to {action} {package}\n"
                 f"Exit code: {exc.returncode}\n"
-                f"stdout: {exc.output}"
+                f"stderr: {(exc.stderr or '').strip()}\n"
+                f"stdout: {(exc.stdout or '').strip()}"
             )
         )
         sys.exit(1)
     except Exception as e:
         logger.error(
-            f"An unexpected exception occurred while try to {action} {package}!",
+            f"An unexpected exception occurred while trying to {action} {package}!",
             e,
         )
         sys.exit(1)
-
-
-def get_site_packages_location() -> str:
-    output = pip_process("show", "pip", format=json_format)
-    pip_location = output["Location"]  # type: ignore
-    return pip_location
-
-
-def get_org_and_package_dirs(manifest: Manifest) -> List[str]:
-    org_name = manifest.namespace
-    package_name = manifest.package_name
-    org = snake_case(org_name if len(org_name) > 1 else "")
-    package = snake_case(package_name if len(package_name) > 1 else package_name)
-    return list(filter(None, [org, package]))
-
-
-def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
-    org_package = get_org_and_package_dirs(manifest)
-    return os.path.join(site_packages, "guardrails", "hub", *org_package)

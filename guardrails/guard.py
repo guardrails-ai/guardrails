@@ -22,7 +22,6 @@ from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
-    ValidatorReference,
     ValidatePayload,
     SimpleTypes,
     ValidationOutcome as IValidationOutcome,
@@ -36,6 +35,7 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.rc import RC
 from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation.validation_summary import ValidationSummary
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
@@ -166,7 +166,7 @@ class Guard(IGuard, Generic[OT]):
             id=id,
             name=name,
             description=description,
-            validators=validators,
+            validators=[],
             output_schema=model_schema,
             history=history,  # type: ignore - pyright doesn't understand pydantic overrides
         )
@@ -179,6 +179,9 @@ class Guard(IGuard, Generic[OT]):
         # self.validators: Optional[List[ValidatorReference]] = []
         # self.output_schema: Optional[ModelSchema] = None
         # self.history = history
+
+        ### Overrides ###
+        self.validators = validators
 
         ### Legacy ##
         self._num_reasks = None
@@ -208,7 +211,10 @@ class Guard(IGuard, Generic[OT]):
                 if loaded_guard:
                     self.id = loaded_guard.id
                     self.description = loaded_guard.description
-                    self.validators = loaded_guard.validators or []
+                    self.validators = [  # type: ignore
+                        ValidatorReference.from_interface(v)
+                        for v in loaded_guard.validators or []
+                    ]
 
                     loaded_output_schema = (
                         ModelSchema.from_dict(  # trims out extra keys
@@ -351,26 +357,17 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        messages: Optional[List[Dict]] = None,
+        reask_messages: Optional[List[Dict]] = None,
         **kwargs,  # noqa
     ):
         """Backfill execution options from kwargs."""
         if num_reasks is not None:
             self._exec_opts.num_reasks = num_reasks
-        if prompt is not None:
-            self._exec_opts.prompt = prompt
-        if instructions is not None:
-            self._exec_opts.instructions = instructions
-        if msg_history is not None:
-            self._exec_opts.msg_history = msg_history
-        if reask_prompt is not None:
-            self._exec_opts.reask_prompt = reask_prompt
-        if reask_instructions is not None:
-            self._exec_opts.reask_instructions = reask_instructions
+        if messages is not None:
+            self._exec_opts.messages = messages
+        if reask_messages is not None:
+            self._exec_opts.reask_messages = reask_messages
 
     @classmethod
     def _for_rail_schema(
@@ -534,11 +531,7 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
         reask_messages: Optional[List[Dict]] = None,
         messages: Optional[List[Dict]] = None,
         tracer: Optional[Tracer] = None,
@@ -552,10 +545,7 @@ class Guard(IGuard, Generic[OT]):
         Args:
             output_class: (Union[Type[BaseModel], List[Type[BaseModel]]]): The pydantic model that describes
             the desired structure of the output.
-            prompt (str, optional): The prompt used to generate the string. Defaults to None.
-            instructions (str, optional): Instructions for chat models. Defaults to None.
-            reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
-            reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+            messages (List[Dict], optional): A list of messages to give to the llm. Defaults to None.
             reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
@@ -575,29 +565,12 @@ class Guard(IGuard, Generic[OT]):
                 DeprecationWarning,
             )
 
-        if reask_instructions:
-            warnings.warn(
-                "reask_instructions is deprecated and will be removed in 0.6.x!"
-                "Please be prepared to set reask_messages instead.",
-                DeprecationWarning,
-            )
-        if reask_prompt:
-            warnings.warn(
-                "reask_prompt is deprecated and will be removed in 0.6.x!"
-                "Please be prepared to set reask_messages instead.",
-                DeprecationWarning,
-            )
-
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = pydantic_model_to_schema(output_class)
         exec_opts = GuardExecutionOptions(
-            prompt=prompt,
-            instructions=instructions,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
             reask_messages=reask_messages,
             messages=messages,
         )
@@ -649,10 +622,6 @@ class Guard(IGuard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
         reask_messages: Optional[List[Dict]] = None,
         messages: Optional[List[Dict]] = None,
         num_reasks: Optional[int] = None,
@@ -665,29 +634,13 @@ class Guard(IGuard, Generic[OT]):
         Args:
             validators: (List[Validator]): The list of validators to apply to the string output.
             string_description (str, optional): A description for the string to be generated. Defaults to None.
-            prompt (str, optional): The prompt used to generate the string. Defaults to None.
-            instructions (str, optional): Instructions for chat models. Defaults to None.
-            reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
-            reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+            messages (List[Dict], optional): A list of messages to pass to llm. Defaults to None.
             reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
         """  # noqa
-        if reask_instructions:
-            warnings.warn(
-                "reask_instructions is deprecated and will be removed in 0.6.x!"
-                "Please be prepared to set reask_messages instead.",
-                DeprecationWarning,
-            )
-        if reask_prompt:
-            warnings.warn(
-                "reask_prompt is deprecated and will be removed in 0.6.x!"
-                "Please be prepared to set reask_messages instead.",
-                DeprecationWarning,
-            )
-
         if num_reasks:
             warnings.warn(
                 "Setting num_reasks during initialization is deprecated"
@@ -706,12 +659,8 @@ class Guard(IGuard, Generic[OT]):
             list(validators), type=SimpleTypes.STRING, description=string_description
         )
         exec_opts = GuardExecutionOptions(
-            prompt=prompt,
-            instructions=instructions,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
-            reask_messages=reask_messages,
             messages=messages,
+            reask_messages=reask_messages,
         )
         guard = cast(
             Guard[str],
@@ -736,11 +685,8 @@ class Guard(IGuard, Generic[OT]):
         llm_output: Optional[str] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        messages: Optional[List[Dict]] = None,
+        reask_messages: Optional[List[Dict]] = None,
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -749,17 +695,12 @@ class Guard(IGuard, Generic[OT]):
         self._fill_validators()
         self._fill_exec_opts(
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
+            messages=messages,
+            reask_messages=reask_messages,
         )
         metadata = metadata or {}
-        if not llm_output and llm_api and not (prompt or msg_history):
-            raise RuntimeError(
-                "'prompt' or 'msg_history' must be provided in order to call an LLM!"
-            )
+        # if not llm_output and llm_api and not (messages):
+        #     raise RuntimeError("'messages' must be provided in order to call an LLM!")
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
@@ -775,9 +716,7 @@ class Guard(IGuard, Generic[OT]):
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
-            prompt: Optional[str] = None,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict]] = None,
+            messages: Optional[List[Dict]] = None,
             metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
             **kwargs,
@@ -799,13 +738,10 @@ class Guard(IGuard, Generic[OT]):
                     "This should never happen."
                 )
 
-            input_prompt = prompt or self._exec_opts.prompt
-            input_instructions = instructions or self._exec_opts.instructions
+            input_messages = messages or self._exec_opts.messages
             call_inputs = CallInputs(
                 llm_api=llm_api,
-                prompt=input_prompt,
-                instructions=input_instructions,
-                msg_history=msg_history,
+                messages=input_messages,
                 prompt_params=prompt_params,
                 num_reasks=self._num_reasks,
                 metadata=metadata,
@@ -837,9 +773,7 @@ class Guard(IGuard, Generic[OT]):
                 llm_output=llm_output,
                 prompt_params=prompt_params,
                 num_reasks=self._num_reasks,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
                 call_log=call_log,
@@ -862,9 +796,7 @@ class Guard(IGuard, Generic[OT]):
             llm_output=llm_output,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             *args,
@@ -881,9 +813,7 @@ class Guard(IGuard, Generic[OT]):
         num_reasks: int = 0,  # Should be defined at this point
         metadata: Dict,  # Should be defined at this point
         full_schema_reask: bool = False,  # Should be defined at this point
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
         api = None
@@ -903,9 +833,7 @@ class Guard(IGuard, Generic[OT]):
                 output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 api=api,
                 metadata=metadata,
                 output=llm_output,
@@ -926,9 +854,7 @@ class Guard(IGuard, Generic[OT]):
                 output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 api=api,
                 metadata=metadata,
                 output=llm_output,
@@ -951,9 +877,7 @@ class Guard(IGuard, Generic[OT]):
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -965,9 +889,7 @@ class Guard(IGuard, Generic[OT]):
                      (e.g. openai.completions.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
+            messages: The message history to pass to the LLM.
             metadata: Metadata to pass to the validators.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
@@ -977,20 +899,15 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             ValidationOutcome
         """
-        instructions = instructions or self._exec_opts.instructions
-        prompt = prompt or self._exec_opts.prompt
-        msg_history = (
-            msg_history
-            or kwargs.get("messages", None)
-            or self._exec_opts.messages
-            or []
-        )
-        if prompt is None:
-            if msg_history is not None and not len(msg_history):
-                raise RuntimeError(
-                    "You must provide a prompt if msg_history is empty. "
-                    "Alternatively, you can provide a prompt in the Schema constructor."
-                )
+
+        messages = messages or self._exec_opts.messages or []
+
+        if messages is not None and not len(messages):
+            raise RuntimeError(
+                "You must provide messages. "
+                "Alternatively, you can provide messages in the Schema constructor."
+            )
+
         return trace_guard_execution(
             self.name,
             self.history,
@@ -1000,9 +917,7 @@ class Guard(IGuard, Generic[OT]):
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             **kwargs,
@@ -1044,14 +959,9 @@ class Guard(IGuard, Generic[OT]):
             if llm_api is None
             else 1
         )
-        default_prompt = self._exec_opts.prompt if llm_api else None
-        prompt = kwargs.pop("prompt", default_prompt)
 
-        default_instructions = self._exec_opts.instructions if llm_api else None
-        instructions = kwargs.pop("instructions", default_instructions)
-
-        default_msg_history = self._exec_opts.msg_history if llm_api else None
-        msg_history = kwargs.pop("msg_history", default_msg_history)
+        default_messages = self._exec_opts.messages if llm_api else None
+        messages = kwargs.pop("messages", default_messages)
 
         return trace_guard_execution(
             self.name,
@@ -1063,9 +973,7 @@ class Guard(IGuard, Generic[OT]):
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=final_num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             **kwargs,
@@ -1087,14 +995,12 @@ class Guard(IGuard, Generic[OT]):
     def __add_validator(self, validator: Validator, on: str = "output"):
         if on not in [
             "output",
-            "prompt",
-            "instructions",
-            "msg_history",
+            "messages",
         ] and not on.startswith("$"):
             warnings.warn(
                 f"Unusual 'on' value: {on}!"
                 "This value is typically one of "
-                "'output', 'prompt', 'instructions', 'msg_history') "
+                "'output', 'messages') "
                 "or a JSON path starting with '$.'",
                 UserWarning,
             )
@@ -1130,8 +1036,6 @@ class Guard(IGuard, Generic[OT]):
     ) -> "Guard":
         """Use a validator to validate either of the following:
         - The output of an LLM request
-        - The prompt
-        - The instructions
         - The message history
 
         Args:
@@ -1154,8 +1058,6 @@ class Guard(IGuard, Generic[OT]):
                     )
 
         hydrated_validator = get_validator(validator, *args, **kwargs)
-        if on == "messages":
-            on = "msg_history"
         self.__add_validator(hydrated_validator, on=on)
         self._save()
         return self
@@ -1177,8 +1079,6 @@ class Guard(IGuard, Generic[OT]):
     ) -> "Guard":
         """Use multiple validators to validate results of an LLM request."""
         # Loop through the validators
-        if on == "messages":
-            on = "msg_history"
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
@@ -1219,13 +1119,13 @@ class Guard(IGuard, Generic[OT]):
                     validation_passed=False,
                     error="The response from the server was empty!",
                 )
-
-            # TODO reenable this when we have history support in
-            # multi-node server environments
-            # guard_history = self._api_client.get_history(
-            #     self.name, validation_output.call_id
-            # )
-            # self.history.extend([Call.from_interface(call) for call in guard_history])
+            if os.environ.get("GUARD_HISTORY_ENABLED", "true").lower() == "true":
+                guard_history = self._api_client.get_history(
+                    self.name, validation_output.call_id
+                )
+                self.history.extend(
+                    [Call.from_interface(call) for call in guard_history]
+                )
 
             validation_summaries = []
             if self.history.last and self.history.last.iterations.last:
@@ -1289,14 +1189,14 @@ class Guard(IGuard, Generic[OT]):
                         validation_passed=(validation_output.validation_passed is True),
                     )
 
-            # TODO reenable this when sever supports multi-node history
-            # if validation_output:
-            #     guard_history = self._api_client.get_history(
-            #         self.name, validation_output.call_id
-            #     )
-            # self.history.extend(
-            #     [Call.from_interface(call) for call in guard_history]
-            # )
+            if os.environ.get("GUARD_HISTORY_ENABLED", "true").lower() == "true":
+                if validation_output:
+                    guard_history = self._api_client.get_history(
+                        self.name, validation_output.call_id
+                    )
+                    self.history.extend(
+                        [Call.from_interface(call) for call in guard_history]
+                    )
         else:
             raise ValueError("Guard does not have an api client!")
 
@@ -1328,16 +1228,10 @@ class Guard(IGuard, Generic[OT]):
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
 
-            if not payload.get("prompt"):
-                payload["prompt"] = self._exec_opts.prompt
-            if not payload.get("instructions"):
-                payload["instructions"] = self._exec_opts.instructions
-            if not payload.get("msg_history"):
-                payload["msg_history"] = self._exec_opts.msg_history
-            if not payload.get("reask_prompt"):
-                payload["reask_prompt"] = self._exec_opts.reask_prompt
-            if not payload.get("reask_instructions"):
-                payload["reask_instructions"] = self._exec_opts.reask_instructions
+            if not payload.get("messages"):
+                payload["messages"] = self._exec_opts.messages
+            if not payload.get("reask_messages"):
+                payload["reask_messages"] = self._exec_opts.reask_messages
 
             should_stream = kwargs.get("stream", False)
             if should_stream:
@@ -1376,7 +1270,7 @@ class Guard(IGuard, Generic[OT]):
             id=self.id,
             name=self.name,
             description=self.description,
-            validators=self.validators,
+            validators=self.validators,  # type: ignore
             output_schema=self.output_schema,
             history=[c.to_interface() for c in self.history],  # type: ignore
         )
@@ -1416,7 +1310,10 @@ class Guard(IGuard, Generic[OT]):
             id=i_guard.id,
             name=i_guard.name,
             description=i_guard.description,
-            validators=i_guard.validators,
+            validators=[
+                ValidatorReference.from_interface(i_val)
+                for i_val in i_guard.validators or []
+            ],
             output_schema=output_schema,
         )
 

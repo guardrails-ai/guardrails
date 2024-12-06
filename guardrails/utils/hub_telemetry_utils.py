@@ -1,12 +1,17 @@
 # Imports
 import logging
 from typing import Optional
-
 from guardrails.settings import settings
+from guardrails.version import GUARDRAILS_VERSION
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
 )
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.resources import (
+    SERVICE_NAME,
+    Resource,
+    SERVICE_VERSION,
+    DEPLOYMENT_ENVIRONMENT,
+)
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -68,7 +73,12 @@ class HubTelemetry:
 
         # Create a resource
         # Service name is required for most backends
-        self._resource = Resource(attributes={SERVICE_NAME: self._service_name})
+        attributes = {
+            SERVICE_NAME: self._service_name,
+            SERVICE_VERSION: GUARDRAILS_VERSION,
+            DEPLOYMENT_ENVIRONMENT: "production",
+        }
+        self._resource = Resource(attributes=attributes)
 
         # Create a tracer provider and a processor
         self._tracer_provider = TracerProvider(resource=self._resource)

@@ -41,7 +41,7 @@ const sidebars = {
       label: "Migration Guides",
       collapsed: false,
       items: [
-        "migration_guides/0-6-alpha-migration",
+        "migration_guides/0-6-migration",
         "migration_guides/0-5-migration",
         "migration_guides/0-4-migration",
         "migration_guides/0-3-migration",
@@ -105,6 +105,7 @@ const sidebars = {
   integrations: [
     // "integrations/azure_openai",
     "integrations/langchain",
+    "integrations/llama_index",
     {
       type: "category",
       label: "Telemetry",

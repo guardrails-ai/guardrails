@@ -4,18 +4,19 @@
 #   - [ ] Remove validator_base.py in 0.6.x
 
 import asyncio
+import contextlib
 from functools import partial
 import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+import re
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from typing_extensions import deprecated
 from warnings import warn
 import warnings
 
-import nltk
 import requests
 from langchain_core.runnables import Runnable
 
@@ -31,12 +32,9 @@ from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-
-#   See: https://github.com/guardrails-ai/guardrails/issues/829
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
+from guardrails.utils.tokenization_utils import (
+    postproc_splits,
+)
 
 
 ### functions to get chunks ###
@@ -48,21 +46,46 @@ def split_sentence_str(chunk: str):
     return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
-def split_sentence_nltk(chunk: str):
-    """
-    NOTE: this approach currently does not work
-    Use a sentence tokenizer to split the chunk into sentences.
+def split_sentence_word_tokenizers_jl_separator(
+    chunk: str, separator: str = "abcdsentenceseperatordcba"
+):
+    """Use a sentence tokenizer to detect if at least one sentence is present
+    in the chunk. We return the first sentence and the remaining chunks without
+    the first sentence.
 
-    Because using the tokenizer is expensive, we only use it if there
-    is a period present in the chunk.
+    We perform the first step of WordTokenizers.jl's split_sentences function to
+    detect possible sentence boundaries before calling the sentence tokenizer.
+
+    Args:
+        chunk (str): The text to split into sentences.
+
+    Returns:
+        List[str]: A list of two strings. The first string is the first sentence
+            in the chunk. The second string is the remaining text in the chunk.
     """
     # using the sentence tokenizer is expensive
     # we check for a . to avoid wastefully calling the tokenizer
-    if "." not in chunk:
+
+    # check at least 3 characters have been accumulated before splitting
+    is_minimum_length = False
+    with contextlib.suppress(IndexError):
+        chunk[2]
+        is_minimum_length = True
+
+    # check for potential line endings, which is what split_sentences does
+    chunk_with_potential_line_endings, count = re.subn(
+        r"([?!.])(?=\s|$)", rf"\1{separator}", chunk
+    )
+    any_potential_line_endings = count > 0
+    if not is_minimum_length or not any_potential_line_endings:
         return []
-    sentences = nltk.sent_tokenize(chunk)
-    if len(sentences) == 0:
+
+    sentences = postproc_splits(chunk_with_potential_line_endings, separator)
+    sentences = re.split(rf"\n?{separator} ?\n?", sentences)
+    # if not more than one sentence, we haven't accumulated enough for a validation
+    if len(sentences) <= 1:
         return []
+
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
@@ -119,7 +142,7 @@ class Validator:
         self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
-            on_fail = OnFailAction.NOOP
+            on_fail = OnFailAction.EXCEPTION
         if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
@@ -266,7 +289,7 @@ class Validator:
         Returns:
             list[str]: The text chunked into some subset.
         """
-        return split_sentence_str(chunk)
+        return split_sentence_word_tokenizers_jl_separator(chunk)
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
