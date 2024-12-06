@@ -26,17 +26,18 @@ SIMPLE_RAIL_SPEC = f"""
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 {INSTRUCTIONS}
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 
 {PROMPT}
 
-</prompt>
+    </message>
+</messages>
 </rail>
 """
 
@@ -46,17 +47,18 @@ RAIL_WITH_PARAMS = """
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 ${user_instructions}
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 
 ${user_prompt}
 
-</prompt>
+    </message>
+</messages>
 </rail>
 """
 
@@ -66,18 +68,19 @@ RAIL_WITH_FORMAT_INSTRUCTIONS = """
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 You are a helpful bot, who answers only with valid JSON
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 
 Extract a string from the text
 
 ${gr.complete_json_suffix_v2}
-</prompt>
+    </message>
+</messages>
 </rail>
 """
 
@@ -86,67 +89,76 @@ RAIL_WITH_OLD_CONSTANT_SCHEMA = """
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 You are a helpful bot, who answers only with valid JSON
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 
 Extract a string from the text
 @gr.complete_json_suffix_v2
-</prompt>
+    </message>
+</messages>
 </rail>
 """
 
-RAIL_WITH_REASK_PROMPT = """
+RAIL_WITH_REASK_MESSAGES_USER = """
 <rail version="0.1">
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 You are a helpful bot, who answers only with valid JSON
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 ${gr.complete_json_suffix_v2}
-</prompt>
-<reask_prompt>
+    </message>
+</messages>
+
+<reask_messages>
+<message role="user">
 Please try that again, extract a string from the text
 ${xml_output_schema}
 ${previous_response}
-</reask_prompt>
+</message>
+</reask_messages>
 </rail>
 """
 
-RAIL_WITH_REASK_INSTRUCTIONS = """
+RAIL_WITH_REASK_MESSAGES_USER_AND_SYSTEM = """
 <rail version="0.1">
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
-<instructions>
+<messages>
+    <message role="system">
 
 You are a helpful bot, who answers only with valid JSON
 
-</instructions>
-
-<prompt>
+    </message>
+    <message role="user">
 
 Extract a string from the text
 
 ${gr.complete_json_suffix_v2}
-</prompt>
-<reask_prompt>
+    </message>
+</messages>
+
+<reask_messages>
+<message role="user">
 Please try that again, extract a string from the text
 ${xml_output_schema}
 ${previous_response}
-</reask_prompt>
-<reask_instructions>
+</message>
+<message role="system">
 You are a helpful bot, who answers only with valid JSON
-</reask_instructions>
+</message>
+</reask_messages>
 </rail>
 """
 
@@ -156,9 +168,9 @@ def test_parse_prompt():
     guard = gd.Guard.for_rail_string(SIMPLE_RAIL_SPEC)
 
     # Strip both, raw and parsed, to be safe
-    instructions = Instructions(guard._exec_opts.instructions)
+    instructions = Instructions(guard._exec_opts.messages[0]["content"])
     assert instructions.format().source.strip() == INSTRUCTIONS.strip()
-    prompt = Prompt(guard._exec_opts.prompt)
+    prompt = Prompt(guard._exec_opts.messages[1]["content"])
     assert prompt.format().source.strip() == PROMPT.strip()
 
 
@@ -169,12 +181,12 @@ def test_instructions_with_params():
     user_instructions = "A useful system message."
     user_prompt = "A useful prompt."
 
-    instructions = Instructions(guard._exec_opts.instructions)
+    instructions = Instructions(guard._exec_opts.messages[0]["content"])
     assert (
         instructions.format(user_instructions=user_instructions).source.strip()
         == user_instructions.strip()
     )
-    prompt = Prompt(guard._exec_opts.prompt)
+    prompt = Prompt(guard._exec_opts.messages[1]["content"])
     assert prompt.format(user_prompt=user_prompt).source.strip() == user_prompt.strip()
 
 
@@ -189,7 +201,7 @@ def test_variable_names(rail, var_names):
     """Test extracting variable names from a prompt."""
     guard = gd.Guard.for_rail_string(rail)
 
-    prompt = Prompt(guard._exec_opts.prompt)
+    prompt = Prompt(guard._exec_opts.messages[1]["content"])
 
     assert prompt.variable_names == var_names
 
@@ -210,18 +222,20 @@ def test_format_instructions():
         .safe_substitute(output_schema=output_schema)
         .rstrip()
     )
-    prompt = Prompt(guard._exec_opts.prompt, output_schema=output_schema)
+    prompt = Prompt(
+        guard._exec_opts.messages[1]["content"], output_schema=output_schema
+    )
     assert prompt.format_instructions.rstrip() == expected_instructions
 
 
-def test_reask_prompt():
-    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_PROMPT)
-    assert guard._exec_opts.reask_prompt == REASK_PROMPT
+def test_reask_messages_user():
+    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_MESSAGES_USER)
+    assert guard._exec_opts.reask_messages[0]["content"] == REASK_PROMPT
 
 
-def test_reask_instructions():
-    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard._exec_opts.reask_instructions == INSTRUCTIONS
+def test_reask_messages_user_and_system():
+    guard = gd.Guard.for_rail_string(RAIL_WITH_REASK_MESSAGES_USER_AND_SYSTEM)
+    assert guard._exec_opts.reask_messages[1]["content"] == INSTRUCTIONS
 
 
 @pytest.mark.parametrize(
@@ -247,9 +261,15 @@ class TestResponse(BaseModel):
 def test_gr_prefixed_prompt_item_passes():
     # From pydantic:
     prompt = """Give me a response to ${grade}"""
+    messages = [
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    ]
 
-    guard = gd.Guard.for_pydantic(output_class=TestResponse, prompt=prompt)
-    prompt = Prompt(guard._exec_opts.prompt)
+    guard = gd.Guard.for_pydantic(output_class=TestResponse, messages=messages)
+    prompt = Prompt(guard._exec_opts.messages[0]["content"])
     assert len(prompt.variable_names) == 1
 
 

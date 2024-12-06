@@ -2,12 +2,11 @@ import enum
 import importlib
 import json
 import os
-import openai
 from typing import Dict, List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
-from guardrails_api_client import Guard as IGuard, ValidatorReference
+from guardrails_api_client import Guard as IGuard
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
@@ -15,6 +14,7 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.validation.validation_result import FailResult
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.guard import Guard
 from guardrails.actions.reask import FieldReAsk
 from tests.integration_tests.test_assets.validators import (
@@ -26,8 +26,7 @@ from tests.integration_tests.test_assets.validators import (
 )
 
 from .mock_llm_outputs import (
-    MockOpenAICallable,
-    MockOpenAIChatCallable,
+    MockLiteLLMCallableOther,
     entity_extraction,
     lists_object,
 )
@@ -104,15 +103,13 @@ def validated_output():
     }
 
 
-def guard_initializer(
-    rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
-) -> Guard:
+def guard_initializer(rail: Union[str, BaseModel], messages=None) -> Guard:
     """Helper function to initialize a Guard using the correct method."""
 
     if isinstance(rail, str):
         return Guard.for_rail_string(rail)
     else:
-        return Guard.for_pydantic(rail, prompt=prompt, instructions=instructions)
+        return Guard.for_pydantic(rail, messages=messages)
 
 
 '''def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
@@ -149,7 +146,7 @@ def test_entity_extraction_with_reask(
     second time.
     """
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     second_response = (
         entity_extraction.LLM_OUTPUT_FULL_REASK
@@ -176,10 +173,10 @@ def test_entity_extraction_with_reask(
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
 
     final_output: ValidationOutcome = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
         max_tokens=2000,
@@ -196,7 +193,7 @@ def test_entity_extraction_with_reask(
 
     # For orginal prompt and output
     first = call.iterations.first
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == entity_extraction.COMPILED_PROMPT
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
@@ -233,7 +230,8 @@ def test_entity_extraction_with_reask(
     if test_full_schema_reask:
         assert (
             # second.inputs.prompt.source # Also valid
-            call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_FULL_REASK
+            call.reask_messages.first[1]["content"]
+            == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
         assert (
             # second.raw_output # Also valid
@@ -241,7 +239,10 @@ def test_entity_extraction_with_reask(
         )
     else:
         # Second iteration is the first reask
-        assert call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_REASK
+        assert (
+            call.reask_messages.first[1]["content"]
+            == entity_extraction.COMPILED_PROMPT_REASK
+        )
         # FIXME: Switch back to this once field level reask schema pruning is implemented  # noqa
         # assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
         assert call.raw_outputs.at(1) == json.dumps(
@@ -259,12 +260,27 @@ def test_entity_extraction_with_reask(
 )
 def test_entity_extraction_with_noop(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT_FULL_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -283,7 +299,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert (
         call.guarded_output is not None
@@ -305,12 +321,27 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
 )
 def test_entity_extraction_with_filter(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT_FULL_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -324,8 +355,8 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 1
 
-    # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    # For original prompt and output
+    assert call.compiled_messages[0]["content"] == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.status == "fail"
     assert call.guarded_output is None
@@ -340,12 +371,27 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
 )
 def test_entity_extraction_with_fix(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT_FULL_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -359,7 +405,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
@@ -376,12 +422,27 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
 )
 def test_entity_extraction_with_refrain(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT_FULL_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -395,26 +456,34 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 
 @pytest.mark.parametrize(
-    "rail,prompt,instructions",
+    "rail,messages",
     [
-        (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None, None),
+        (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None),
         (
             entity_extraction.PYDANTIC_RAIL_WITH_FIX,
-            entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
-            entity_extraction.PYDANTIC_INSTRUCTIONS_CHAT_MODEL,
+            [
+                {
+                    "role": "system",
+                    "content": entity_extraction.PYDANTIC_INSTRUCTIONS_CHAT_MODEL,
+                },
+                {
+                    "role": "user",
+                    "content": entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
+                },
+            ],
         ),
     ],
 )
-def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructions):
+def test_entity_extraction_with_fix_chat_models(mocker, rail, messages):
     """Test that the entity extraction works with fix for chat models."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -425,9 +494,9 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     ]
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = guard_initializer(rail, prompt, instructions)
+    guard = guard_initializer(rail, messages)
     final_output = guard(
-        llm_api=openai.chat.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -442,9 +511,12 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 
     # For orginal prompt and output
     assert (
-        call.compiled_prompt == entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
+        call.compiled_messages[1]["content"]
+        == entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
     )
-    assert call.compiled_instructions == entity_extraction.COMPILED_INSTRUCTIONS
+    assert (
+        call.compiled_messages[0]["content"] == entity_extraction.COMPILED_INSTRUCTIONS
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
@@ -475,16 +547,18 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 
 
 @pytest.mark.parametrize(
-    "rail,prompt,instructions,history,llm_api,expected_prompt,"
+    "rail,messages,expected_prompt,"
     "expected_instructions,expected_reask_prompt,expected_reask_instructions,"
     "llm_outputs",
     [
         (
             entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
-            entity_extraction.OPTIONAL_PROMPT_COMPLETION_MODEL,
-            None,
-            None,
-            openai.completions.create,
+            [
+                {
+                    "role": "user",
+                    "content": entity_extraction.OPTIONAL_PROMPT_COMPLETION_MODEL,
+                }
+            ],
             entity_extraction.COMPILED_PROMPT,
             None,
             entity_extraction.COMPILED_PROMPT_REASK,
@@ -498,10 +572,16 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
         ),
         (
             entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
-            entity_extraction.OPTIONAL_PROMPT_CHAT_MODEL,
-            entity_extraction.OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
-            None,
-            openai.chat.completions.create,
+            [
+                {
+                    "role": "system",
+                    "content": entity_extraction.OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
+                },
+                {
+                    "role": "user",
+                    "content": entity_extraction.OPTIONAL_PROMPT_CHAT_MODEL,
+                },
+            ],
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -515,10 +595,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
         ),
         (
             entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
-            None,
-            None,
             entity_extraction.OPTIONAL_MSG_HISTORY,
-            openai.chat.completions.create,
             None,
             None,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -535,10 +612,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 def test_entity_extraction_with_reask_with_optional_prompts(
     mocker,
     rail,
-    prompt,
-    instructions,
-    history,
-    llm_api,
+    messages,
     expected_prompt,
     expected_instructions,
     expected_reask_prompt,
@@ -554,25 +628,20 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         )
         for o in llm_outputs
     ]
+
     mock_openai_invoke_llm = None
-    if llm_api == openai.completions.create:
-        mock_openai_invoke_llm = mocker.patch(
-            "guardrails.llm_providers.OpenAICallable._invoke_llm"
-        )
-    else:
-        mock_openai_invoke_llm = mocker.patch(
-            "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
-        )
+
+    mock_openai_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
     mock_openai_invoke_llm.side_effect = llm_return_values
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = Guard.for_rail_string(rail)
 
     final_output = guard(
-        llm_api=llm_api,
-        prompt=prompt,
-        instructions=instructions,
-        msg_history=history,
+        model="gpt-3.5-turbo",
+        messages=messages,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -586,13 +655,19 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == expected_prompt
+    if expected_prompt:
+        if len(call.compiled_messages) == 1:
+            prompt = call.compiled_messages[0]["content"]
+        else:
+            prompt = call.compiled_messages[1]["content"]
+        assert prompt == expected_prompt
     assert call.iterations.first.raw_output == entity_extraction.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response
         == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
-    assert call.compiled_instructions == expected_instructions
+    if expected_instructions:
+        assert call.compiled_messages[0]["content"] == expected_instructions
 
     # For reask validator logs
     # TODO: Update once we add json_path to the ValidatorLog class
@@ -616,7 +691,8 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     )
 
     # For re-asked prompt and output
-    assert call.reask_prompts.last == expected_reask_prompt
+    if expected_reask_prompt:
+        assert call.reask_messages.last[1]["content"] == expected_reask_prompt
     # FIXME: Switch back to this once field level reask schema pruning is implemented  # noqa
     # assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
     assert call.raw_outputs.at(1) == json.dumps(
@@ -625,14 +701,14 @@ def test_entity_extraction_with_reask_with_optional_prompts(
 
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     if expected_reask_instructions:
-        assert call.reask_instructions.last == expected_reask_instructions
+        assert call.reask_messages.last[0]["content"] == expected_reask_instructions
 
 
 def test_skeleton_reask(mocker):
     from unittest.mock import patch
 
     with patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         side_effect=[
             LLMResponse(
                 output=entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,
@@ -666,7 +742,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK
         )
         final_output = guard(
-            llm_api=openai.completions.create,
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             max_tokens=1000,
             num_reasks=1,
@@ -684,7 +760,10 @@ def test_skeleton_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
+    assert (
+        call.compiled_messages[0]["content"]
+        == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
+    )
     assert (
         call.iterations.first.raw_output
         == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
@@ -695,7 +774,10 @@ def test_skeleton_reask(mocker):
     )
 
     # For re-asked prompt and output
-    assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    assert (
+        call.reask_messages[0][1]["content"]
+        == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    )
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
 
@@ -703,15 +785,26 @@ def test_skeleton_reask(mocker):
 def test_string_with_message_history_reask(mocker):
     """Test single string (non-JSON) generation with message history and
     reask."""
-    mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=string.MSG_LLM_OUTPUT_INCORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=string.MSG_LLM_OUTPUT_CORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.chat.completions.create,
-        msg_history=string.MOVIE_MSG_HISTORY,
+        messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
@@ -723,16 +816,16 @@ def test_string_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
 
-    assert call.compiled_instructions is None
-    assert call.compiled_prompt is None
     assert call.iterations.first.raw_output == string.MSG_LLM_OUTPUT_INCORRECT
     assert (
         call.iterations.first.validation_response == string.MSG_VALIDATED_OUTPUT_REASK
     )
 
     # For re-asked prompt and output
-    assert call.reask_prompts.last == string.MSG_COMPILED_PROMPT_REASK
-    assert call.reask_instructions.last == string.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.reask_messages[0][1]["content"] == string.MSG_COMPILED_PROMPT_REASK
+    assert (
+        call.reask_messages[0][0]["content"] == string.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
     assert call.raw_outputs.last == string.MSG_LLM_OUTPUT_CORRECT
     assert call.guarded_output == string.MSG_LLM_OUTPUT_CORRECT
 
@@ -740,7 +833,7 @@ def test_string_with_message_history_reask(mocker):
 def test_pydantic_with_message_history_reask(mocker):
     """Test JSON generation with message history re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -766,8 +859,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
     guard = gd.Guard.for_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.chat.completions.create,
-        msg_history=string.MOVIE_MSG_HISTORY,
+        messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
@@ -782,23 +874,23 @@ def test_pydantic_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
 
-    assert call.compiled_instructions is None
-    assert call.compiled_prompt is None
     assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert (
         call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
     )
 
     # For re-asked prompt and output
-    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
-    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.reask_messages[0][1]["content"] == pydantic.MSG_COMPILED_PROMPT_REASK
+    assert (
+        call.reask_messages[0][0]["content"] == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
     assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):
     mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=entity_extraction.LLM_OUTPUT,
             prompt_token_count=123,
@@ -811,11 +903,12 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
     try:
         content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
         guard = guard_initializer(
-            entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+            entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
+            messages=[{"role": "user", "content": entity_extraction.PYDANTIC_PROMPT}],
         )
 
         guard(
-            llm_api=openai.completions.create,
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -841,7 +934,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
 
 def test_in_memory_validator_log_is_not_duplicated(mocker):
     mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=entity_extraction.LLM_OUTPUT,
             prompt_token_count=123,
@@ -854,11 +947,12 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
     try:
         content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
         guard = guard_initializer(
-            entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+            entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
+            messages=[{"role": "user", "content": entity_extraction.PYDANTIC_PROMPT}],
         )
 
         guard(
-            llm_api=openai.completions.create,
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -892,7 +986,7 @@ def test_enum_datatype(mocker):
         prompt: Optional[str] = None,
         *args,
         instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict[str, str]]] = None,
+        messages: Optional[List[Dict[str, str]]] = None,
         **kwargs,
     ) -> str:
         nonlocal return_value
@@ -901,7 +995,7 @@ def test_enum_datatype(mocker):
     guard = gd.Guard.for_pydantic(Task)
     _, dict_o, *rest = guard(
         custom_llm,
-        prompt="What is the status of this task?",
+        messages=[{"role": "user", "content": "What is the status of this task?"}],
     )
     assert dict_o == {"status": "not started"}
 
@@ -909,7 +1003,9 @@ def test_enum_datatype(mocker):
     guard = gd.Guard.for_pydantic(Task)
     result = guard(
         custom_llm,
-        prompt="What is the status of this task REALLY?",
+        messages=[
+            {"role": "user", "content": "What is the status of this task REALLY?"}
+        ],
         num_reasks=0,
     )
 
@@ -939,11 +1035,13 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
     # Create a Guard with a top level list return type
 
     # Mock the LLM
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallableOther
+    )
 
-    guard = guard_initializer(rail, prompt=prompt)
+    guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
 
-    output = guard(llm_api=openai.completions.create)
+    output = guard(model="gpt-3.5-turbo")
 
     # Validate the output
     assert output.validated_output == [
@@ -974,7 +1072,7 @@ def test_pydantic_with_lite_llm(mocker):
     final_output = guard(
         messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
     )
-    assert guard.history.last.inputs.msg_history == [
+    assert guard.history.last.inputs.messages == [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Can you give me your favorite movie?"},
     ]
@@ -987,7 +1085,7 @@ def test_pydantic_with_lite_llm(mocker):
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -999,7 +1097,7 @@ def test_string_output(mocker):
 
     guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
     )
@@ -1012,7 +1110,7 @@ def test_string_output(mocker):
     assert call.iterations.length == 1
 
     # For original prompt and output
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
     assert call.raw_outputs.last == string.LLM_OUTPUT
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None
@@ -1020,7 +1118,7 @@ def test_string_output(mocker):
 
 def test_json_function_calling_tool(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     task_list = {
         "list": [
@@ -1081,8 +1179,8 @@ def test_json_function_calling_tool(mocker):
     ]
 
     final_output = guard(
-        llm_api=openai.chat.completions.create,
-        msg_history=[
+        model="gpt-3.5-turbo",
+        messages=[
             {
                 "role": "user",
                 "content": "You are a helpful assistant"
@@ -1118,7 +1216,7 @@ def test_json_function_calling_tool(mocker):
 def test_string_reask(mocker):
     """Test single string (non-JSON) generation with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -1135,7 +1233,7 @@ def test_string_reask(mocker):
 
     guard = gd.Guard.for_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
-        llm_api=openai.completions.create,
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
@@ -1149,15 +1247,18 @@ def test_string_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    assert (
+        call.iterations.last.inputs.messages[1]["content"]
+        == string.COMPILED_PROMPT_REASK
+    )
     # Same thing as above
-    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+    assert call.reask_messages[0][1]["content"] == string.COMPILED_PROMPT_REASK
 
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.guarded_output == string.LLM_OUTPUT_REASK
@@ -1170,9 +1271,9 @@ class TestSerizlizationAndDeserialization:
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
         ).use_many(
-            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
-            ValidLength(1, 100),
-            ValidChoices(["Some Name", "Some Other Name"]),
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
+            ValidLength(1, 100, on_fail="noop"),
+            ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
         )
 
         response = guard.parse("Some Name")
@@ -1215,9 +1316,9 @@ class TestSerizlizationAndDeserialization:
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
         ).use_many(
-            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
-            ValidLength(1, 100),
-            ValidChoices(["Some Name", "Some Other Name"]),
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
+            ValidLength(1, 100, on_fail="noop"),
+            ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
         )
 
         response = guard.parse("Some Name")
@@ -1253,7 +1354,9 @@ def test_guard_for_pydantic_with_mock_hf_pipeline():
 
     pipe = make_mock_pipeline()
     guard = Guard()
-    _ = guard(pipe, prompt="Don't care about the output.")
+    _ = guard(
+        pipe, messages=[{"role": "user", "content": "Don't care about the output."}]
+    )
 
 
 @pytest.mark.skipif(
@@ -1269,7 +1372,7 @@ def test_guard_for_pydantic_with_mock_hf_model():
     _ = guard(
         model.generate,
         tokenizer=tokenizer,
-        prompt="Don't care about the output.",
+        messages=[{"role": "user", "content": "Don't care about the output."}],
     )
 
 
@@ -1277,7 +1380,9 @@ class TestValidatorInitializedOnce:
     def test_guard_init(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
-        guard = Guard(validators=[ValidatorReference(id="lower-case", on="$")])
+        guard = Guard(
+            validators=[ValidatorReference(id="lower-case", on="$", onFail="noop")]
+        )
 
         # Validator is not initialized until the guard is used
         assert init_spy.call_count == 0
@@ -1459,148 +1564,17 @@ class TestValidatorInitializedOnce:
 # With 0.6.0 we can drop the baggage of
 #   the prompt and instructions and just pass in the messages.
 class TestCustomLLMApi:
-    def test_with_prompt(self, mocker):
+    def test_WITH_MSG_HISTORY(self, mocker):
         mock_llm = mocker.Mock()
 
         def custom_llm(
-            prompt: Optional[str] = None,
             *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
+            messages: Optional[List[Dict[str, str]]] = None,
             **kwargs,
         ) -> str:
             mock_llm(
-                prompt,
                 *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            prompt="Can you generate a list of 10 things that are not food?",
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            "Can you generate a list of 10 things that are not food?",
-            instructions=None,
-            msg_history=None,
-            temperature=0,
-        )
-
-    def test_with_prompt_and_instructions(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            prompt="Can you generate a list of 10 things that are not food?",
-            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            "Can you generate a list of 10 things that are not food?",
-            instructions="You are a list generator.  You can generate a list of things that are not food.",  # noqa
-            msg_history=None,
-            temperature=0,
-        )
-
-    def test_with_msg_history(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
-                **kwargs,
-            )
-            return "Not really, no.  I'm just a static function."
-
-        guard = Guard().use(
-            ValidLength(1, 100),
-        )
-        output = guard(
-            llm_api=custom_llm,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
-        )
-
-        assert output.validation_passed is True
-        assert output.validated_output == "Not really, no.  I'm just a static function."
-        mock_llm.assert_called_once_with(
-            None,
-            instructions=None,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
-            temperature=0,
-        )
-
-    def test_with_messages(self, mocker):
-        mock_llm = mocker.Mock()
-
-        def custom_llm(
-            prompt: Optional[str] = None,
-            *args,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict[str, str]]] = None,
-            **kwargs,
-        ) -> str:
-            mock_llm(
-                prompt,
-                *args,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 **kwargs,
             )
             return "Not really, no.  I'm just a static function."
@@ -1625,18 +1599,6 @@ class TestCustomLLMApi:
         assert output.validation_passed is True
         assert output.validated_output == "Not really, no.  I'm just a static function."
         mock_llm.assert_called_once_with(
-            None,
-            instructions=None,
-            msg_history=[
-                {
-                    "role": "system",
-                    "content": "You are a list generator.  You can generate a list of things that are not food.",  # noqa
-                },
-                {
-                    "role": "user",
-                    "content": "Can you generate a list of 10 things that are not food?",  # noqa
-                },
-            ],
             messages=[
                 {
                     "role": "system",

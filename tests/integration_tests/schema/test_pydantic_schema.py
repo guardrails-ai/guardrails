@@ -1,6 +1,6 @@
 import json
 
-from guardrails_api_client.models.validator_reference import ValidatorReference
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 from guardrails.classes.output_type import OutputTypes

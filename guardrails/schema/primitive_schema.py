@@ -3,10 +3,10 @@ from typing import List, Optional
 from guardrails_api_client.models.model_schema import ModelSchema
 from guardrails_api_client.models.simple_types import SimpleTypes
 from guardrails_api_client.models.validation_type import ValidationType
-from guardrails_api_client.models.validator_reference import ValidatorReference
 
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.validator_base import Validator
 
 

@@ -58,7 +58,7 @@ A template can also be a local json file with the format above. A config for it 
 guardrails create --template chatbot.json
 ```
 
-The validator arguments and entries can be updated manually or programatically. 
+The validator arguments and entries can be updated manually or programmatically. 
 
 For example we could update kwargs to only identify and fix location.
 
@@ -639,7 +639,7 @@ resource "aws_lb_listener" "app_lb_listener" {
 resource "aws_lb_target_group" "app_lb" {
   name        = "${local.deployment_name}-nlb-tg"
   protocol    = "TCP"
-  port        = 80
+  port        = var.backend_server_port
   vpc_id      = aws_vpc.backend.id
   target_type = "ip"
 
@@ -650,6 +650,7 @@ resource "aws_lb_target_group" "app_lb" {
     timeout             = "3"
     unhealthy_threshold = "3"
     path                = "/"
+    port                = var.backend_server_port
   }
 
   lifecycle {

@@ -2,7 +2,3 @@
 Given the following ingredients, what would you call this pizza?
 
 tomato, cheese, sour cream
-
-
-String Output:
-

@@ -3,17 +3,18 @@
     type="string"
     description="Name for the pizza"
 />
-
-<instructions>
+<messages>
+<message role="system">
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
 ${complete_string_suffix}
-</instructions>
-
-<prompt>
+</message>
+<message role="user">
 Given the following ingredients, what would you call this pizza?
 
 ${ingredients}
-</prompt>
+</message>
+</messages>
+
 
 </rail>
