@@ -78,7 +78,7 @@ jobs:
       run: |
         source .venv/bin/activate
         echo "Installed packages: "
-        pip list | grep -i grhub
         pip list | grep guardrails
+        pip list | grep -i grhub || exit 0
         
 
