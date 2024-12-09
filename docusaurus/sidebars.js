@@ -55,6 +55,7 @@ const sidebars = {
     "concepts/validator_on_fail_actions",
     // "concepts/guardrails",
     "concepts/hub",
+    "concepts/performance",
     "concepts/deploying",
     "concepts/remote_validation_inference",
     {
@@ -104,6 +105,7 @@ const sidebars = {
   integrations: [
     // "integrations/azure_openai",
     "integrations/langchain",
+    "integrations/llamaindex",
     {
       type: "category",
       label: "Telemetry",
