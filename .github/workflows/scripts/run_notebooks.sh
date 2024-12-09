@@ -14,6 +14,14 @@ notebook="$1"
 invalid_notebooks=("llamaindex-output-parsing.ipynb" "competitors_check.ipynb" "guardrails_server.ipynb" "valid_chess_moves.ipynb")
 if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
   echo "Processing $notebook..."
+
+  echo "Guardrails Hub Init File Contents: "
+  cat /home/runner/work/guardrails/guardrails/.venv/lib/python3.11/site-packages/guardrails/hub/__init__.py
+
+  # Example install
+
+  guardrails hub install hub://guardrails/toxic_language --quiet
+
   # poetry run jupyter nbconvert --to notebook --execute "$notebook"
   jupyter nbconvert --to notebook --execute "$notebook"
   if [ $? -ne 0 ]; then

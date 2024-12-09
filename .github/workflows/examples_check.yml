@@ -1,6 +1,7 @@
 name: Notebook Execution and Error Check
 
 on:
+  pull_request:
   schedule:
     - cron: "0 0 * * *"
   push:
