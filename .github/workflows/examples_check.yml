@@ -68,17 +68,4 @@ jobs:
     - name: Execute notebooks and check for errors
       run: |
         source .venv/bin/activate
-        bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }} || exit 0
-    - name: Check init file (debug)
-      run: |
-        echo "Guardrails Hub Init File Contents: "
-        cat /home/runner/work/guardrails/guardrails/.venv/lib/python3.11/site-packages/guardrails/hub/__init__.py
-
-    - name: Check installed
-      run: |
-        source .venv/bin/activate
-        echo "Installed packages: "
-        pip list | grep guardrails
-        pip list | grep -i grhub || exit 0
-        
-
+        bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
