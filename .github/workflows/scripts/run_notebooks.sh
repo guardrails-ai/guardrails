@@ -19,8 +19,8 @@ if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
   cat /home/runner/work/guardrails/guardrails/.venv/lib/python3.11/site-packages/guardrails/hub/__init__.py
 
   # Example install
-
-  guardrails hub install hub://guardrails/toxic_language --quiet
+  export GUARDRAILS_TOKEN=$(cat ~/.guardrailsrc| awk -F 'token=' '{print $2}' | awk '{print $1}' | tr -d '\n')
+  pip install -vvv --index-url=https://__token__:$GUARDRAILS_TOKEN@pypi.guardrailsai.com/simple --extra-index-url=https://pypi.org/simple guardrails-grhub-detect-jailbreak
 
   # poetry run jupyter nbconvert --to notebook --execute "$notebook"
   jupyter nbconvert --to notebook --execute "$notebook"
