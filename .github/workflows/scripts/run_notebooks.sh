@@ -20,7 +20,8 @@ if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
 
   # Example install
   export GUARDRAILS_TOKEN=$(cat ~/.guardrailsrc| awk -F 'token=' '{print $2}' | awk '{print $1}' | tr -d '\n')
-  pip install -vvv --index-url=https://__token__:$GUARDRAILS_TOKEN@pypi.guardrailsai.com/simple --extra-index-url=https://pypi.org/simple guardrails-grhub-detect-jailbreak
+  pip install -vvv --index-url=https://__token__:$GUARDRAILS_TOKEN@pypi.guardrailsai.com/simple --extra-index-url=https://pypi.org/simple \
+    guardrails-grhub-toxic-language
 
   # poetry run jupyter nbconvert --to notebook --execute "$notebook"
   jupyter nbconvert --to notebook --execute "$notebook"
