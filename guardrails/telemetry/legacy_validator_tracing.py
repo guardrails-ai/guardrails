@@ -5,6 +5,7 @@ from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.call_tracing.trace_handler import TraceHandler
 from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.settings import settings
 from guardrails.telemetry.common import get_span
 from guardrails.utils.casting_utils import to_string
 
@@ -68,7 +69,8 @@ def trace_validator_result(
         **kwargs,
     }
 
-    TraceHandler().log_validator(validator_log)
+    if settings.watch_mode_enabled:
+        TraceHandler().log_validator(validator_log)
 
     current_span.add_event(
         f"{validator_name}_result",
@@ -85,6 +87,6 @@ def trace_validation_result(
     current_span=None,
 ):
     _current_span = get_span(current_span)
-    if _current_span is not None:
+    if _current_span is not None and not settings.disable_tracing:
         for log in validation_logs:
             trace_validator_result(_current_span, log, attempt_number)

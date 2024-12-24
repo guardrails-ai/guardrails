@@ -7,6 +7,7 @@ from dataclasses import asdict
 import rich
 import typer
 
+from guardrails.settings import settings
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.call_tracing import GuardTraceEntry, TraceHandler
 from guardrails.cli.telemetry import trace_if_enabled
@@ -31,6 +32,7 @@ def watch_command(
         default=False, is_flag=True, help="Clear all log outputs and exit."
     ),
 ):
+    settings._watch_mode_enabled = True
     trace_if_enabled("watch")
     if clear:
         _clear_and_quit()
