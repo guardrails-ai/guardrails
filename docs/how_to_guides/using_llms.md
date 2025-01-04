@@ -287,8 +287,20 @@ for chunk in stream_chunk_generator
 ```
 
 ## Other LLMs
+As mentioned at the top of this page, over 100 LLMs are supported through our litellm integration, including (but not limited to)
 
-See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.
+- Anthropic
+- AWS Bedrock
+- Anyscale
+- Huggingface
+- Mistral
+- Predibase
+- Fireworks
+
+
+Find your LLM in LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers). Then, follow those same steps and set the same environment variables they guide you to use, but invoke a `Guard` object instead of the litellm object.
+
+Guardrails will wire through the arguments to litellm, run the Guarding process, and return a validated outcome.
 
 ## Custom LLM Wrappers
 In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that accepts a positional argument for the prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
