@@ -11,6 +11,10 @@ inputs:
     description: 'PyPi Repository URL'
     required: false
     default: 'https://pypi.guardrailsai.com'
+  package_directory:
+    description: 'Package Directory "validator" or "some_parent_folder/package"'
+    required: false
+    default: 'validator'
 
 runs:
   using: "composite"
@@ -18,7 +22,7 @@ runs:
     - name: Checkout "Validator" Repository
       uses: actions/checkout@v3
       with:
-        path: 'validator'
+        path: ${{ inputs.package_directory }}
 
     - name: Checkout "Action" repository
       uses: actions/checkout@v3
@@ -56,22 +60,22 @@ runs:
     - name: Move CI Scripts to Validator
       shell: bash
       run: |
-        mv shared-ci-scripts/.github/actions/validator_pypi_publish/*.py ./validator
+        mv shared-ci-scripts/.github/actions/validator_pypi_publish/*.py ./${{ inputs.package_directory }}
 
     - name: Rename Package 
       shell: bash
       run: |
-        cd validator
+        cd ${{ inputs.package_directory }}
         CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator_id }})
         NEW_PEP_PACKAGE_NAME=$(python package_name_normalization.py $CONCATANATED_NAME)
         VALIDATOR_FOLDER_NAME=$(echo $NEW_PEP_PACKAGE_NAME | tr - _)
-        mv ./validator ./$VALIDATOR_FOLDER_NAME
+        mv ./${{ inputs.package_directory }} ./$VALIDATOR_FOLDER_NAME
         python add_build_prefix.py ./pyproject.toml $NEW_PEP_PACKAGE_NAME $VALIDATOR_FOLDER_NAME
 
     - name: Build & Upload
       shell: bash
       run: |
-        cd validator
+        cd ${{ inputs.package_directory }}
         python -m build
         twine upload dist/* -u __token__ -p ${{ inputs.guardrails_token }} -r private-repository
         
