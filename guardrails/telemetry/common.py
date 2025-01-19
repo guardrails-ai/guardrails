@@ -124,3 +124,90 @@ def add_user_attributes(span: Span):
     except Exception as e:
         logger.warning("Error loading baggage user information", e)
         pass
+
+
+def redact(value: str) -> str:
+    """Redacts all but the last four characters of the given string.
+
+    Args:
+        value (str): The string to be redacted.
+
+    Returns:
+        str: The redacted string with all but the last four characters
+              replaced by asterisks.
+    """
+    redaction_length = len(value) - 4
+    stars = "*" * redaction_length
+    return f"{stars}{value[-4:]}"
+
+
+def ismatchingkey(
+    target_key: str,
+    keys_to_match: tuple[str, ...] = ("key", "token", "password"),
+) -> bool:
+    """Check if the target key contains any of the specified keys to match.
+
+    Args:
+        target_key (str): The key to be checked.
+        keys_to_match (tuple[str, ...], optional): A tuple of keys to match
+                against the target key. Defaults to ("key", "token").
+
+    Returns:
+        bool: True if any of the keys to match are found in the target key,
+              False otherwise.
+    """
+    for k in keys_to_match:
+        if k in target_key:
+            return True
+    return False
+
+
+def can_convert_to_dict(s):
+    """Check if a string can be converted to a dictionary.
+
+    This function attempts to load the input string as JSON. If successful,
+    it returns True, indicating that the string can be converted to a dictionary.
+    Otherwise, it catches ValueError and TypeError exceptions and returns False.
+
+    Args:
+        s (str): The input string to be checked.
+
+    Returns:
+        bool: True if the string can be converted to a dictionary, False otherwise.
+    """
+    try:
+        json.loads(s)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
+def recursive_key_operation(data, operation, keys_to_match=["key", "token"]):
+    """Recursively checks if any key in the dictionary or JSON object is
+    present in keys_to_match and applies the operation on the corresponding
+    value.
+
+    Args:
+        data (dict or list or str): The dictionary or JSON object to traverse.
+        keys_to_match (list): List of keys to match.
+        operation (function): The operation to perform on the matched values.
+
+    Returns:
+        dict or list or str: the modified dictionary, list or string.
+    """
+    if isinstance(data, str) and can_convert_to_dict(data):
+        data_dict = json.loads(data)
+        data = str(recursive_key_operation(data_dict, operation, keys_to_match))
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            if ismatchingkey(key, keys_to_match) and isinstance(value, str):
+                # Apply the operation to the value of the matched key
+                data[key] = operation(value)
+            else:
+                # Recursively process nested dictionaries or lists
+                data[key] = recursive_key_operation(value, operation, keys_to_match)
+    elif isinstance(data, list):
+        for i in range(len(data)):
+            data[i] = recursive_key_operation(data[i], operation, keys_to_match)
+
+    return data
