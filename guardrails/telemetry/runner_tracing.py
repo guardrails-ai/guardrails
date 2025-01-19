@@ -17,7 +17,13 @@ from guardrails.settings import settings
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
-from guardrails.telemetry.common import get_tracer, add_user_attributes, serialize
+from guardrails.telemetry.common import (
+    get_tracer,
+    add_user_attributes,
+    serialize,
+    recursive_key_operation,
+    redact,
+)
 from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
 
@@ -45,10 +51,14 @@ def add_step_attributes(
 
     ser_args = [serialize(arg) for arg in args]
     ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+
     inputs = {
         "args": [sarg for sarg in ser_args if sarg is not None],
         "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
     }
+    for k in inputs:
+        inputs[k] = recursive_key_operation(inputs[k], redact)
+
     step_span.set_attribute("input.mime_type", "application/json")
     step_span.set_attribute("input.value", json.dumps(inputs))
 
@@ -239,6 +249,8 @@ def add_call_attributes(
         "args": [sarg for sarg in ser_args if sarg is not None],
         "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
     }
+    for k in inputs:
+        inputs[k] = recursive_key_operation(inputs[k], redact)
     call_span.set_attribute("input.mime_type", "application/json")
     call_span.set_attribute("input.value", json.dumps(inputs))
 
