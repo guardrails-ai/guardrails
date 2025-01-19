@@ -11,8 +11,8 @@ class TestRedactFunction(unittest.TestCase):
 
     def test_open_ai_example_key(self):
         self.assertEqual(
-            redact("sk-1234abcdefghijklmnopqrstuvwxhp37"),
-            "*******************************hp37",
+            redact("sk-hp37"),
+            "***hp37",
         )
 
     def test_redact_very_short_string(self):

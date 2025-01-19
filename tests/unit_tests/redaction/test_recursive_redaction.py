@@ -29,20 +29,20 @@ class TestRecursiveKeyOperation(unittest.TestCase):
         result = recursive_key_operation(data, redact)
         self.assertEqual(result, data)
 
-    # def test_empty_dict(self):
-    #     data = {}
-    #     result = recursive_key_operation(data, redact)
-    #     self.assertEqual(result, data)
+    def test_empty_dict(self):
+        data = {}
+        result = recursive_key_operation(data, redact)
+        self.assertEqual(result, data)
 
-    # def test_empty_list(self):
-    #     data = []
-    #     result = recursive_key_operation(data, redact)
-    #     self.assertEqual(result, data)
+    def test_empty_list(self):
+        data = []
+        result = recursive_key_operation(data, redact)
+        self.assertEqual(result, data)
 
-    # def test_non_string_value(self):
-    #     data = {'key': 123, 'another_key': 'value'}
-    #     result = recursive_key_operation(data, redact)
-    #     self.assertEqual(result, data)
+    def test_non_string_value(self):
+        data = {'key': 123, 'another_key': 'value'}
+        result = recursive_key_operation(data, redact)
+        self.assertEqual(result, data)
 
 
 if __name__ == "__main__":
