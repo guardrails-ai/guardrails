@@ -40,7 +40,7 @@ class TestRecursiveKeyOperation(unittest.TestCase):
         self.assertEqual(result, data)
 
     def test_non_string_value(self):
-        data = {'key': 123, 'another_key': 'value'}
+        data = {"key": 123, "another_key": "value"}
         result = recursive_key_operation(data, redact)
         self.assertEqual(result, data)
 
