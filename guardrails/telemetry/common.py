@@ -188,12 +188,12 @@ def recursive_key_operation(data, operation, keys_to_match=["key", "token"]):
     value.
 
     Args:
-        data (dict or list): The dictionary or JSON object to traverse.
+        data (dict or list or str): The dictionary or JSON object to traverse.
         keys_to_match (list): List of keys to match.
         operation (function): The operation to perform on the matched values.
 
     Returns:
-        dict or list: The updated dictionary or JSON object.
+        dict or list or str: the modified dictionary, list or string.
     """
     if isinstance(data, str) and can_convert_to_dict(data):
         data_dict = json.loads(data)
