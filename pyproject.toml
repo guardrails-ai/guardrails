@@ -109,7 +109,6 @@ pillow = "^10.1.0"
 cairosvg = "^2.7.1"
 mkdocs-glightbox = "^0.3.4"
 
-
 [[tool.poetry.source]]
 name = "PyPI"
 

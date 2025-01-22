@@ -66,6 +66,7 @@ jobs:
           python3 -m venv ./.venv
           source .venv/bin/activate
           make full
+          pip install nemoguardrails nest-asyncio
 
       - name: Static analysis with pyright
         run: |
