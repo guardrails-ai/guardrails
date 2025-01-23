@@ -162,7 +162,7 @@ def ismatchingkey(
     return False
 
 
-def can_convert_to_dict(s):
+def can_convert_to_dict(s: str) -> bool:
     """Check if a string can be converted to a dictionary.
 
     This function attempts to load the input string as JSON. If successful,
@@ -182,15 +182,19 @@ def can_convert_to_dict(s):
         return False
 
 
-def recursive_key_operation(data, operation, keys_to_match=["key", "token"]):
+def recursive_key_operation(
+    data: Dict[str, Any] | List[Any] | str,
+    operation: Callable[[str], str],
+    keys_to_match: List[str] = ["key", "token"],
+) -> Dict[str, Any] | List[Any] | str:
     """Recursively checks if any key in the dictionary or JSON object is
     present in keys_to_match and applies the operation on the corresponding
     value.
 
     Args:
         data (dict or list or str): The dictionary or JSON object to traverse.
-        keys_to_match (list): List of keys to match.
         operation (function): The operation to perform on the matched values.
+        keys_to_match (list): List of keys to match.
 
     Returns:
         dict or list or str: the modified dictionary, list or string.
