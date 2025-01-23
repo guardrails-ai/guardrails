@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, List
 from opentelemetry.baggage import get_baggage
 from opentelemetry import context
 from opentelemetry.context import Context
@@ -185,19 +185,30 @@ def can_convert_to_dict(s: str) -> bool:
 def recursive_key_operation(
     data: Optional[Union[Dict[str, Any], List[Any], str]],
     operation: Callable[[str], str],
-    keys_to_match: List[str] = ["key", "token"],
+    keys_to_match: List[str] = ["key", "token", "password"],
 ) -> Optional[Union[Dict[str, Any], List[Any], str]]:
-    """Recursively checks if any key in the dictionary or JSON object is
-    present in keys_to_match and applies the operation on the corresponding
-    value.
+    """Recursively traverses a dictionary, list, or JSON string and applies a
+    specified operation to the values of keys that match any in the
+    `keys_to_match` list. This function is useful for masking sensitive data
+    (e.g., keys, tokens, passwords) in nested structures.
 
     Args:
-        data (dict or list or str): The dictionary or JSON object to traverse.
-        operation (function): The operation to perform on the matched values.
-        keys_to_match (list): List of keys to match.
+        data (Optional[Union[Dict[str, Any], List[Any], str]]): The input data
+            to traverse. This can bea dictionary, list, or JSON string. If a
+            JSON string is provided, it will be parsed into a dictionary before
+            processing.
+
+        operation (Callable[[str], str]): A function that takes a string value
+            and returns a modified string. This operation is applied to the values
+            of keys that match any in `keys_to_match`.
+        keys_to_match (List[str]): A list of keys to search for in the data. If
+            a key matche any in this list, the corresponding value will be processed
+            by the `operation`. Defaults to ["key", "token", "password"].
 
     Returns:
-        dict or list or str: the modified dictionary, list or string.
+        Optional[Union[Dict[str, Any], List[Any], str]]: The modified data structure
+        with the operation applied to the values of matched keys. The return type
+        matches the input type (dict, list, or str).
     """
     if isinstance(data, str) and can_convert_to_dict(data):
         data_dict = json.loads(data)
