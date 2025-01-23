@@ -98,12 +98,18 @@ def trace_llm_call(
                     )
 
     ser_invocation_parameters = serialize(invocation_parameters)
-    if ser_invocation_parameters:
-        ser_invocation_parameters = recursive_key_operation(
-            ser_invocation_parameters, redact
-        )
+    redacted_ser_invocation_parameters = recursive_key_operation(
+        ser_invocation_parameters, redact
+    )
+    reser_invocation_parameters = (
+        json.dumps(redacted_ser_invocation_parameters)
+        if isinstance(redacted_ser_invocation_parameters, dict)
+        or isinstance(redacted_ser_invocation_parameters, list)
+        else redacted_ser_invocation_parameters
+    )
+    if reser_invocation_parameters:
         current_span.set_attribute(
-            "llm.invocation_parameters", ser_invocation_parameters
+            "llm.invocation_parameters", reser_invocation_parameters
         )
 
     ser_model_name = serialize(model_name)
