@@ -183,7 +183,7 @@ def can_convert_to_dict(s: str) -> bool:
 
 
 def recursive_key_operation(
-    data: Dict[str, Any] | List[Any] | str,
+    data: Optional[Union[Dict[str, Any], List[Any], str]],
     operation: Callable[[str], str],
     keys_to_match: List[str] = ["key", "token"],
 ) -> Optional[Union[Dict[str, Any], List[Any], str]]:
