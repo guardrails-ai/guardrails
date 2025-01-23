@@ -204,7 +204,7 @@ def recursive_key_operation(
         data = str(recursive_key_operation(data_dict, operation, keys_to_match))
     elif isinstance(data, dict):
         for key, value in data.items():
-            if ismatchingkey(key, keys_to_match) and isinstance(value, str):
+            if ismatchingkey(key, tuple(keys_to_match)) and isinstance(value, str):
                 # Apply the operation to the value of the matched key
                 data[key] = operation(value)
             else:
