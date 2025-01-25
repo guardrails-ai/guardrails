@@ -8,6 +8,7 @@ from guardrails.telemetry.common import (
     recursive_key_operation,
     redact,
 )
+from openinference.semconv.trace import SpanAttributes
 
 
 def trace_operation(
@@ -82,7 +83,7 @@ def trace_llm_call(
 
     if current_span is None:
         return
-
+    current_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
     ser_function_call = serialize(function_call)
     if ser_function_call:
         current_span.set_attribute("llm.function_call", ser_function_call)
