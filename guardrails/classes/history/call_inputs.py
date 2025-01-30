@@ -78,3 +78,29 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         i_call_inputs = ICallInputs.from_dict(obj) or ICallInputs()
 
         return cls.from_interface(i_call_inputs)
+
+    def __str__(self):
+        attributes = {}
+        for k, v in self.__dict__.items():
+            if not k.startswith("_"):
+                if k == "kwargs":
+                    redacted_kwargs = {}
+                    for sk, sv in v.items():
+                        if (
+                            "key" in sk.lower() or "token" in sk.lower()
+                        ) and isinstance(sv, str):
+                            redaction_length = len(sv) - 4
+                            stars = "*" * redaction_length
+                            redacted_kwargs[sk] = f"{stars}{sv[-4:]}"
+                        else:
+                            redacted_kwargs[sk] = sv
+                    attributes[k] = redacted_kwargs
+                else:
+                    attributes[k] = v
+        class_name = self.__class__.__name__
+        return (
+            f"{class_name}(\n"
+            + ",\
+            \n".join(f"  {k}={v}" for k, v in attributes.items())
+            + "\n)"
+        )
