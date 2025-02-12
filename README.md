@@ -19,6 +19,9 @@
 
 </div>
 
+## News and Updates
+- **[Feb 12, 2025]** We just launched Guardrails Index -- the first of its kind benchmark comparing the performance and latency of 24 guardrails across 6 most common categories! Check out the index at index.guardrailsai.com
+
 ## What is Guardrails?
 
 Guardrails is a Python framework that helps build reliable AI applications by performing two key functions:
