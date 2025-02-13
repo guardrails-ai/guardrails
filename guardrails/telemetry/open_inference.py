@@ -8,6 +8,7 @@ from guardrails.telemetry.common import (
     recursive_key_operation,
     redact,
 )
+
 try:
     from openinference.semconv.trace import SpanAttributes
 except ImportError:
