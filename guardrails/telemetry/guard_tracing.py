@@ -274,9 +274,10 @@ async def trace_async_guard_execution(
             guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
             guard_span.set_attribute("type", "guardrails/guard")
             guard_span.set_attribute("guard.name", guard_name)
-            guard_span.set_attribute(
-                SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-            )
+            if SpanAttributes is not None:
+                guard_span.set_attribute(
+                    SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                )
             try:
                 result = await _execute_fn(*args, **kwargs)
                 if isinstance(result, AsyncIterator):
