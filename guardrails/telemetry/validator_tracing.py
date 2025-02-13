@@ -107,9 +107,10 @@ def trace_validator(
                     name=validator_span_name,  # type: ignore
                     context=current_otel_context,  # type: ignore
                 ) as validator_span:
-                    validator_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )
+                    if SpanAttributes is not None:
+                        validator_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )
 
                     try:
                         resp = fn(*args, **kwargs)
