@@ -10,6 +10,11 @@ from typing import (
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Tracer, Span
 
+try:
+    from openinference.semconv.trace import SpanAttributes  # type: ignore
+except ImportError:
+    SpanAttributes = None
+
 
 from guardrails.settings import settings
 from guardrails.classes.validation.validation_result import ValidationResult
@@ -103,6 +108,11 @@ def trace_validator(
                     name=validator_span_name,  # type: ignore
                     context=current_otel_context,  # type: ignore
                 ) as validator_span:
+                    if SpanAttributes is not None:
+                        validator_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )
+
                     try:
                         resp = fn(*args, **kwargs)
                         add_user_attributes(validator_span)
@@ -167,6 +177,11 @@ def trace_async_validator(
                     name=validator_span_name,  # type: ignore
                     context=current_otel_context,  # type: ignore
                 ) as validator_span:
+                    if SpanAttributes is not None:
+                        validator_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )  # see here for a list of span kinds: https://github.com/Arize-ai/openinference/blob/main/python/openinference-semantic-conventions/src/openinference/semconv/trace/__init__.py#L271
+
                     try:
                         resp = await fn(*args, **kwargs)
                         add_user_attributes(validator_span)

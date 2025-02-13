@@ -8,6 +8,11 @@ from typing import (
     Optional,
 )
 
+try:
+    from openinference.semconv.trace import SpanAttributes  # type: ignore
+except ImportError:
+    SpanAttributes = None
+
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Span
 
@@ -83,6 +88,10 @@ def trace_step(fn: Callable[..., Iteration]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
+                if SpanAttributes is not None:
+                    step_span.set_attribute(
+                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                    )
                 try:
                     response = fn(*args, **kwargs)
                     add_step_attributes(step_span, response, *args, **kwargs)
@@ -111,6 +120,8 @@ def trace_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
+        if SpanAttributes is not None:
+            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
@@ -157,10 +168,15 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
+                if SpanAttributes is not None:
+                    step_span.set_attribute(
+                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                    )
                 try:
                     response = await fn(*args, **kwargs)
                     add_user_attributes(step_span)
                     add_step_attributes(step_span, response, *args, **kwargs)
+
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
@@ -186,6 +202,8 @@ async def trace_async_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
+        if SpanAttributes is not None:
+            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
