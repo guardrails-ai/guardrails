@@ -9,6 +9,7 @@ from typing import (
 
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Tracer, Span
+
 try:
     from openinference.semconv.trace import SpanAttributes
 except ImportError:
