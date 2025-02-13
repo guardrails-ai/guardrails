@@ -30,7 +30,6 @@ from guardrails.telemetry.common import (
 )
 from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
-from openinference.semconv.trace import SpanAttributes
 
 import sys
 
