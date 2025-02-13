@@ -8,7 +8,10 @@ from guardrails.telemetry.common import (
     recursive_key_operation,
     redact,
 )
-from openinference.semconv.trace import SpanAttributes
+try:
+    from openinference.semconv.trace import SpanAttributes
+except ImportError:
+    SpanAttributes = None
 
 
 def trace_operation(
