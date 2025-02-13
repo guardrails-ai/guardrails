@@ -7,6 +7,7 @@ from typing import (
     Iterator,
     Optional,
 )
+
 try:
     from openinference.semconv.trace import SpanAttributes
 except ImportError:
