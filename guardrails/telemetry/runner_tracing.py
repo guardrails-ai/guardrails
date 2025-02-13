@@ -167,9 +167,10 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
-                step_span.set_attribute(
-                    SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                )
+                if SpanAttributes is not None:
+                    step_span.set_attribute(
+                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                    )
                 try:
                     response = await fn(*args, **kwargs)
                     add_user_attributes(step_span)
