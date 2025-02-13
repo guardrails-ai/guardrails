@@ -10,7 +10,10 @@ from typing import (
     Union,
 )
 
-from openinference.semconv.trace import SpanAttributes
+try:
+    from openinference.semconv.trace import SpanAttributes
+except ImportError:
+    SpanAttributes = None
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Tracer, Span, Link, get_tracer
 
