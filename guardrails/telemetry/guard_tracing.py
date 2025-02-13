@@ -229,9 +229,10 @@ async def trace_async_stream_guard(
 
                     add_guard_attributes(guard_span, history, res)
                     add_user_attributes(guard_span)
-                    guard_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )
+                    if SpanAttributes is not None:
+                        guard_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )
                     yield res
         except StopIteration:
             next_exists = False
