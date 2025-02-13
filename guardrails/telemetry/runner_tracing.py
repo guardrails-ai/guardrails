@@ -9,7 +9,7 @@ from typing import (
 )
 
 try:
-    from openinference.semconv.trace import SpanAttributes
+    from openinference.semconv.trace import SpanAttributes  # type: ignore
 except ImportError:
     SpanAttributes = None
 
