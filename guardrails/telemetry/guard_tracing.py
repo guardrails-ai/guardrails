@@ -157,9 +157,10 @@ def trace_stream_guard(
                     guard_span = new_span
                     add_guard_attributes(guard_span, history, res)
                     add_user_attributes(guard_span)
-                    new_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )
+                    if SpanAttributes is not None:
+                        new_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )
                     yield res
         except StopIteration:
             next_exists = False
