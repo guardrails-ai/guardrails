@@ -201,7 +201,8 @@ async def trace_async_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
-        step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
+        if SpanAttributes is not None:
+            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
