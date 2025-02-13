@@ -9,7 +9,10 @@ from typing import (
 
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Tracer, Span
-from openinference.semconv.trace import SpanAttributes
+try:
+    from openinference.semconv.trace import SpanAttributes
+except ImportError:
+    SpanAttributes = None
 
 
 from guardrails.settings import settings
