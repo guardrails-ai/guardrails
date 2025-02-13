@@ -176,9 +176,10 @@ def trace_async_validator(
                     name=validator_span_name,  # type: ignore
                     context=current_otel_context,  # type: ignore
                 ) as validator_span:
-                    validator_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )  # see here for a list of span kinds: https://github.com/Arize-ai/openinference/blob/main/python/openinference-semantic-conventions/src/openinference/semconv/trace/__init__.py#L271
+                    if SpanAttributes is not None:
+                        validator_span.set_attribute(
+                            SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                        )  # see here for a list of span kinds: https://github.com/Arize-ai/openinference/blob/main/python/openinference-semantic-conventions/src/openinference/semconv/trace/__init__.py#L271
 
                     try:
                         resp = await fn(*args, **kwargs)
