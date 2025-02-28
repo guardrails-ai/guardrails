@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-import contextlib
 from string import Template
 from typing import Callable, cast, List
 
@@ -79,25 +78,27 @@ def install(
     verbose_printer(installing_msg)
 
     # Define Loader for UX purposes
-    loader = console.status if not quiet else do_nothing_context
+    # loader = console.status if not quiet else do_nothing_context
 
     # 2. Prep Installation
     fetch_manifest_msg = "Fetching manifest"
-    with loader(fetch_manifest_msg, spinner="bouncingBar"):
-        (module_manifest, site_packages) = (
-            ValidatorPackageService.get_manifest_and_site_packages(validator_id)
-        )
+    # with loader(fetch_manifest_msg, spinner="bouncingBar"):
+    print(fetch_manifest_msg)
+    (module_manifest, site_packages) = (
+        ValidatorPackageService.get_manifest_and_site_packages(validator_id)
+    )
 
     # 3. Install - Pip Installation of git module
     dl_deps_msg = "Downloading dependencies"
-    with loader(dl_deps_msg, spinner="bouncingBar"):
-        ValidatorPackageService.install_hub_module(
-            validator_id,
-            validator_version=validator_version,
-            quiet=quiet,
-            upgrade=upgrade,
-            logger=cli_logger,
-        )
+    # with loader(dl_deps_msg, spinner="bouncingBar"):
+    print(dl_deps_msg)
+    ValidatorPackageService.install_hub_module(
+        validator_id,
+        validator_version=validator_version,
+        quiet=quiet,
+        upgrade=upgrade,
+        logger=cli_logger,
+    )
 
     use_remote_endpoint = False
     module_has_endpoint = (
@@ -125,19 +126,22 @@ def install(
             msg="Installing models locally!",
         )
         post_msg = "Running post-install setup"
-        with loader(post_msg, spinner="bouncingBar"):
-            ValidatorPackageService.run_post_install(
-                module_manifest, site_packages, logger=cli_logger
-            )
+        # with loader(post_msg, spinner="bouncingBar"):
+        print(post_msg)
+        ValidatorPackageService.run_post_install(
+            module_manifest, site_packages, logger=cli_logger
+        )
     else:
         cli_logger.log(
             level=LEVELS.get("SPAM"),  # type: ignore
             msg="Skipping post install, models will not be "
             "downloaded for local inference.",
         )
+    print("Adding to hub inits")
     ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
 
     # 5. Get Validator Class for the installed module
+    print("Getting Validator Class for the installed module")
     installed_module = ValidatorPackageService.get_validator_from_manifest(
         module_manifest
     )
@@ -147,11 +151,12 @@ def install(
     cli_logger.info("Installation complete")
 
     installed_version_message = ""
-    with contextlib.suppress(Exception):
-        package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
-        installed_version = pkg_resources.get_distribution(package_name).version
-        if installed_version:
-            installed_version_message = f" version {installed_version}"
+    # with contextlib.suppress(Exception):
+    print("Getting canonical package name and version")
+    package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
+    installed_version = pkg_resources.get_distribution(package_name).version
+    if installed_version:
+        installed_version_message = f" version {installed_version}"
 
     verbose_printer(
         f"✅Successfully installed {validator_id}{installed_version_message}!\n\n"
@@ -181,8 +186,10 @@ def install(
     cli_logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
 
     # Not a fan of this but allows the installation to be used in create command as is
+    print("Setting __validator_exports__")
     installed_module.__validator_exports__ = module_manifest.exports
 
+    print("Returning Installed Module")
     return installed_module
 
 
