@@ -84,6 +84,9 @@ class ValidatorPackageService:
             raise module_not_found_error
         except Exception as e:
             print("An exception was raise: ", e)
+            import traceback
+
+            traceback.print_exception(e)
             raise e
 
     @staticmethod
