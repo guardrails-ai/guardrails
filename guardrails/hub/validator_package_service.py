@@ -67,18 +67,24 @@ class ValidatorPackageService:
             # Dynamically import the module based on its path
             if "guardrails.hub" in sys.modules:
                 # Reload the module if it's already imported
+                print("Reload the module if it's already imported")
                 importlib.reload(sys.modules["guardrails.hub"])
             if module_path not in sys.modules:
                 # Import the module if it has not been imported yet
+                print("Import the module if it has not been imported yet")
                 reloaded_module = importlib.import_module(module_path)
+                print("Reassigning the module to sys.modules")
                 sys.modules[module_path] = reloaded_module
             else:
+                print("Get the module from sys.modules")
                 reloaded_module = sys.modules[module_path]
             return reloaded_module
-        except ModuleNotFoundError:
-            raise
-        except Exception:
-            raise
+        except ModuleNotFoundError as module_not_found_error:
+            print("Module not found error raised: ", module_not_found_error)
+            raise module_not_found_error
+        except Exception as e:
+            print("An exception was raise: ", e)
+            raise e
 
     @staticmethod
     def get_validator_from_manifest(manifest: Manifest) -> ModuleType:
