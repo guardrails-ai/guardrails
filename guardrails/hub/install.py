@@ -145,6 +145,7 @@ def install(
     installed_module = ValidatorPackageService.get_validator_from_manifest(
         module_manifest
     )
+    print("Casting installed module to ValidatorModuleType")
     installed_module = cast(ValidatorModuleType, installed_module)
 
     # Print success messages

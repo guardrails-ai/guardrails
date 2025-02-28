@@ -101,6 +101,7 @@ class ValidatorPackageService:
         import_line = f"{import_path}"
 
         # Reload or import the module
+        print("Reloading module")
         return ValidatorPackageService.reload_module(import_line)
 
     @staticmethod
