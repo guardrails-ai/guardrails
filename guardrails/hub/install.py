@@ -155,14 +155,17 @@ def install(
     # with contextlib.suppress(Exception):
     print("Getting canonical package name")
     package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
-    print("Getting installed version")
+    print(f"Getting installed version of {package_name}")
     installed_version = pkg_resources.get_distribution(package_name).version
+    print(f"Installed version {package_name} @ {installed_version}")
     if installed_version:
         installed_version_message = f" version {installed_version}"
 
+    print("Calling verbose_printer")
     verbose_printer(
         f"✅Successfully installed {validator_id}{installed_version_message}!\n\n"
     )
+    print("Constructing success message for cli")
     success_message_cli = Template(
         "[bold]Import validator:[/bold]\n"
         "from guardrails.hub import ${export}\n\n"
@@ -173,6 +176,7 @@ def install(
         id=module_manifest.id,
         export=module_manifest.exports[0],
     )
+    print("Constructing success message for logger")
     success_message_logger = Template(
         "✅Successfully installed ${module_name}!\n\n"
         "Import validator:\n"
@@ -184,7 +188,9 @@ def install(
         id=module_manifest.id,
         export=module_manifest.exports[0],
     )
+    print("Calling quiet_printer")
     quiet_printer(success_message_cli)  # type: ignore
+    print("Calling cli_logger.log")
     cli_logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
 
     # Not a fan of this but allows the installation to be used in create command as is
