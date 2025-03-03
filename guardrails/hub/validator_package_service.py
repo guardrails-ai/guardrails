@@ -70,6 +70,7 @@ class ValidatorPackageService:
                 print("Reload the module if it's already imported")
                 # Hack for Debian distutils load order issue
                 try:
+                    import distutils  # noqa
                     import setuptools  # noqa
 
                     importlib.reload(sys.modules["setuptools"])
