@@ -153,8 +153,9 @@ def install(
 
     installed_version_message = ""
     # with contextlib.suppress(Exception):
-    print("Getting canonical package name and version")
+    print("Getting canonical package name")
     package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
+    print("Getting installed version")
     installed_version = pkg_resources.get_distribution(package_name).version
     if installed_version:
         installed_version_message = f" version {installed_version}"
