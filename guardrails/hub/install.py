@@ -156,7 +156,14 @@ def install(
     print("Getting canonical package name")
     package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
     print(f"Getting installed version of {package_name}")
-    installed_version = pkg_resources.get_distribution(package_name).version
+    try:
+        installed_version = pkg_resources.get_distribution(package_name).version
+    except Exception as e:
+        import traceback
+
+        print("Error getting installed version")
+        traceback.print_exception(e)
+        raise e
     print(f"Installed version {package_name} @ {installed_version}")
     if installed_version:
         installed_version_message = f" version {installed_version}"
