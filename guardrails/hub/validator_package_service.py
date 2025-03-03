@@ -68,7 +68,14 @@ class ValidatorPackageService:
             if "guardrails.hub" in sys.modules:
                 # Reload the module if it's already imported
                 print("Reload the module if it's already imported")
-                importlib.reload(sys.modules["setuptools"])
+                # Hack for Debian distutils load order issue
+                try:
+                    import setuptools  # noqa
+
+                    importlib.reload(sys.modules["setuptools"])
+                except (ModuleNotFoundError, ImportError):
+                    pass
+
                 importlib.reload(sys.modules["guardrails.hub"])
             if module_path not in sys.modules:
                 # Import the module if it has not been imported yet
