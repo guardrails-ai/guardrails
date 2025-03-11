@@ -129,3 +129,25 @@ If your login issues persist, please check the contents of the ~/.guardrailsrc f
 If you're still encountering issues, please [open an issue](https://github.com/guardrails-ai/guardrails/issues/new) and we'll help you out!
 
 We're also available on [Discord](https://discord.gg/U9RKkZSBgx) if you want to chat with us directly.
+
+## I'm getting an error realted to distutils when installing validators.
+This can happen on cuda enabled devices in python versions 3.11 and below when a validator indirectly depends on a package that imports distutils.
+
+If you see an error similar to the one below:
+```sh
+Installing hub://guardrails/nsfw_text...
+[   =] Running post-install setup
+Device set to use cpu
+/home/ubuntu/support/.venv/lib/python3.11/site-packages/_distutils_hack/__init__.py:18: UserWarning: Distutils was imported before Setuptools, but importing Setuptools also replaces the `distutils` module in `sys.modules`. This may lead to undesirable behaviors or errors. To avoid these issues, avoid using distutils directly, ensure that setuptools is installed in the traditional way (e.g. not an editable install), and/or make sure that setuptools is always imported before distutils.
+  warnings.warn(
+/home/ubuntu/support/.venv/lib/python3.11/site-packages/_distutils_hack/__init__.py:33: UserWarning: Setuptools is replacing distutils.
+  warnings.warn("Setuptools is replacing distutils.")
+ERROR:guardrails-cli:Failed to import transformers.pipelines because of the following error (look up to see its traceback):
+/home/ubuntu/.pyenv/versions/3.11.11/lib/python3.11/distutils/core.py
+```
+
+set the following as an environment variable to tell python to use the builtin version of distutils that exists in 3.11 and below:
+
+```sh
+export SETUPTOOLS_USE_DISTUTILS="stdlib"
+```
