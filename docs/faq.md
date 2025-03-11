@@ -133,7 +133,7 @@ We're also available on [Discord](https://discord.gg/U9RKkZSBgx) if you want to 
 ## I'm getting an error realted to distutils when installing validators.
 This can happen on cuda enabled devices in python versions 3.11 and below when a validator indirectly depends on a package that imports distutils.  `triton`, a dependency of pytorch, is one such example.
 
-If you see an error similar the one below:
+If you see an error similar to the one below:
 ```sh
 Installing hub://guardrails/nsfw_text...
 [   =] Running post-install setup
