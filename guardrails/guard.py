@@ -134,6 +134,8 @@ class Guard(IGuard, Generic[OT]):
         description: Optional[str] = None,
         validators: Optional[List[ValidatorReference]] = None,
         output_schema: Optional[Dict[str, Any]] = None,
+        base_url: Optional[str] = None,
+        api_key: Optional[str] = None,
     ):
         """Initialize the Guard with serialized validator references and an
         output schema.
@@ -200,11 +202,16 @@ class Guard(IGuard, Generic[OT]):
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
         self._output_formatter: Optional[BaseFormatter] = None
+        self._api_key: Optional[str] = None
+        self._base_url: Optional[str] = None
 
         # Gaurdrails As A Service Initialization
         if settings.use_server:
-            api_key = os.environ.get("GUARDRAILS_API_KEY")
-            self._api_client = GuardrailsApiClient(api_key=api_key)
+            self._api_key = api_key
+            self._base_url = base_url
+            self._api_client = GuardrailsApiClient(
+                api_key=self._api_key, base_url=self._base_url
+            )
             _loaded = False
             if _try_to_load:
                 loaded_guard = self._api_client.fetch_guard(self.name)
@@ -1244,7 +1251,6 @@ class Guard(IGuard, Generic[OT]):
             raise ValueError("Guard does not have an api client!")
 
     def _save(self):
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
         if settings.use_server:
             if self.name is None:
                 self.name = f"gr-{str(self.id)}"
@@ -1255,7 +1261,9 @@ class Guard(IGuard, Generic[OT]):
                     )
                 )
             if not self._api_client:
-                self._api_client = GuardrailsApiClient(api_key=api_key)
+                self._api_client = GuardrailsApiClient(
+                    api_key=self._api_key, base_url=self._base_url
+                )
             self.upsert_guard()
 
     def to_runnable(self) -> Runnable:
@@ -1332,6 +1340,8 @@ class Guard(IGuard, Generic[OT]):
     @staticmethod
     def fetch_guard(
         name: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -1339,10 +1349,9 @@ class Guard(IGuard, Generic[OT]):
             raise ValueError("Name must be specified to fetch a guard")
 
         settings.use_server = True
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
-        api_client = GuardrailsApiClient(api_key=api_key)
+        api_client = GuardrailsApiClient(api_key=api_key, base_url=base_url)
         guard = api_client.fetch_guard(name)
         if guard:
-            return Guard(name=name, *args, **kwargs)
+            return Guard(name=name, base_url=base_url, api_key=api_key, *args, **kwargs)
 
         raise ValueError(f"Guard with name {name} not found")

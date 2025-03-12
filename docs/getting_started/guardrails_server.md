@@ -132,6 +132,19 @@ validation_outcome = name_guard.validate("floofy doopy boopy")
 ```
 
 
+#### Guardrails >= v0.6.5
+In newer versions of Guardrails, you can directly set the URL and API key instead of using environment variables.
+
+```python
+# Client code
+from guardrails import Guard
+
+name_guard = Guard.fetch_guard(name="gibberish_guard", base_url="http://myserver.com", api_key="exampleKey")
+
+validation_outcome = name_guard.validate("floofy doopy boopy")
+```
+
+
 #### Guardrails < v0.5.9
 In older versions of Guardrails, you need to set the `use_server` var in settings to True.
 
