@@ -100,6 +100,20 @@ For example, when we Dockerize the Guardrails API for internal use, our final li
 ```Dockerfile
 CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=4 'guardrails_api.app:create_app(None, "config.py")'
 ```
+Or using uvicorn, we first create a wrapper:
+
+```python
+# app_wrapper.py
+from guardrails_api.app import create_app
+
+app = create_app(None, "config.py")
+```
+
+And then we invoke the wrapper:
+
+```bash
+CMD uvicorn app_wrapper:app --host 0.0.0.0 --port 8000
+```
 
 This line starts the Guardrails API Flask application with a gunicorn WSGI server.  It specifies what port to bind the server to, as well as the timeout for workers and the maximum number of worker threads for handling requests.  
 
