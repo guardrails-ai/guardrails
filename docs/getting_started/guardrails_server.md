@@ -120,20 +120,7 @@ A `guardrails` key is added to the response object, which includes the validatio
 :::
 
 ### Advanced Client Usage
-Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object.
-
-```python
-# Client code
-from guardrails import Guard
-
-name_guard = Guard.fetch_guard(name="gibberish_guard")
-
-validation_outcome = name_guard.validate("floofy doopy boopy")
-```
-
-
-#### Guardrails >= v0.6.5
-In newer versions of Guardrails, you can directly set the URL and API key instead of using environment variables.
+Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object. Default values can be set in the environment variables `GUARDRAILS_BASE_URL` for the URL and `GUARDRAILS_API_KEY` for the API key.
 
 ```python
 # Client code
@@ -144,6 +131,8 @@ name_guard = Guard.fetch_guard(name="gibberish_guard", base_url="http://myserver
 validation_outcome = name_guard.validate("floofy doopy boopy")
 ```
 
+#### Guardrails < v0.6.5
+In older versions of Guardrails, you must set the URL and API key through the environment variables mentioned above.
 
 #### Guardrails < v0.5.9
 In older versions of Guardrails, you need to set the `use_server` var in settings to True.
