@@ -38,7 +38,6 @@ jobs:
           python3 -m venv ./.venv
           source .venv/bin/activate
           poetry install
-          pip install liccheck
 
       - name: Check license
         run: |
