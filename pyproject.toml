@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.6.4"
+version = "0.6.5"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -46,7 +46,7 @@ requests = "^2.31.0"
 faker = "^25.2.0"
 jsonref = "^1.1.0"
 jsonformer = {version = "0.12.0", optional = true}
-jsonschema = {version = "^4.22.0", extras = ["format"]}
+jsonschema = {version = "^4.22.0", extras = ["format-nongpl"]}
 pip = ">=22"
 pyjwt = "^2.8.0"
 opentelemetry-sdk = "^1.24.0"
@@ -87,6 +87,8 @@ pypdfium2 = "^4.23.1"
 pyright = "1.1.334"
 lxml-stubs = "^0.4.0"
 ruff = ">=0.4.1"
+liccheck = "^0.9.2"
+
 
 [tool.poetry.group.api]
 optional = true
@@ -132,3 +134,42 @@ markers = [
 [pytest]
 log_cli = "True"
 log_cli_level = "DEBUG"
+
+
+[tool.liccheck]
+authorized_licenses = [
+    "3-clause bsd",
+    "bsd",
+    "new bsd",
+    "bsd license",
+    "new bsd license",
+    "simplified bsd",
+    "academic free license (afl)",
+    "apache",
+    "apache 2.0",
+    "apache software",
+    "apache software license",
+    "gnu lgpl",
+    "lgpl with exceptions or zpl",
+    "gnu library or lesser general public license (lgpl)",
+    "isc",
+    "isc license",
+    "isc license (iscl)",
+    "mit",
+    "mit license",
+    "mozilla public license 2.0 (mpl 2.0)",
+    "the unlicense (unlicense)",
+    "python software foundation",
+    "python software foundation license",
+    "zpl 2.1",
+]
+unauthorized_licenses = [
+    "gpl v3",
+]
+level = "Paranoid"
+dependencies = true # to load [tool.poetry.dependencies]
+
+[tool.liccheck.authorized_packages]
+aiocache = "0.12.3" # BSD 3-Clause
+aiohappyeyeballs = "2.4.3" # Python Software Foundation
+guardrails-api = "*" # Modified ELSSTIC
