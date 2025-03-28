@@ -168,21 +168,8 @@ unauthorized_licenses = [
 ]
 level = "Paranoid"
 dependencies = true # to load [tool.poetry.dependencies]
-optional_dependencies = [
-    "sql",
-    "vectordb",
-    "manifest",
-    "anthropic",
-    "huggingface",
-    "api",
-    "databricks",
-    "uv",
-    "llama"
-] # to load extras from [tool.poetry.extras]
 
 [tool.liccheck.authorized_packages]
 aiocache = "0.12.3" # BSD 3-Clause
 aiohappyeyeballs = "2.4.3" # Python Software Foundation
 guardrails-api = "*" # Modified ELSSTIC
-jsonformer = "0.12.0" # MIT
-pillow = "10.4.0" # Historical Permission Notice and Disclaimer (HPND)

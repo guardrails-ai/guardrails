@@ -37,7 +37,8 @@ jobs:
           # Setup Virtual Environment
           python3 -m venv ./.venv
           source .venv/bin/activate
-          make full
+          poetry install
+          pip install liccheck
 
       - name: Check license
         run: |
