@@ -42,9 +42,7 @@ jobs:
       - name: Check license
         run: |
           source .venv/bin/activate
-          pip show SQLAlchemy
-          pip show greenlet
-          liccheck
+          .venv/bin/liccheck
   Linting:
     runs-on: ubuntu-latest
     strategy:
