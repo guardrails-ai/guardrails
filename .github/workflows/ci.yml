@@ -42,6 +42,7 @@ jobs:
       - name: Check license
         run: |
           source .venv/bin/activate
+          .venv/bin/pip install greenlet
           .venv/bin/liccheck
   Linting:
     runs-on: ubuntu-latest
