@@ -56,7 +56,7 @@ pip install guardrails-ai
 ### Create Input and Output Guards for LLM Validation
 
 1. Download and configure the Guardrails Hub CLI.
-    
+
     ```bash
     pip install guardrails-ai
     guardrails configure
@@ -96,7 +96,7 @@ pip install guardrails-ai
     ```
 
     Then, create a Guard from the installed guardrails.
-    
+
     ```python
     from guardrails import Guard, OnFailAction
     from guardrails.hub import CompetitorCheck, ToxicLanguage
@@ -161,7 +161,7 @@ raw_output, validated_output, *rest = guard(
 print(validated_output)
 ```
 
-This prints: 
+This prints:
 ```
 {
     "pet_type": "dog",
@@ -175,7 +175,7 @@ Guardrails can be set up as a standalone service served by Flask with `guardrail
 
 1. Install: `pip install "guardrails-ai"`
 2. Configure: `guardrails configure`
-3. Create a config: `guardrails create --validators=hub://guardrails/two_words --name=two-word-guard`
+3. Create a config: `guardrails create --validators=hub://guardrails/two_words --guard-name=two-word-guard`
 4. Start the dev server: `guardrails start --config=./config.py`
 5. Interact with the dev server via the snippets below
 ```
@@ -204,7 +204,7 @@ completion = openai.chat.completions.create(
 )
 ```
 
-For production deployments, we recommend using Docker with Gunicorn as the WSGI server for improved performance and scalability. 
+For production deployments, we recommend using Docker with Gunicorn as the WSGI server for improved performance and scalability.
 
 ## FAQ
 
