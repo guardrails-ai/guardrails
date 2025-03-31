@@ -108,6 +108,16 @@ const sidebars = {
     "integrations/llamaindex",
     {
       type: "category",
+      label: "NeMo Guardrails",
+      collapsed: false,
+      items: [
+        "integrations/nemo_guardrails/index",
+        "integrations/nemo_guardrails/guard_as_action",
+        "integrations/nemo_guardrails/rails_as_guard",
+      ],
+    },
+    {
+      type: "category",
       label: "Telemetry",
       collapsed: false,
       items: [
