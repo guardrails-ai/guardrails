@@ -374,6 +374,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         metadata,
                         validator_logs,
                         stream,
+                        validation_session_id=iteration.id,
                         **kwargs,
                     )
                 value = self.perform_correction(
