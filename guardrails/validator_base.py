@@ -4,7 +4,7 @@
 #   - [ ] Remove validator_base.py in 0.6.x
 
 import asyncio
-import contextlib
+from contextvars import Context, ContextVar
 from functools import partial
 import inspect
 import logging
@@ -67,10 +67,8 @@ def split_sentence_word_tokenizers_jl_separator(
     # we check for a . to avoid wastefully calling the tokenizer
 
     # check at least 3 characters have been accumulated before splitting
-    is_minimum_length = False
-    with contextlib.suppress(IndexError):
-        chunk[2]
-        is_minimum_length = True
+    third_chunk = safe_get(chunk, 2)
+    is_minimum_length = third_chunk is not None
 
     # check for potential line endings, which is what split_sentences does
     chunk_with_potential_line_endings, count = re.subn(
@@ -292,7 +290,13 @@ class Validator:
         return split_sentence_word_tokenizers_jl_separator(chunk)
 
     def validate_stream(
-        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+        self,
+        chunk: Any,
+        metadata: Dict[str, Any],
+        *,
+        ctx_accumulated_chunks: Optional[ContextVar[List[str]]] = None,
+        context: Optional[Context] = None,
+        **kwargs,
     ) -> Optional[ValidationResult]:
         """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
         than the validator's chunking strategy, it will be accumulated until it
@@ -307,8 +311,13 @@ class Validator:
         result.
         """
         # combine accumulated chunks and new [:-1]chunk
-        self.accumulated_chunks.append(chunk)
-        accumulated_text = "".join(self.accumulated_chunks)
+        accumulated_chunks = (
+            context.run(ctx_accumulated_chunks.get)
+            if ctx_accumulated_chunks and context
+            else self.accumulated_chunks
+        )
+        accumulated_chunks.append(chunk)
+        accumulated_text = "".join(accumulated_chunks)
         # check if enough chunks have accumulated for validation
         split_contents = self._chunking_function(accumulated_text)
 
@@ -318,9 +327,16 @@ class Validator:
             split_contents = [accumulated_text, ""]
         # if no chunks are returned, we haven't accumulated enough
         if len(split_contents) == 0:
+            if ctx_accumulated_chunks and context:
+                context.run(ctx_accumulated_chunks.set, accumulated_chunks)
+            else:
+                self.accumulated_chunks = accumulated_chunks
             return None
         [chunk_to_validate, new_accumulated_chunks] = split_contents
-        self.accumulated_chunks = [new_accumulated_chunks]
+        if ctx_accumulated_chunks and context:
+            context.run(ctx_accumulated_chunks.set, [new_accumulated_chunks])
+        else:
+            self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # if validate doesn't set validated chunk, we set it
@@ -336,6 +352,10 @@ class Validator:
                     )
                 ]
 
+        if ctx_accumulated_chunks:
+            ctx_accumulated_chunks.set(accumulated_chunks)
+        else:
+            self.accumulated_chunks = accumulated_chunks
         return validation_result
 
     async def async_validate_stream(

@@ -1,3 +1,4 @@
+from contextvars import ContextVar, copy_context
 from typing import (
     Any,
     AsyncIterator,
@@ -118,6 +119,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         refrain_triggered = False
         validation_passed = True
 
+        ctx_accumulated_chunks = ContextVar("accumulated_chunks")
+        ctx_accumulated_chunks.set([])
+        context = copy_context()
+
         if self.output_type == OutputTypes.STRING:
             validator_service = AsyncValidatorService(self.disable_tracer)
             async for chunk in stream_output:
@@ -134,6 +139,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     "$",
                     "$",
                     True,
+                    context=context,
+                    ctx_accumulated_chunks=ctx_accumulated_chunks,
                 )
                 validators = self.validation_map.get("$", [])
 
@@ -240,6 +247,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     parsed_fragment,
                     output_schema,
                     validate_subschema=True,
+                    context=context,
+                    ctx_accumulated_chunks=ctx_accumulated_chunks,
                 )
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
@@ -274,6 +283,9 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
+
+        if not chunk.choices or len(chunk.choices) == 0:
+            return chunk_text
 
         try:
             finished = chunk.choices[0].finish_reason

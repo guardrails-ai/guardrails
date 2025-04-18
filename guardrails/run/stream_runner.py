@@ -240,6 +240,11 @@ class StreamRunner(Runner):
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
         try:
+            if (
+                not chunk.choices or len(chunk.choices) == 0
+            ) and chunk.usage is not None:
+                # This is the last extra chunk for usage statistics
+                return True
             finished = chunk.choices[0].finish_reason
             return finished is not None
         except (AttributeError, TypeError):
