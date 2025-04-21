@@ -1,4 +1,5 @@
 from contextvars import ContextVar, copy_context
+import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -26,6 +27,10 @@ from guardrails.classes.validation.validation_result import (
     PassResult,
     FailResult,
 )
+
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
@@ -137,96 +142,124 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
 
         if self.output_type == OutputTypes.STRING:
             validator_service = AsyncValidatorService(self.disable_tracer)
-            async for chunk in stream_output:
-                chunk_text = self.get_chunk_text(chunk, api)
-                _ = self.is_last_chunk(chunk, api)
 
-                fragment += chunk_text
+            next_exists = True
+            while next_exists:
+                try:
+                    chunk = await anext(stream_output)
+                    chunk_text = self.get_chunk_text(chunk, api)
+                    _ = self.is_last_chunk(chunk, api)
 
-                results = await validator_service.async_partial_validate(
-                    chunk_text,
-                    self.metadata,
-                    self.validation_map,
-                    iteration,
-                    "$",
-                    "$",
-                    True,
-                    context=context,
-                    context_vars=stream_context_vars,
-                )
-                validators = self.validation_map.get("$", [])
+                    fragment += chunk_text
 
-                # collect the result validated_chunk into validation progress
-                # per validator
-                for result in results:
-                    validator_log = result.validator_logs  # type: ignore
-                    validator = next(
-                        filter(
-                            lambda x: x.rail_alias == validator_log.registered_name,
-                            validators,
-                        ),
-                        None,
+                    results = await validator_service.async_partial_validate(
+                        chunk_text,
+                        self.metadata,
+                        self.validation_map,
+                        iteration,
+                        "$",
+                        "$",
+                        True,
+                        context=context,
+                        context_vars=stream_context_vars,
                     )
-                    if (
-                        validator_log.validation_result
-                        and validator_log.validation_result.validated_chunk
-                    ):
-                        is_filter = validator.on_fail_descriptor is OnFailAction.FILTER  # type: ignore
-                        is_refrain = (
-                            validator.on_fail_descriptor is OnFailAction.REFRAIN  # type: ignore
+                    validators = self.validation_map.get("$", [])
+
+                    # collect the result validated_chunk into validation progress
+                    # per validator
+                    for result in results:
+                        validator_log = result.validator_logs  # type: ignore
+                        validator = next(
+                            filter(
+                                lambda x: x.rail_alias == validator_log.registered_name,
+                                validators,
+                            ),
+                            None,
                         )
-                        if validator_log.validation_result.outcome == "fail":
-                            validation_passed = False
-                        reasks, valid_op = self.introspect(
+                        if (
                             validator_log.validation_result
-                        )
-                        if reasks:
-                            raise ValueError(
-                                "Reasks are not yet supported with streaming. Please "
-                                "remove reasks from schema or disable streaming."
+                            and validator_log.validation_result.validated_chunk
+                        ):
+                            is_filter = (
+                                validator.on_fail_descriptor is OnFailAction.FILTER  # type: ignore
+                            )
+                            is_refrain = (
+                                validator.on_fail_descriptor is OnFailAction.REFRAIN  # type: ignore
+                            )
+                            if validator_log.validation_result.outcome == "fail":
+                                validation_passed = False
+                            reasks, valid_op = self.introspect(
+                                validator_log.validation_result
+                            )
+                            if reasks:
+                                raise ValueError(
+                                    "Reasks are not yet supported with streaming. "
+                                    "Please remove reasks from schema or disable"
+                                    " streaming."
+                                )
+
+                            if isinstance(validator_log.validation_result, PassResult):
+                                chunk = validator_log.validation_result.validated_chunk
+                            elif isinstance(
+                                validator_log.validation_result, FailResult
+                            ):
+                                if is_filter or is_refrain:
+                                    refrain_triggered = True
+                                    chunk = ""
+                                else:
+                                    chunk = validator_service.perform_correction(
+                                        validator_log.validation_result,
+                                        validator_log.validation_result.validated_chunk,
+                                        validator,  # type: ignore
+                                        rechecked_value=None,
+                                    )  # type: ignore
+
+                            if validator_log.validator_name not in validation_progress:
+                                validation_progress[validator_log.validator_name] = ""
+
+                            validation_progress[validator_log.validator_name] += chunk
+                    # if there is an entry for every validator
+                    # run a merge and emit a validation outcome
+                    if (
+                        len(validation_progress) == len(validators)
+                        or len(validators) == 0
+                    ):
+                        if refrain_triggered:
+                            current = ""
+                        else:
+                            merge_chunks = []
+                            for piece in validation_progress:
+                                merge_chunks.append(validation_progress[piece])
+
+                            current = validator_service.multi_merge(
+                                fragment, merge_chunks
                             )
 
-                        if isinstance(validator_log.validation_result, PassResult):
-                            chunk = validator_log.validation_result.validated_chunk
-                        elif isinstance(validator_log.validation_result, FailResult):
-                            if is_filter or is_refrain:
-                                refrain_triggered = True
-                                chunk = ""
-                            else:
-                                chunk = validator_service.perform_correction(
-                                    validator_log.validation_result,
-                                    validator_log.validation_result.validated_chunk,
-                                    validator,  # type: ignore
-                                    rechecked_value=None,
-                                )  # type: ignore
+                        vo = ValidationOutcome(
+                            call_id=call_log.id,  # type: ignore
+                            raw_llm_output=fragment,
+                            validated_output=current,
+                            validation_passed=True,
+                        )
+                        fragment = ""
+                        validation_progress = {}
+                        refrain_triggered = False
 
-                        if validator_log.validator_name not in validation_progress:
-                            validation_progress[validator_log.validator_name] = ""
+                        yield vo
 
-                        validation_progress[validator_log.validator_name] += chunk
-                # if there is an entry for every validator
-                # run a merge and emit a validation outcome
-                if len(validation_progress) == len(validators) or len(validators) == 0:
-                    if refrain_triggered:
-                        current = ""
-                    else:
-                        merge_chunks = []
-                        for piece in validation_progress:
-                            merge_chunks.append(validation_progress[piece])
-
-                        current = validator_service.multi_merge(fragment, merge_chunks)
-
-                    vo = ValidationOutcome(
-                        call_id=call_log.id,  # type: ignore
-                        raw_llm_output=fragment,
-                        validated_output=current,
-                        validation_passed=True,
-                    )
-                    fragment = ""
-                    validation_progress = {}
-                    refrain_triggered = False
-
-                    yield vo
+                except StopIteration:
+                    next_exists = False
+                except StopAsyncIteration:
+                    next_exists = False
+                except Exception as e:
+                    raise e
+                finally:
+                    # reset all context vars
+                    for context_var in context_vars.values():
+                        token = context.run(context_var.set, [])
+                        context.run(context_var.reset, token)
+                    token = context.run(stream_context_vars.set, {})
+                    context.run(stream_context_vars.reset, token)
 
             # if theres anything left merge and emit a chunk
             if len(validation_progress) > 0:
@@ -242,48 +275,64 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     validation_passed=validation_passed,
                 )
         else:
-            async for chunk in stream_output:
-                chunk_text = self.get_chunk_text(chunk, api)
-                fragment += chunk_text
+            next_exists = True
+            while next_exists:
+                try:
+                    chunk = await anext(stream_output)
+                    chunk_text = self.get_chunk_text(chunk, api)
+                    fragment += chunk_text
 
-                parsed_fragment, move_to_next = self.parse(
-                    fragment, output_schema, verified=verified
-                )
-                if move_to_next:
-                    continue
-                validated_fragment = await self.async_validate(
-                    iteration,
-                    index,
-                    parsed_fragment,
-                    output_schema,
-                    validate_subschema=True,
-                    context=context,
-                    context_vars=stream_context_vars,
-                )
-                if isinstance(validated_fragment, SkeletonReAsk):
-                    raise ValueError(
-                        "Received fragment schema is an invalid sub-schema "
-                        "of the expected output JSON schema."
+                    parsed_fragment, move_to_next = self.parse(
+                        fragment, output_schema, verified=verified
                     )
-
-                reasks, valid_op = self.introspect(validated_fragment)
-                if reasks:
-                    raise ValueError(
-                        "Reasks are not yet supported with streaming. Please "
-                        "remove reasks from schema or disable streaming."
+                    if move_to_next:
+                        continue
+                    validated_fragment = await self.async_validate(
+                        iteration,
+                        index,
+                        parsed_fragment,
+                        output_schema,
+                        validate_subschema=True,
+                        context=context,
+                        context_vars=stream_context_vars,
                     )
+                    if isinstance(validated_fragment, SkeletonReAsk):
+                        raise ValueError(
+                            "Received fragment schema is an invalid sub-schema "
+                            "of the expected output JSON schema."
+                        )
 
-                if self.output_type == OutputTypes.LIST:
-                    validation_response = cast(list, validated_fragment)
-                else:
-                    validation_response = cast(dict, validated_fragment)
-                yield ValidationOutcome(
-                    call_id=call_log.id,  # type: ignore
-                    raw_llm_output=validated_fragment,
-                    validated_output=chunk_text,
-                    validation_passed=validated_fragment is not None,
-                )
-                fragment = ""
+                    reasks, valid_op = self.introspect(validated_fragment)
+                    if reasks:
+                        raise ValueError(
+                            "Reasks are not yet supported with streaming. Please "
+                            "remove reasks from schema or disable streaming."
+                        )
+
+                    if self.output_type == OutputTypes.LIST:
+                        validation_response = cast(list, validated_fragment)
+                    else:
+                        validation_response = cast(dict, validated_fragment)
+                    yield ValidationOutcome(
+                        call_id=call_log.id,  # type: ignore
+                        raw_llm_output=fragment,
+                        validated_output=validated_fragment,
+                        validation_passed=validated_fragment is not None,
+                    )
+                    fragment = ""
+                except StopIteration:
+                    next_exists = False
+                except StopAsyncIteration:
+                    next_exists = False
+                except Exception as e:
+                    raise e
+                finally:
+                    # reset all context vars
+                    for context_var in context_vars.values():
+                        token = context.run(context_var.set, [])
+                        context.run(context_var.reset, token)
+                    token = context.run(stream_context_vars.set, {})
+                    context.run(stream_context_vars.reset, token)
 
         iteration.outputs.raw_output = fragment
         # FIXME: Handle case where parsing continuously fails/is a reask
