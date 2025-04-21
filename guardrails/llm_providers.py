@@ -218,6 +218,7 @@ class LiteLLMCallable(PromptCallableBase):
             llm_response = cast(Iterator[str], response)
             return LLMResponse(
                 output="",
+                # FIXME: Why is this different from the async streaming implementation?
                 stream_output=llm_response,
             )
 
@@ -491,6 +492,7 @@ class ArbitraryCallable(PromptCallableBase):
             llm_response = cast(Iterator[str], llm_response)
             return LLMResponse(
                 output="",
+                # FIXME: Why is this different from the async streaming implementation?
                 stream_output=llm_response,
             )
 
@@ -685,6 +687,8 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             # response = cast(AsyncIterator[str], response)
             return LLMResponse(
                 output="",
+                # FIXME: Why is this different from the synchronous streaming implementation?  ## noqa: E501
+                # This shouldn't be necessary: https://docs.litellm.ai/docs/completion/stream#async-streaming
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
             )
 
@@ -842,6 +846,8 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
             # the callable returns a generator object
             return LLMResponse(
                 output="",
+                # FIXME: Why is this different from the synchronous streaming implementation?  ## noqa: E501
+                # This shouldn't be necessary: https://docs.litellm.ai/docs/completion/stream#async-streaming
                 async_stream_output=output.completion_stream,
             )
 
