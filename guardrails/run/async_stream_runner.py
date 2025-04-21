@@ -122,7 +122,6 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         refrain_triggered = False
         validation_passed = True
 
-        # TODO: reset the context vars when finished
         context = copy_context()
         stream_context_vars: ContextVar[Dict[str, ContextVar[List[str]]]] = ContextVar(
             "stream_context"
