@@ -294,7 +294,8 @@ class Validator:
         chunk: Any,
         metadata: Dict[str, Any],
         *,
-        ctx_accumulated_chunks: Optional[ContextVar[List[str]]] = None,
+        property_path: Optional[str] = "$",
+        context_vars: Optional[ContextVar[Dict[str, ContextVar[List[str]]]]] = None,
         context: Optional[Context] = None,
         **kwargs,
     ) -> Optional[ValidationResult]:
@@ -311,11 +312,18 @@ class Validator:
         result.
         """
         # combine accumulated chunks and new [:-1]chunk
-        accumulated_chunks = (
-            context.run(ctx_accumulated_chunks.get)
-            if ctx_accumulated_chunks and context
-            else self.accumulated_chunks
-        )
+        accumulated_chunks = self.accumulated_chunks
+
+        # if context_vars is passed, use it to get the accumulated chunks
+        context_var: Optional[ContextVar[List[str]]] = None
+        ctx_var_map: Optional[Dict[str, ContextVar[List[str]]]] = None
+        context_key = f"{property_path}_{self.rail_alias}"
+        if context_vars and context:
+            ctx_var_map = context.run(context_vars.get)
+            context_var = ctx_var_map.get(context_key)
+            if context_var:
+                accumulated_chunks = context.run(context_var.get)
+
         accumulated_chunks.append(chunk)
         accumulated_text = "".join(accumulated_chunks)
         # check if enough chunks have accumulated for validation
@@ -327,14 +335,18 @@ class Validator:
             split_contents = [accumulated_text, ""]
         # if no chunks are returned, we haven't accumulated enough
         if len(split_contents) == 0:
-            if ctx_accumulated_chunks and context:
-                context.run(ctx_accumulated_chunks.set, accumulated_chunks)
+            if context_vars and context_var and context and ctx_var_map:
+                context.run(context_var.set, accumulated_chunks)
+                ctx_var_map[context_key] = context_var
+                context.run(context_vars.set, ctx_var_map)
             else:
                 self.accumulated_chunks = accumulated_chunks
             return None
         [chunk_to_validate, new_accumulated_chunks] = split_contents
-        if ctx_accumulated_chunks and context:
-            context.run(ctx_accumulated_chunks.set, [new_accumulated_chunks])
+        if context_vars and context_var and context and ctx_var_map:
+            context.run(context_var.set, [new_accumulated_chunks])
+            ctx_var_map[context_key] = context_var
+            context.run(context_vars.set, ctx_var_map)
         else:
             self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
@@ -352,10 +364,6 @@ class Validator:
                     )
                 ]
 
-        if ctx_accumulated_chunks:
-            ctx_accumulated_chunks.set(accumulated_chunks)
-        else:
-            self.accumulated_chunks = accumulated_chunks
         return validation_result
 
     async def async_validate_stream(

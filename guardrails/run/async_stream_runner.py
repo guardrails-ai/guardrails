@@ -117,9 +117,23 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         refrain_triggered = False
         validation_passed = True
 
-        ctx_accumulated_chunks = ContextVar("accumulated_chunks")
-        ctx_accumulated_chunks.set([])
+        # TODO: reset the context vars when finished
         context = copy_context()
+        stream_context_vars: ContextVar[Dict[str, ContextVar[List[str]]]] = ContextVar(
+            "stream_context"
+        )
+        context_vars: Dict[str, ContextVar[List[str]]] = {}
+        for k, v in self.validation_map.items():
+            if isinstance(v, list):
+                for validator in v:
+                    property_validation_chunks = ContextVar(
+                        f"{k}_{validator.rail_alias}_chunks"
+                    )
+                    context.run(property_validation_chunks.set, [])
+                    context_vars[f"{k}_{validator.rail_alias}"] = (
+                        property_validation_chunks  # noqa: E501
+                    )
+        context.run(stream_context_vars.set, context_vars)
 
         if self.output_type == OutputTypes.STRING:
             validator_service = AsyncValidatorService(self.disable_tracer)
@@ -138,7 +152,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     "$",
                     True,
                     context=context,
-                    ctx_accumulated_chunks=ctx_accumulated_chunks,
+                    context_vars=stream_context_vars,
                 )
                 validators = self.validation_map.get("$", [])
 
@@ -186,9 +200,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                                     rechecked_value=None,
                                 )  # type: ignore
 
-                        if not hasattr(
-                            validation_progress, validator_log.validator_name
-                        ):
+                        if validator_log.validator_name not in validation_progress:
                             validation_progress[validator_log.validator_name] = ""
 
                         validation_progress[validator_log.validator_name] += chunk
@@ -246,7 +258,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     output_schema,
                     validate_subschema=True,
                     context=context,
-                    ctx_accumulated_chunks=ctx_accumulated_chunks,
+                    context_vars=stream_context_vars,
                 )
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(

@@ -252,12 +252,13 @@ class StreamRunner(Runner):
             return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
-        """
-        Get the text from a chunk.
+        """Get the text from a chunk.
 
-        chunk is assumed to be an Iterator of either string or ChatCompletionChunk
+        chunk is assumed to be an Iterator of either string or
+        ChatCompletionChunk
 
-        These types are not properly enforced upstream so we must use reflection
+        These types are not properly enforced upstream so we must use
+        reflection
         """
         # Safeguard against None
         # which can happen when the user provides
