@@ -12,9 +12,12 @@ def safe_get_with_brackets(
         return value
     except Exception as e:
         logger.debug(
-            f"Failed to get value for key: {key} out of container: {container}!"
+            f"""
+            Failed to get value for key: {key} out of container: {container}.
+            Reason: {e}
+            Fallbacking to default value...
+            """
         )
-        logger.debug(e)
         return default
 
 

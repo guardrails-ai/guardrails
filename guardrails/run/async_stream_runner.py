@@ -5,7 +5,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Union,
     cast,
 )
 
@@ -16,7 +15,6 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
-    PromptCallableBase,
 )
 from guardrails.logger import set_scope
 from guardrails.run import StreamRunner
@@ -279,32 +277,3 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
         iteration.outputs.validation_response = validation_response
         iteration.outputs.guarded_output = valid_op
-
-    def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
-        """Get the text from a chunk."""
-        chunk_text = ""
-
-        if not chunk.choices or len(chunk.choices) == 0:
-            return chunk_text
-
-        try:
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
-            if not finished and content:
-                chunk_text = content
-        except Exception:
-            try:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].text
-                if not finished and content:
-                    chunk_text = content
-            except Exception:
-                try:
-                    chunk_text = chunk
-                except Exception as e:
-                    raise ValueError(
-                        f"Error getting chunk from stream: {e}. "
-                        "Non-OpenAI API callables expected to return "
-                        "a generator of strings."
-                    ) from e
-        return chunk_text
