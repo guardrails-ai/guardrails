@@ -279,10 +279,11 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     validation_response = cast(dict, validated_fragment)
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
-                    raw_llm_output=fragment,
+                    raw_llm_output=validated_fragment,
                     validated_output=chunk_text,
                     validation_passed=validated_fragment is not None,
                 )
+                fragment = ""
 
         iteration.outputs.raw_output = fragment
         # FIXME: Handle case where parsing continuously fails/is a reask
