@@ -84,6 +84,8 @@ class AsyncValidatorService(ValidatorServiceBase):
         metadata: Dict,
         absolute_property_path: str,
         stream: Optional[bool] = False,
+        *,
+        reference_path: Optional[str] = None,
         **kwargs,
     ) -> ValidatorRun:
         validator_logs = self.before_run_validator(
@@ -96,6 +98,7 @@ class AsyncValidatorService(ValidatorServiceBase):
             metadata,
             stream,
             validation_session_id=iteration.id,
+            reference_path=reference_path,
             **kwargs,
         )
 
@@ -111,6 +114,7 @@ class AsyncValidatorService(ValidatorServiceBase):
                     result.metadata or {},
                     stream,
                     validation_session_id=iteration.id,
+                    reference_path=reference_path,
                     **kwargs,
                 )
             value = self.perform_correction(
@@ -160,6 +164,7 @@ class AsyncValidatorService(ValidatorServiceBase):
                     metadata,
                     absolute_property_path,
                     stream=stream,
+                    reference_property_path=reference_property_path,
                     **kwargs,
                 )
             )
@@ -277,6 +282,7 @@ class AsyncValidatorService(ValidatorServiceBase):
                     metadata,
                     absolute_path,
                     stream=stream,
+                    reference_path=reference_path,
                     **kwargs,
                 )
             )

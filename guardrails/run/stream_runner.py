@@ -17,6 +17,7 @@ from guardrails.utils.parsing_utils import (
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
 from guardrails.telemetry import trace_stream_step
+from guardrails.utils.safe_get import safe_get
 
 
 class StreamRunner(Runner):
@@ -240,35 +241,74 @@ class StreamRunner(Runner):
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
         try:
+            if (
+                not chunk.choices or len(chunk.choices) == 0
+            ) and chunk.usage is not None:
+                # This is the last extra chunk for usage statistics
+                return True
             finished = chunk.choices[0].finish_reason
             return finished is not None
         except (AttributeError, TypeError):
             return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
-        """Get the text from a chunk."""
-        chunk_text = ""
-        try:
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
-            if not finished and content:
-                chunk_text = content
-        except Exception:
-            try:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].text
-                if not finished and content:
-                    chunk_text = content
-            except Exception:
-                try:
-                    chunk_text = chunk
-                except Exception as e:
-                    raise ValueError(
-                        f"Error getting chunk from stream: {e}. "
-                        "Non-OpenAI API callables expected to return "
-                        "a generator of strings."
-                    ) from e
-        return chunk_text
+        """Get the text from a chunk.
+
+        chunk is assumed to be an Iterator of either string or
+        ChatCompletionChunk
+
+        These types are not properly enforced upstream so we must use
+        reflection
+        """
+        # Safeguard against None
+        # which can happen when the user provides
+        # custom LLM wrappers
+        if not chunk:
+            return ""
+        elif isinstance(chunk, str):
+            # If chunk is a string, return it
+            return chunk
+        elif hasattr(chunk, "choices") and hasattr(chunk.choices, "__iter__"):
+            # If chunk is a ChatCompletionChunk, return the text
+            # from the first choice
+            chunk_text = ""
+            first_choice = safe_get(chunk.choices, 0)
+            if not first_choice:
+                return chunk_text
+
+            if hasattr(first_choice, "delta") and hasattr(
+                first_choice.delta, "content"
+            ):
+                chunk_text = first_choice.delta.content
+            elif hasattr(first_choice, "text"):
+                chunk_text = first_choice.text
+            else:
+                # If chunk is not a string or ChatCompletionChunk, raise an error
+                raise ValueError(
+                    "chunk.choices[0] does not have "
+                    "delta.content or text. "
+                    "Non-OpenAI compliant callables must return "
+                    "a generator of strings."
+                )
+
+            if not chunk_text:
+                # If chunk_text is empty, return an empty string
+                return ""
+            elif not isinstance(chunk_text, str):
+                # If chunk_text is not a string, raise an error
+                raise ValueError(
+                    "Chunk text is not a string. "
+                    "Non-OpenAI compliant callables must return "
+                    "a generator of strings."
+                )
+            return chunk_text
+        else:
+            # If chunk is not a string or ChatCompletionChunk, raise an error
+            raise ValueError(
+                "Chunk is not a string or ChatCompletionChunk. "
+                "Non-OpenAI compliant callables must return "
+                "a generator of strings."
+            )
 
     def parse(
         self, output: str, output_schema: Dict[str, Any], *, verified: set, **kwargs

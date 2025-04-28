@@ -503,7 +503,12 @@ class TestRunValidator:
 
         assert mock_run_validator_async.call_count == 1
         mock_run_validator_async.assert_called_once_with(
-            validator, "value", {}, False, validation_session_id=iteration.id
+            validator,
+            "value",
+            {},
+            False,
+            validation_session_id=iteration.id,
+            reference_path=None,
         )
 
         assert mock_after_run_validator.call_count == 1
@@ -562,7 +567,12 @@ class TestRunValidator:
 
         assert mock_run_validator_async.call_count == 1
         mock_run_validator_async.assert_called_once_with(
-            validator, "value", {}, False, validation_session_id=iteration.id
+            validator,
+            "value",
+            {},
+            False,
+            validation_session_id=iteration.id,
+            reference_path=None,
         )
 
         assert mock_after_run_validator.call_count == 1
@@ -625,7 +635,12 @@ class TestRunValidator:
 
         assert mock_run_validator_async.call_count == 1
         mock_run_validator_async.assert_called_once_with(
-            validator, "value", {}, False, validation_session_id=iteration.id
+            validator,
+            "value",
+            {},
+            False,
+            validation_session_id=iteration.id,
+            reference_path=None,
         )
 
         assert mock_after_run_validator.call_count == 1
@@ -699,13 +714,21 @@ class TestRunValidator:
         assert mock_run_validator_async.call_count == 2
         mock_run_validator_async.assert_has_calls(
             [
-                call(validator, "value", {}, False, validation_session_id=iteration.id),
+                call(
+                    validator,
+                    "value",
+                    {},
+                    False,
+                    validation_session_id=iteration.id,
+                    reference_path=None,
+                ),
                 call(
                     validator,
                     "fixed-value",
                     {},
                     False,
                     validation_session_id=iteration.id,
+                    reference_path=None,
                 ),
             ]
         )

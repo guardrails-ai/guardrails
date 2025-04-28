@@ -162,6 +162,7 @@ authorized_licenses = [
     "python software foundation",
     "python software foundation license",
     "zpl 2.1",
+    "mit and python-2.0"
 ]
 unauthorized_licenses = [
     "gpl v3",

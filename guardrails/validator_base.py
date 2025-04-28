@@ -4,7 +4,7 @@
 #   - [ ] Remove validator_base.py in 0.6.x
 
 import asyncio
-import contextlib
+from contextvars import Context, ContextVar
 from functools import partial
 import inspect
 import logging
@@ -67,10 +67,8 @@ def split_sentence_word_tokenizers_jl_separator(
     # we check for a . to avoid wastefully calling the tokenizer
 
     # check at least 3 characters have been accumulated before splitting
-    is_minimum_length = False
-    with contextlib.suppress(IndexError):
-        chunk[2]
-        is_minimum_length = True
+    third_chunk = safe_get(chunk, 2)
+    is_minimum_length = third_chunk is not None
 
     # check for potential line endings, which is what split_sentences does
     chunk_with_potential_line_endings, count = re.subn(
@@ -292,7 +290,14 @@ class Validator:
         return split_sentence_word_tokenizers_jl_separator(chunk)
 
     def validate_stream(
-        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+        self,
+        chunk: Any,
+        metadata: Dict[str, Any],
+        *,
+        property_path: Optional[str] = "$",
+        context_vars: Optional[ContextVar[Dict[str, ContextVar[List[str]]]]] = None,
+        context: Optional[Context] = None,
+        **kwargs,
     ) -> Optional[ValidationResult]:
         """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
         than the validator's chunking strategy, it will be accumulated until it
@@ -307,8 +312,20 @@ class Validator:
         result.
         """
         # combine accumulated chunks and new [:-1]chunk
-        self.accumulated_chunks.append(chunk)
-        accumulated_text = "".join(self.accumulated_chunks)
+        accumulated_chunks = self.accumulated_chunks
+
+        # if context_vars is passed, use it to get the accumulated chunks
+        context_var: Optional[ContextVar[List[str]]] = None
+        ctx_var_map: Optional[Dict[str, ContextVar[List[str]]]] = None
+        context_key = f"{property_path}_{self.rail_alias}"
+        if context_vars and context:
+            ctx_var_map = context.run(context_vars.get)
+            context_var = ctx_var_map.get(context_key)
+            if context_var:
+                accumulated_chunks = context.run(context_var.get)
+
+        accumulated_chunks.append(chunk)
+        accumulated_text = "".join(accumulated_chunks)
         # check if enough chunks have accumulated for validation
         split_contents = self._chunking_function(accumulated_text)
 
@@ -318,9 +335,20 @@ class Validator:
             split_contents = [accumulated_text, ""]
         # if no chunks are returned, we haven't accumulated enough
         if len(split_contents) == 0:
+            if context_vars and context_var and context and ctx_var_map:
+                context.run(context_var.set, accumulated_chunks)
+                ctx_var_map[context_key] = context_var
+                context.run(context_vars.set, ctx_var_map)
+            else:
+                self.accumulated_chunks = accumulated_chunks
             return None
         [chunk_to_validate, new_accumulated_chunks] = split_contents
-        self.accumulated_chunks = [new_accumulated_chunks]
+        if context_vars and context_var and context and ctx_var_map:
+            context.run(context_var.set, [new_accumulated_chunks])
+            ctx_var_map[context_key] = context_var
+            context.run(context_vars.set, ctx_var_map)
+        else:
+            self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # if validate doesn't set validated chunk, we set it
