@@ -37,12 +37,10 @@ def test_litellm_tools():
     class Fruits(BaseModel):
         list: List[Fruit]
 
-    guard = gd.Guard.from_pydantic(Fruits)
+    guard = gd.Guard.for_pydantic(Fruits)
     res = guard(
         model="gpt-4o",
-        msg_history=[
-            {"role": "user", "content": "Name 10 unique fruits, lowercase only"}
-        ],
+        messages=[{"role": "user", "content": "Name 10 unique fruits, lowercase only"}],
         tools=guard.json_function_calling_tool([]),
         tool_choice="required",
     )
@@ -64,9 +62,7 @@ def test_litellm_openai():
     res = guard(
         llm_api=litellm.completion,
         model="gpt-3.5-turbo",
-        msg_history=[
-            {"role": "user", "content": "Name 10 unique fruits, lowercase only"}
-        ],
+        messages=[{"role": "user", "content": "Name 10 unique fruits, lowercase only"}],
     )
     assert res.validated_output
     res = guard(

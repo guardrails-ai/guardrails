@@ -6,7 +6,6 @@ The guard object is the main interface for Guardrails. It can be used without co
 ## How it works
 
 ![Guardrails Logo](../img/guardrails_arch_white_vertical.png#only-light)
-![Guardrails Logo](../img/guardrails_arch_dark_vertical.png#only-dark)
 
 
 ## Two main flows

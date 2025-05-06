@@ -1,9 +1,11 @@
 from pathlib import Path
+from typing import cast
 import pytest
 import sys
 from unittest.mock import call, patch, MagicMock
 
-from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails_hub_types import Manifest
+from guardrails.cli.hub.utils import PipProcessError
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
@@ -45,16 +47,17 @@ class TestGetModulePath:
 
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator", "helper"],
                 "tags": {},
             }
@@ -62,37 +65,26 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
-        mock_hub_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import helper, TestValidator"  # noqa
+        mock_hub_read.return_value = (
+            "from guardrails_ai_grhub_id import helper, TestValidator"  # noqa
+        )
 
         hub_seek_spy = mocker.spy(hub_init_file, "seek")
         hub_write_spy = mocker.spy(hub_init_file, "write")
         hub_close_spy = mocker.spy(hub_init_file, "close")
 
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import helper, TestValidator"  # noqa
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
-
-        mock_is_file = mocker.patch(
-            "guardrails.hub.validator_package_service.os.path.isfile"
-        )
-        mock_is_file.return_value = True
-
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
+        manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "a+"),
         ]
         mock_open.assert_has_calls(open_calls)
 
@@ -101,25 +93,18 @@ class TestAddToHubInits:
         assert hub_write_spy.call_count == 0
         assert hub_close_spy.call_count == 1
 
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-        assert ns_seek_spy.call_count == 1
-        assert mock_ns_read.call_count == 1
-        assert ns_write_spy.call_count == 0
-        assert ns_close_spy.call_count == 1
-
     def test_appends_import_line_if_not_present(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -127,9 +112,8 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
         mock_hub_read.return_value = "from guardrails.hub.other_org.other_validator.validator import OtherValidator"  # noqa
@@ -138,26 +122,14 @@ class TestAddToHubInits:
         hub_write_spy = mocker.spy(hub_init_file, "write")
         hub_close_spy = mocker.spy(hub_init_file, "close")
 
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = ""
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
-
-        mock_is_file = mocker.patch(
-            "guardrails.hub.validator_package_service.os.path.isfile"
-        )
-        mock_is_file.return_value = True
-
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
+        manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "a+"),
         ]
         mock_open.assert_has_calls(open_calls)
 
@@ -171,39 +143,25 @@ class TestAddToHubInits:
         hub_write_calls = [
             call("\n"),
             call(
-                "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
+                "from guardrails_ai_grhub_id import TestValidator"  # noqa
             ),
         ]
         hub_write_spy.assert_has_calls(hub_write_calls)
 
         assert hub_close_spy.call_count == 1
 
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-
-        assert ns_seek_spy.call_count == 2
-        ns_seek_calls = [call(0, 0), call(0, 2)]
-        ns_seek_spy.assert_has_calls(ns_seek_calls)
-
-        assert mock_ns_read.call_count == 1
-        assert ns_write_spy.call_count == 1
-        ns_write_spy.assert_called_once_with(
-            "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
-        )
-        assert ns_close_spy.call_count == 1
-
     def test_creates_namespace_init_if_not_exists(self, mocker):
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
@@ -211,19 +169,11 @@ class TestAddToHubInits:
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
-        ns_init_file = MockFile()
         mock_open = mocker.patch("guardrails.hub.validator_package_service.open")
-        mock_open.side_effect = [hub_init_file, ns_init_file]
+        mock_open.side_effect = [hub_init_file]
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
-        mock_hub_read.return_value = "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
-
-        mock_ns_read = mocker.patch.object(ns_init_file, "read")
-        mock_ns_read.return_value = ""
-
-        ns_seek_spy = mocker.spy(ns_init_file, "seek")
-        ns_write_spy = mocker.spy(ns_init_file, "write")
-        ns_close_spy = mocker.spy(ns_init_file, "close")
+        mock_hub_read.return_value = "from guardrails_ai_grhub_id import TestValidator"  # noqa
 
         mock_is_file = mocker.patch(
             "guardrails.hub.validator_package_service.os.path.isfile"
@@ -232,26 +182,14 @@ class TestAddToHubInits:
 
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
+        manifest = cast(Manifest, manifest)
         ValidatorPackageService.add_to_hub_inits(manifest, site_packages)
 
-        assert mock_open.call_count == 2
+        assert mock_open.call_count == 1
         open_calls = [
             call("./site-packages/guardrails/hub/__init__.py", "a+"),
-            call("./site-packages/guardrails/hub/guardrails_ai/__init__.py", "w"),
         ]
         mock_open.assert_has_calls(open_calls)
-
-        mock_is_file.assert_called_once_with(
-            "./site-packages/guardrails/hub/guardrails_ai/__init__.py"
-        )
-
-        assert ns_seek_spy.call_count == 0
-        assert mock_ns_read.call_count == 0
-        assert ns_write_spy.call_count == 1
-        ns_write_spy.assert_called_once_with(
-            "from guardrails.hub.guardrails_ai.test_validator.validator import TestValidator"  # noqa
-        )
-        assert ns_close_spy.call_count == 1
 
 
 class TestReloadModule:
@@ -330,30 +268,32 @@ class TestRunPostInstall:
     @pytest.mark.parametrize(
         "manifest",
         [
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
-                    "id": "id",
+                    "id": "guardrails-ai/id",
                     "name": "name",
                     "author": {"name": "me", "email": "me@me.me"},
                     "maintainers": [],
                     "repository": {"url": "some-repo"},
                     "namespace": "guardrails-ai",
-                    "package_name": "test-validator",
-                    "module_name": "validator",
+                    "packageName": "test-validator",
+                    "moduleName": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                 }
             ),
-            ModuleManifest.from_dict(
+            Manifest.from_dict(
                 {
-                    "id": "id",
+                    "id": "guardrails-ai/id",
                     "name": "name",
                     "author": {"name": "me", "email": "me@me.me"},
                     "maintainers": [],
                     "repository": {"url": "some-repo"},
                     "namespace": "guardrails-ai",
-                    "package_name": "test-validator",
-                    "module_name": "validator",
+                    "packageName": "test-validator",
+                    "moduleName": "validator",
+                    "description": "description",
                     "exports": ["TestValidator"],
                     "tags": {},
                     "post_install": "",
@@ -384,45 +324,48 @@ class TestRunPostInstall:
         mock_isfile.return_value = True
         from guardrails.hub.validator_package_service import ValidatorPackageService
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
-                "post_install": "post_install.py",
+                "postInstall": "post_install.py",
             }
         )
 
+        manifest = cast(Manifest, manifest)
         ValidatorPackageService.run_post_install(manifest, "./site_packages")
 
         assert mock_subprocess_check_output.call_count == 1
         mock_subprocess_check_output.assert_called_once_with(
             [
                 mock_sys_executable,
-                "./site_packages/guardrails/hub/guardrails_ai/test_validator/validator/post_install.py",  # noqa
+                "./site_packages/guardrails_ai_grhub_id/post_install.py",  # noqa
             ]
         )
 
 
 class TestValidatorPackageService:
     def setup_method(self):
-        self.manifest = ModuleManifest.from_dict(
+        self.manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails",
-                "package_name": "test-validator",
-                "module_name": "test_validator",
+                "packageName": "test-validator",
+                "moduleName": "test_validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {"has_guardrails_endpoint": False},
             }
@@ -460,163 +403,125 @@ class TestValidatorPackageService:
         assert site_packages_path == "/fake/site-packages"
 
     @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_org_and_package_dirs"
-    )
-    @patch(
         "guardrails.hub.validator_package_service.ValidatorPackageService.reload_module"
     )
-    def test_get_validator_from_manifest(
-        self, mock_reload_module, mock_get_org_and_package_dirs
-    ):
-        mock_get_org_and_package_dirs.return_value = ["guardrails_ai", "test_package"]
-
+    def test_get_validator_from_manifest(self, mock_reload_module):
         mock_validator_module = MagicMock()
         mock_reload_module.return_value = mock_validator_module
 
-        ValidatorPackageService.get_validator_from_manifest(self.manifest)
+        manifest = cast(Manifest, self.manifest)
+        ValidatorPackageService.get_validator_from_manifest(manifest)
 
-        mock_reload_module.assert_called_once_with(
-            f"guardrails.hub.guardrails_ai.test_package.{self.manifest.module_name}"
-        )
-
-    @pytest.mark.parametrize(
-        "manifest,expected",
-        [
-            (
-                ModuleManifest.from_dict(
-                    {
-                        "id": "id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "some-repo"},
-                        "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "test_validator",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                    }
-                ),
-                ["guardrails_ai", "test_validator"],
-            ),
-            (
-                ModuleManifest.from_dict(
-                    {
-                        "id": "id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "some-repo"},
-                        "namespace": "",
-                        "package_name": "test-validator",
-                        "module_name": "test_validator",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                    }
-                ),
-                ["test_validator"],
-            ),
-        ],
-    )
-    def test_get_org_and_package_dirs(self, manifest, expected):
-        from guardrails.hub.validator_package_service import ValidatorPackageService
-
-        actual = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        assert actual == expected
+        mock_reload_module.assert_called_once_with("guardrails_grhub_id")
 
     def test_get_module_name_valid(self):
-        module_name = ValidatorPackageService.get_module_name("hub://test-module")
+        module_name, module_version = ValidatorPackageService.get_validator_id(
+            "hub://test-module>=1.0.0"
+        )
         assert module_name == "test-module"
+        assert module_version == ">=1.0.0"
 
     def test_get_module_name_invalid(self):
         with pytest.raises(InvalidHubInstallURL):
-            ValidatorPackageService.get_module_name("invalid-uri")
+            ValidatorPackageService.get_validator_id("invalid-uri")
 
-    @pytest.mark.parametrize(
-        "manifest,expected",
-        [
-            (
-                ModuleManifest.from_dict(
-                    {
-                        "id": "id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "some-repo"},
-                        "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                    }
-                ),
-                "git+some-repo",
-            ),
-            (
-                ModuleManifest.from_dict(
-                    {
-                        "id": "id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "git+some-repo"},
-                        "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                        "post_install": "",
-                    }
-                ),
-                "git+some-repo",
-            ),
-            (
-                ModuleManifest.from_dict(
-                    {
-                        "id": "id",
-                        "name": "name",
-                        "author": {"name": "me", "email": "me@me.me"},
-                        "maintainers": [],
-                        "repository": {"url": "git+some-repo", "branch": "prod"},
-                        "namespace": "guardrails-ai",
-                        "package_name": "test-validator",
-                        "module_name": "validator",
-                        "exports": ["TestValidator"],
-                        "tags": {},
-                        "post_install": "",
-                    }
-                ),
-                "git+some-repo@prod",
-            ),
-        ],
-    )
-    def test_get_install_url(self, manifest, expected):
-        actual = ValidatorPackageService.get_install_url(manifest)
-        assert actual == expected
-
-    def test_get_hub_directory(self):
-        hub_directory = ValidatorPackageService.get_hub_directory(
-            self.manifest, self.site_packages
+    def test_install_hub_module_when_exception(self, mocker):
+        mock_pip_process = mocker.patch(
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
         )
-        assert (
-            hub_directory
-            == "./.venv/lib/python3.X/site-packages/guardrails/hub/guardrails/test_validator"  # noqa
-        )  # noqa
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
+        mock_pip_process.side_effect = [Exception()]
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails-ai/id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        with pytest.raises(Exception):
+            ValidatorPackageService.install_hub_module(manifest.id)
+
+        assert mock_pip_process.call_count == 1
+
+    def test_install_hub_module_when_no_validators_extras(self, mocker):
+        mock_pip_process = mocker.patch(
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
+        mock_pip_process.side_effect = [
+            PipProcessError("install", "guardrails-ai-grhub-id"),
+            "Sucessfully installed guardrails-ai-grhub-id",
+        ]
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails-ai/id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+        ValidatorPackageService.install_hub_module(manifest.id)
+
+        assert mock_pip_process.call_count == 2
+        pip_calls = [
+            call(
+                "install",
+                "guardrails-ai-grhub-id[validators]",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
+                quiet=False,
+            ),
+            call(
+                "install",
+                "guardrails-ai-grhub-id",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
+                quiet=False,
+            ),
+        ]
+        mock_pip_process.assert_has_calls(pip_calls)
 
     def test_install_hub_module(self, mocker):
-        mock_get_install_url = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.get_install_url"
-        )
-        mock_get_install_url.return_value = "mock-install-url"
-
-        mock_get_hub_directory = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.get_hub_directory"
-        )
-        mock_get_hub_directory.return_value = "mock/install/directory"
-
         mock_pip_process = mocker.patch(
-            "guardrails.hub.validator_package_service.pip_process"
+            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
         )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+
         inspect_report = {
             "installed": [
                 {
@@ -639,43 +544,34 @@ class TestValidatorPackageService:
             "Sucessfully installed pydash>=7.0.6,<8.0.0",
         ]
 
-        manifest = ModuleManifest.from_dict(
+        manifest = Manifest.from_dict(
             {
-                "id": "id",
+                "id": "guardrails-ai/id",
                 "name": "name",
                 "author": {"name": "me", "email": "me@me.me"},
                 "maintainers": [],
                 "repository": {"url": "some-repo"},
                 "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
+                "packageName": "test-validator",
+                "moduleName": "validator",
+                "description": "description",
                 "exports": ["TestValidator"],
                 "tags": {},
             }
         )
-        site_packages = "./site-packages"
-        ValidatorPackageService.install_hub_module(manifest, site_packages)
+        manifest = cast(Manifest, manifest)
+        ValidatorPackageService.install_hub_module(manifest.id)
 
-        mock_get_install_url.assert_called_once_with(manifest)
-        mock_get_hub_directory.assert_called_once_with(manifest, site_packages)
-
-        assert mock_pip_process.call_count == 5
+        assert mock_pip_process.call_count == 1
         pip_calls = [
             call(
                 "install",
-                "mock-install-url",
-                ["--target=mock/install/directory", "--no-deps"],
+                "guardrails-ai-grhub-id[validators]",
+                [
+                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                    "--extra-index-url=https://pypi.org/simple",
+                ],
                 quiet=False,
             ),
-            call(
-                "inspect",
-                flags=["--path=mock/install/directory"],
-                format="json",
-                quiet=False,
-                no_color=True,
-            ),
-            call("install", "rstr", quiet=False),
-            call("install", "openai<2", quiet=False),
-            call("install", "pydash>=7.0.6,<8.0.0", quiet=False),
         ]
         mock_pip_process.assert_has_calls(pip_calls)

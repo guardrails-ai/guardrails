@@ -24,8 +24,12 @@ def test_hugging_face_model_callable():
         bar: str
         bez: List[str]
 
-    g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model.generate, tokenizer=tokenizer, prompt="test")
+    g = Guard.for_pydantic(Foo, output_formatter="jsonformer")
+    response = g(
+        model.generate,
+        tokenizer=tokenizer,
+        messages=[{"content": "test", "role": "user"}],
+    )
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
@@ -44,8 +48,8 @@ def test_hugging_face_pipeline_callable():
         bar: str
         bez: List[str]
 
-    g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model, prompt="Sample:")
+    g = Guard.for_pydantic(Foo, output_formatter="jsonformer")
+    response = g(model, messages=[{"content": "Sample:", "role": "user"}])
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
@@ -68,7 +72,7 @@ def test_hugging_face_pipeline_complex_schema():
     class Tricky(BaseModel):
         foo: MultiNum
 
-    g = Guard.from_pydantic(Tricky, output_formatter="jsonformer")
+    g = Guard.for_pydantic(Tricky, output_formatter="jsonformer")
     response = g(model, prompt="Sample:")
     out = response.validated_output
     assert isinstance(out, dict)

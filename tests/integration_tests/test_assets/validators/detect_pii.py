@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, List, Union
 import difflib
-import nltk
 
 from guardrails.validator_base import (
     FailResult,
@@ -60,12 +59,19 @@ class MockDetectPII(Validator):
     }
 
     def chunking_function(self, chunk: str):
-        """
-        Use a sentence tokenizer to split the chunk into sentences.
+        """Use a sentence tokenizer to split the chunk into sentences.
 
-        Because using the tokenizer is expensive, we only use it if there
-        is a period present in the chunk.
+        Because using the tokenizer is expensive, we only use it if
+        there is a period present in the chunk.
         """
+        try:
+            import nltk
+        except ImportError:
+            raise ImportError(
+                "nltk is required for sentence splitting. Please install it using "
+                "`poetry add nltk`"
+            )
+
         # using the sentence tokenizer is expensive
         # we check for a . to avoid wastefully calling the tokenizer
         if "." not in chunk:

@@ -1,13 +1,12 @@
 from typing import Dict
-
 import pytest
 
 import guardrails as gd
 from guardrails import register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import OnFailAction
 from guardrails.classes.validation.validation_result import FailResult, ValidationResult
+from tests.integration_tests.test_assets.custom_llm import mock_async_llm, mock_llm
 
 from .test_assets import pydantic, string
 
@@ -30,15 +29,13 @@ def test_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(
-        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
+    guard = gd.Guard.for_pydantic(
+        output_class=pydantic.PersonalDetails,
+        messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
 
-    def mock_callable(prompt: str):
-        return
-
     final_output = guard(
-        llm_api=mock_callable,
+        llm_api=mock_llm,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
@@ -51,16 +48,16 @@ def test_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"] == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
@@ -84,15 +81,13 @@ async def test_async_parsing_reask(mocker):
         ),
     ]
 
-    guard = gd.AsyncGuard.from_pydantic(
-        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
+    guard = gd.AsyncGuard.for_pydantic(
+        output_class=pydantic.PersonalDetails,
+        messages=[{"role": "user", "content": pydantic.PARSING_INITIAL_PROMPT}],
     )
 
-    async def mock_async_callable(prompt: str):
-        return
-
     final_output = await guard(
-        llm_api=mock_async_callable,
+        llm_api=mock_async_llm,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
@@ -105,17 +100,17 @@ async def test_async_parsing_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
+    assert call.compiled_messages[0]["content"] == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
     assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
 
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.PARSING_COMPILED_REASK
     )
     # Same as above
-    assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
+    assert call.reask_messages[0][1]["content"] == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
@@ -128,7 +123,7 @@ def test_reask_prompt_instructions(mocker):
     """
 
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=string.MSG_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,
@@ -140,17 +135,17 @@ def test_reask_prompt_instructions(mocker):
     def always_fail(value: str, metadata: Dict) -> ValidationResult:
         return FailResult(error_message=f"Value {value} should fail.")
 
-    # We don't support tuple syntax for from_string and never have
+    # We don't support tuple syntax for for_string and never have
     # Once the validator function is decorated though, it becomes a Validator class
-    guard = gd.Guard.from_string(
+    guard = gd.Guard.for_string(
         validators=[always_fail(OnFailAction.REASK)],
         description="Some description",
     )
 
     guard.parse(
         llm_output="Tomato Cheese Pizza",
-        llm_api=get_static_openai_chat_create_func(),
-        msg_history=[
+        model="gpt-3.5-turbo",
+        messages=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},
         ],

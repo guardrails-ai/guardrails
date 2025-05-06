@@ -1,6 +1,18 @@
+import json
 from typing import Any, Dict, List, Optional
 
-from guardrails.telemetry.common import get_span, serialize, to_dict
+from guardrails.telemetry.common import (
+    get_span,
+    to_dict,
+    serialize,
+    recursive_key_operation,
+    redact,
+)
+
+try:
+    from openinference.semconv.trace import SpanAttributes  # type: ignore
+except ImportError:
+    SpanAttributes = None
 
 
 def trace_operation(
@@ -75,7 +87,8 @@ def trace_llm_call(
 
     if current_span is None:
         return
-
+    if SpanAttributes is not None:
+        current_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
     ser_function_call = serialize(function_call)
     if ser_function_call:
         current_span.set_attribute("llm.function_call", ser_function_call)
@@ -92,9 +105,18 @@ def trace_llm_call(
                     )
 
     ser_invocation_parameters = serialize(invocation_parameters)
-    if ser_invocation_parameters:
+    redacted_ser_invocation_parameters = recursive_key_operation(
+        ser_invocation_parameters, redact
+    )
+    reser_invocation_parameters = (
+        json.dumps(redacted_ser_invocation_parameters)
+        if isinstance(redacted_ser_invocation_parameters, dict)
+        or isinstance(redacted_ser_invocation_parameters, list)
+        else redacted_ser_invocation_parameters
+    )
+    if reser_invocation_parameters:
         current_span.set_attribute(
-            "llm.invocation_parameters", ser_invocation_parameters
+            "llm.invocation_parameters", reser_invocation_parameters
         )
 
     ser_model_name = serialize(model_name)

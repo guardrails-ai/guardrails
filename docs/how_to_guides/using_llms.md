@@ -58,7 +58,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
@@ -170,7 +170,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
@@ -235,7 +235,7 @@ class Fruit(BaseModel):
 class Basket(BaseModel):
     fruits: List[Fruit]
     
-guard = Guard.from_pydantic(Basket)
+guard = Guard.for_pydantic(Basket)
 
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
@@ -287,5 +287,61 @@ for chunk in stream_chunk_generator
 ```
 
 ## Other LLMs
+As mentioned at the top of this page, over 100 LLMs are supported through our litellm integration, including (but not limited to)
 
-See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.
+- Anthropic
+- AWS Bedrock
+- Anyscale
+- Huggingface
+- Mistral
+- Predibase
+- Fireworks
+
+
+Find your LLM in LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers). Then, follow those same steps and set the same environment variables they guide you to use, but invoke a `Guard` object instead of the litellm object.
+
+Guardrails will wire through the arguments to litellm, run the Guarding process, and return a validated outcome.
+
+## Custom LLM Wrappers
+In case you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. In order to use a custom LLM, create a function that accepts a positional argument for the prompt as a string and any other arguments that you want to pass to the LLM API as keyword args. The function should return the output of the LLM API as a string.
+Install ProfanityFree from hub:
+```
+guardrails hub install hub://guardrails/profanity_free
+```
+```python
+from guardrails import Guard
+from guardrails.hub import ProfanityFree
+
+# Create a Guard class
+guard = Guard().use(ProfanityFree())
+
+# Function that takes the prompt as a string and returns the LLM output as string
+def my_llm_api(
+    *,
+    **kwargs
+) -> str:
+    """Custom LLM API wrapper.
+
+    At least one of messages should be provided.
+
+    Args:
+        **kwargs: Any additional arguments to be passed to the LLM API
+
+    Returns:
+        str: The output of the LLM API
+    """
+    messages = kwargs.pop("messages", [])
+    updated_messages = some_message_processing(messages)
+    # Call your LLM API here
+    # What you pass to the llm will depend on what arguments it accepts.
+    llm_output = some_llm(updated_messages, **kwargs)
+
+    return llm_output
+
+# Wrap your LLM API call
+validated_response = guard(
+    my_llm_api,
+    messages=[{"role":"user","content":"Can you generate a list of 10 things that are not food?"}],
+    **kwargs,
+)
+```

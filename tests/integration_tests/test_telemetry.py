@@ -81,6 +81,12 @@ class TestTelemetry:
             "guardrails.utils.hub_telemetry_utils.OTLPSpanExporter",
             return_value=hub_exporter,
         )
+        hub_processor = SimpleSpanProcessor(hub_exporter)
+
+        mocker.patch(
+            "guardrails.utils.hub_telemetry_utils.BatchSpanProcessor",
+            return_value=hub_processor,
+        )
 
         from guardrails import Guard
         from tests.integration_tests.test_assets.validators import LowerCase
@@ -95,10 +101,18 @@ class TestTelemetry:
         hub_spans = hub_exporter.get_finished_spans()
 
         assert len(private_spans) == 0
-        assert len(hub_spans) == 3
+        assert len(hub_spans) == 6
 
-        for span in hub_spans:
-            assert span.name in ["/guard_call", "/validator_usage", "/reasks"]
+        span_names = sorted([span.name for span in hub_spans])
+
+        assert span_names == [
+            "/guard_call",
+            "/llm_call",
+            "/reasks",
+            "/step",
+            "/validation",
+            "/validator_usage",
+        ]
 
     @pytest.mark.no_hub_telemetry_mock
     def test_no_cross_contamination(self, mocker):
@@ -117,6 +131,13 @@ class TestTelemetry:
             "guardrails.utils.hub_telemetry_utils.OTLPSpanExporter"
         )
         mock_hub_otlp_span_exporter.return_value = hub_exporter
+
+        hub_processor = SimpleSpanProcessor(hub_exporter)
+
+        mocker.patch(
+            "guardrails.utils.hub_telemetry_utils.BatchSpanProcessor",
+            return_value=hub_processor,
+        )
 
         from guardrails.telemetry import default_otel_collector_tracer
         from guardrails import Guard
@@ -143,6 +164,15 @@ class TestTelemetry:
                 "guardrails/guard/step/validator",
             ]
 
-        assert len(hub_spans) == 3
-        for span in hub_spans:
-            assert span.name in ["/guard_call", "/validator_usage", "/reasks"]
+        assert len(hub_spans) == 6
+
+        span_names = sorted([span.name for span in hub_spans])
+
+        assert span_names == [
+            "/guard_call",
+            "/llm_call",
+            "/reasks",
+            "/step",
+            "/validation",
+            "/validator_usage",
+        ]

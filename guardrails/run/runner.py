@@ -15,10 +15,12 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
-from guardrails.run.utils import msg_history_source, msg_history_string
+from guardrails.prompt import Prompt
+from guardrails.prompt.messages import Messages
+from guardrails.run.utils import messages_source
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
+from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -28,10 +30,8 @@ from guardrails.utils.parsing_utils import (
     parse_llm_output,
     prune_extra_keys,
 )
-from guardrails.run.utils import preprocess_prompt
 from guardrails.utils.prompt_utils import (
     prompt_content_for_schema,
-    prompt_uses_xml,
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.telemetry import trace_call, trace_step
@@ -61,9 +61,7 @@ class Runner:
     metadata: Dict[str, Any]
 
     # LLM Inputs
-    prompt: Optional[Prompt] = None
-    instructions: Optional[Instructions] = None
-    msg_history: Optional[List[Dict[str, Union[Prompt, str]]]] = None
+    messages: Optional[List[Dict[str, Union[Prompt, str]]]] = None
     base_model: Optional[ModelOrListOfModels]
     exec_options: Optional[GuardExecutionOptions]
 
@@ -77,7 +75,7 @@ class Runner:
     disable_tracer: Optional[bool] = True
 
     # QUESTION: Are any of these init args actually necessary for initialization?
-    # ANSWER: _Maybe_ prompt, instructions, and msg_history for Prompt initialization
+    # ANSWER: _Maybe_ messages for Prompt initialization
     #   but even that can happen at execution time.
     # TODO: In versions >=0.6.x, remove this class and just execute a Guard functionally
     def __init__(
@@ -87,9 +85,7 @@ class Runner:
         num_reasks: int,
         validation_map: ValidatorMap,
         *,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         api: Optional[PromptCallableBase] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
@@ -113,34 +109,19 @@ class Runner:
         xml_output_schema = json_schema_to_rail_output(
             json_schema=output_schema, validator_map=validation_map
         )
-        if prompt:
-            self.exec_options.prompt = prompt
-            self.prompt = Prompt(
-                prompt,
-                output_schema=stringified_output_schema,
-                xml_output_schema=xml_output_schema,
-            )
 
-        if instructions:
-            self.exec_options.instructions = instructions
-            self.instructions = Instructions(
-                instructions,
-                output_schema=stringified_output_schema,
-                xml_output_schema=xml_output_schema,
-            )
-
-        if msg_history:
-            self.exec_options.msg_history = msg_history
-            msg_history_copy = []
-            for msg in msg_history:
+        if messages:
+            self.exec_options.messages = messages
+            messages_copy = []
+            for msg in messages:
                 msg_copy = copy.deepcopy(msg)
                 msg_copy["content"] = Prompt(
                     msg_copy["content"],
                     output_schema=stringified_output_schema,
                     xml_output_schema=xml_output_schema,
                 )
-                msg_history_copy.append(msg_copy)
-            self.msg_history = msg_history_copy
+                messages_copy.append(msg_copy)
+            self.messages = messages_copy
 
         self.base_model = base_model
 
@@ -154,10 +135,11 @@ class Runner:
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
 
-        if not self._disable_tracer:
-            # Get the HubTelemetry singleton
-            self._hub_telemetry = HubTelemetry()
+        # Get the HubTelemetry singleton
+        self._hub_telemetry = HubTelemetry()
+        self._hub_telemetry._enabled = not self._disable_tracer
 
+    @trace(name="/reasks", origin="Runner.__call__")
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -171,23 +153,14 @@ class Runner:
         """
         prompt_params = prompt_params or {}
         try:
-            # Figure out if we need to include instructions in the prompt.
-            include_instructions = not (
-                self.instructions is None and self.msg_history is None
-            )
-
             # NOTE: At first glance this seems gratuitous,
             #   but these local variables are reassigned after
             #   calling self.prepare_to_loop
             (
-                instructions,
-                prompt,
-                msg_history,
+                messages,
                 output_schema,
             ) = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
+                self.messages,
                 self.output_schema,
             )
 
@@ -197,9 +170,7 @@ class Runner:
                 iteration = self.step(
                     index=index,
                     api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
+                    messages=messages,
                     prompt_params=prompt_params,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
@@ -211,25 +182,12 @@ class Runner:
                     break
 
                 # Get new prompt and output schema.
-                (prompt, instructions, output_schema, msg_history) = (
-                    self.prepare_to_loop(
-                        iteration.reasks,
-                        output_schema,
-                        parsed_output=iteration.outputs.parsed_output,
-                        validated_output=call_log.validation_response,
-                        prompt_params=prompt_params,
-                        include_instructions=include_instructions,
-                    )
-                )
-
-            # Log how many times we reasked
-            # Use the HubTelemetry singleton
-            if not self._disable_tracer:
-                self._hub_telemetry.create_new_span(
-                    span_name="/reasks",
-                    attributes=[("reask_count", index)],
-                    is_parent=False,  # This span has no children
-                    has_parent=True,  # This span has a parent
+                (output_schema, messages) = self.prepare_to_loop(
+                    iteration.reasks,
+                    output_schema,
+                    parsed_output=iteration.outputs.parsed_output,
+                    validated_output=call_log.validation_response,
+                    prompt_params=prompt_params,
                 )
 
         except UserFacingException as e:
@@ -242,6 +200,7 @@ class Runner:
             raise e
         return call_log
 
+    @trace(name="/step", origin="Runner.step")
     @trace_step
     def step(
         self,
@@ -250,9 +209,7 @@ class Runner:
         call_log: Call,
         *,
         api: Optional[PromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
@@ -261,9 +218,7 @@ class Runner:
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -279,26 +234,20 @@ class Runner:
         try:
             # Prepare: run pre-processing, and input validation.
             if output is not None:
-                instructions = None
-                prompt = None
-                msg_history = None
+                messages = None
             else:
-                instructions, prompt, msg_history = self.prepare(
+                messages = self.prepare(
                     call_log,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
+                    messages=messages,
                     prompt_params=prompt_params,
                     api=api,
                     attempt_number=index,
                 )
 
-            iteration.inputs.instructions = instructions
-            iteration.inputs.prompt = prompt
-            iteration.inputs.msg_history = msg_history
+            iteration.inputs.messages = messages
 
             # Call: run the API.
-            llm_response = self.call(instructions, prompt, msg_history, api, output)
+            llm_response = self.call(messages, api, output)
 
             iteration.outputs.llm_response_info = llm_response
             raw_output = llm_response.output
@@ -335,55 +284,69 @@ class Runner:
             raise e
         return iteration
 
-    def validate_msg_history(
-        self, call_log: Call, msg_history: MessageHistory, attempt_number: int
+    @trace(name="/input_validation", origin="Runner.validate_messages")
+    def validate_messages(
+        self, call_log: Call, messages: MessageHistory, attempt_number: int
     ) -> None:
-        msg_str = msg_history_string(msg_history)
-        inputs = Inputs(
-            llm_output=msg_str,
-        )
-        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
-        call_log.iterations.insert(0, iteration)
-        value, _metadata = validator_service.validate(
-            value=msg_str,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="msg_history",
-        )
-        validated_msg_history = validator_service.post_process_validation(
-            value, attempt_number, iteration, OutputTypes.STRING
-        )
-
-        iteration.outputs.validation_response = validated_msg_history
-        if isinstance(validated_msg_history, ReAsk):
-            raise ValidationError(
-                f"Message history validation failed: " f"{validated_msg_history}"
+        for msg in messages:
+            content = (
+                msg["content"].source
+                if isinstance(msg["content"], Prompt)
+                else msg["content"]
             )
-        if validated_msg_history != msg_str:
-            raise ValidationError("Message history validation failed")
+            inputs = Inputs(
+                llm_output=content,
+            )
+            iteration = Iteration(
+                call_id=call_log.id, index=attempt_number, inputs=inputs
+            )
+            call_log.iterations.insert(0, iteration)
+            value, _metadata = validator_service.validate(
+                value=content,
+                metadata=self.metadata,
+                validator_map=self.validation_map,
+                iteration=iteration,
+                disable_tracer=self._disable_tracer,
+                path="messages",
+            )
 
-    def prepare_msg_history(
+            validated_msg = validator_service.post_process_validation(
+                value, attempt_number, iteration, OutputTypes.STRING
+            )
+
+            iteration.outputs.validation_response = validated_msg
+
+            if isinstance(validated_msg, ReAsk):
+                raise ValidationError(f"Messages validation failed: {validated_msg}")
+            elif not validated_msg or iteration.status == fail_status:
+                raise ValidationError("Messages validation failed")
+
+            msg["content"] = cast(str, validated_msg)
+
+        return messages  # type: ignore
+
+    def prepare_messages(
         self,
         call_log: Call,
-        msg_history: MessageHistory,
+        messages: MessageHistory,
         prompt_params: Dict,
         attempt_number: int,
     ) -> MessageHistory:
-        formatted_msg_history: MessageHistory = []
+        formatted_messages: MessageHistory = []
         # Format any variables in the message history with the prompt params.
-        for msg in msg_history:
+        for msg in messages:
             msg_copy = copy.deepcopy(msg)
-            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-            formatted_msg_history.append(msg_copy)
+            if attempt_number == 0:
+                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            formatted_messages.append(msg_copy)
 
-        # validate msg_history
-        if "msg_history" in self.validation_map:
-            self.validate_msg_history(call_log, formatted_msg_history, attempt_number)
+        # validate messages
+        if "messages" in self.validation_map:
+            self.validate_messages(call_log, formatted_messages, attempt_number)
 
-        return formatted_msg_history
+        return formatted_messages
 
+    @trace(name="/input_validation", origin="Runner.validate_prompt")
     def validate_prompt(self, call_log: Call, prompt: Prompt, attempt_number: int):
         inputs = Inputs(
             llm_output=prompt.source,
@@ -411,128 +374,37 @@ class Runner:
             raise ValidationError("Prompt validation failed")
         return Prompt(cast(str, validated_prompt))
 
-    def validate_instructions(
-        self, call_log: Call, instructions: Instructions, attempt_number: int
-    ):
-        inputs = Inputs(
-            llm_output=instructions.source,
-        )
-        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
-        call_log.iterations.insert(0, iteration)
-        value, _metadata = validator_service.validate(
-            value=instructions.source,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="instructions",
-        )
-        validated_instructions = validator_service.post_process_validation(
-            value, attempt_number, iteration, OutputTypes.STRING
-        )
-
-        iteration.outputs.validation_response = validated_instructions
-        if isinstance(validated_instructions, ReAsk):
-            raise ValidationError(
-                f"Instructions validation failed: {validated_instructions}"
-            )
-        elif not validated_instructions or iteration.status == fail_status:
-            raise ValidationError("Instructions validation failed")
-        return Instructions(cast(str, validated_instructions))
-
-    def prepare_prompt(
-        self,
-        call_log: Call,
-        instructions: Optional[Instructions],
-        prompt: Prompt,
-        prompt_params: Dict,
-        api: Union[PromptCallableBase, AsyncPromptCallableBase],
-        attempt_number: int,
-    ):
-        use_xml = prompt_uses_xml(self.prompt._source) if self.prompt else False
-        prompt = prompt.format(**prompt_params)
-
-        # TODO(shreya): should there be any difference
-        #  to parsing params for prompt?
-        if instructions is not None and isinstance(instructions, Instructions):
-            instructions = instructions.format(**prompt_params)
-
-        instructions, prompt = preprocess_prompt(
-            prompt_callable=api,
-            instructions=instructions,
-            prompt=prompt,
-            output_type=self.output_type,
-            use_xml=use_xml,
-        )
-
-        # validate prompt
-        if "prompt" in self.validation_map and prompt is not None:
-            prompt = self.validate_prompt(call_log, prompt, attempt_number)
-
-        # validate instructions
-        if "instructions" in self.validation_map and instructions is not None:
-            instructions = self.validate_instructions(
-                call_log, instructions, attempt_number
-            )
-
-        return instructions, prompt
-
+    @trace(name="/input_prep", origin="Runner.prepare")
     def prepare(
         self,
         call_log: Call,
         attempt_number: int,
         *,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[MessageHistory],
+        messages: Optional[MessageHistory],
         prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[MessageHistory]]:
+    ) -> Optional[MessageHistory]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
-            The instructions, prompt, and message history.
+            The message history.
         """
         prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
-        has_prompt_validation = "prompt" in self.validation_map
-        has_instructions_validation = "instructions" in self.validation_map
-        has_msg_history_validation = "msg_history" in self.validation_map
-        if msg_history:
-            if has_prompt_validation or has_instructions_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Prompt and instructions validation are "
-                        "not supported when using message history."
-                    )
-                )
-            prompt, instructions = None, None
-            msg_history = self.prepare_msg_history(
-                call_log, msg_history, prompt_params, attempt_number
-            )
-        elif prompt is not None:
-            if has_msg_history_validation:
-                raise UserFacingException(
-                    ValueError(
-                        "Message history validation is "
-                        "not supported when using prompt/instructions."
-                    )
-                )
-            msg_history = None
-            instructions, prompt = self.prepare_prompt(
-                call_log, instructions, prompt, prompt_params, api, attempt_number
+        if messages:
+            messages = self.prepare_messages(
+                call_log, messages, prompt_params, attempt_number
             )
 
-        return instructions, prompt, msg_history
+        return messages
 
+    @trace(name="/llm_call", origin="Runner.call")
     @trace_call
     def call(
         self,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[MessageHistory],
+        messages: Optional[MessageHistory],
         api: Optional[PromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
@@ -554,12 +426,8 @@ class Runner:
             llm_response = LLMResponse(output=output)
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
-        elif msg_history:
-            llm_response = api_fn(msg_history=msg_history_source(msg_history))
-        elif prompt and instructions:
-            llm_response = api_fn(prompt.source, instructions=instructions.source)
-        elif prompt:
-            llm_response = api_fn(prompt.source)
+        elif messages:
+            llm_response = api_fn(messages=messages_source(messages))
         else:
             llm_response = api_fn()
 
@@ -572,6 +440,7 @@ class Runner:
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
+    @trace(name="/validation", origin="Runner.validate")
     def validate(
         self,
         iteration: Iteration,
@@ -635,16 +504,13 @@ class Runner:
         parsed_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
-        include_instructions: bool = False,
     ) -> Tuple[
-        Prompt,
-        Optional[Instructions],
         Dict[str, Any],
-        Optional[List[Dict]],
+        Optional[Union[List[Dict], Messages]],
     ]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
-        output_schema, prompt, instructions = get_reask_setup(
+        output_schema, messages = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,
             validation_map=self.validation_map,
@@ -655,8 +521,5 @@ class Runner:
             prompt_params=prompt_params,
             exec_options=self.exec_options,
         )
-        if not include_instructions:
-            instructions = None
-        # todo add messages support
-        msg_history = None
-        return prompt, instructions, output_schema, msg_history
+
+        return output_schema, messages

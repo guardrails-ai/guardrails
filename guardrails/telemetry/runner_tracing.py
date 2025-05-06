@@ -1,12 +1,17 @@
 import json
 from functools import wraps
 from typing import (
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
-    Generator,
+    Iterator,
     Optional,
 )
+
+try:
+    from openinference.semconv.trace import SpanAttributes  # type: ignore
+except ImportError:
+    SpanAttributes = None
 
 from opentelemetry import context, trace
 from opentelemetry.trace import StatusCode, Span
@@ -17,10 +22,20 @@ from guardrails.settings import settings
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
-from guardrails.telemetry.common import get_tracer, serialize
+from guardrails.telemetry.common import (
+    get_tracer,
+    add_user_attributes,
+    serialize,
+    recursive_key_operation,
+    redact,
+)
 from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
 
+import sys
+
+if sys.version_info.minor < 10:
+    from guardrails.utils.polyfills import anext
 
 #########################################
 ### START Runner.step Instrumentation ###
@@ -41,10 +56,14 @@ def add_step_attributes(
 
     ser_args = [serialize(arg) for arg in args]
     ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+
     inputs = {
         "args": [sarg for sarg in ser_args if sarg is not None],
         "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
     }
+    for k in inputs:
+        inputs[k] = recursive_key_operation(inputs[k], redact)
+
     step_span.set_attribute("input.mime_type", "application/json")
     step_span.set_attribute("input.value", json.dumps(inputs))
 
@@ -69,13 +88,19 @@ def trace_step(fn: Callable[..., Iteration]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
+                if SpanAttributes is not None:
+                    step_span.set_attribute(
+                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                    )
                 try:
                     response = fn(*args, **kwargs)
                     add_step_attributes(step_span, response, *args, **kwargs)
+                    add_user_attributes(step_span)
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
                     add_step_attributes(step_span, None, *args, **kwargs)
+                    add_user_attributes(step_span)
                     raise e
         else:
             return fn(*args, **kwargs)
@@ -84,8 +109,8 @@ def trace_step(fn: Callable[..., Iteration]):
 
 
 def trace_stream_step_generator(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]], *args, **kwargs
-) -> Generator[ValidationOutcome[OT], None, None]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> Iterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -95,6 +120,8 @@ def trace_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
+        if SpanAttributes is not None:
+            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
@@ -111,17 +138,16 @@ def trace_stream_step_generator(
             call = safe_get(args, 8, kwargs.get("call_log", None))
             iteration = call.iterations.last if call else None
             add_step_attributes(step_span, iteration, *args, **kwargs)
+            add_user_attributes(step_span)
             if exception:
                 raise exception
 
 
 def trace_stream_step(
-    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]],
-) -> Callable[..., Generator[ValidationOutcome[OT], None, None]]:
+    fn: Callable[..., Iterator[ValidationOutcome[OT]]],
+) -> Callable[..., Iterator[ValidationOutcome[OT]]]:
     @wraps(fn)
-    def trace_stream_step_wrapper(
-        *args, **kwargs
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    def trace_stream_step_wrapper(*args, **kwargs) -> Iterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_stream_step_generator(fn, *args, **kwargs)
         else:
@@ -142,12 +168,19 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
+                if SpanAttributes is not None:
+                    step_span.set_attribute(
+                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
+                    )
                 try:
                     response = await fn(*args, **kwargs)
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, response, *args, **kwargs)
+
                     return response
                 except Exception as e:
                     step_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_user_attributes(step_span)
                     add_step_attributes(step_span, None, *args, **kwargs)
                     raise e
 
@@ -158,8 +191,8 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
 
 
 async def trace_async_stream_step_generator(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]], *args, **kwargs
-) -> AsyncIterable[ValidationOutcome[OT]]:
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]], *args, **kwargs
+) -> AsyncIterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
     tracer = get_tracer()
     tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
@@ -169,6 +202,8 @@ async def trace_async_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
+        if SpanAttributes is not None:
+            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
@@ -177,6 +212,8 @@ async def trace_async_stream_step_generator(
                     res = await anext(gen)  # type: ignore
                     yield res
                 except StopIteration:
+                    next_exists = False
+                except StopAsyncIteration:
                     next_exists = False
         except Exception as e:
             step_span.set_status(status=StatusCode.ERROR, description=str(e))
@@ -190,12 +227,12 @@ async def trace_async_stream_step_generator(
 
 
 def trace_async_stream_step(
-    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]],
+    fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]],
 ):
     @wraps(fn)
     async def trace_async_stream_step_wrapper(
         *args, **kwargs
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterator[ValidationOutcome[OT]]:
         if not settings.disable_tracing:
             return trace_async_stream_step_generator(fn, *args, **kwargs)
         else:
@@ -230,6 +267,8 @@ def add_call_attributes(
         "args": [sarg for sarg in ser_args if sarg is not None],
         "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
     }
+    for k in inputs:
+        inputs[k] = recursive_key_operation(inputs[k], redact)
     call_span.set_attribute("input.mime_type", "application/json")
     call_span.set_attribute("input.value", json.dumps(inputs))
 
@@ -256,6 +295,11 @@ def trace_call(fn: Callable[..., LLMResponse]):
             ) as call_span:
                 try:
                     response = fn(*args, **kwargs)
+                    if isinstance(response, LLMResponse) and (
+                        response.async_stream_output or response.stream_output
+                    ):
+                        # TODO: Iterate, add a call attr each time
+                        return response
                     add_call_attributes(call_span, response, *args, **kwargs)
                     return response
                 except Exception as e:

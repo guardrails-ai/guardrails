@@ -58,7 +58,7 @@ A template can also be a local json file with the format above. A config for it 
 guardrails create --template chatbot.json
 ```
 
-The validator arguments and entries can be updated manually or programatically. 
+The validator arguments and entries can be updated manually or programmatically. 
 
 For example we could update kwargs to only identify and fix location.
 
@@ -255,7 +255,7 @@ terraform apply -var="aws_region=us-east-1" -var="backend_memory=2048" -var="bac
 Once the deployment has succeeded you should see some output values (which will be required if you wish to set up CI).
 
 
-## Step4: Deploying Guardrails API
+## Step 4: Deploying Guardrails API
 ### Manual
 
 Firstly, create or use your existing guardrails token and export it to your current shell `export GUARDRAILS_TOKEN="..."`
@@ -444,7 +444,67 @@ By setting the above environment variable `GUARDRAILS_BASE_URL` the SDK will be 
 
 ## Quick Start Repository Template
 
-We've conveniently packaged all the artifacts from this document in a github repository that can be used as a template for your own verification and deployment [here](https://github.com/guardrails-ai/continuous_integration_and_deployment_aws_template). 
+We've conveniently packaged all the artifacts from this document in a github repository that can be used as a template for your own verification and deployment [here](https://github.com/guardrails-ai/continuous_integration_and_deployment_aws_template).
+
+## Diagram
+
+```mermaid
+graph TD
+    %% Internet and IGW
+    Internet((Internet)) --> IGW[Internet Gateway]
+    IGW --> RouteTable[Public Route Table]
+
+    %% VPC Container
+    VPC[VPC<br/>10.0.0.0/16] --> IGW
+    
+    %% IAM Permissions Group
+    subgraph ECSIAMPermissions["ECS IAM Permissions"]
+        ExecutionRole[ECS Execution Role]
+        TaskRole[ECS Task Role]
+    end
+    
+    %% Public Subnet Group
+    subgraph PublicSubnets["Public Subnets x3"]
+        NLB[Network Load Balancer]
+        TG[Target Group<br/>TCP:80]
+        SG[Security Group<br/>Ingress: 8000<br/>Egress: All]
+        ECSCluster[ECS Cluster]
+        
+        %% ECS Components
+        ECSService[ECS Service]
+        TaskDef[Task Definition<br/>CPU: 1024<br/>Memory: 2048]
+        Container[Container<br/>Port: 8000]
+        
+        %% Internal Connections
+        NLB --> |Port 80| TG
+        TG --> ECSService
+        ECSCluster --> ECSService
+        SG --> ECSService
+        ECSService --> TaskDef
+        TaskDef --> Container
+    end
+    
+    %% IAM Connections
+    ECSIAMPermissions --> TaskDef
+    
+    %% Route Table Connection
+    RouteTable --> PublicSubnets
+    
+    %% External Service Connections
+    CloudWatchLogs[CloudWatch Log Group] --> Container
+    ECR[ECR Repository] --> |Image| Container
+    
+    %% Internet Access
+    Internet --> NLB
+
+    %% Styling
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:black
+    classDef subnet fill:#FFD700,stroke:#232F3E,stroke-width:2px,color:black
+    classDef iam fill:#FF6B6B,stroke:#232F3E,stroke-width:2px,color:black
+    class VPC,IGW,NATGateway,RouteTable,NLB,TG,ECSCluster,ECSService,TaskDef,Container,SG,CloudWatchLogs,ECR aws
+    class PublicSubnets subnet
+    class ECSIAMPermissions,ExecutionRole,TaskRole iam
+```
 
 ## Terraform
 
@@ -579,7 +639,7 @@ resource "aws_lb_listener" "app_lb_listener" {
 resource "aws_lb_target_group" "app_lb" {
   name        = "${local.deployment_name}-nlb-tg"
   protocol    = "TCP"
-  port        = 80
+  port        = var.backend_server_port
   vpc_id      = aws_vpc.backend.id
   target_type = "ip"
 
@@ -590,6 +650,7 @@ resource "aws_lb_target_group" "app_lb" {
     timeout             = "3"
     unhealthy_threshold = "3"
     path                = "/"
+    port                = var.backend_server_port
   }
 
   lifecycle {

@@ -97,7 +97,3 @@ Here's an example of the structure:
   ],
   "interest_rates": {}
 }
-
-
-Json Output:
-

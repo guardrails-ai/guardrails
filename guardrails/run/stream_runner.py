@@ -1,17 +1,14 @@
-from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
-    LiteLLMCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
     PromptCallableBase,
 )
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
+from guardrails.hub_telemetry.hub_tracing import trace_stream
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,
@@ -20,6 +17,7 @@ from guardrails.utils.parsing_utils import (
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
 from guardrails.telemetry import trace_stream_step
+from guardrails.utils.safe_get import safe_get
 
 
 class StreamRunner(Runner):
@@ -30,9 +28,10 @@ class StreamRunner(Runner):
     similar.
     """
 
+    @trace_stream(name="/reasks", origin="StreamRunner.__call__")
     def __call__(
         self, call_log: Call, prompt_params: Optional[Dict] = {}
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         """Execute the StreamRunner.
 
         Args:
@@ -42,58 +41,44 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
-        # This is only used during ReAsks and ReAsks
-        #   are not yet supported for streaming.
-        # Figure out if we need to include instructions in the prompt.
-        # include_instructions = not (
-        #     self.instructions is None and self.msg_history is None
-        # )
+
         prompt_params = prompt_params or {}
 
         (
-            instructions,
-            prompt,
-            msg_history,
+            messages,
             output_schema,
         ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
+            self.messages,
             self.output_schema,
         )
 
         return self.step(
             index=0,
             api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             output_schema=output_schema,
             output=self.output,
             call_log=call_log,
         )
 
+    @trace_stream(name="/step", origin="StreamRunner.step")
     @trace_stream_step
     def step(
         self,
         index: int,
         api: Optional[PromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
         output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Iterator[ValidationOutcome[OT]]:
         """Run a full step."""
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -108,26 +93,20 @@ class StreamRunner(Runner):
 
         # Prepare: run pre-processing, and input validation.
         if output is not None:
-            instructions = None
-            prompt = None
-            msg_history = None
+            messages = None
         else:
-            instructions, prompt, msg_history = self.prepare(
+            messages = self.prepare(
                 call_log,
                 index,
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                messages=messages,
                 prompt_params=prompt_params,
                 api=api,
             )
 
-        iteration.inputs.prompt = prompt
-        iteration.inputs.instructions = instructions
-        iteration.inputs.msg_history = msg_history
+        iteration.inputs.messages = messages
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(instructions, prompt, msg_history, api, output)
+        llm_response = self.call(messages, api, output)
 
         iteration.outputs.llm_response_info = llm_response
 
@@ -148,7 +127,7 @@ class StreamRunner(Runner):
         # for now, handle string and json schema differently
         if self.output_type == OutputTypes.STRING:
 
-            def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
+            def prepare_chunk_generator(stream) -> Iterator[Tuple[Any, bool]]:
                 for chunk in stream:
                     chunk_text = self.get_chunk_text(chunk, api)
                     nonlocal fragment
@@ -262,41 +241,77 @@ class StreamRunner(Runner):
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
         try:
+            if (
+                not chunk.choices or len(chunk.choices) == 0
+            ) and chunk.usage is not None:
+                # This is the last extra chunk for usage statistics
+                return True
             finished = chunk.choices[0].finish_reason
             return finished is not None
         except (AttributeError, TypeError):
             return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
-        """Get the text from a chunk."""
-        chunk_text = ""
-        if isinstance(api, OpenAICallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].text
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, OpenAIChatCallable) or isinstance(api, LiteLLMCallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
-            if not finished and content:
-                chunk_text = content
-        else:
-            try:
-                chunk_text = chunk
-            except Exception as e:
+        """Get the text from a chunk.
+
+        chunk is assumed to be an Iterator of either string or
+        ChatCompletionChunk
+
+        These types are not properly enforced upstream so we must use
+        reflection
+        """
+        # Safeguard against None
+        # which can happen when the user provides
+        # custom LLM wrappers
+        if not chunk:
+            return ""
+        elif isinstance(chunk, str):
+            # If chunk is a string, return it
+            return chunk
+        elif hasattr(chunk, "choices") and hasattr(chunk.choices, "__iter__"):
+            # If chunk is a ChatCompletionChunk, return the text
+            # from the first choice
+            chunk_text = ""
+            first_choice = safe_get(chunk.choices, 0)
+            if not first_choice:
+                return chunk_text
+
+            if hasattr(first_choice, "delta") and hasattr(
+                first_choice.delta, "content"
+            ):
+                chunk_text = first_choice.delta.content
+            elif hasattr(first_choice, "text"):
+                chunk_text = first_choice.text
+            else:
+                # If chunk is not a string or ChatCompletionChunk, raise an error
                 raise ValueError(
-                    f"Error getting chunk from stream: {e}. "
-                    "Non-OpenAI API callables expected to return "
+                    "chunk.choices[0] does not have "
+                    "delta.content or text. "
+                    "Non-OpenAI compliant callables must return "
                     "a generator of strings."
-                ) from e
-        return chunk_text
+                )
+
+            if not chunk_text:
+                # If chunk_text is empty, return an empty string
+                return ""
+            elif not isinstance(chunk_text, str):
+                # If chunk_text is not a string, raise an error
+                raise ValueError(
+                    "Chunk text is not a string. "
+                    "Non-OpenAI compliant callables must return "
+                    "a generator of strings."
+                )
+            return chunk_text
+        else:
+            # If chunk is not a string or ChatCompletionChunk, raise an error
+            raise ValueError(
+                "Chunk is not a string or ChatCompletionChunk. "
+                "Non-OpenAI compliant callables must return "
+                "a generator of strings."
+            )
 
     def parse(
-        self,
-        output: str,
-        output_schema: Dict[str, Any],
-        *,
-        verified: set,
+        self, output: str, output_schema: Dict[str, Any], *, verified: set, **kwargs
     ):
         """Parse the output."""
         parsed_output, error = parse_llm_output(

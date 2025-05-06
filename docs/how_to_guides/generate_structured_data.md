@@ -29,7 +29,7 @@ class Delivery(BaseModel):
 class Schedule(BaseModel):
     deliveries: List[Delivery]
 
-guard = Guard.from_pydantic(Schedule)
+guard = Guard.for_pydantic(Schedule)
 chat_history="""
 nelson and murdock: i need a pickup 797 9th Avenue, manila envelope, June 3 10:00am with dropoff 10:30am Courthouse, 61 Center Street C/O frank james
 operator: quote - $23.00
@@ -101,14 +101,14 @@ response = guard(
 For Hugging Face models structured JSON output maybe returned utilizing constrained decoding. Constrained decoding is a technique that allows you to guide the model to generate a specific type of output, a little bit like JSON ad-libs. Learn more about constrained decoding [here](https://www.guardrailsai.com/blog/json-with-open-source-models).
 
 ```python
-g = Guard.from_pydantic(NewFriends, output_formatter="jsonformer")
+g = Guard.for_pydantic(NewFriends, output_formatter="jsonformer")
 
 # JSONFormer is only compatible with HF Pipelines and HF Models:
 from transformers import pipeline
 pipe = pipeline("text-generation", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 # Inference is straightforward:
-out = g(pipe, prompt=prompt).validated_output
+out = g(pipe, messages=[{"role":"user","content":prompt}]).validated_output
 
 # `out` is a dict.  Format it as JSON for readability:
 import json
@@ -129,5 +129,19 @@ response = guard(
     messages=messages,
     prompt_params={"chat_history": chat_history},
     response_format={ "type": "json_object" }
+)
+```
+
+
+### Strict JSON Mode
+For models that support strict JSON mode, 
+
+
+```py
+response = guard(
+    model="gpt-4o",
+    messages=messages,
+    prompt_params={"chat_history": chat_history},
+    response_format=g.response_format_json_schema()
 )
 ```

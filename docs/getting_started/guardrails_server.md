@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Guardrails Server
+# Quickstart: Guardrails Server
 
 # Overview
 
@@ -12,6 +12,13 @@ Together, these features make it easier to get started, and make it possible to 
 This document will overview a few of the key features of the Guardrails Server, and how to get started.
 
 # Walkthrough
+
+## 0. Configure Guardrails
+First, get a free auth key from [Guardrails Hub](https://hub.guardrailsai.com/keys). Then, configure the Guardrails CLI with the auth key.
+
+```bash
+guardrails configure
+```
 
 ## 1. Install the Guardrails Server
 This is done by simply installing the `guardrails-ai` package. See the [installation guide](./quickstart.md) for more information.
@@ -28,7 +35,7 @@ We'll use the `create` command on the guardrails CLI to do this. We'll specify t
 
 
 ```bash
-guardrails create --validators hub://guardrails/gibberish_text --name gibberish_guard
+guardrails create --validators hub://guardrails/gibberish_text --guard-name gibberish_guard
 ```
 
 :::note
@@ -113,20 +120,33 @@ A `guardrails` key is added to the response object, which includes the validatio
 :::
 
 ### Advanced Client Usage
-Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object.
+Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object. Default values can be set in the environment variables `GUARDRAILS_BASE_URL` for the URL and `GUARDRAILS_API_KEY` for the API key.
 
-To do this, you must first set a `use_server` flag in Guardrails settings.
+```python
+# Client code
+from guardrails import Guard
+
+name_guard = Guard.fetch_guard(name="gibberish_guard", base_url="http://myserver.com", api_key="exampleKey")
+
+validation_outcome = name_guard.validate("floofy doopy boopy")
+```
+
+#### Guardrails < v0.6.5
+In older versions of Guardrails, you must set the URL and API key through the environment variables mentioned above.
+
+#### Guardrails < v0.5.9
+In older versions of Guardrails, you need to set the `use_server` var in settings to True.
 
 ```python
 # Client code
 from guardrails import Guard, settings
 
 settings.use_server = True
-
 name_guard = Guard(name="gibberish_guard")
 
 validation_outcome = name_guard.validate("floofy doopy boopy")
 ```
+
 
 
 ## Learn More

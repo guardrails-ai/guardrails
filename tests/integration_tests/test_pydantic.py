@@ -1,6 +1,5 @@
 import json
 from typing import Dict, List
-
 import pytest
 from pydantic import BaseModel
 
@@ -8,10 +7,6 @@ import guardrails as gd
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call import Call
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.openai_utils import (
-    get_static_openai_chat_create_func,
-    get_static_openai_create_func,
-)
 
 from .mock_llm_outputs import pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
@@ -20,7 +15,7 @@ from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -40,10 +35,12 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.for_pydantic(
+        ListOfPeople,
+        messages=[{"role": "user", "content": VALIDATED_RESPONSE_REASK_PROMPT}],
+    )
     final_output = guard(
-        get_static_openai_create_func(),
-        engine="text-davinci-003",
+        model="text-davinci-003",
         max_tokens=512,
         temperature=0.5,
         num_reasks=2,
@@ -59,8 +56,8 @@ def test_pydantic_with_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 3
 
-    # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.COMPILED_PROMPT
+    # For original prompt and output
+    assert call.compiled_messages[0]["content"] == pydantic.COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
@@ -68,12 +65,12 @@ def test_pydantic_with_reask(mocker):
 
     # For re-asked prompt and output
     # Assert through iteration
-    assert call.iterations.at(1).inputs.prompt == gd.Prompt(
+    assert call.iterations.at(1).inputs.messages[1]["content"] == gd.Prompt(
         pydantic.COMPILED_PROMPT_REASK_1
     )
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_REASK_1
     # Assert through call shortcut properties
-    assert call.reask_prompts.first == pydantic.COMPILED_PROMPT_REASK_1
+    assert call.reask_messages.first[1]["content"] == pydantic.COMPILED_PROMPT_REASK_1
     assert call.raw_outputs.at(1) == pydantic.LLM_OUTPUT_REASK_1
 
     # We don't track merged validation output anymore
@@ -93,11 +90,11 @@ def test_pydantic_with_reask(mocker):
     )
 
     # For re-asked prompt #2 and output #2
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.COMPILED_PROMPT_REASK_2
     )
     # Same as above
-    assert call.reask_prompts.last == pydantic.COMPILED_PROMPT_REASK_2
+    assert call.reask_messages.last[1]["content"] == pydantic.COMPILED_PROMPT_REASK_2
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_REASK_2
     assert call.guarded_output is None
     assert call.validation_response == pydantic.VALIDATED_OUTPUT_REASK_3
@@ -106,7 +103,7 @@ def test_pydantic_with_reask(mocker):
 def test_pydantic_with_full_schema_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -126,9 +123,16 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.for_pydantic(
+        ListOfPeople,
+        messages=[
+            {
+                "content": VALIDATED_RESPONSE_REASK_PROMPT,
+                "role": "user",
+            }
+        ],
+    )
     final_output = guard(
-        get_static_openai_chat_create_func(),
         model="gpt-3.5-turbo",
         max_tokens=512,
         temperature=0.5,
@@ -145,20 +149,21 @@ def test_pydantic_with_full_schema_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 3
 
-    # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.COMPILED_PROMPT_CHAT
-    assert call.compiled_instructions == pydantic.COMPILED_INSTRUCTIONS_CHAT
+    # For original prompt and output
+    assert call.compiled_messages[0]["content"] == pydantic.COMPILED_PROMPT_CHAT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
     )
 
     # For re-asked prompt and output
-    assert call.iterations.at(1).inputs.prompt == gd.Prompt(
-        pydantic.COMPILED_PROMPT_FULL_REASK_1
+    assert (
+        call.iterations.at(1).inputs.messages[1]["content"]._source
+        == pydantic.COMPILED_PROMPT_FULL_REASK_1
     )
-    assert call.iterations.at(1).inputs.instructions == gd.Instructions(
-        pydantic.COMPILED_INSTRUCTIONS_CHAT
+    assert (
+        call.iterations.at(1).inputs.messages[0]["content"]._source
+        == pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_FULL_REASK_1
     assert (
@@ -166,10 +171,10 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
 
     # For re-asked prompt #2 and output #2
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
+    assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         pydantic.COMPILED_PROMPT_FULL_REASK_2
     )
-    assert call.iterations.last.inputs.instructions == gd.Instructions(
+    assert call.iterations.last.inputs.messages[0]["content"] == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_FULL_REASK_2
@@ -217,6 +222,6 @@ class ContainerModel2(BaseModel):
 def test_container_types(model, output):
     output_str = json.dumps(output)
 
-    guard = gd.Guard.from_pydantic(model)
+    guard = gd.Guard.for_pydantic(model)
     out = guard.parse(output_str)
     assert out.validated_output == output

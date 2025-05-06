@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.5.6"
+version = "0.6.6"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -20,15 +20,13 @@ lxml = "^4.9.3"
 openai = "^1.30.1"
 rich = "^13.6.0"
 pydantic = ">=2.0.0, <3.0"
-typer = {extras = ["all"],  version = ">=0.9.0, <0.13"}
+typer = {version = ">=0.9.0,<0.16"}
 griffe = "^0.36.9"
 tenacity = ">=8.1.0"
-regex = "^2023.10.3"
 rstr = "^3.2.2"
 typing-extensions = "^4.8.0"
 python-dateutil = "^2.8.2"
 tiktoken = ">=0.5.1"
-nltk = ">3.0, <=3.8.1"
 litellm = "^1.37.14"
 sqlvalidator = {version = "^0.0.20", optional = true}
 sqlalchemy = {version = ">=2.0.9", optional = true}
@@ -43,22 +41,27 @@ nbdoc = {version = "^0.0.82", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
-langchain-core = ">=0.1,<0.3"
-coloredlogs = "^15.0.1"
+langchain-core = ">=0.1,<0.4"
 requests = "^2.31.0"
 faker = "^25.2.0"
 jsonref = "^1.1.0"
 jsonformer = {version = "0.12.0", optional = true}
-jsonschema = {version = "^4.22.0", extras = ["format"]}
+jsonschema = {version = "^4.22.0", extras = ["format-nongpl"]}
 pip = ">=22"
 pyjwt = "^2.8.0"
 opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
-guardrails-api-client = ">=0.3.8"
+guardrails-hub-types = "^0.0.4"
+guardrails-api-client = "^0.4.0a1"
 diff-match-patch = "^20230430"
-guardrails-api = ">=0.0.1"
 h11 = "0.16.0"
+guardrails-api = ">=0.1.0a1,<0.2.0"
+mlflow = {version = "^2.0.1", optional = true}
+uvloop = {version = "^0.20.0", optional = true}
+semver = "^3.0.2"
+llama-index = {version = ">=0.11.0", optional = true}
+boto3 = {version = ">1, <2", optional = true}
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -68,6 +71,9 @@ anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 huggingface = ["transformers", "torch", "jsonformer"]
 api = ["guardrails-api"]
+databricks = ["mlflow"]
+uv = ["uvloop"]
+llama = ["llama-index"]
 
 
 [tool.poetry.group.dev.dependencies]
@@ -82,6 +88,8 @@ pypdfium2 = "^4.23.1"
 pyright = "1.1.334"
 lxml-stubs = "^0.4.0"
 ruff = ">=0.4.1"
+liccheck = "^0.9.2"
+
 
 [tool.poetry.group.api]
 optional = true
@@ -102,6 +110,7 @@ griffe = "^0.36.9"
 pillow = "^10.1.0"
 cairosvg = "^2.7.1"
 mkdocs-glightbox = "^0.3.4"
+
 
 [[tool.poetry.source]]
 name = "PyPI"
@@ -126,3 +135,43 @@ markers = [
 [pytest]
 log_cli = "True"
 log_cli_level = "DEBUG"
+
+
+[tool.liccheck]
+authorized_licenses = [
+    "3-clause bsd",
+    "bsd",
+    "new bsd",
+    "bsd license",
+    "new bsd license",
+    "simplified bsd",
+    "academic free license (afl)",
+    "apache",
+    "apache 2.0",
+    "apache software",
+    "apache software license",
+    "gnu lgpl",
+    "lgpl with exceptions or zpl",
+    "gnu library or lesser general public license (lgpl)",
+    "isc",
+    "isc license",
+    "isc license (iscl)",
+    "mit",
+    "mit license",
+    "mozilla public license 2.0 (mpl 2.0)",
+    "the unlicense (unlicense)",
+    "python software foundation",
+    "python software foundation license",
+    "zpl 2.1",
+    "mit and python-2.0"
+]
+unauthorized_licenses = [
+    "gpl v3",
+]
+level = "Paranoid"
+dependencies = true # to load [tool.poetry.dependencies]
+
+[tool.liccheck.authorized_packages]
+aiocache = "0.12.3" # BSD 3-Clause
+aiohappyeyeballs = "2.4.3" # Python Software Foundation
+guardrails-api = "*" # Modified ELSSTIC

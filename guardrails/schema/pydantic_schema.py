@@ -13,9 +13,9 @@ from typing import (
 
 from pydantic import AliasChoices, AliasGenerator, AliasPath, BaseModel
 from pydantic.fields import FieldInfo
-from guardrails_api_client import ValidatorReference
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.logger import logger
 from guardrails.types import (
     ModelOrListOfModels,
@@ -88,7 +88,7 @@ def get_base_model(
     type_origin = get_origin(pydantic_class)
     key_type_origin = None
 
-    if type_origin == list:
+    if type_origin is list:
         item_types = get_args(pydantic_class)
         if len(item_types) > 1:
             raise ValueError("List data type must have exactly one child.")
@@ -96,14 +96,14 @@ def get_base_model(
         if not item_type or not issubclass(item_type, BaseModel):
             raise ValueError("List item type must be a Pydantic model.")
         schema_model = item_type
-    elif type_origin == dict:
+    elif type_origin is dict:
         key_value_types = get_args(pydantic_class)
         value_type = safe_get(key_value_types, 1)
         key_type_origin = safe_get(key_value_types, 0)
         if not value_type or not issubclass(value_type, BaseModel):
             raise ValueError("Dict value type must be a Pydantic model.")
         schema_model = value_type
-    elif type_origin == Union:
+    elif type_origin is Union:
         union_members = get_args(pydantic_class)
         model_members = list(filter(is_base_model_type, union_members))
         if len(model_members) > 0:
@@ -141,7 +141,7 @@ def extract_union_member(
     field_model, field_type_origin, key_type_origin = try_get_base_model(member)
     if not field_model:
         return member
-    if field_type_origin == Union:
+    if field_type_origin is Union:
         union_members = get_args(field_model)
         extracted_union_members = []
         for m in union_members:
@@ -157,9 +157,9 @@ def extract_union_member(
             json_path=json_path,
             aliases=aliases,
         )
-        if field_type_origin == list:
+        if field_type_origin is list:
             return List[extracted_field_model]
-        elif field_type_origin == dict:
+        elif field_type_origin is dict:
             return Dict[key_type_origin, extracted_field_model]  # type: ignore
         return extracted_field_model
 
@@ -231,7 +231,7 @@ def extract_validators(
                 field.annotation
             )
             if field_model:
-                if field_type_origin == Union:
+                if field_type_origin is Union:
                     union_members = list(get_args(field_model))
                     extracted_union_members = []
                     for m in union_members:
@@ -254,11 +254,11 @@ def extract_validators(
                         json_path=field_path,
                         aliases=alias_paths,
                     )
-                    if field_type_origin == list:
+                    if field_type_origin is list:
                         model.model_fields[field_name].annotation = List[
                             extracted_field_model
                         ]
-                    elif field_type_origin == dict:
+                    elif field_type_origin is dict:
                         model.model_fields[field_name].annotation = Dict[
                             key_type_origin, extracted_field_model  # type: ignore
                         ]
@@ -276,7 +276,7 @@ def pydantic_to_json_schema(
     json_schema = pydantic_class.model_json_schema()
     json_schema["title"] = pydantic_class.__name__
 
-    if type_origin == list:
+    if type_origin is list:
         json_schema = {
             "title": f"Array<{json_schema.get('title')}>",
             "type": "array",
@@ -294,7 +294,7 @@ def pydantic_model_to_schema(
     schema_model, type_origin, _key_type_origin = get_base_model(pydantic_class)
 
     processed_schema.output_type = (
-        OutputTypes.LIST if type_origin == list else OutputTypes.DICT
+        OutputTypes.LIST if type_origin is list else OutputTypes.DICT
     )
 
     model = extract_validators(schema_model, processed_schema, "$")

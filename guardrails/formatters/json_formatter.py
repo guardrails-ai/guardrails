@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Union
+from typing import Dict, List, Optional, Union
 
 from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.llm_providers import (
@@ -99,32 +99,52 @@ class JsonFormatter(BaseFormatter):
 
         if isinstance(llm_callable, HuggingFacePipelineCallable):
             model = llm_callable.init_kwargs["pipeline"]
-            return ArbitraryCallable(
-                lambda p: json.dumps(
+
+            def fn(
+                *args,
+                messages: Optional[List[Dict[str, str]]] = None,
+                **kwargs,
+            ) -> str:
+                prompt = ""
+                for msg in messages:  # type: ignore
+                    prompt += msg["content"]
+
+                return json.dumps(
                     Jsonformer(
                         model=model.model,
                         tokenizer=model.tokenizer,
                         json_schema=self.output_schema,
-                        prompt=p,
+                        prompt=prompt,
                     )()
                 )
-            )
+
+            return ArbitraryCallable(fn)
         elif isinstance(llm_callable, HuggingFaceModelCallable):
             # This will not work because 'model_generate' is the .gen method.
             # model = self.api.init_kwargs["model_generate"]
             # Use the __self__ to grab the base mode for passing into JF.
             model = llm_callable.init_kwargs["model_generate"].__self__
             tokenizer = llm_callable.init_kwargs["tokenizer"]
-            return ArbitraryCallable(
-                lambda p: json.dumps(
+
+            def fn(
+                *args,
+                messages: Optional[List[Dict[str, str]]] = None,
+                **kwargs,
+            ) -> str:
+                prompt = ""
+                for msg in messages:  # type: ignore
+                    prompt += msg["content"]
+
+                return json.dumps(
                     Jsonformer(
                         model=model,
                         tokenizer=tokenizer,
                         json_schema=self.output_schema,
-                        prompt=p,
+                        prompt=prompt,
                     )()
                 )
-            )
+
+            return ArbitraryCallable(fn)
         else:
             raise ValueError(
                 "JsonFormatter can only be used with HuggingFace*Callable."

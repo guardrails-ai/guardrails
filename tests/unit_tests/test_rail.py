@@ -8,14 +8,14 @@ def test_rail_scalar_string():
   <string name="string_name" />
 </output>
 
-<instructions>
+<messages>
+<message role="system">
 Hello world
-</instructions>
-
-<prompt>
+</message>
+<message role="user">
 Hello world
-</prompt>
-
+</message>
+</messages>
 </rail>
 """
     rail_string_to_schema(rail_spec)
@@ -32,13 +32,14 @@ def test_rail_object_with_scalar():
     </object>
 </output>
 
-<instructions>
+<messages>
+<message role="system">
 Hello world
-</instructions>
-
-<prompt>
+</message>
+<message role="user">
 Hello world
-</prompt>
+</message>
+</messages>
 </rail>
 """
     rail_string_to_schema(rail_spec)
@@ -174,15 +175,14 @@ def test_format_not_read_as_validators():
     <output>
       <string name="string_name" format="two-words"/>
     </output>
-
-    <instructions>
+    <messages>
+    <message role="system">
     Hello world
-    </instructions>
-
-    <prompt>
+    </message>
+    <message role="user">
     Hello world
-    </prompt>
-
+    </message>
+    </messages>
     </rail>
     """
     # Declaring Validators in the format field was dropped in 0.5.x

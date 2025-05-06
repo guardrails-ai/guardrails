@@ -10,18 +10,19 @@ from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.cli.hub.template import get_template
-from guardrails.cli.telemetry import trace_if_enabled
+from guardrails.hub_telemetry.hub_tracing import trace
 
 console = Console()
 
 
 @gr_cli.command(name="create")
+@trace(name="guardrails-cli/create")
 def create_command(
     validators: Optional[str] = typer.Option(
         default="",
         help="A comma-separated list of validator hub URIs.",
     ),
-    name: Optional[str] = typer.Option(
+    guard_name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
     ),
     local_models: Optional[bool] = typer.Option(
@@ -46,7 +47,6 @@ def create_command(
         help="Print out the validators to be installed without making any changes.",
     ),
 ):
-    trace_if_enabled("create")
     # fix pyright typing issue
     validators = cast(str, validators)
     filepath = check_filename(filepath)
@@ -78,13 +78,15 @@ def create_command(
             local_models,
             dry_run,
         )
-        if name is None and validators:
-            name = "Guard"
+        if guard_name is None and validators:
+            guard_name = "Guard"
             if len(installed_validators) > 0:
-                name = installed_validators[0] + "Guard"
+                guard_name = installed_validators[0] + "Guard"
 
-            console.print(f"No name provided for guard. Defaulting to {name}")
-        new_config_file = generate_config_file(installed_validators, name)
+            console.print(
+                "No guard name provided for guard. Defaulting to {guard_name}"
+            )
+        new_config_file = generate_config_file(installed_validators, guard_name)
 
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")

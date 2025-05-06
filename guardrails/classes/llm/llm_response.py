@@ -1,6 +1,6 @@
 import asyncio
 from itertools import tee
-from typing import Any, Dict, Iterable, Optional, AsyncIterable
+from typing import Any, Dict, Iterator, Optional, AsyncIterator
 
 from guardrails_api_client import LLMResponse as ILLMResponse
 from pydantic.config import ConfigDict
@@ -19,9 +19,9 @@ class LLMResponse(ILLMResponse):
 
     Attributes:
         output (str): The output from the LLM.
-        stream_output (Optional[Iterable]): A stream of output from the LLM.
+        stream_output (Optional[Iterator]): A stream of output from the LLM.
             Default None.
-        async_stream_output (Optional[AsyncIterable]): An async stream of output
+        async_stream_output (Optional[AsyncIterator]): An async stream of output
             from the LLM.  Default None.
         prompt_token_count (Optional[int]): The number of tokens in the prompt.
             Default None.
@@ -35,8 +35,8 @@ class LLMResponse(ILLMResponse):
     prompt_token_count: Optional[int] = None
     response_token_count: Optional[int] = None
     output: str
-    stream_output: Optional[Iterable] = None
-    async_stream_output: Optional[AsyncIterable] = None
+    stream_output: Optional[Iterator] = None
+    async_stream_output: Optional[AsyncIterator] = None
 
     def to_interface(self) -> ILLMResponse:
         stream_output = None
@@ -47,7 +47,12 @@ class LLMResponse(ILLMResponse):
             stream_output = [str(so) for so in copy_2]
 
         async_stream_output = None
-        if self.async_stream_output:
+        # dont do this again if already aiter-able were updating
+        # ourselves here so in memory
+        # this can cause issues
+        if self.async_stream_output and not hasattr(
+            self.async_stream_output, "__aiter__"
+        ):
             # tee doesn't work with async iterators
             # This may be destructive
             async_stream_output = []
@@ -56,7 +61,7 @@ class LLMResponse(ILLMResponse):
                 async_stream_output.append(so)
                 awaited_stream_output.append(str(async_to_sync(so)))
 
-            self.async_stream_output = aiter(async_stream_output)  # type: ignore
+            self.async_stream_output = aiter(async_stream_output)  # type: ignore  # noqa: F821
 
         return ILLMResponse(
             prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases
@@ -73,7 +78,7 @@ class LLMResponse(ILLMResponse):
     def from_interface(cls, i_llm_response: ILLMResponse) -> "LLMResponse":
         stream_output = None
         if i_llm_response.stream_output:
-            stream_output = [so for so in i_llm_response.stream_output]
+            stream_output = iter([so for so in i_llm_response.stream_output])
 
         async_stream_output = None
         if i_llm_response.async_stream_output:

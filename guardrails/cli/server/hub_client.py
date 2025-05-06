@@ -4,13 +4,14 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
+from guardrails_hub_types import Manifest
 import jwt
 from jwt import ExpiredSignatureError, DecodeError
 
 
-from guardrails.classes.credentials import Credentials
+from guardrails.settings import settings
+from guardrails.classes.rc import RC
 from guardrails.cli.logger import logger
-from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.version import GUARDRAILS_VERSION
 
 FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
@@ -19,14 +20,15 @@ TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails confi
 to update your token.
 {FIND_NEW_TOKEN}"""
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
-to update your token.
+to update your token. The token is only required to install validators and run remote \
+inference. It is not needed for local validation.
 {FIND_NEW_TOKEN}"""
 
 VALIDATOR_HUB_SERVICE = os.getenv(
     "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 validator_manifest_endpoint = Template(
-    "validator-manifests/${namespace}/${validator_name}"
+    "validator/${namespace}/${validator_name}/manifest"
 )
 
 
@@ -86,8 +88,8 @@ def fetch_module_manifest(
     return fetch(manifest_url, token, anonymousUserId)
 
 
-def get_jwt_token(creds: Credentials) -> Optional[str]:
-    token = creds.token
+def get_jwt_token(rc: RC) -> Optional[str]:
+    token = rc.token
 
     # check for jwt expiration
     if token:
@@ -100,24 +102,22 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     return token
 
 
-def fetch_module(module_name: str) -> ModuleManifest:
-    creds = Credentials.from_rc_file(logger)
-    token = get_jwt_token(creds)
+def fetch_module(module_name: str) -> Optional[Manifest]:
+    token = get_jwt_token(settings.rc)
 
-    module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
-    return ModuleManifest.from_dict(module_manifest_json)
+    module_manifest_json = fetch_module_manifest(module_name, token, settings.rc.id)
+    return Manifest.from_dict(module_manifest_json)
 
 
 def fetch_template(template_address: str) -> Dict[str, Any]:
-    creds = Credentials.from_rc_file(logger)
-    token = get_jwt_token(creds)
+    token = get_jwt_token(settings.rc)
 
     namespace, template_name = template_address.replace("hub:template://", "").split(
         "/", 1
     )
     template_path = f"guard-templates/{namespace}/{template_name}"
     template_url = f"{VALIDATOR_HUB_SERVICE}/{template_path}"
-    return fetch(template_url, token, creds.id)
+    return fetch(template_url, token, settings.rc.id)
 
 
 # GET /guard-templates/{namespace}/{guardTemplateName}
@@ -139,7 +139,7 @@ def get_guard_template(template_address: str):
         sys.exit(1)
 
 
-# GET /validator-manifests/{namespace}/{validatorName}
+# GET /validator/{namespace}/{validatorName}/manifest
 def get_validator_manifest(module_name: str):
     try:
         module_manifest = fetch_module(module_name)
@@ -147,7 +147,10 @@ def get_validator_manifest(module_name: str):
             logger.error(f"Failed to install hub://{module_name}")
             sys.exit(1)
         return module_manifest
-    except HttpError:
+    except HttpError as e:
+        if e.message == "Unauthorized":
+            logger.error(TOKEN_INVALID_MESSAGE)
+            raise
         logger.error(f"Failed to install hub://{module_name}")
         sys.exit(1)
     except (ExpiredTokenError, InvalidTokenError) as e:
@@ -161,10 +164,9 @@ def get_validator_manifest(module_name: str):
 # GET /auth
 def get_auth():
     try:
-        creds = Credentials.from_rc_file(logger)
-        token = get_jwt_token(creds)
+        token = get_jwt_token(settings.rc)
         auth_url = f"{VALIDATOR_HUB_SERVICE}/auth"
-        response = fetch(auth_url, token, creds.id)
+        response = fetch(auth_url, token, settings.rc.id)
         if not response:
             raise AuthenticationError("Failed to authenticate!")
     except HttpError as http_error:
@@ -179,8 +181,7 @@ def get_auth():
 
 def post_validator_submit(package_name: str, content: str):
     try:
-        creds = Credentials.from_rc_file(logger)
-        token = get_jwt_token(creds)
+        token = get_jwt_token(settings.rc)
         submission_url = f"{VALIDATOR_HUB_SERVICE}/validator/submit"
 
         headers = {
