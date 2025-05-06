@@ -9630,4 +9630,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "3621d0e9c6179bf3dd328df36554ced7674a17ac75ff7d05a295b40e40740e09"
+content-hash = "431deb7a86d03c80c4aa1e63720f3ebd2076b0b1ac47db4e63bbeb511185f16d"
