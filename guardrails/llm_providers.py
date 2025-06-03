@@ -278,8 +278,7 @@ class HuggingFaceModelCallable(PromptCallableBase):
             import torch
         except ImportError:
             raise PromptCallableException(
-                "The `torch` package is not installed. "
-                "Install with `pip install torch`"
+                "The `torch` package is not installed. Install with `pip install torch`"
             )
         prompt = messages_to_prompt_string(messages)
         tokenizer = kwargs.pop("tokenizer")
@@ -384,8 +383,7 @@ class HuggingFacePipelineCallable(PromptCallableBase):
             import torch  # noqa: F401 # type: ignore
         except ImportError:
             raise PromptCallableException(
-                "The `torch` package is not installed. "
-                "Install with `pip install torch`"
+                "The `torch` package is not installed. Install with `pip install torch`"
             )
 
         content_key = kwargs.pop("content_key", "generated_text")

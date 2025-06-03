@@ -140,7 +140,7 @@ class MockDetectPII(Validator):
             entities_to_filter = pii_entities
         else:
             raise ValueError(
-                f"`pii_entities` must be one of {pii_keys}" " or a list of strings."
+                f"`pii_entities` must be one of {pii_keys} or a list of strings."
             )
 
         # Analyze the text, and anonymize it if there is PII
@@ -174,7 +174,7 @@ class MockDetectPII(Validator):
                 ErrorSpan(
                     start=diff_range[0],
                     end=diff_range[1],
-                    reason=f"PII detected in {value[diff_range[0]:diff_range[1]]}",
+                    reason=f"PII detected in {value[diff_range[0] : diff_range[1]]}",
                 )
             )
 

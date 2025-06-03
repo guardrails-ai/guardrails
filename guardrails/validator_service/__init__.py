@@ -41,8 +41,7 @@ def should_run_sync():
     bool_values = ["true", "false"]
     if run_sync.lower() not in bool_values:
         warnings.warn(
-            f"GUARDRAILS_RUN_SYNC must be one of {bool_values}!"
-            f" Defaulting to 'false'."
+            f"GUARDRAILS_RUN_SYNC must be one of {bool_values}! Defaulting to 'false'."
         )
     return process_count == 1 or run_sync.lower() == "true"
 

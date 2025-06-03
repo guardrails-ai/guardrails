@@ -26,7 +26,7 @@ def prompt_content_for_string_schema(
     description = output_schema.get("description")
     if description:
         prompt_content += (
-            "Here's a description of what I want you to generate: " f"{description}"
+            f"Here's a description of what I want you to generate: {description}"
         )
     validators = validator_map.get(json_path, [])
     if len(validators):

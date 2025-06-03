@@ -29,10 +29,10 @@ def set_additional_properties_false_iteratively(schema):
                     current["properties"].keys()
                 )  # this has to be set
             if "maximum" in current:
-                logger.warn("Property maximum is not supported." " Dropping")
+                logger.warn("Property maximum is not supported. Dropping")
                 current.pop("maximum")  # the api does not like these set
             if "minimum" in current:
-                logger.warn("Property maximum is not supported." " Dropping")
+                logger.warn("Property maximum is not supported. Dropping")
                 current.pop("minimum")  # the api does not like these set
             if "default" in current:
                 logger.warn("Property default is not supported. Marking field Required")
