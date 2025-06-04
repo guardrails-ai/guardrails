@@ -387,7 +387,7 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        guard = cls(
+        guard = cls._init_guard_for_cls_method(
             name=name,
             description=description,
             output_schema=schema.json_schema,
@@ -534,6 +534,25 @@ class Guard(IGuard, Generic[OT]):
         return cls.for_pydantic(output_class, **kwargs)
 
     @classmethod
+    def _init_guard_for_cls_method(
+        cls,
+        *,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        validators: Optional[List[ValidatorReference]] = None,
+        output_schema: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
+        return cls(
+            id=id,
+            name=name,
+            description=description,
+            output_schema=output_schema,
+            validators=validators,
+        )
+
+    @classmethod
     def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
@@ -545,6 +564,7 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
         output_formatter: Optional[Union[str, BaseFormatter]] = None,
+        **kwargs,
     ):
         """Create a Guard instance using a Pydantic model to specify the output
         schema.
@@ -581,11 +601,12 @@ class Guard(IGuard, Generic[OT]):
             reask_messages=reask_messages,
             messages=messages,
         )
-        guard = cls(
+        guard = cls._init_guard_for_cls_method(
             name=name,
             description=description,
             output_schema=schema.json_schema,
             validators=schema.validators,
+            **kwargs,
         )
         if schema.output_type == OutputTypes.LIST:
             guard = cast(Guard[List], guard)
@@ -1314,7 +1335,7 @@ class Guard(IGuard, Generic[OT]):
             i_guard.output_schema.to_dict() if i_guard.output_schema else None
         )
 
-        guard = cls(
+        guard = cls._init_guard_for_cls_method(
             id=i_guard.id,
             name=i_guard.name,
             description=i_guard.description,
