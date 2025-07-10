@@ -124,7 +124,7 @@ def configure(
             Login successful.
 
             Get started by installing our RegexMatch validator:
-            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+            https://hub.guardrailsai.com/validator/guardrails/regex_match
 
             You can install it by running:
             guardrails hub install hub://guardrails/regex_match
