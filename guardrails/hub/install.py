@@ -3,7 +3,7 @@ import contextlib
 from string import Template
 from typing import Callable, cast, List
 
-import pkg_resources
+import importlib.metadata
 
 from guardrails.hub.validator_package_service import (
     ValidatorPackageService,
@@ -149,7 +149,7 @@ def install(
     installed_version_message = ""
     with contextlib.suppress(Exception):
         package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
-        installed_version = pkg_resources.get_distribution(package_name).version
+        installed_version = importlib.metadata.version(package_name)
         if installed_version:
             installed_version_message = f" version {installed_version}"
 
