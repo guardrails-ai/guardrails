@@ -115,8 +115,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        pkg_resources = mocker.patch("guardrails.hub.install.pkg_resources")
-        pkg_resources.get_distribution.return_value.version = "1.0.0"
+        importlib_metadata = mocker.patch("guardrails.hub.install.importlib.metadata")
+        importlib_metadata.version = "1.0.0"
 
         get_manifest_and_site_packages_mock = mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
