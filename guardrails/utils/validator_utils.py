@@ -37,8 +37,7 @@ def parse_rail_arguments(arg_tokens: List[str]) -> List[Any]:
                 t = literal_eval(t)
             except (ValueError, SyntaxError, NameError) as e:
                 raise ValueError(
-                    f"Python expression `{t}` is not valid, "
-                    f"and raised an error: {e}."
+                    f"Python expression `{t}` is not valid, and raised an error: {e}."
                 )
         validator_args.append(t)
     return validator_args

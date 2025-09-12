@@ -138,9 +138,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
                 if hasattr(mock_llm_responses[key], "read"):
                     out_text = mock_llm_responses[key]
             else:
-                raise ValueError(
-                    "specify either prompt and instructions " "or messages"
-                )
+                raise ValueError("specify either prompt and instructions or messages")
             return LLMResponse(
                 output=out_text,
                 prompt_token_count=123,
