@@ -37,7 +37,7 @@ jobs:
           # Setup Virtual Environment
           python3 -m venv ./.venv
           source .venv/bin/activate
-          poetry install
+          poetry install --extras dev
 
       - name: Check license
         run: |
