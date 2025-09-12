@@ -65,8 +65,7 @@ sql = [
 ]
 vectordb = [
     "faiss-cpu>=1.7.4,<2.0.0",
-    # TODO - Test with numpy 2
-    "numpy>=1.25, <2.0"
+    "numpy>=1.25, <3.0"
 ]
 manifest = [
     "manifest-ml>=0.1.8,<0.2.0"
@@ -89,7 +88,6 @@ api = [
     "boto3>1,<2"
 ]
 databricks = [
-    # TODO - Test with mlflow 3
     "mlflow>=2.0.1,<4.0.0",
     "boto3>1, <2"
 ]
