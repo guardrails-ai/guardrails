@@ -150,6 +150,8 @@ log_cli_level = "DEBUG"
 authorized_licenses = [
     "3-clause bsd",
     "bsd",
+    "bsd3",
+    "bsd-3-clause",
     "new bsd",
     "bsd license",
     "new bsd license",
@@ -157,8 +159,11 @@ authorized_licenses = [
     "academic free license (afl)",
     "apache",
     "apache 2.0",
+    "apache-2.0",
+    "apache license 2.0",
     "apache software",
     "apache software license",
+    "apache-2.0 and cnri-python",
     "gnu lgpl",
     "lgpl with exceptions or zpl",
     "gnu library or lesser general public license (lgpl)",
@@ -171,8 +176,10 @@ authorized_licenses = [
     "the unlicense (unlicense)",
     "python software foundation",
     "python software foundation license",
+    "psf-2.0",
     "zpl 2.1",
-    "mit and python-2.0"
+    "mit and python-2.0",
+    "apache-2.0 and mit"
 ]
 unauthorized_licenses = [
     "gpl v3",
