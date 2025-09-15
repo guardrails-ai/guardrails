@@ -29,7 +29,7 @@ def test_remove_from_hub_inits(mocker):
     expected_calls = [
         call(
             "/site-packages/guardrails/hub/__init__.py",
-            "from guardrails_grhub_test_package import " "Validator, Helper",
+            "from guardrails_grhub_test_package import Validator, Helper",
         ),
     ]
 

@@ -160,9 +160,9 @@ class Validator:
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
-        assert (
-            self.rail_alias in validators_registry
-        ), f"Validator {self.__class__.__name__} is not registered. "
+        assert self.rail_alias in validators_registry, (
+            f"Validator {self.__class__.__name__} is not registered. "
+        )
 
     @property
     @deprecated(

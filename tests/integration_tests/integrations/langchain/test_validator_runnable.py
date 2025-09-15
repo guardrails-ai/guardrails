@@ -51,7 +51,7 @@ def test_validator_runnable(output: str, throws: bool, expected_error: Optional[
             chain.invoke({"topic": topic})
 
         assert str(exc_info.value) == (
-            "The response from the LLM failed validation!" f" {expected_error}"
+            f"The response from the LLM failed validation! {expected_error}"
         )
 
     else:

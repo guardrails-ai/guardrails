@@ -486,7 +486,7 @@ def test_input_validation_fix(mocker):
             ],
         )
     assert str(excinfo.value) == (
-        "Validation failed for field with errors:" " must be exactly two words"
+        "Validation failed for field with errors: must be exactly two words"
     )
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
@@ -592,7 +592,7 @@ async def test_async_messages_validation_fix(mocker):
 
 
 @pytest.mark.parametrize(
-    "on_fail," "structured_messages_error," "unstructured_messages_error,",
+    "on_fail,structured_messages_error,unstructured_messages_error,",
     [
         (
             OnFailAction.REASK,
@@ -674,7 +674,7 @@ def test_input_validation_fail(
 
 
 @pytest.mark.parametrize(
-    "on_fail," "structured_messages_error," "unstructured_messages_error,",
+    "on_fail,structured_messages_error,unstructured_messages_error,",
     [
         (
             OnFailAction.REASK,

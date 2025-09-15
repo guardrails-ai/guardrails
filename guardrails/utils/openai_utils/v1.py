@@ -15,7 +15,7 @@ from guardrails.telemetry import trace_llm_call, trace_operation
 
 def get_static_openai_create_func():
     warnings.warn(
-        "This function is deprecated. " " and will be removed in 0.6.0",
+        "This function is deprecated.  and will be removed in 0.6.0",
         DeprecationWarning,
     )
     return openai.completions.create

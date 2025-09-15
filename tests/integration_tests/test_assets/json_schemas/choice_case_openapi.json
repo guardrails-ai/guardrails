@@ -4,9 +4,6 @@
       "properties": {
         "chosen_action": {
           "const": "fight",
-          "enum": [
-            "fight"
-          ],
           "title": "Chosen Action",
           "type": "string"
         },
@@ -31,9 +28,6 @@
       "properties": {
         "chosen_action": {
           "const": "flight",
-          "enum": [
-            "flight"
-          ],
           "title": "Chosen Action",
           "type": "string"
         },
