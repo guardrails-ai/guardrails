@@ -37,7 +37,7 @@ docs-deploy:
 	poetry run mkdocs gh-deploy
 
 dev:
-	poetry install
+	poetry install --extras "dev"
 	poetry run pre-commit install
 
 full:
