@@ -2716,6 +2716,22 @@ files = [
 dev = ["pyright", "pytest", "pytest-cov", "ruff"]
 
 [[package]]
+name = "guardrails-jsonformer"
+version = "0.13.1"
+description = "A fork of 1rgs' jsonformer maintained by Guardrails AI"
+optional = true
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+markers = "extra == \"huggingface\""
+files = [
+    {file = "guardrails_jsonformer-0.13.1-py3-none-any.whl", hash = "sha256:748f8ef574ae7a2661e3f62f72b6ff86642aa3f717033fc9bb047b39b3dd0ae3"},
+    {file = "guardrails_jsonformer-0.13.1.tar.gz", hash = "sha256:857e7518d7d4251c518e4f567485a90af56adaabe13a685c2f9fc8b5811b53a6"},
+]
+
+[package.dependencies]
+termcolor = ">=2.3.0,<3.0.0"
+
+[[package]]
 name = "gunicorn"
 version = "23.0.0"
 description = "WSGI HTTP Server for UNIX"
@@ -3385,22 +3401,6 @@ files = [
 
 [package.extras]
 dev = ["build (==1.2.2.post1)", "coverage (==7.5.4) ; python_version < \"3.9\"", "coverage (==7.8.0) ; python_version >= \"3.9\"", "mypy (==1.14.1) ; python_version < \"3.9\"", "mypy (==1.15.0) ; python_version >= \"3.9\"", "pip (==25.0.1)", "pylint (==3.2.7) ; python_version < \"3.9\"", "pylint (==3.3.6) ; python_version >= \"3.9\"", "ruff (==0.11.2)", "twine (==6.1.0)", "uv (==0.6.11)"]
-
-[[package]]
-name = "jsonformer"
-version = "0.12.0"
-description = ""
-optional = true
-python-versions = ">=3.8,<4.0"
-groups = ["main"]
-markers = "extra == \"huggingface\""
-files = [
-    {file = "jsonformer-0.12.0-py3-none-any.whl", hash = "sha256:67339a764cb17e33d9a567293470f59b856ca38f2c456da6aad07652a2daf69a"},
-    {file = "jsonformer-0.12.0.tar.gz", hash = "sha256:3edc4ea87b27ff1043878ff632d9ee9aaad70a271bbc30e29199a5557885241b"},
-]
-
-[package.dependencies]
-termcolor = ">=2.3.0,<3.0.0"
 
 [[package]]
 name = "jsonpatch"
@@ -7237,6 +7237,7 @@ files = [
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:bb89f0a835bcfc1d42ccd5f41f04870c1b936d8507c6df12b7737febc40f0909"},
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:f0c2d907a1e102526dd2986df638343388b94c33860ff3bbe1384130828714b1"},
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:f8157bed2f51db683f31306aa497311b560f2265998122abe1dce6428bd86567"},
+    {file = "psycopg2_binary-2.9.10-cp313-cp313-win_amd64.whl", hash = "sha256:27422aa5f11fbcd9b18da48373eb67081243662f9b46e6fd07c3eb46e4535142"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:eb09aa7f9cecb45027683bb55aebaaf45a0df8bf6de68801a6afdc7947bb09d4"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b73d6d7f0ccdad7bc43e6d34273f70d587ef62f824d7261c4ae9b8b1b6af90e8"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ce5ab4bf46a211a8e924d307c1b1fcda82368586a19d0a24f8ae166f5c784864"},
@@ -11001,7 +11002,7 @@ databricks = ["mlflow"]
 dev = ["docformatter", "liccheck", "lxml-stubs", "pre-commit", "pypdfium2", "pyright", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "ruff", "twine"]
 docs = ["cairosvg", "griffe", "mkdocs", "mkdocs-glightbox", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings", "mknotebooks", "pillow"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
-huggingface = ["jsonformer", "torch", "transformers"]
+huggingface = ["guardrails-jsonformer", "torch", "transformers"]
 llama = ["llama-index"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
@@ -11011,4 +11012,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "14805aef12840133e86a2ff033c17a86e6ca0923bcecced6d9d9448ceb38224d"
+content-hash = "03ec12b5e228800a680033ef3751c281be93e8f44a9561e145f513d76bb9feb6"

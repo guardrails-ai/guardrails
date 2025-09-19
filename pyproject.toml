@@ -95,7 +95,7 @@ huggingface = [
     # Blocked from upgrading further by jsonformer
     "transformers>=4.38.0,<4.49.0",
     "torch>=2.1.1,<3.0.0",
-    "jsonformer>=0.12.0,<1.0.0"
+    "guardrails-jsonformer>=0.13.1,<1.0.0"
 ]
 api = [
     "guardrails-api>=0.1.0a1,<0.2.0",
