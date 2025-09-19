@@ -38,7 +38,9 @@ class GuardrailsApiClient:
         )
         self.timeout = 300
         self._api_client = ApiClient(
-            configuration=Configuration(api_key=self.api_key, host=self.base_url)
+            configuration=Configuration(
+                api_key={"ApiKeyAuth": self.api_key}, host=self.base_url
+            )
         )
         self._guard_api = GuardApi(self._api_client)
         self._validate_api = ValidateApi(self._api_client)
