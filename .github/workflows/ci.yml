@@ -41,7 +41,6 @@ jobs:
           if [ "${{ matrix.python-version }}" == "3.9" ]; 
             then
               pip install .[dev]
-              pip install setup_tools
             else
               poetry install --extras dev
           fi
@@ -49,7 +48,7 @@ jobs:
       - name: Check license
         run: |
           source .venv/bin/activate
-          .venv/bin/pip install greenlet
+          .venv/bin/pip install greenlet setuptools
           .venv/bin/liccheck
   Linting:
     runs-on: ubuntu-latest
