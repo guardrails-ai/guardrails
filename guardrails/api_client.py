@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from typing import Any, Iterator, Optional
 
 import requests
@@ -37,10 +38,15 @@ class GuardrailsApiClient:
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
         )
         self.timeout = 300
+
+        _api_key = (
+            self.api_key
+            if sys.version_info.minor < 10
+            else {"ApiKeyAuth": self.api_key}
+        )
+
         self._api_client = ApiClient(
-            configuration=Configuration(
-                api_key={"ApiKeyAuth": self.api_key}, host=self.base_url
-            )
+            configuration=Configuration(api_key=_api_key, host=self.base_url)  # type: ignore
         )
         self._guard_api = GuardApi(self._api_client)
         self._validate_api = ValidateApi(self._api_client)
