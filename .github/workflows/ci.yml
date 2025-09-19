@@ -73,9 +73,9 @@ jobs:
           source .venv/bin/activate
           if [ "${{ matrix.python-version }}" == "3.9" ]; 
             then
-              pip install .[dev,sql,vectordb,manifest,anthropic,huggingface,api,databricks,uv,llama]
+              pip install .[dev]
             else
-              make full          
+              make dev          
           fi
 
       - name: Lint with ruff
