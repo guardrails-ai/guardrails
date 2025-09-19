@@ -2680,14 +2680,14 @@ dev = ["coverage", "gunicorn (>=22.0.0,<23)", "pytest", "pytest-mock", "ruff"]
 
 [[package]]
 name = "guardrails-api-client"
-version = "0.4.0a2"
+version = "0.4.0"
 description = "Guardrails API Client."
 optional = false
 python-versions = "<4,>=3.8"
 groups = ["main"]
 files = [
-    {file = "guardrails_api_client-0.4.0a2-py3-none-any.whl", hash = "sha256:8e765b036017c5edd424f9208ab668ce7d6dc86d82ebae2b5289e4c67b122a75"},
-    {file = "guardrails_api_client-0.4.0a2.tar.gz", hash = "sha256:d8e3d4e65abc0ba4ded4a11b0a3e7060008b049211cdb1a89372379b74ab4855"},
+    {file = "guardrails_api_client-0.4.0-py3-none-any.whl", hash = "sha256:3c936a1afb3373828c63a4f1cd17b876621a0e25dc334706bf63c041e03f1a90"},
+    {file = "guardrails_api_client-0.4.0.tar.gz", hash = "sha256:05f636bdc332fd3304007f564bca92b43ce9beb531ea3606d2cbdcbe97ab2c6f"},
 ]
 
 [package.dependencies]
@@ -11011,4 +11011,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "c3370aed17d3b122ff347e9aefe1904d192ab583e38e8d37e18352c08c46c2a7"
+content-hash = "14805aef12840133e86a2ff033c17a86e6ca0923bcecced6d9d9448ceb38224d"
