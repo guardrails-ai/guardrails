@@ -1,20 +1,20 @@
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
 autoformat:
-	poetry run ruff check guardrails/ tests/ --fix
-	poetry run ruff format guardrails/ tests/
-	poetry run docformatter --in-place --recursive guardrails tests
+	ruff check guardrails/ tests/ --fix
+	ruff format guardrails/ tests/
+	docformatter --in-place --recursive guardrails tests
 
 .PHONY: type
 type:
-	poetry run pyright guardrails/
+	pyright guardrails/
 
 lint:
-	poetry run ruff check guardrails/ tests/
-	poetry run ruff format guardrails/ tests/ --check
+	ruff check guardrails/ tests/
+	ruff format guardrails/ tests/ --check
 
 test:
-	poetry run pytest tests/
+	pytest tests/
 
 test-basic:
 	set -e
@@ -22,13 +22,13 @@ test-basic:
 	python -c "import guardrails.version as mversion"
 
 test-cov:
-	poetry run pytest tests/ --cov=./guardrails/ --cov-report=xml
+	pytest tests/ --cov=./guardrails/ --cov-report=xml
 
 view-test-cov:
-	poetry run pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
+	pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
 view-test-cov-file:
-	poetry run pytest tests/unit_tests/test_logger.py --cov=./guardrails/ --cov-report html && open htmlcov/index.html
+	pytest tests/unit_tests/test_logger.py --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
 docs-serve:
 	poetry run mkdocs serve -a $(MKDOCS_SERVE_ADDR)

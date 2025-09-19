@@ -66,7 +66,6 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install Dependencies
-        # TODO: fix errors so that we can run `make dev` instead
         run: |
           # Setup Virtual Environment
           python3 -m venv ./.venv
@@ -99,7 +98,6 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install Dependencies
-        # TODO: fix errors so that we can run `make dev` instead
         run: |
           # Setup Virtual Environment
           python3 -m venv ./.venv
