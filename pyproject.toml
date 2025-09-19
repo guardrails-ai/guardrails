@@ -191,7 +191,8 @@ authorized_licenses = [
     "psf-2.0",
     "zpl 2.1",
     "mit and python-2.0",
-    "apache-2.0 and mit"
+    "apache-2.0 and mit",
+    "                                 Apache"
 ]
 unauthorized_licenses = [
     "gpl v3",
