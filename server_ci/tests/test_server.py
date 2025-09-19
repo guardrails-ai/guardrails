@@ -68,6 +68,11 @@ async def test_async_streaming_guard_validation():
 
 @pytest.mark.asyncio
 async def test_sync_streaming_guard_validation():
+    # FIXME: The fact that this is necessary is concerning;
+    #   This is also necessary on our latest published versions:
+    #       guardrails-ai==0.6.6
+    #       guardrails-api==0.1.0a2
+    os.environ["GUARD_HISTORY_ENABLED"] = "false"
     settings.use_server = True
     guard = Guard(name="test-guard")
 

@@ -9,9 +9,12 @@ on:
 jobs:
     build-test-server:
         runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            tag: ["fastapi", "flask"]
         steps:
             - name: Check out head
-              uses: actions/checkout@v3
+              uses: actions/checkout@v5
               with:
                 persist-credentials: false
 
@@ -29,17 +32,17 @@ jobs:
               uses: docker/build-push-action@v6
               with:
                 context: .
-                file: server_ci/Dockerfile
+                file: server_ci/Dockerfile.${{ matrix.tag }}
                 platforms: linux/amd64
                 push: false
-                tags: guardrails:${{ github.sha }}
+                tags: guardrails:${{ matrix.tag }}
                 load: true
                 build-args: |
                   GUARDRAILS_TOKEN=${{ secrets.GUARDRAILS_API_KEY }}
 
             - name: Start Docker container
               run: |
-                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} guardrails:${{ github.sha }}
+                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} guardrails:${{ matrix.tag }}
         
             - name: Wait for Docker container to be ready
               run: |
@@ -54,7 +57,7 @@ jobs:
     
             - name: Run Pytest
               run: |
-                pip install pytest openai guardrails-ai
+                pip install pytest pytest-asyncio openai guardrails-ai
                 pytest server_ci/tests
                 docker stop guardrails-container
                 docker rm guardrails-container

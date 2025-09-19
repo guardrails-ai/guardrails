@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ARG GUARDRAILS_TOKEN
 ARG GUARDRAILS_TEMPLATE="guard-template.json"
@@ -25,18 +25,11 @@ RUN pipx install poetry
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy the entrypoint script
-COPY /server_ci/entry.sh /app/entry.sh
-COPY ../ /app/guardrails
+COPY /server_ci/flask-entry.sh /app/flask-entry.sh
 
 # Install guardrails, the guardrails API, and gunicorn
 # openai optional. only used for integration testing
-RUN pip install "gunicorn" "guardrails-api"
-
-WORKDIR /app/guardrails
-
-RUN poetry install
-
-RUN pip install ./
+RUN pip install "gunicorn[gthread]>=22.0.0,<23" "guardrails-api>=0.0.5,<0.1.0" "guardrails-ai==0.5.15" "guardrails-api-client>=0.3.0,<0.4.0"
 
 RUN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
 
@@ -47,10 +40,8 @@ COPY /server_ci/$GUARDRAILS_TEMPLATE /app/$GUARDRAILS_TEMPLATE
 RUN guardrails create --template /app/$GUARDRAILS_TEMPLATE
 
 
-RUN cp -r /usr/local/lib/python3.11/site-packages/guardrails/hub/* /app/guardrails/guardrails/hub
-
 # Expose port 8000 for the application
 EXPOSE 8000
 
 # Command to start the Gunicorn server with specified settings
-CMD ["/bin/bash", "/app/entry.sh"]
+CMD ["/bin/bash", "/app/flask-entry.sh"]
