@@ -1,4 +1,5 @@
-FROM python:3.12-slim
+# New LiteLLM version has a dependency on madoka which requires g++ to build the wheel
+FROM python:3.12
 
 ARG GUARDRAILS_TOKEN
 ARG GUARDRAILS_TEMPLATE="guard-template.json"
@@ -19,9 +20,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pipx install poetry
-
-# Ensure poetry is available in the PATH
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy the entrypoint script
@@ -29,7 +27,8 @@ COPY /server_ci/flask-entry.sh /app/flask-entry.sh
 
 # Install guardrails, the guardrails API, and gunicorn
 # openai optional. only used for integration testing
-RUN pip install "gunicorn[gthread]>=22.0.0,<23" "guardrails-api>=0.0.5,<0.1.0" "guardrails-ai==0.5.15" "guardrails-api-client>=0.3.0,<0.4.0"
+# Lock click version to what's compatible with typer==0.12.5
+RUN pip install "click==8.1.8" "gunicorn[gthread]>=22.0.0,<23" "guardrails-ai[api]==0.5.15"
 
 RUN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
 
