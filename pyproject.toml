@@ -20,6 +20,7 @@ dependencies = [
     "rich>=13.6.0,<15.0.0",
     "pydantic>=2.0.0, <3.0",
     "typer>=0.9.0,<0.16",
+    "click<8.2.0", # TODO: Upgrade typer range and test cli before allowing >=8.2.0
     "tenacity>=8.1.0,<10.0.0",
     "rstr>=3.2.2,<4.0.0",
     "typing-extensions>=4.8.0,<5.0.0",
@@ -96,8 +97,7 @@ docs-build = [
     "pydoc-markdown==4.8.2"
 ]
 huggingface = [
-    # Blocked from upgrading further by jsonformer
-    "transformers>=4.38.0,<4.49.0",
+    "transformers>=4.38.0,<5.0.0",
     "torch>=2.1.1,<3.0.0",
     "guardrails-jsonformer>=0.13.1,<1.0.0"
 ]
@@ -207,3 +207,4 @@ dependencies = true # to load [tool.poetry.dependencies]
 aiocache = "0.12.3" # BSD 3-Clause
 aiohappyeyeballs = "2.4.3" # Python Software Foundation
 guardrails-api = "*" # Modified ELSSTIC
+pondpond = "1.4.1" # Apache 2.0
