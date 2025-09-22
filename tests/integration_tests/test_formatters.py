@@ -58,12 +58,12 @@ def test_hugging_face_pipeline_callable():
         assert isinstance(validated_output["bez"][0], str)
 
 
-@pytest.mark.skip(reason="Random model infinitely recurses on complex struct. Use GPT2")
+@if_transformers_installed
 def test_hugging_face_pipeline_complex_schema():
     # NOTE: This is the real GPT-2 model.
     from transformers import pipeline
 
-    model = pipeline("text-generation", "gpt2")
+    model = pipeline("text-generation", "distilgpt2")
 
     class MultiNum(BaseModel):
         whole: int
@@ -73,7 +73,7 @@ def test_hugging_face_pipeline_complex_schema():
         foo: MultiNum
 
     g = Guard.for_pydantic(Tricky, output_formatter="jsonformer")
-    response = g(model, prompt="Sample:")
+    response = g(model, messages=[{"content": "Sample:", "role": "user"}])
     out = response.validated_output
     assert isinstance(out, dict)
     assert "foo" in out

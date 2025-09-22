@@ -360,11 +360,11 @@ def test_get_llm_ask_manifest(mocker):
     reason="transformers is not installed",
 )
 def test_get_llm_ask_hugging_face_model(mocker):
-    from transformers import PreTrainedModel
+    from transformers import PreTrainedModel, GenerationMixin
 
     from guardrails.llm_providers import HuggingFaceModelCallable
 
-    class MockModel(PreTrainedModel):
+    class MockModel(PreTrainedModel, GenerationMixin):
         _modules: Any
 
         def __init__(self, *args, **kwargs):
