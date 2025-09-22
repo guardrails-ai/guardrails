@@ -1,5 +1,5 @@
 # New LiteLLM version has a dependency on madoka which requires g++ to build the wheel
-FROM python:3.12
+FROM python:3.13
 
 ARG GUARDRAILS_TOKEN
 ARG GUARDRAILS_TEMPLATE="guard-template.json"
