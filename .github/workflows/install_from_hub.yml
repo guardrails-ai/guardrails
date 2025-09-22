@@ -15,9 +15,9 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with: 
-        python-version: 3.11.x
+        python-version: 3.13.x
     - name: pip install from main
-      run: pip install git+https://github.com/guardrails-ai/guardrails.git@main
+      run: pip install git+https://github.com/guardrails-ai/guardrails.git@py-3.13
     - name: Install PII validator
       run: |
         guardrails configure --token $GUARDRAILS_API_KEY --disable-metrics --enable-remote-inferencing;
