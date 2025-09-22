@@ -1,6 +1,6 @@
 import importlib
 import pytest
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -78,5 +78,5 @@ def test_hugging_face_pipeline_complex_schema():
     assert isinstance(out, dict)
     assert "foo" in out
     assert isinstance(out["foo"], dict)
-    assert isinstance(out["foo"]["whole"], int | float)
+    assert isinstance(out["foo"]["whole"], Union[int, float])
     assert isinstance(out["foo"]["frac"], float)
