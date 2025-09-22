@@ -208,3 +208,4 @@ dependencies = true # to load [tool.poetry.dependencies]
 aiocache = "0.12.3" # BSD 3-Clause
 aiohappyeyeballs = "2.4.3" # Python Software Foundation
 guardrails-api = "*" # Modified ELSSTIC
+pondpond = "1.4.1" # Apache 2.0
