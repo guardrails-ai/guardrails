@@ -133,6 +133,10 @@ requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
+name = "guardrails-ai"
+version = "0.6.7"
+description = "Adding guardrails to large language models."
+authors = ["Guardrails AI <contact@guardrailsai.com>"]
 package-mode = true
 packages = [
     { include = "guardrails", from = "." }
