@@ -33,7 +33,7 @@ It means that the call to the LLM failed. This is usually triggered for one of t
 
 ## How can I host Guardrails as its own server
 
-Guardrails can run totally on the server as of version 0.5.0. You can use the `guardrails-ai` package to run Guardrails as a server. You can find more information on how to do this in the [Guardrails AI documentation](https://docs.guardrails.ai/guardrails_ai/installation).
+Guardrails can run totally on the server as of version 0.5.0. You can use the `guardrails-ai` package to run Guardrails as a server. You can find more information on how to do this in the [Guardrails AI documentation](https://www.guardrailsai.com/docs/getting_started/guardrails_server).
 
 ## Which validators should I use? Where can I find them?
 
