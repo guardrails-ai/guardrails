@@ -2635,7 +2635,7 @@ dev = ["coverage", "gunicorn (>=22.0.0,<23)", "pytest", "pytest-mock", "ruff"]
 
 [[package]]
 name = "guardrails-api-client"
-version = "0.4.0a1"
+version = "0.4.0"
 description = "Guardrails API Client."
 optional = false
 python-versions = "<4,>=3.8"
