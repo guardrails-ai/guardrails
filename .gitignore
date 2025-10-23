@@ -1,4 +1,3 @@
-docs/api_reference_markdown/
 openai_api_key.txt
 *__pycache__*
 data/*
