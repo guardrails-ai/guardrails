@@ -147,6 +147,9 @@ name = "PyPI"
 select = ["E4", "E7", "E9", "F", "E501"]
 ignore = ["E731", "E203", "E741"]
 
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E501"]
+
 [tool.pytest.ini_options]
 python_classes = ["Test"]
 python_functions = ["test_"]
