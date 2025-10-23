@@ -2650,7 +2650,7 @@ pydantic = ">=2"
 lazy-imports = ">=1,<2"
 python-dateutil = ">=2.8.2"
 typing-extensions = ">=4.7.1"
-urllib3 = ">=1.25.3,<2.1.0"
+urllib3 = ">=2.1.0,<3.0.0""
 
 [package.extras]
 dev = ["pyright", "pytest", "pytest-cov", "ruff"]
