@@ -2642,7 +2642,7 @@ python-versions = "<4,>=3.8"
 groups = ["main"]
 files = [
     {file = "guardrails_api_client-0.4.0-py3-none-any.whl", hash = "sha256:3c936a1afb3373828c63a4f1cd17b876621a0e25dc334706bf63c041e03f1a90"},
-    {file = "guardrails_api_client-0.4.0a1.tar.gz", hash = "sha256:102e70cd53704298cd3d71c58bdac71bc6bfa2c341bc3b336a4ec434c540e9b4"},
+    {file = "guardrails_api_client-0.4.0.tar.gz", hash = "sha256:05f636bdc332fd3304007f564bca92b43ce9beb531ea3606d2cbdcbe97ab2c6f"},
 ]
 
 [package.dependencies]
