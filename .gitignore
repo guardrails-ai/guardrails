@@ -26,9 +26,9 @@ test.index
 htmlcov
 node_modules
 .docusaurus
-docs-build
+/docs-build/
 .vercel
-docusaurus/examples-toc.json
+!docs/docusaurus/examples-toc.json
 .python-version
 static/docs
 docusaurus/static/docs
