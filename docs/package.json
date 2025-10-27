@@ -7,7 +7,7 @@
     "prebuild": "node docusaurus/prebuild.js",
     "generate-docs": "poetry install --all-extras; cd ..; make docs-gen; cd docs; npm run prebuild",
     "start": "docusaurus start --config docusaurus/docusaurus.config.js",
-    "clean-start": "rm -rf docs/api_reference_markdown; rm -rf docs-build; npm run generate-docs; npm run start",
+    "clean-start": "rm -rf src/api_reference_markdown; rm -rf build; mkdir -p build; npm run generate-docs; npm run start",
     "build": "docusaurus build --config docusaurus/docusaurus.config.js",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -15,7 +15,7 @@
     "serve": "docusaurus serve --config docusaurus/docusaurus.config.js",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "restart": "rm -rf docs/api_reference_markdown; rm -rf docs-build; npm run generate-docs; npm run start"
+    "restart": "rm -rf src/api_reference_markdown; rm -rf build; mkdir -p build; npm run generate-docs; npm run start"
   },
   "dependencies": {
     "@docusaurus/core": "^3.9.2",

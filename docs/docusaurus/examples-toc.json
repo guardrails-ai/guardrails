@@ -339,6 +339,11 @@
       },
       {
         "type": "doc",
+        "id": "examples/text_summarization_quality",
+        "label": "Text Summarization Quality"
+      },
+      {
+        "type": "doc",
         "id": "examples/toxic_language",
         "label": "Toxic Language"
       },
@@ -346,6 +351,11 @@
         "type": "doc",
         "id": "examples/translation_to_specific_language",
         "label": "Translation To Specific Language"
+      },
+      {
+        "type": "doc",
+        "id": "examples/translation_with_quality_check",
+        "label": "Translation With Quality Check"
       },
       {
         "type": "doc",
