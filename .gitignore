@@ -14,7 +14,8 @@ site/*
 guardrails.log
 guardrails_ai.egg-info/
 */build/*
-!docs/build/*
+docs/build
+!docs/dist/*
 dist/*
 *.rail_output*
 .idea/*

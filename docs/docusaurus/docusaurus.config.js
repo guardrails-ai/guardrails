@@ -51,7 +51,7 @@ const config = {
         
         // Please change this to your repo.
         // Remove this to remove the "edit this page" links.
-        path: 'build',
+        path: 'dist',
         editUrl:
           "https://github.com/guardrails-ai/guardrails/tree/main/",
       },

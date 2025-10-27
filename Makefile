@@ -45,8 +45,8 @@ full:
 
 docs-gen:
 	poetry run python ./docs/pydocs/generate_pydocs.py
-	cp -r docs/src/* docs/build
-	poetry run nbdoc_build --force_all True --srcdir ./docs/build
+	cp -r docs/src/* docs/dist
+	poetry run nbdoc_build --force_all True --srcdir ./docs/dist
 
 self-install:
 	pip install -e .

@@ -173,7 +173,7 @@ function getFilesRecursive(dir) {
         const id = file.name.replace(".mdx", "").replace(".md", "");
         fileList.push({
           type: "doc",
-          id: path.relative("./", path.join(dir, id)).substring('build/'.length),
+          id: path.relative("./", path.join(dir, id)).substring('dist/'.length),
           label: snakeCaseToSentence(id),
         });
       }
@@ -182,7 +182,7 @@ function getFilesRecursive(dir) {
   return fileList;
 }
 
-const examples = getFilesRecursive("./build");
+const examples = getFilesRecursive("./dist");
 
 // write examples object out to file
 fs.writeFileSync("./docusaurus/examples-toc.json", JSON.stringify(examples, null, 2), "utf8");
@@ -220,5 +220,5 @@ function escapeHtml (fp) {
   });
 }
 
-const apiReferenceDir = "./build/api_reference_markdown";
+const apiReferenceDir = "./dist/api_reference_markdown";
 // escapeHtml(apiReferenceDir);
