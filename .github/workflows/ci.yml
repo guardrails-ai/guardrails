@@ -38,12 +38,13 @@ jobs:
           python3 -m venv ./.venv
           source .venv/bin/activate
           
-          if [ "${{ matrix.python-version }}" == "3.9" ]; 
-            then
-              pip install .[dev]
-            else
-              poetry install --extras dev
-          fi
+          # if [ "${{ matrix.python-version }}" == "3.9" ]; 
+          #   then
+          #     pip install .[dev]
+          #   else
+          #     poetry install --extras dev
+          # fi
+          make full
 
       - name: Check license
         run: |
@@ -70,12 +71,13 @@ jobs:
           # Setup Virtual Environment
           python3 -m venv ./.venv
           source .venv/bin/activate
-          if [ "${{ matrix.python-version }}" == "3.9" ]; 
-            then
-              pip install .[dev]
-            else
-              make dev          
-          fi
+          # if [ "${{ matrix.python-version }}" == "3.9" ]; 
+          #   then
+          #     pip install .[dev]
+          #   else
+          #     make dev          
+          # fi
+          make dev
 
       - name: Lint with ruff
         run: |
@@ -102,12 +104,13 @@ jobs:
           # Setup Virtual Environment
           python3 -m venv ./.venv
           source .venv/bin/activate
-          if [ "${{ matrix.python-version }}" == "3.9" ]; 
-            then
-              pip install .[dev,sql,vectordb,manifest,anthropic,huggingface,api,databricks,uv,llama]
-            else
-              make full          
-          fi
+          # if [ "${{ matrix.python-version }}" == "3.9" ]; 
+          #   then
+          #     pip install .[dev,sql,vectordb,manifest,anthropic,huggingface,api,databricks,uv,llama]
+          #   else
+          #     make full   
+          # fi
+          make full
 
       - name: Static analysis with pyright
         run: |
@@ -144,12 +147,13 @@ jobs:
           python3 -m venv ./.venv
           source .venv/bin/activate
           
-          if [ "${{ matrix.python-version }}" == "3.9" ]; 
-            then
-              pip install .[dev,sql,vectordb,manifest,anthropic,huggingface,api,databricks,uv,llama]
-            else
-              make full          
-          fi
+          # if [ "${{ matrix.python-version }}" == "3.9" ]; 
+          #   then
+          #     pip install .[dev,sql,vectordb,manifest,anthropic,huggingface,api,databricks,uv,llama]
+          #   else
+          #     make full          
+          # fi
+          make full
           
           if [ "${{ matrix.python-version }}" == "3.12" ]; then
             echo "Installing latest langchain-core and langsmith from PyPI"
