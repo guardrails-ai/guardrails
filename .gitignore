@@ -13,7 +13,7 @@ settings.json
 site/*
 guardrails.log
 guardrails_ai.egg-info/
-build/*
+*/build/*
 dist/*
 *.rail_output*
 .idea/*
@@ -26,7 +26,6 @@ test.index
 htmlcov
 node_modules
 .docusaurus
-/docs-build/
 .vercel
 !docs/docusaurus/examples-toc.json
 .python-version
