@@ -40,11 +40,6 @@ jobs:
           source .venv/bin/activate
           
           # Install dev dependencies
-          # if [ "${{ matrix.python-version }}" == "3.9" ]; then
-          #   pip install .[dev]
-          # else
-          #   poetry install --extras dev
-          # fi
           poetry install --extras dev
           
           # Install specific typer and click versions
