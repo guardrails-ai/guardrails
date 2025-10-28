@@ -54,8 +54,8 @@ Guardrails CRUD API. The server hosts the documenation on this page in an intera
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Returns the status of the server|[HealthCheck](#schemahealthcheck)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Returns the status of the server|[HealthCheck](#healthcheck)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -223,7 +223,7 @@ ApiKeyAuth, BearerAuth
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|A list of Guards.|Inline|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <h3 id="getguards-responseschema">Response Schema</h3>
 
@@ -231,13 +231,13 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[[guard](#schemaguard)]|false|none|none|
-|» Guard|[guard](#schemaguard)|false|none|none|
+|*anonymous*|[[guard](#guard)]|false|none|none|
+|» Guard|[guard](#guard)|false|none|none|
 |»» id|string(kebab-case)|true|none|The unique identifier for the Guard.|
 |»» name|string|true|none|The name for the Guard.|
 |»» description|string|false|none|A description that concisely states the expected behaviour or purpose of the Guard.|
 |»» validators|[allOf]|false|none|none|
-|»»» ValidatorReference|[ValidatorReference](#schemavalidatorreference)|false|none|none|
+|»»» ValidatorReference|[ValidatorReference](#validatorreference)|false|none|none|
 |»»»» id|string|true|none|The unique identifier for this Validator.  Often the hub id; e.g. guardrails/regex_match|
 |»»»» on|any|false|none|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "messages" or "output"|
 
@@ -258,7 +258,7 @@ Status Code **200**
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |»»»» onFail|string|false|none|none|
-|»» output_schema|[schema](#schemaschema)|false|none|none|
+|»» output_schema|[schema](#schema)|false|none|none|
 |»»» definitions|object|false|none|none|
 |»»»» **additionalProperties**|any|false|none|none|
 |»»» dependencies|object|false|none|none|
@@ -280,7 +280,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[core](#schemacore)|false|none|none|
+|»»» *anonymous*|[core](#core)|false|none|none|
 |»»»» $anchor|string|false|none|none|
 |»»»» $ref|string(uri-reference)|false|none|none|
 |»»»» $dynamicRef|string(uri-reference)|false|none|none|
@@ -295,7 +295,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[applicator](#schemaapplicator)|false|none|none|
+|»»» *anonymous*|[applicator](#applicator)|false|none|none|
 |»»»» prefixItems|[any]|false|none|none|
 |»»»» items|any|false|none|none|
 |»»»» contains|any|false|none|none|
@@ -319,7 +319,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[unevaluated](#schemaunevaluated)|false|none|none|
+|»»» *anonymous*|[unevaluated](#unevaluated)|false|none|none|
 |»»»» unevaluatedItems|any|false|none|none|
 |»»»» unevaluatedProperties|any|false|none|none|
 
@@ -327,22 +327,22 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[validation](#schemavalidation)|false|none|none|
+|»»» *anonymous*|[validation](#validation)|false|none|none|
 |»»»» multipleOf|number|false|none|none|
 |»»»» maximum|number|false|none|none|
 |»»»» exclusiveMaximum|number|false|none|none|
 |»»»» minimum|number|false|none|none|
 |»»»» exclusiveMinimum|number|false|none|none|
-|»»»» maxLength|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|»»»» minLength|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
+|»»»» maxLength|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|»»»» minLength|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
 |»»»» pattern|string(regex)|false|none|none|
-|»»»» maxItems|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|»»»» minItems|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
+|»»»» maxItems|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|»»»» minItems|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
 |»»»» uniqueItems|boolean|false|none|none|
-|»»»» maxContains|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|»»»» minContains|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|»»»» maxProperties|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|»»»» minProperties|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
+|»»»» maxContains|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|»»»» minContains|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|»»»» maxProperties|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|»»»» minProperties|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
 |»»»» required|[string]|false|none|none|
 |»»»» dependentRequired|object|false|none|none|
 |»»»»» **additionalProperties**|[string]|false|none|none|
@@ -360,13 +360,13 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»» *anonymous*|[[simpleTypes](#schemasimpletypes)]|false|none|none|
+|»»»»» *anonymous*|[[simpleTypes](#simpletypes)]|false|none|none|
 
 *and*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[meta-data](#schemameta-data)|false|none|none|
+|»»» *anonymous*|[meta-data](#meta-data)|false|none|none|
 |»»»» title|string|false|none|none|
 |»»»» description|string|false|none|none|
 |»»»» default|any|false|none|none|
@@ -379,14 +379,14 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[format-annotation](#schemaformat-annotation)|false|none|none|
+|»»» *anonymous*|[format-annotation](#format-annotation)|false|none|none|
 |»»»» format|string|false|none|none|
 
 *and*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[content](#schemacontent)|false|none|none|
+|»»» *anonymous*|[content](#content)|false|none|none|
 |»»»» contentMediaType|string|false|none|none|
 |»»»» contentEncoding|string|false|none|none|
 |»»»» contentSchema|any|false|none|none|
@@ -395,15 +395,15 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»» history|[[call](#schemacall)]|false|read-only|none|
-|»»» Call|[call](#schemacall)|false|none|none|
+|»» history|[[call](#call)]|false|read-only|none|
+|»»» Call|[call](#call)|false|none|none|
 |»»»» id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
-|»»»» iterations|[[iteration](#schemaiteration)]|false|none|none|
-|»»»»» Iteration|[iteration](#schemaiteration)|false|none|none|
+|»»»» iterations|[[iteration](#iteration)]|false|none|none|
+|»»»»» Iteration|[iteration](#iteration)|false|none|none|
 |»»»»»» id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
 |»»»»»» index|integer|true|none|The zero-based index of this iteration within the current Call.|
 |»»»»»» callId|string|true|none|The unique identifier for the Call that this iteration is a part of.|
-|»»»»»» inputs|[inputs](#schemainputs)|false|none|none|
+|»»»»»» inputs|[inputs](#inputs)|false|none|none|
 |»»»»»»» llmApi|string|false|none|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»»» llmOutput|string|false|none|The string output from an external LLM call provided by the user via Guard.parse.|
 |»»»»»»» messages|[object]|false|none|The message history for chat models.|
@@ -415,8 +415,8 @@ Status Code **200**
 |»»»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»»»» fullSchemaReask|boolean|false|none|Whether to perform reasks for the entire schema rather than for individual fields.|
 |»»»»»»» stream|boolean|false|none|Whether to use streaming.|
-|»»»»»» outputs|[outputs](#schemaoutputs)|false|none|none|
-|»»»»»»» llmResponseInfo|[LLMResponse](#schemallmresponse)|false|none|Information from the LLM response.|
+|»»»»»» outputs|[outputs](#outputs)|false|none|none|
+|»»»»»»» llmResponseInfo|[LLMResponse](#llmresponse)|false|none|Information from the LLM response.|
 |»»»»»»»» promptTokenCount|integer|false|none|none|
 |»»»»»»»» responseTokenCount|integer|false|none|none|
 |»»»»»»»» output|string|true|none|none|
@@ -485,7 +485,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»»»» *anonymous*|[objects](#schemaobjects)|false|none|none|
+|»»»»»»»»»» *anonymous*|[objects](#objects)|false|none|none|
 |»»»»»»»»»»» **additionalProperties**|any|false|none|none|
 
 *or*
@@ -504,7 +504,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»»»»» *anonymous*|[objects](#schemaobjects)|false|none|none|
+|»»»»»»»»»»» *anonymous*|[objects](#objects)|false|none|none|
 
 *continued*
 
@@ -522,16 +522,16 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»» *anonymous*|[reask](#schemareask)|false|none|none|
+|»»»»»»»» *anonymous*|[reask](#reask)|false|none|none|
 |»»»»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»»»»»» incorrectValue|any|false|none|none|
 |»»»»»»»»» failResults|[allOf]|false|none|none|
-|»»»»»»»»»» FailResult|[fail-result](#schemafail-result)|false|none|The output from a single Validator.|
+|»»»»»»»»»» FailResult|[fail-result](#fail-result)|false|none|The output from a single Validator.|
 |»»»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»»»» errorMessage|string|true|none|none|
 |»»»»»»»»»»» fixValue|any|false|none|none|
-|»»»»»»»»»»» errorSpans|[[error-span](#schemaerror-span)]|false|none|none|
-|»»»»»»»»»»»» ErrorSpan|[error-span](#schemaerror-span)|false|none|none|
+|»»»»»»»»»»» errorSpans|[[error-span](#error-span)]|false|none|none|
+|»»»»»»»»»»»» ErrorSpan|[error-span](#error-span)|false|none|none|
 |»»»»»»»»»»»»» start|integer|true|none|none|
 |»»»»»»»»»»»»» end|integer|true|none|none|
 |»»»»»»»»»»»»» reason|string|true|none|The reason validation failed, specific to this chunk.|
@@ -580,10 +580,10 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»» reasks|[[reask](#schemareask)]|false|none|none|
-|»»»»»»»» ReAsk|[reask](#schemareask)|false|none|none|
-|»»»»»»» validatorLogs|[[validator-log](#schemavalidator-log)]|false|none|none|
-|»»»»»»»» ValidatorLog|[validator-log](#schemavalidator-log)|false|none|none|
+|»»»»»»» reasks|[[reask](#reask)]|false|none|none|
+|»»»»»»»» ReAsk|[reask](#reask)|false|none|none|
+|»»»»»»» validatorLogs|[[validator-log](#validator-log)]|false|none|none|
+|»»»»»»»» ValidatorLog|[validator-log](#validator-log)|false|none|none|
 |»»»»»»»»» validatorName|string(PascalCase)|true|none|The class name of the validator.|
 |»»»»»»»»» registeredName|string(kebab-case)|true|none|The registry id of the validator.|
 |»»»»»»»»» instanceId|any|false|none|A unique identifier for the validator that produced this log within the session.|
@@ -613,7 +613,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»»»» *anonymous*|[pass-result](#schemapass-result)|false|none|The output from a single Validator.|
+|»»»»»»»»»» *anonymous*|[pass-result](#pass-result)|false|none|The output from a single Validator.|
 |»»»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»»»» valueOverride|any|false|none|none|
 
@@ -621,11 +621,11 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»»»» *anonymous*|[fail-result](#schemafail-result)|false|none|The output from a single Validator.|
+|»»»»»»»»»» *anonymous*|[fail-result](#fail-result)|false|none|The output from a single Validator.|
 |»»»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»»»» errorMessage|string|true|none|none|
 |»»»»»»»»»»» fixValue|any|false|none|none|
-|»»»»»»»»»»» errorSpans|[[error-span](#schemaerror-span)]|false|none|none|
+|»»»»»»»»»»» errorSpans|[[error-span](#error-span)]|false|none|none|
 
 *continued*
 
@@ -634,19 +634,19 @@ Status Code **200**
 |»»»»»»»»» startTime|string(date-time)|false|none|none|
 |»»»»»»»»» endTime|string(date-time)|false|none|none|
 |»»»»»»» error|string|false|none|The error message from any exception which interrupted the Guard execution process.|
-|»»»» inputs|[CallInputs](#schemacallinputs)|false|none|none|
+|»»»» inputs|[CallInputs](#callinputs)|false|none|none|
 
 *allOf*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»» *anonymous*|[inputs](#schemainputs)|false|none|none|
+|»»»»» *anonymous*|[inputs](#inputs)|false|none|none|
 
 *and*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»» *anonymous*|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|none|
+|»»»»» *anonymous*|[args-and-kwargs](#args-and-kwargs)|false|none|none|
 |»»»»»» args|[anyOf]|false|none|none|
 |»»»»»»» AnyType|any|false|none|none|
 |»»»»»» kwargs|object|false|none|none|
@@ -804,25 +804,25 @@ ApiKeyAuth, BearerAuth
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
-|body|body|[guard](#schemaguard)|true|none|
+|body|body|[guard](#guard)|true|none|
 |» id|body|string(kebab-case)|true|The unique identifier for the Guard.|
 |» name|body|string|true|The name for the Guard.|
 |» description|body|string|false|A description that concisely states the expected behaviour or purpose of the Guard.|
 |» validators|body|[allOf]|false|none|
-|»» ValidatorReference|body|[ValidatorReference](#schemavalidatorreference)|false|none|
+|»» ValidatorReference|body|[ValidatorReference](#validatorreference)|false|none|
 |»»» id|body|string|true|The unique identifier for this Validator.  Often the hub id; e.g. guardrails/regex_match|
 |»»» on|body|any|false|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "prompt" or "output"|
 |»»»» *anonymous*|body|string|false|meta-property|
 |»»»» *anonymous*|body|string|false|JSON path to property; e.g. $.foo.bar|
 |»»» onFail|body|string|false|none|
-|» output_schema|body|[schema](#schemaschema)|false|none|
+|» output_schema|body|[schema](#schema)|false|none|
 |»» definitions|body|object|false|none|
 |»»» **additionalProperties**|body|any|false|none|
 |»» dependencies|body|object|false|none|
 |»»» **additionalProperties**|body|any|false|none|
 |»»»» *anonymous*|body|any|false|none|
 |»»»» *anonymous*|body|[string]|false|none|
-|»» *anonymous*|body|[core](#schemacore)|false|none|
+|»» *anonymous*|body|[core](#core)|false|none|
 |»»» $anchor|body|string|false|none|
 |»»» $ref|body|string(uri-reference)|false|none|
 |»»» $dynamicRef|body|string(uri-reference)|false|none|
@@ -832,7 +832,7 @@ ApiKeyAuth, BearerAuth
 |»»» $comment|body|string|false|none|
 |»»» $defs|body|object|false|none|
 |»»»» **additionalProperties**|body|any|false|none|
-|»» *anonymous*|body|[applicator](#schemaapplicator)|false|none|
+|»» *anonymous*|body|[applicator](#applicator)|false|none|
 |»»» prefixItems|body|[any]|false|none|
 |»»» items|body|any|false|none|
 |»»» contains|body|any|false|none|
@@ -851,25 +851,25 @@ ApiKeyAuth, BearerAuth
 |»»» anyOf|body|[any]|false|none|
 |»»» oneOf|body|[any]|false|none|
 |»»» not|body|any|false|none|
-|»» *anonymous*|body|[unevaluated](#schemaunevaluated)|false|none|
+|»» *anonymous*|body|[unevaluated](#unevaluated)|false|none|
 |»»» unevaluatedItems|body|any|false|none|
 |»»» unevaluatedProperties|body|any|false|none|
-|»» *anonymous*|body|[validation](#schemavalidation)|false|none|
+|»» *anonymous*|body|[validation](#validation)|false|none|
 |»»» multipleOf|body|number|false|none|
 |»»» maximum|body|number|false|none|
 |»»» exclusiveMaximum|body|number|false|none|
 |»»» minimum|body|number|false|none|
 |»»» exclusiveMinimum|body|number|false|none|
-|»»» maxLength|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minLength|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxLength|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minLength|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» pattern|body|string(regex)|false|none|
-|»»» maxItems|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minItems|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxItems|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minItems|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» uniqueItems|body|boolean|false|none|
-|»»» maxContains|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minContains|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» maxProperties|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minProperties|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxContains|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minContains|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» maxProperties|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minProperties|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» required|body|[string]|false|none|
 |»»» dependentRequired|body|object|false|none|
 |»»»» **additionalProperties**|body|[string]|false|none|
@@ -877,8 +877,8 @@ ApiKeyAuth, BearerAuth
 |»»» enum|body|[any]|false|none|
 |»»» type|body|any|false|none|
 |»»»» *anonymous*|body|any|false|none|
-|»»»» *anonymous*|body|[[simpleTypes](#schemasimpletypes)]|false|none|
-|»» *anonymous*|body|[meta-data](#schemameta-data)|false|none|
+|»»»» *anonymous*|body|[[simpleTypes](#simpletypes)]|false|none|
+|»» *anonymous*|body|[meta-data](#meta-data)|false|none|
 |»»» title|body|string|false|none|
 |»»» description|body|string|false|none|
 |»»» default|body|any|false|none|
@@ -886,21 +886,21 @@ ApiKeyAuth, BearerAuth
 |»»» readOnly|body|boolean|false|none|
 |»»» writeOnly|body|boolean|false|none|
 |»»» examples|body|[any]|false|none|
-|»» *anonymous*|body|[format-annotation](#schemaformat-annotation)|false|none|
+|»» *anonymous*|body|[format-annotation](#format-annotation)|false|none|
 |»»» format|body|string|false|none|
-|»» *anonymous*|body|[content](#schemacontent)|false|none|
+|»» *anonymous*|body|[content](#content)|false|none|
 |»»» contentMediaType|body|string|false|none|
 |»»» contentEncoding|body|string|false|none|
 |»»» contentSchema|body|any|false|none|
-|» history|body|[[call](#schemacall)]|false|none|
-|»» Call|body|[call](#schemacall)|false|none|
+|» history|body|[[call](#call)]|false|none|
+|»» Call|body|[call](#call)|false|none|
 |»»» id|body|string|true|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
-|»»» iterations|body|[[iteration](#schemaiteration)]|false|none|
-|»»»» Iteration|body|[iteration](#schemaiteration)|false|none|
+|»»» iterations|body|[[iteration](#iteration)]|false|none|
+|»»»» Iteration|body|[iteration](#iteration)|false|none|
 |»»»»» id|body|string|true|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
 |»»»»» index|body|integer|true|The zero-based index of this iteration within the current Call.|
 |»»»»» callId|body|string|true|The unique identifier for the Call that this iteration is a part of.|
-|»»»»» inputs|body|[inputs](#schemainputs)|false|none|
+|»»»»» inputs|body|[inputs](#inputs)|false|none|
 |»»»»»» llmApi|body|string|false|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»» llmOutput|body|string|false|The string output from an external LLM call provided by the user via Guard.parse.|
 |»»»»»» messages|body|[object]|false|The message history for chat models.|
@@ -912,8 +912,8 @@ ApiKeyAuth, BearerAuth
 |»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»» fullSchemaReask|body|boolean|false|Whether to perform reasks for the entire schema rather than for individual fields.|
 |»»»»»» stream|body|boolean|false|Whether to use streaming.|
-|»»»»» outputs|body|[outputs](#schemaoutputs)|false|none|
-|»»»»»» llmResponseInfo|body|[LLMResponse](#schemallmresponse)|false|Information from the LLM response.|
+|»»»»» outputs|body|[outputs](#outputs)|false|none|
+|»»»»»» llmResponseInfo|body|[LLMResponse](#llmresponse)|false|Information from the LLM response.|
 |»»»»»»» promptTokenCount|body|integer|false|none|
 |»»»»»»» responseTokenCount|body|integer|false|none|
 |»»»»»»» output|body|string|true|none|
@@ -932,23 +932,23 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»»»» *anonymous*|body|null|false|none|
 |»»»»»»»»»» *anonymous*|body|number|false|none|
 |»»»»»»»»»» *anonymous*|body|string|false|none|
-|»»»»»»»»» *anonymous*|body|[objects](#schemaobjects)|false|none|
+|»»»»»»»»» *anonymous*|body|[objects](#objects)|false|none|
 |»»»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»»»» *anonymous*|body|[anyOf]|false|none|
 |»»»»»»»»»» *anonymous*|body|any|false|none|
-|»»»»»»»»»» *anonymous*|body|[objects](#schemaobjects)|false|none|
+|»»»»»»»»»» *anonymous*|body|[objects](#objects)|false|none|
 |»»»»»» validationResponse|body|any|false|none|
 |»»»»»»» *anonymous*|body|string|false|none|
-|»»»»»»» *anonymous*|body|[reask](#schemareask)|false|none|
+|»»»»»»» *anonymous*|body|[reask](#reask)|false|none|
 |»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»»» incorrectValue|body|any|false|none|
 |»»»»»»»» failResults|body|[allOf]|false|none|
-|»»»»»»»»» FailResult|body|[fail-result](#schemafail-result)|false|The output from a single Validator.|
+|»»»»»»»»» FailResult|body|[fail-result](#fail-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» errorMessage|body|string|true|none|
 |»»»»»»»»»» fixValue|body|any|false|none|
-|»»»»»»»»»» errorSpans|body|[[error-span](#schemaerror-span)]|false|none|
-|»»»»»»»»»»» ErrorSpan|body|[error-span](#schemaerror-span)|false|none|
+|»»»»»»»»»» errorSpans|body|[[error-span](#error-span)]|false|none|
+|»»»»»»»»»»» ErrorSpan|body|[error-span](#error-span)|false|none|
 |»»»»»»»»»»»» start|body|integer|true|none|
 |»»»»»»»»»»»» end|body|integer|true|none|
 |»»»»»»»»»»»» reason|body|string|true|The reason validation failed, specific to this chunk.|
@@ -962,10 +962,10 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»» *anonymous*|body|[anyOf]|false|none|
 |»»»»»»»» AnyType|body|any|false|none|
-|»»»»»» reasks|body|[[reask](#schemareask)]|false|none|
-|»»»»»»» ReAsk|body|[reask](#schemareask)|false|none|
-|»»»»»» validatorLogs|body|[[validator-log](#schemavalidator-log)]|false|none|
-|»»»»»»» ValidatorLog|body|[validator-log](#schemavalidator-log)|false|none|
+|»»»»»» reasks|body|[[reask](#reask)]|false|none|
+|»»»»»»» ReAsk|body|[reask](#reask)|false|none|
+|»»»»»» validatorLogs|body|[[validator-log](#validator-log)]|false|none|
+|»»»»»»» ValidatorLog|body|[validator-log](#validator-log)|false|none|
 |»»»»»»»» validatorName|body|string(PascalCase)|true|The class name of the validator.|
 |»»»»»»»» registeredName|body|string(kebab-case)|true|The registry id of the validator.|
 |»»»»»»»» instanceId|body|any|false|A unique identifier for the validator that produced this log within the session.|
@@ -975,20 +975,20 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»» valueBeforeValidation|body|any|true|none|
 |»»»»»»»» valueAfterValidation|body|any|false|none|
 |»»»»»»»» validationResult|body|any|false|none|
-|»»»»»»»»» *anonymous*|body|[pass-result](#schemapass-result)|false|The output from a single Validator.|
+|»»»»»»»»» *anonymous*|body|[pass-result](#pass-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» valueOverride|body|any|false|none|
-|»»»»»»»»» *anonymous*|body|[fail-result](#schemafail-result)|false|The output from a single Validator.|
+|»»»»»»»»» *anonymous*|body|[fail-result](#fail-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» errorMessage|body|string|true|none|
 |»»»»»»»»»» fixValue|body|any|false|none|
-|»»»»»»»»»» errorSpans|body|[[error-span](#schemaerror-span)]|false|none|
+|»»»»»»»»»» errorSpans|body|[[error-span](#error-span)]|false|none|
 |»»»»»»»» startTime|body|string(date-time)|false|none|
 |»»»»»»»» endTime|body|string(date-time)|false|none|
 |»»»»»» error|body|string|false|The error message from any exception which interrupted the Guard execution process.|
-|»»» inputs|body|[CallInputs](#schemacallinputs)|false|none|
-|»»»» *anonymous*|body|[inputs](#schemainputs)|false|none|
-|»»»» *anonymous*|body|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|
+|»»» inputs|body|[CallInputs](#callinputs)|false|none|
+|»»»» *anonymous*|body|[inputs](#inputs)|false|none|
+|»»»» *anonymous*|body|[args-and-kwargs](#args-and-kwargs)|false|none|
 |»»»»» args|body|[anyOf]|false|none|
 |»»»»»» AnyType|body|any|false|none|
 |»»»»» kwargs|body|object|false|none|
@@ -1172,8 +1172,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the new Guard|[guard](#schemaguard)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the new Guard|[guard](#guard)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1343,8 +1343,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the fetched Guard|[guard](#schemaguard)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the fetched Guard|[guard](#guard)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1471,25 +1471,25 @@ ApiKeyAuth, BearerAuth
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |guardName|path|string|true|Guard name|
-|body|body|[guard](#schemaguard)|true|none|
+|body|body|[guard](#guard)|true|none|
 |» id|body|string(kebab-case)|true|The unique identifier for the Guard.|
 |» name|body|string|true|The name for the Guard.|
 |» description|body|string|false|A description that concisely states the expected behaviour or purpose of the Guard.|
 |» validators|body|[allOf]|false|none|
-|»» ValidatorReference|body|[ValidatorReference](#schemavalidatorreference)|false|none|
+|»» ValidatorReference|body|[ValidatorReference](#validatorreference)|false|none|
 |»»» id|body|string|true|The unique identifier for this Validator.  Often the hub id; e.g. guardrails/regex_match|
 |»»» on|body|any|false|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "prompt" or "output"|
 |»»»» *anonymous*|body|string|false|meta-property|
 |»»»» *anonymous*|body|string|false|JSON path to property; e.g. $.foo.bar|
 |»»» onFail|body|string|false|none|
-|» output_schema|body|[schema](#schemaschema)|false|none|
+|» output_schema|body|[schema](#schema)|false|none|
 |»» definitions|body|object|false|none|
 |»»» **additionalProperties**|body|any|false|none|
 |»» dependencies|body|object|false|none|
 |»»» **additionalProperties**|body|any|false|none|
 |»»»» *anonymous*|body|any|false|none|
 |»»»» *anonymous*|body|[string]|false|none|
-|»» *anonymous*|body|[core](#schemacore)|false|none|
+|»» *anonymous*|body|[core](#core)|false|none|
 |»»» $anchor|body|string|false|none|
 |»»» $ref|body|string(uri-reference)|false|none|
 |»»» $dynamicRef|body|string(uri-reference)|false|none|
@@ -1499,7 +1499,7 @@ ApiKeyAuth, BearerAuth
 |»»» $comment|body|string|false|none|
 |»»» $defs|body|object|false|none|
 |»»»» **additionalProperties**|body|any|false|none|
-|»» *anonymous*|body|[applicator](#schemaapplicator)|false|none|
+|»» *anonymous*|body|[applicator](#applicator)|false|none|
 |»»» prefixItems|body|[any]|false|none|
 |»»» items|body|any|false|none|
 |»»» contains|body|any|false|none|
@@ -1518,25 +1518,25 @@ ApiKeyAuth, BearerAuth
 |»»» anyOf|body|[any]|false|none|
 |»»» oneOf|body|[any]|false|none|
 |»»» not|body|any|false|none|
-|»» *anonymous*|body|[unevaluated](#schemaunevaluated)|false|none|
+|»» *anonymous*|body|[unevaluated](#unevaluated)|false|none|
 |»»» unevaluatedItems|body|any|false|none|
 |»»» unevaluatedProperties|body|any|false|none|
-|»» *anonymous*|body|[validation](#schemavalidation)|false|none|
+|»» *anonymous*|body|[validation](#validation)|false|none|
 |»»» multipleOf|body|number|false|none|
 |»»» maximum|body|number|false|none|
 |»»» exclusiveMaximum|body|number|false|none|
 |»»» minimum|body|number|false|none|
 |»»» exclusiveMinimum|body|number|false|none|
-|»»» maxLength|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minLength|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxLength|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minLength|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» pattern|body|string(regex)|false|none|
-|»»» maxItems|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minItems|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxItems|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minItems|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» uniqueItems|body|boolean|false|none|
-|»»» maxContains|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minContains|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» maxProperties|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
-|»»» minProperties|body|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|
+|»»» maxContains|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minContains|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» maxProperties|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
+|»»» minProperties|body|[nonNegativeInteger](#nonnegativeinteger)|false|none|
 |»»» required|body|[string]|false|none|
 |»»» dependentRequired|body|object|false|none|
 |»»»» **additionalProperties**|body|[string]|false|none|
@@ -1544,8 +1544,8 @@ ApiKeyAuth, BearerAuth
 |»»» enum|body|[any]|false|none|
 |»»» type|body|any|false|none|
 |»»»» *anonymous*|body|any|false|none|
-|»»»» *anonymous*|body|[[simpleTypes](#schemasimpletypes)]|false|none|
-|»» *anonymous*|body|[meta-data](#schemameta-data)|false|none|
+|»»»» *anonymous*|body|[[simpleTypes](#simpletypes)]|false|none|
+|»» *anonymous*|body|[meta-data](#meta-data)|false|none|
 |»»» title|body|string|false|none|
 |»»» description|body|string|false|none|
 |»»» default|body|any|false|none|
@@ -1553,21 +1553,21 @@ ApiKeyAuth, BearerAuth
 |»»» readOnly|body|boolean|false|none|
 |»»» writeOnly|body|boolean|false|none|
 |»»» examples|body|[any]|false|none|
-|»» *anonymous*|body|[format-annotation](#schemaformat-annotation)|false|none|
+|»» *anonymous*|body|[format-annotation](#format-annotation)|false|none|
 |»»» format|body|string|false|none|
-|»» *anonymous*|body|[content](#schemacontent)|false|none|
+|»» *anonymous*|body|[content](#content)|false|none|
 |»»» contentMediaType|body|string|false|none|
 |»»» contentEncoding|body|string|false|none|
 |»»» contentSchema|body|any|false|none|
-|» history|body|[[call](#schemacall)]|false|none|
-|»» Call|body|[call](#schemacall)|false|none|
+|» history|body|[[call](#call)]|false|none|
+|»» Call|body|[call](#call)|false|none|
 |»»» id|body|string|true|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
-|»»» iterations|body|[[iteration](#schemaiteration)]|false|none|
-|»»»» Iteration|body|[iteration](#schemaiteration)|false|none|
+|»»» iterations|body|[[iteration](#iteration)]|false|none|
+|»»»» Iteration|body|[iteration](#iteration)|false|none|
 |»»»»» id|body|string|true|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
 |»»»»» index|body|integer|true|The zero-based index of this iteration within the current Call.|
 |»»»»» callId|body|string|true|The unique identifier for the Call that this iteration is a part of.|
-|»»»»» inputs|body|[inputs](#schemainputs)|false|none|
+|»»»»» inputs|body|[inputs](#inputs)|false|none|
 |»»»»»» llmApi|body|string|false|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»»» llmOutput|body|string|false|The string output from an external LLM call provided by the user via Guard.parse.|
 |»»»»»» messages|body|[object]|false|The message history for chat models.|
@@ -1579,8 +1579,8 @@ ApiKeyAuth, BearerAuth
 |»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»» fullSchemaReask|body|boolean|false|Whether to perform reasks for the entire schema rather than for individual fields.|
 |»»»»»» stream|body|boolean|false|Whether to use streaming.|
-|»»»»» outputs|body|[outputs](#schemaoutputs)|false|none|
-|»»»»»» llmResponseInfo|body|[LLMResponse](#schemallmresponse)|false|Information from the LLM response.|
+|»»»»» outputs|body|[outputs](#outputs)|false|none|
+|»»»»»» llmResponseInfo|body|[LLMResponse](#llmresponse)|false|Information from the LLM response.|
 |»»»»»»» promptTokenCount|body|integer|false|none|
 |»»»»»»» responseTokenCount|body|integer|false|none|
 |»»»»»»» output|body|string|true|none|
@@ -1599,23 +1599,23 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»»»» *anonymous*|body|null|false|none|
 |»»»»»»»»»» *anonymous*|body|number|false|none|
 |»»»»»»»»»» *anonymous*|body|string|false|none|
-|»»»»»»»»» *anonymous*|body|[objects](#schemaobjects)|false|none|
+|»»»»»»»»» *anonymous*|body|[objects](#objects)|false|none|
 |»»»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»»»» *anonymous*|body|[anyOf]|false|none|
 |»»»»»»»»»» *anonymous*|body|any|false|none|
-|»»»»»»»»»» *anonymous*|body|[objects](#schemaobjects)|false|none|
+|»»»»»»»»»» *anonymous*|body|[objects](#objects)|false|none|
 |»»»»»» validationResponse|body|any|false|none|
 |»»»»»»» *anonymous*|body|string|false|none|
-|»»»»»»» *anonymous*|body|[reask](#schemareask)|false|none|
+|»»»»»»» *anonymous*|body|[reask](#reask)|false|none|
 |»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»»» incorrectValue|body|any|false|none|
 |»»»»»»»» failResults|body|[allOf]|false|none|
-|»»»»»»»»» FailResult|body|[fail-result](#schemafail-result)|false|The output from a single Validator.|
+|»»»»»»»»» FailResult|body|[fail-result](#fail-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» errorMessage|body|string|true|none|
 |»»»»»»»»»» fixValue|body|any|false|none|
-|»»»»»»»»»» errorSpans|body|[[error-span](#schemaerror-span)]|false|none|
-|»»»»»»»»»»» ErrorSpan|body|[error-span](#schemaerror-span)|false|none|
+|»»»»»»»»»» errorSpans|body|[[error-span](#error-span)]|false|none|
+|»»»»»»»»»»» ErrorSpan|body|[error-span](#error-span)|false|none|
 |»»»»»»»»»»»» start|body|integer|true|none|
 |»»»»»»»»»»»» end|body|integer|true|none|
 |»»»»»»»»»»»» reason|body|string|true|The reason validation failed, specific to this chunk.|
@@ -1629,10 +1629,10 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»» **additionalProperties**|body|any|false|none|
 |»»»»»»» *anonymous*|body|[anyOf]|false|none|
 |»»»»»»»» AnyType|body|any|false|none|
-|»»»»»» reasks|body|[[reask](#schemareask)]|false|none|
-|»»»»»»» ReAsk|body|[reask](#schemareask)|false|none|
-|»»»»»» validatorLogs|body|[[validator-log](#schemavalidator-log)]|false|none|
-|»»»»»»» ValidatorLog|body|[validator-log](#schemavalidator-log)|false|none|
+|»»»»»» reasks|body|[[reask](#reask)]|false|none|
+|»»»»»»» ReAsk|body|[reask](#reask)|false|none|
+|»»»»»» validatorLogs|body|[[validator-log](#validator-log)]|false|none|
+|»»»»»»» ValidatorLog|body|[validator-log](#validator-log)|false|none|
 |»»»»»»»» validatorName|body|string(PascalCase)|true|The class name of the validator.|
 |»»»»»»»» registeredName|body|string(kebab-case)|true|The registry id of the validator.|
 |»»»»»»»» instanceId|body|any|false|A unique identifier for the validator that produced this log within the session.|
@@ -1642,20 +1642,20 @@ ApiKeyAuth, BearerAuth
 |»»»»»»»» valueBeforeValidation|body|any|true|none|
 |»»»»»»»» valueAfterValidation|body|any|false|none|
 |»»»»»»»» validationResult|body|any|false|none|
-|»»»»»»»»» *anonymous*|body|[pass-result](#schemapass-result)|false|The output from a single Validator.|
+|»»»»»»»»» *anonymous*|body|[pass-result](#pass-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» valueOverride|body|any|false|none|
-|»»»»»»»»» *anonymous*|body|[fail-result](#schemafail-result)|false|The output from a single Validator.|
+|»»»»»»»»» *anonymous*|body|[fail-result](#fail-result)|false|The output from a single Validator.|
 |»»»»»»»»»» outcome|body|any|true|none|
 |»»»»»»»»»» errorMessage|body|string|true|none|
 |»»»»»»»»»» fixValue|body|any|false|none|
-|»»»»»»»»»» errorSpans|body|[[error-span](#schemaerror-span)]|false|none|
+|»»»»»»»»»» errorSpans|body|[[error-span](#error-span)]|false|none|
 |»»»»»»»» startTime|body|string(date-time)|false|none|
 |»»»»»»»» endTime|body|string(date-time)|false|none|
 |»»»»»» error|body|string|false|The error message from any exception which interrupted the Guard execution process.|
-|»»» inputs|body|[CallInputs](#schemacallinputs)|false|none|
-|»»»» *anonymous*|body|[inputs](#schemainputs)|false|none|
-|»»»» *anonymous*|body|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|
+|»»» inputs|body|[CallInputs](#callinputs)|false|none|
+|»»»» *anonymous*|body|[inputs](#inputs)|false|none|
+|»»»» *anonymous*|body|[args-and-kwargs](#args-and-kwargs)|false|none|
 |»»»»» args|body|[anyOf]|false|none|
 |»»»»»» AnyType|body|any|false|none|
 |»»»»» kwargs|body|object|false|none|
@@ -1839,8 +1839,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the updated Guard|[guard](#schemaguard)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the updated Guard|[guard](#guard)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2009,8 +2009,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the deleted Guard|[guard](#schemaguard)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the deleted Guard|[guard](#guard)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2079,7 +2079,7 @@ ApiKeyAuth, BearerAuth
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|the fetched Guard History|Inline|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <h3 id="getguardhistory-responseschema">Response Schema</h3>
 
@@ -2087,15 +2087,15 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[[call](#schemacall)]|false|none|none|
-|» Call|[call](#schemacall)|false|none|none|
+|*anonymous*|[[call](#call)]|false|none|none|
+|» Call|[call](#call)|false|none|none|
 |»» id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
-|»» iterations|[[iteration](#schemaiteration)]|false|none|none|
-|»»» Iteration|[iteration](#schemaiteration)|false|none|none|
+|»» iterations|[[iteration](#iteration)]|false|none|none|
+|»»» Iteration|[iteration](#iteration)|false|none|none|
 |»»»» id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
 |»»»» index|integer|true|none|The zero-based index of this iteration within the current Call.|
 |»»»» callId|string|true|none|The unique identifier for the Call that this iteration is a part of.|
-|»»»» inputs|[inputs](#schemainputs)|false|none|none|
+|»»»» inputs|[inputs](#inputs)|false|none|none|
 |»»»»» llmApi|string|false|none|The LLM resource targeted by the user. e.g. openai.chat.completions.create|
 |»»»»» llmOutput|string|false|none|The string output from an external LLM call provided by the user via Guard.parse.|
 |»»»»» messages|[object]|false|none|The message history for chat models.|
@@ -2107,8 +2107,8 @@ Status Code **200**
 |»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»» fullSchemaReask|boolean|false|none|Whether to perform reasks for the entire schema rather than for individual fields.|
 |»»»»» stream|boolean|false|none|Whether to use streaming.|
-|»»»» outputs|[outputs](#schemaoutputs)|false|none|none|
-|»»»»» llmResponseInfo|[LLMResponse](#schemallmresponse)|false|none|Information from the LLM response.|
+|»»»» outputs|[outputs](#outputs)|false|none|none|
+|»»»»» llmResponseInfo|[LLMResponse](#llmresponse)|false|none|Information from the LLM response.|
 |»»»»»» promptTokenCount|integer|false|none|none|
 |»»»»»» responseTokenCount|integer|false|none|none|
 |»»»»»» output|string|true|none|none|
@@ -2177,7 +2177,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»» *anonymous*|[objects](#schemaobjects)|false|none|none|
+|»»»»»»»» *anonymous*|[objects](#objects)|false|none|none|
 |»»»»»»»»» **additionalProperties**|any|false|none|none|
 
 *or*
@@ -2196,7 +2196,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»»» *anonymous*|[objects](#schemaobjects)|false|none|none|
+|»»»»»»»»» *anonymous*|[objects](#objects)|false|none|none|
 
 *continued*
 
@@ -2214,16 +2214,16 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»» *anonymous*|[reask](#schemareask)|false|none|none|
+|»»»»»» *anonymous*|[reask](#reask)|false|none|none|
 |»»»»»»» **additionalProperties**|any|false|none|none|
 |»»»»»»» incorrectValue|any|false|none|none|
 |»»»»»»» failResults|[allOf]|false|none|none|
-|»»»»»»»» FailResult|[fail-result](#schemafail-result)|false|none|The output from a single Validator.|
+|»»»»»»»» FailResult|[fail-result](#fail-result)|false|none|The output from a single Validator.|
 |»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»» errorMessage|string|true|none|none|
 |»»»»»»»»» fixValue|any|false|none|none|
-|»»»»»»»»» errorSpans|[[error-span](#schemaerror-span)]|false|none|none|
-|»»»»»»»»»» ErrorSpan|[error-span](#schemaerror-span)|false|none|none|
+|»»»»»»»»» errorSpans|[[error-span](#error-span)]|false|none|none|
+|»»»»»»»»»» ErrorSpan|[error-span](#error-span)|false|none|none|
 |»»»»»»»»»»» start|integer|true|none|none|
 |»»»»»»»»»»» end|integer|true|none|none|
 |»»»»»»»»»»» reason|string|true|none|The reason validation failed, specific to this chunk.|
@@ -2272,10 +2272,10 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»» reasks|[[reask](#schemareask)]|false|none|none|
-|»»»»»» ReAsk|[reask](#schemareask)|false|none|none|
-|»»»»» validatorLogs|[[validator-log](#schemavalidator-log)]|false|none|none|
-|»»»»»» ValidatorLog|[validator-log](#schemavalidator-log)|false|none|none|
+|»»»»» reasks|[[reask](#reask)]|false|none|none|
+|»»»»»» ReAsk|[reask](#reask)|false|none|none|
+|»»»»» validatorLogs|[[validator-log](#validator-log)]|false|none|none|
+|»»»»»» ValidatorLog|[validator-log](#validator-log)|false|none|none|
 |»»»»»»» validatorName|string(PascalCase)|true|none|The class name of the validator.|
 |»»»»»»» registeredName|string(kebab-case)|true|none|The registry id of the validator.|
 |»»»»»»» instanceId|any|false|none|A unique identifier for the validator that produced this log within the session.|
@@ -2305,7 +2305,7 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»» *anonymous*|[pass-result](#schemapass-result)|false|none|The output from a single Validator.|
+|»»»»»»»» *anonymous*|[pass-result](#pass-result)|false|none|The output from a single Validator.|
 |»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»» valueOverride|any|false|none|none|
 
@@ -2313,11 +2313,11 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»»»»»»» *anonymous*|[fail-result](#schemafail-result)|false|none|The output from a single Validator.|
+|»»»»»»»» *anonymous*|[fail-result](#fail-result)|false|none|The output from a single Validator.|
 |»»»»»»»»» outcome|any|true|none|none|
 |»»»»»»»»» errorMessage|string|true|none|none|
 |»»»»»»»»» fixValue|any|false|none|none|
-|»»»»»»»»» errorSpans|[[error-span](#schemaerror-span)]|false|none|none|
+|»»»»»»»»» errorSpans|[[error-span](#error-span)]|false|none|none|
 
 *continued*
 
@@ -2326,19 +2326,19 @@ Status Code **200**
 |»»»»»»» startTime|string(date-time)|false|none|none|
 |»»»»»»» endTime|string(date-time)|false|none|none|
 |»»»»» error|string|false|none|The error message from any exception which interrupted the Guard execution process.|
-|»» inputs|[CallInputs](#schemacallinputs)|false|none|none|
+|»» inputs|[CallInputs](#callinputs)|false|none|none|
 
 *allOf*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[inputs](#schemainputs)|false|none|none|
+|»»» *anonymous*|[inputs](#inputs)|false|none|none|
 
 *and*
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»»» *anonymous*|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|none|
+|»»» *anonymous*|[args-and-kwargs](#args-and-kwargs)|false|none|none|
 |»»»» args|[anyOf]|false|none|none|
 |»»»»» AnyType|any|false|none|none|
 |»»»» kwargs|object|false|none|none|
@@ -2386,7 +2386,7 @@ ApiKeyAuth, BearerAuth
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |guardName|path|string|true|Guard name|
-|body|body|[OpenAIChatCompletionPayload](#schemaopenaichatcompletionpayload)|true|none|
+|body|body|[OpenAIChatCompletionPayload](#openaichatcompletionpayload)|true|none|
 |» model|body|string|false|The model to use for the completion|
 |» messages|body|[object]|false|The messages to use for the completion|
 |»» role|body|string|false|The role of the message|
@@ -2416,8 +2416,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|The output of the completion|[OpenAIChatCompletion](#schemaopenaichatcompletion)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|The output of the completion|[OpenAIChatCompletion](#openaichatcompletion)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2456,13 +2456,13 @@ ApiKeyAuth, BearerAuth
 |---|---|---|---|---|
 |guardName|path|string|true|Guard name|
 |x-openai-api-key|header|string(password)|false|A valid OpenAI API Key for calling LLM's on your behalf|
-|body|body|[ValidatePayload](#schemavalidatepayload)|true|none|
+|body|body|[ValidatePayload](#validatepayload)|true|none|
 |» **additionalProperties**|body|any|false|none|
 |» llmOutput|body|string|false|The LLM output as a string or the input prompts for the LLM|
 |» numReasks|body|integer|false|An override for the number of re-asks to perform|
 |» promptParams|body|object|false|additional params for llm prompts|
 |»» **additionalProperties**|body|any|false|none|
-|» llmApi|body|[LLMResource](#schemallmresource)|false|none|
+|» llmApi|body|[LLMResource](#llmresource)|false|none|
 
 #### Enumerated Values
 
@@ -2519,8 +2519,8 @@ ApiKeyAuth, BearerAuth
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|The output of the validation|[validation-outcome](#schemavalidation-outcome)|
-|default|Default|Unexpected error|[HttpError](#schemahttperror)|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|The output of the validation|[validation-outcome](#validation-outcome)|
+|default|Default|Unexpected error|[HttpError](#httperror)|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2784,13 +2784,13 @@ anyOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[primitives](#schemaprimitives)|false|none|none|
+|*anonymous*|[primitives](#primitives)|false|none|none|
 
 or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[objects](#schemaobjects)|false|none|none|
+|*anonymous*|[objects](#objects)|false|none|none|
 
 ### any-type
 <!-- backwards compatibility -->
@@ -2816,19 +2816,19 @@ anyOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[primitives](#schemaprimitives)|false|none|none|
+|*anonymous*|[primitives](#primitives)|false|none|none|
 
 or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[objects](#schemaobjects)|false|none|none|
+|*anonymous*|[objects](#objects)|false|none|none|
 
 or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[arrays](#schemaarrays)|false|none|none|
+|*anonymous*|[arrays](#arrays)|false|none|none|
 
 ### validation-result
 <!-- backwards compatibility -->
@@ -2858,7 +2858,7 @@ ValidationResult
 |outcome|string|true|none|none|
 |metadata|object|false|none|none|
 |» **additionalProperties**|any|false|none|none|
-|validatedChunk|[any-type](#schemaany-type)|false|none|none|
+|validatedChunk|[any-type](#any-type)|false|none|none|
 
 #### Enumerated Values
 
@@ -2927,11 +2927,11 @@ FailResult
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|FailResult|[validation-result](#schemavalidation-result)|false|none|The output from a single Validator.|
+|FailResult|[validation-result](#validation-result)|false|none|The output from a single Validator.|
 |outcome|any|true|none|none|
 |errorMessage|string|true|none|none|
-|fixValue|[any-type](#schemaany-type)|false|none|none|
-|errorSpans|[[error-span](#schemaerror-span)]|false|none|none|
+|fixValue|[any-type](#any-type)|false|none|none|
+|errorSpans|[[error-span](#error-span)]|false|none|none|
 
 ### reask
 <!-- backwards compatibility -->
@@ -2975,8 +2975,8 @@ ReAsk
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |**additionalProperties**|any|false|none|none|
-|incorrectValue|[any-type](#schemaany-type)|false|none|none|
-|failResults|[[fail-result](#schemafail-result)]|false|none|none|
+|incorrectValue|[any-type](#any-type)|false|none|none|
+|failResults|[[fail-result](#fail-result)]|false|none|none|
 
 ### validation-outcome
 <!-- backwards compatibility -->
@@ -3047,13 +3047,13 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[[any-type](#schemaany-type)]|false|none|none|
+|» *anonymous*|[[any-type](#any-type)]|false|none|none|
 
 continued
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reask|[reask](#schemareask)|false|none|If validation continuously fails and all allocated reasks are used, this field will contain the final reask that would have been sent to the LLM if additional reasks were available.|
+|reask|[reask](#reask)|false|none|If validation continuously fails and all allocated reasks are used, this field will contain the final reask that would have been sent to the LLM if additional reasks were available.|
 |validationPassed|boolean|false|none|A boolean to indicate whether or not the LLM output passed validation.  If this is False, the validated_output may be invalid.|
 |error|string|false|none|If the validation process raised a handleable exception, this field will contain the error message.|
 
@@ -3374,13 +3374,13 @@ allOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[inputs](#schemainputs)|false|none|none|
+|*anonymous*|[inputs](#inputs)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|none|
+|*anonymous*|[args-and-kwargs](#args-and-kwargs)|false|none|none|
 
 ### ValidatorReference
 <!-- backwards compatibility -->
@@ -3411,7 +3411,7 @@ ValidatorReference
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|ValidatorReference|[args-and-kwargs](#schemaargs-and-kwargs)|false|none|none|
+|ValidatorReference|[args-and-kwargs](#args-and-kwargs)|false|none|none|
 |id|string|true|none|The unique identifier for this Validator.  Often the hub id; e.g. guardrails/regex_match|
 |on|any|false|none|A reference to the property this validator should be applied against.  Can be a valid JSON path or a meta-property such as "prompt" or "output"|
 
@@ -3475,7 +3475,7 @@ ArgsAndKwargs
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|args|[[any-type](#schemaany-type)]|false|none|none|
+|args|[[any-type](#any-type)]|false|none|none|
 |kwargs|object|false|none|none|
 |» **additionalProperties**|any|false|none|none|
 
@@ -3565,7 +3565,7 @@ Applicator vocabulary meta-schema
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |Applicator vocabulary meta-schema|object,boolean|false|none|none|
-|prefixItems|[schemaArray](#schemaschemaarray)|false|none|none|
+|prefixItems|[schemaArray](#schemaarray)|false|none|none|
 |items|any|false|none|none|
 |contains|any|false|none|none|
 |additionalProperties|any|false|none|none|
@@ -3579,9 +3579,9 @@ Applicator vocabulary meta-schema
 |if|any|false|none|none|
 |then|any|false|none|none|
 |else|any|false|none|none|
-|allOf|[schemaArray](#schemaschemaarray)|false|none|none|
-|anyOf|[schemaArray](#schemaschemaarray)|false|none|none|
-|oneOf|[schemaArray](#schemaschemaarray)|false|none|none|
+|allOf|[schemaArray](#schemaarray)|false|none|none|
+|anyOf|[schemaArray](#schemaarray)|false|none|none|
+|oneOf|[schemaArray](#schemaarray)|false|none|none|
 |not|any|false|none|none|
 
 ### unevaluated
@@ -3659,19 +3659,19 @@ Validation vocabulary meta-schema
 |exclusiveMaximum|number|false|none|none|
 |minimum|number|false|none|none|
 |exclusiveMinimum|number|false|none|none|
-|maxLength|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|minLength|[nonNegativeIntegerDefault0](#schemanonnegativeintegerdefault0)|false|none|none|
+|maxLength|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|minLength|[nonNegativeIntegerDefault0](#nonnegativeintegerdefault0)|false|none|none|
 |pattern|string(regex)|false|none|none|
-|maxItems|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|minItems|[nonNegativeIntegerDefault0](#schemanonnegativeintegerdefault0)|false|none|none|
+|maxItems|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|minItems|[nonNegativeIntegerDefault0](#nonnegativeintegerdefault0)|false|none|none|
 |uniqueItems|boolean|false|none|none|
-|maxContains|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|minContains|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|maxProperties|[nonNegativeInteger](#schemanonnegativeinteger)|false|none|none|
-|minProperties|[nonNegativeIntegerDefault0](#schemanonnegativeintegerdefault0)|false|none|none|
-|required|[stringArray](#schemastringarray)|false|none|none|
+|maxContains|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|minContains|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|maxProperties|[nonNegativeInteger](#nonnegativeinteger)|false|none|none|
+|minProperties|[nonNegativeIntegerDefault0](#nonnegativeintegerdefault0)|false|none|none|
+|required|[stringArray](#stringarray)|false|none|none|
 |dependentRequired|object|false|none|none|
-|» **additionalProperties**|[stringArray](#schemastringarray)|false|none|none|
+|» **additionalProperties**|[stringArray](#stringarray)|false|none|none|
 |const|any|false|none|none|
 |enum|[any]|false|none|none|
 |type|any|false|none|none|
@@ -3680,13 +3680,13 @@ anyOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[simpleTypes](#schemasimpletypes)|false|none|none|
+|» *anonymous*|[simpleTypes](#simpletypes)|false|none|none|
 
 or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[[simpleTypes](#schemasimpletypes)]|false|none|none|
+|» *anonymous*|[[simpleTypes](#simpletypes)]|false|none|none|
 
 #### meta-data
 <!-- backwards compatibility -->
@@ -3891,49 +3891,49 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|»» *anonymous*|[validation/definitions/stringArray](#schemavalidation/definitions/stringarray)|false|none|none|
+|»» *anonymous*|[validation/definitions/stringArray](#stringarray)|false|none|none|
 
 allOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[core](#schemacore)|false|none|none|
+|*anonymous*|[core](#core)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[applicator](#schemaapplicator)|false|none|none|
+|*anonymous*|[applicator](#applicator)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[unevaluated](#schemaunevaluated)|false|none|none|
+|*anonymous*|[unevaluated](#unevaluated)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[validation](#schemavalidation)|false|none|none|
+|*anonymous*|[validation](#validation)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[meta-data](#schemameta-data)|false|none|none|
+|*anonymous*|[meta-data](#meta-data)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[format-annotation](#schemaformat-annotation)|false|none|none|
+|*anonymous*|[format-annotation](#format-annotation)|false|none|none|
 
 and
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[content](#schemacontent)|false|none|none|
+|*anonymous*|[content](#content)|false|none|none|
 
 ### inputs
 <!-- backwards compatibility -->
@@ -4011,9 +4011,9 @@ PassResult
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|PassResult|[validation-result](#schemavalidation-result)|false|none|The output from a single Validator.|
+|PassResult|[validation-result](#validation-result)|false|none|The output from a single Validator.|
 |outcome|any|true|none|none|
-|valueOverride|[any-type](#schemaany-type)|false|none|none|
+|valueOverride|[any-type](#any-type)|false|none|none|
 
 #### validator-log
 <!-- backwards compatibility -->
@@ -4072,21 +4072,21 @@ continued
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |propertyPath|string|true|none|The JSON path to the property which was validated that produced this log.|
-|valueBeforeValidation|[any-type](#schemaany-type)|true|none|none|
-|valueAfterValidation|[any-type](#schemaany-type)|false|none|none|
+|valueBeforeValidation|[any-type](#any-type)|true|none|none|
+|valueAfterValidation|[any-type](#any-type)|false|none|none|
 |validationResult|any|false|none|none|
 
 anyOf
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[pass-result](#schemapass-result)|false|none|none|
+|» *anonymous*|[pass-result](#pass-result)|false|none|none|
 
 or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[fail-result](#schemafail-result)|false|none|none|
+|» *anonymous*|[fail-result](#fail-result)|false|none|none|
 
 continued
 
@@ -4177,7 +4177,7 @@ Outputs
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|llmResponseInfo|[LLMResponse](#schemallmresponse)|false|none|Information from the LLM response.|
+|llmResponseInfo|[LLMResponse](#llmresponse)|false|none|Information from the LLM response.|
 |rawOutput|string|false|none|The string content from the LLM response.|
 |parsedOutput|any|false|none|none|
 
@@ -4198,7 +4198,7 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[[any-type](#schemaany-type)]|false|none|none|
+|» *anonymous*|[[any-type](#any-type)]|false|none|none|
 
 continued
 
@@ -4216,7 +4216,7 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[reask](#schemareask)|false|none|none|
+|» *anonymous*|[reask](#reask)|false|none|none|
 
 or
 
@@ -4229,7 +4229,7 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[[any-type](#schemaany-type)]|false|none|none|
+|» *anonymous*|[[any-type](#any-type)]|false|none|none|
 
 continued
 
@@ -4254,14 +4254,14 @@ or
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» *anonymous*|[[any-type](#schemaany-type)]|false|none|none|
+|» *anonymous*|[[any-type](#any-type)]|false|none|none|
 
 continued
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reasks|[[reask](#schemareask)]|false|none|none|
-|validatorLogs|[[validator-log](#schemavalidator-log)]|false|none|none|
+|reasks|[[reask](#reask)]|false|none|none|
+|validatorLogs|[[validator-log](#validator-log)]|false|none|none|
 |error|string|false|none|The error message from any exception which interrupted the Guard execution process.|
 
 ### iteration
@@ -4375,8 +4375,8 @@ Iteration
 |id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
 |index|integer|true|none|The zero-based index of this iteration within the current Call.|
 |callId|string|true|none|The unique identifier for the Call that this iteration is a part of.|
-|inputs|[inputs](#schemainputs)|false|none|none|
-|outputs|[outputs](#schemaoutputs)|false|none|none|
+|inputs|[inputs](#inputs)|false|none|none|
+|outputs|[outputs](#outputs)|false|none|none|
 
 ### call
 <!-- backwards compatibility -->
@@ -4429,8 +4429,8 @@ Call
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |id|string|true|none|The unique identifier for this Call.  Can be used as an identifier for a specific execution of a Guard.|
-|iterations|[[iteration](#schemaiteration)]|false|none|none|
-|inputs|[CallInputs](#schemacallinputs)|false|none|none|
+|iterations|[[iteration](#iteration)]|false|none|none|
+|inputs|[CallInputs](#callinputs)|false|none|none|
 |exception|string|false|none|none|
 
 ### guard
@@ -4590,9 +4590,9 @@ Guard
 |id|string(kebab-case)|true|none|The unique identifier for the Guard.|
 |name|string|true|none|The name for the Guard.|
 |description|string|false|none|A description that concisely states the expected behaviour or purpose of the Guard.|
-|validators|[[ValidatorReference](#schemavalidatorreference)]|false|none|none|
-|output_schema|[schema](#schemaschema)|false|none|none|
-|history|[[call](#schemacall)]|false|read-only|none|
+|validators|[[ValidatorReference](#validatorreference)]|false|none|none|
+|output_schema|[schema](#schema)|false|none|none|
+|history|[[call](#call)]|false|read-only|none|
 
 ### ValidatePayload
 <!-- backwards compatibility -->
@@ -4625,7 +4625,7 @@ Guard
 |numReasks|integer|false|none|An override for the number of re-asks to perform|
 |promptParams|object|false|none|additional params for llm prompts|
 |» **additionalProperties**|any|false|none|none|
-|llmApi|[LLMResource](#schemallmresource)|false|none|none|
+|llmApi|[LLMResource](#llmresource)|false|none|none|
 
 ### LLMResource
 <!-- backwards compatibility -->

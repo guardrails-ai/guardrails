@@ -188,4 +188,4 @@ token usage for this step:  633
 ```
 
 For more information on `Call`, see the [History & Logs](/docs/api_reference_markdown/history_and_logs) page.
-For more information on the properties available on `Iteration`, see the [History & Logs](/docs/api_reference_markdown/history_and_logs/#guardrails.classes.history.Iteration) page.
+For more information on the properties available on `Iteration`, see the [History & Logs](/docs/api_reference_markdown/history_and_logs#iteration) page.

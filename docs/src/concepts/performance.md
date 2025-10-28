@@ -17,7 +17,7 @@ The largest latency and performance issues will come from your selection of LLM.
 
 Here are a few tips to get the best performance out of your Guardrails-enabled applications.
 
-**Use async guards for the best performance**. Use the `AsyncGuard` class to make concurrent calls to multiple LLMs and process the response chunks as they arrive. For more information, see [Async stream-validate LLM responses](/docs/async-streaming).
+**Use async guards for the best performance**. Use the `AsyncGuard` class to make concurrent calls to multiple LLMs and process the response chunks as they arrive. For more information, see [Async stream-validate LLM responses](/docs/concepts/async_streaming).
 
 **Use a remote server for heavy workloads**. More compute-intensive workloads, such as remote inference endpoints, work best when run with dedicated memory and CPU. For example, guards that use a single Machine Learning (ML) model for validation can run in milliseconds on GPU-equipped machines, while they may take tens of seconds on normal CPUs. However, guardrailing orchestration itself performs better on general compute.
 

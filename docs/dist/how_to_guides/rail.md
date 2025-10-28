@@ -68,7 +68,7 @@ The `RAIL` specification contains 2 main components:
 1. `Output`: Contains information about the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
    This is the main component of the `RAIL` specification, which enforces the guarantees that the LLM should provide.
    Check out the [RAIL Output](#-specifying-output-structure) page for more details, including the full specifcation of how to create complex output schemas.
-2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-prompt-element) page for more details.
+2. `Messages`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Messages](#-components-of-a-prompt-element) page for more details.
 
 Let's see an example of an `RAIL` specification in action:
 
@@ -90,7 +90,7 @@ Let's see an example of an `RAIL` specification in action:
 ```
 
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
-2. The `messages` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-message-element) page for more details.
+2. The `messages` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#-components-of-a-prompt-element) page for more details.
 
 ## 📖 How to use `RAIL` in Guardrails?
 
@@ -125,7 +125,7 @@ In addition to the high level task description, messages also contains the follo
 | Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
 |-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Variables         | `${variable_name}`        | These are provided by the user at runtime, and substituted in the prompt.                                                                                                                                                                                                                                                               |
-| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](/docs/concepts/output/#adding-compiled-output-element-to-prompt).                                                                    |
+| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](/docs/how_to_guides/output#-adding-compiled-output-element-to-prompt).                                                                    |
 | Prompt Primitives | `${gr.prompt_primitive_name}` | These are pre-constructed prompts that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out [`guardrails/constants.xml`](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml). |
 
 ```xml

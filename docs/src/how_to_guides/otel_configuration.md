@@ -7,7 +7,7 @@ We utilize Open Telemetry (OTEL) for this purpose. This guide will help you conf
 > If you have issues with the Grafana integration ensure you read this guide to make sure you configure telemetry as expected.
 
 For more details for how to set up collectors using managed services refer to:
-- [Grafana Integration](../../integrations/telemetry/grafana)
+- [Grafana Integration](/docs/integrations/telemetry/grafana)
 - [Arize AI Integration](https://docs.arize.com/arize/large-language-models/guardrails)
 
 
