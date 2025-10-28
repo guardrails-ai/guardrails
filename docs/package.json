@@ -6,7 +6,7 @@
     "docusaurus": "docusaurus",
     "prebuild": "node docusaurus/prebuild.js",
     "generate-docs": "poetry install --all-extras; cd ..; make docs-gen; cd docs; npm run prebuild",
-    "start": "docusaurus start --config docusaurus/docusaurus.config.js",
+    "start": "docusaurus start --config docusaurus/docusaurus.config.js --port 3002",
     "clean-start": "rm -rf src/api_reference_markdown; rm -rf dist; mkdir -p dist; npm run generate-docs; npm run start",
     "build": "docusaurus build --config docusaurus/docusaurus.config.js",
     "swizzle": "docusaurus swizzle",
