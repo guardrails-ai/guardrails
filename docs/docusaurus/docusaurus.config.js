@@ -15,7 +15,7 @@ const config = {
   url: "https://guardrailsai.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.VERCEL_ENV === "production" ? "/" : "/docs/",
+  baseUrl: process.env.NODE_ENV === "production" ? "/" : "/docs/",
   staticDirectories: ['static'],
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
