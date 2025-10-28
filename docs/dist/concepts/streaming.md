@@ -67,7 +67,7 @@ error_spans = guard.error_spans_in_output()
 
 In cases where concurrent network calls are happening (many LLM calls!) it may be beneficial to use an asynchronous LLM client. Guardrails also natively supports asynchronous streaming calls.
 
-Learn more about async streaming [here](./async_streaming).
+Learn more about async streaming [here](/docs/concepts/async_streaming).
 
 
 ```python

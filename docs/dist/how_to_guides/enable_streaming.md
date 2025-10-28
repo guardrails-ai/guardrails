@@ -25,7 +25,7 @@ for chunk in stream_chunk_generator:
 
 ## Using Validators with Streaming
 
-Using validators with streaming works the same way. Note that not all `on_fail` types are supported with streaming. See the full list [here](../concepts/error_remediation).
+Using validators with streaming works the same way. Note that not all `on_fail` types are supported with streaming. See the full list [here](/docs/concepts/error_remediation).
 
 ```bash
 guardrails hub install hub://guardrails/profanity_free
@@ -55,6 +55,6 @@ for chunk in stream_chunk_generator:
 ## Learn more
 Read more about streaming in our concept docs:
 
-- [Streaming](../concepts/streaming)
-- [Async Stream-validate LLM responses](../concepts/async_streaming)
-- [Streaming Structured Data](../concepts/streaming_structured_data)
+- [Streaming](/docs/concepts/streaming)
+- [Async Stream-validate LLM responses](/docs/concepts/async_streaming)
+- [Streaming Structured Data](/docs/concepts/streaming_structured_data)

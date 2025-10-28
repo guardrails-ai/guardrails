@@ -150,8 +150,8 @@ validation_outcome = name_guard.validate("floofy doopy boopy")
 
 
 ## Learn More
-- [Guardrails Server Concepts](../concepts/deploying)
-- [Guardrails CLI Reference](../cli)
-- [Remote Validation Inference](../concepts/remote_validation_inference)
+- [Guardrails Server Concepts](/docs/concepts/deploying)
+- [Guardrails CLI Reference](/docs/cli)
+- [Remote Validation Inference](/docs/concepts/remote_validation_inference)
 - [Guardrails Hub](https://hub.guardrailsai.com)
 

@@ -1,7 +1,7 @@
 # `Prompt` Element
 
 
-**Note**: Prompt element support has been dropped in 0.6.0 in support of [messages](./messages).
+**Note**: Prompt element support has been dropped in 0.6.0 in support of [messages](/docs/how_to_guides/messages).
 
 The `<prompt></prompt>` element contains the query that describes the high level task.
 

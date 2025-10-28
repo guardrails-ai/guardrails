@@ -1,6 +1,6 @@
 # `Instructions` Element
 
-**Note**: Instructions element support has been dropped in 0.6.0 in support of [messages](./messages).
+**Note**: Instructions element support has been dropped in 0.6.0 in support of [messages](/docs/how_to_guides/messages).
 
 The `<instructions></instructions>` element is passed to the LLM as secondary input. Different model may use these differently. For example, chat models may receive instructions in the system-prompt.
 

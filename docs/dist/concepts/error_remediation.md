@@ -36,7 +36,7 @@ Guardrails provides a number of `OnFailActions` for when a validator fails. The 
 | `OnFailAction.FIX_REASK` | First, fix the generated output deterministically, and then rerun validation with the deterministically fixed output. If validation fails, then perform reasking.           | No | 
 
 
-Custom OnFailActions can also be implemented, see the `custom` section in the [how to use on fail actions guide](../how_to_guides/use_on_fail_actions).
+Custom OnFailActions can also be implemented, see the `custom` section in the [how to use on fail actions guide](/docs/how_to_guides/use_on_fail_actions).
 
 ## Guidance on dealing with Validator errors
 

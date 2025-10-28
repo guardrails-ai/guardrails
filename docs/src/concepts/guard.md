@@ -86,4 +86,4 @@ print(guard.history.last.reasks) # A list of reasks
 
 ## Error Handling and Retries
 
-Guardrails is designed to account for different types of errors that can occur when calling the LLM, and it is also designed to emit helpful errors when validations fail. Read more about error handling and retries [here](./error_remediation).
+Guardrails is designed to account for different types of errors that can occur when calling the LLM, and it is also designed to emit helpful errors when validations fail. Read more about error handling and retries [here](/docs/concepts/error_remediation).
