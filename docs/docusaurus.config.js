@@ -5,11 +5,17 @@
 // const lightCodeTheme = require("prism-react-renderer/themes/github");
 // const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
-console.log('VERCEL_ENV: ', process.env.VERCEL_ENV);
-console.log('VERCEL_TARGET_ENV: ', process.env.VERCEL_TARGET_ENV);
-console.log('VERCEL_URL: ', process.env.VERCEL_URL);
-console.log('VERCEL_BRANCH_URL: ', process.env.VERCEL_BRANCH_URL);
-console.log('VERCEL_PROJECT_PRODUCTION_URL: ', process.env.VERCEL_PROJECT_PRODUCTION_URL);
+
+// TODO: Remove "new-docs" after migrating alias
+const urls = {
+  "production": "https://new-docs.guardrailsai.com",
+  "preview": "https://preview.new-docs.guardrailsai.com",
+  "": "https://docs.localhost",
+};
+
+
+const VERCEL_ENV = process.env.VERCEL_ENV ?? "";
+const url = urls[VERCEL_ENV] ?? urls[""];
 
 
 /** @type {import('@docusaurus/types').Config} */
@@ -18,7 +24,7 @@ const config = {
   tagline: "Enforce assurance for LLM applications",
   favicon: "img/favicon.ico",
   // Set the production url of your site here
-  url: "https://guardrailsai.com",
+  url: url,
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/docs/", // process.env.NODE_ENV === "production" ? "/" : "/docs/",
@@ -85,7 +91,7 @@ const config = {
         logo: {
           alt: "Guardrails Logo",
           src: "img/logo.svg",
-          href: process.env.NODE_ENV === "production" ? "https://guardrailsai.com" : "https://docs.localhost",
+          href: url,
           target: '_self'
         },
         items: [
