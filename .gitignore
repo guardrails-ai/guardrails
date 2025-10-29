@@ -29,7 +29,7 @@ htmlcov
 node_modules
 .docusaurus
 .vercel
-!docs/docusaurus/examples-toc.json
+!docs/examples-toc.json
 .python-version
 static/docs
 docusaurus/static/docs
