@@ -5,6 +5,11 @@
 // const lightCodeTheme = require("prism-react-renderer/themes/github");
 // const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
+console.log('VERCEL_ENV: ', process.env.VERCEL_ENV);
+console.log('VERCEL_TARGET_ENV: ', process.env.VERCEL_TARGET_ENV);
+console.log('VERCEL_URL: ', process.env.VERCEL_URL);
+console.log('VERCEL_BRANCH_URL: ', process.env.VERCEL_BRANCH_URL);
+console.log('VERCEL_PROJECT_PRODUCTION_URL: ', process.env.VERCEL_PROJECT_PRODUCTION_URL);
 
 
 /** @type {import('@docusaurus/types').Config} */
@@ -80,6 +85,8 @@ const config = {
         logo: {
           alt: "Guardrails Logo",
           src: "img/logo.svg",
+          href: process.env.NODE_ENV === "production" ? "https://guardrailsai.com" : "https://docs.localhost",
+          target: '_self'
         },
         items: [
           {
