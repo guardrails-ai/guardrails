@@ -6,10 +6,9 @@
 // const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
 
-// TODO: Remove "new-docs" after migrating alias
 const urls = {
-  "production": "https://new-docs.guardrailsai.com",
-  "preview": "https://preview.new-docs.guardrailsai.com",
+  "production": "https://guardrailsai.com",
+  "preview": "https://preview.guardrailsai.com",
   "": "https://docs.localhost",
 };
 
