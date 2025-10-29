@@ -1,4 +1,4 @@
-import CodeOutputBlock from '../../docusaurus/code-output-block.jsx';
+import CodeOutputBlock from '../../code-output-block.jsx';
 
 <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/output_parsing/GuardrailsDemo.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 

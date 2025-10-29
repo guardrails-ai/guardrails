@@ -1,4 +1,4 @@
-import CodeOutputBlock from '../../docusaurus/code-output-block.jsx';
+import CodeOutputBlock from '../../code-output-block.jsx';
 
 ```bash
 pip install "guardrails-ai[api]==0.5.0a9" -q

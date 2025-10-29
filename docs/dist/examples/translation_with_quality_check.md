@@ -1,4 +1,4 @@
-import CodeOutputBlock from '../../docusaurus/code-output-block.jsx';
+import CodeOutputBlock from '../../code-output-block.jsx';
 
 ```bash
 guardrails hub install hub://brainlogic/high_quality_translation -q

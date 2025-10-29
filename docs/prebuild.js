@@ -38,8 +38,8 @@ function processFile(relativeFilePath) {
     }
 
 
-    // compute path to the docusaurus/code-output-block.jsx file
-    const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
+    // compute path to the code-output-block.jsx file
+    const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './code-output-block.jsx');
     const importStatement = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n`;
     if (hasCodeBlocks && !data.includes(importStatement)) {
       // import the code-output-block component at the top of each file
@@ -185,7 +185,7 @@ function getFilesRecursive(dir) {
 const examples = getFilesRecursive("./dist");
 
 // write examples object out to file
-fs.writeFileSync("./docusaurus/examples-toc.json", JSON.stringify(examples, null, 2), "utf8");
+fs.writeFileSync("./examples-toc.json", JSON.stringify(examples, null, 2), "utf8");
 
 
 // escape all < and > tags in files in docs/api_reference_markdown/markdown

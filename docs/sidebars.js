@@ -19,7 +19,7 @@ const fs = require("fs");
 // get examples from the file called examples-toc.json
 
 const examples = JSON.parse(
-  fs.readFileSync("./docusaurus/examples-toc.json", "utf8")
+  fs.readFileSync("./examples-toc.json", "utf8")
 ).find((x) => x.label === "Examples");
 
 const sidebars = {
