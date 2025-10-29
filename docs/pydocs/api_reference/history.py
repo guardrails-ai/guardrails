@@ -18,5 +18,5 @@ write_to_file(
             parser=ParserOptions(print_function=False),
         ),
     ),
-    filename="docs/api_reference_markdown/history_and_logs.md",
+    filename="docs/src/api_reference_markdown/history_and_logs.md",
 )

@@ -17,6 +17,7 @@ codecov.yml
 CONTRIBUTING.md
 docs
 docs-build
+docs/build
 docs-graveyard
 DOCS.md
 docusaurus

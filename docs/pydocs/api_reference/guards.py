@@ -80,5 +80,5 @@ write_to_file(
             skip_empty_modules=True,
         ),
     ),
-    filename="docs/api_reference_markdown/guards.md",
+    filename="docs/src/api_reference_markdown/guards.md",
 )

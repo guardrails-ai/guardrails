@@ -172,7 +172,7 @@ def test_entity_extraction_with_reask(
         new=multiprocessing_validators,
     )
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
 
     final_output: ValidationOutcome = guard(
@@ -277,7 +277,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
         ),
     ]
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -338,7 +338,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
         ),
     ]
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -388,7 +388,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
         ),
     ]
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -439,7 +439,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
         ),
     ]
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages=[{"role": "user", "content": prompt}])
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -493,7 +493,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, messages):
         )
     ]
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, messages)
     final_output = guard(
         model="gpt-3.5-turbo",
@@ -636,7 +636,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     )
     mock_openai_invoke_llm.side_effect = llm_return_values
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = gd.docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = Guard.for_rail_string(rail)
 
     final_output = guard(
@@ -737,7 +737,9 @@ def test_skeleton_reask(mocker):
             },
         )
 
-        content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+        content = gd.docs_utils.read_pdf(
+            "docs/src/examples/data/chase_card_agreement.pdf"
+        )
         guard = gd.Guard.for_rail_string(
             entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK
         )
@@ -901,7 +903,9 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
     proc_count_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
     os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
     try:
-        content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+        content = gd.docs_utils.read_pdf(
+            "docs/src/examples/data/chase_card_agreement.pdf"
+        )
         guard = guard_initializer(
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
             messages=[{"role": "user", "content": entity_extraction.PYDANTIC_PROMPT}],
@@ -945,7 +949,9 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
     separate_proc_bak = OneLine.run_in_separate_process
     OneLine.run_in_separate_process = False
     try:
-        content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+        content = gd.docs_utils.read_pdf(
+            "docs/src/examples/data/chase_card_agreement.pdf"
+        )
         guard = guard_initializer(
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
             messages=[{"role": "user", "content": entity_extraction.PYDANTIC_PROMPT}],

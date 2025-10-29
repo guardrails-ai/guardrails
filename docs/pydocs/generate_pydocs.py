@@ -21,7 +21,7 @@ write_to_file(
             search_path=["validators"], parser=ParserOptions(print_function=False)
         )
     ),
-    filename="docs/hub/api_reference_markdown/validators.md",
+    filename="docs/src/hub/api_reference_markdown/validators.md",
 )
 
 
@@ -48,7 +48,7 @@ write_to_file(
 #             data_code_block=True,
 #         )
 #     ),
-#     filename="docs/api_reference_markdown/response_structures.md",
+#     filename="docs/src/api_reference_markdown/response_structures.md",
 # )
 
 
@@ -59,7 +59,7 @@ write_to_file(
 #             print_function=False
 #         )
 #     )),
-#     filename="docs/api_reference_markdown/schema.md",
+#     filename="docs/src/api_reference_markdown/schema.md",
 # )
 
 # write_to_file(
@@ -70,7 +70,7 @@ write_to_file(
 #             ),
 #         ),
 #     ),
-#     filename="docs/api_reference_markdown/document_store.md",
+#     filename="docs/src/api_reference_markdown/document_store.md",
 # )
 
 # write_to_file(
@@ -85,7 +85,7 @@ write_to_file(
 #             "DataType",
 #         ]
 #     ),
-#     filename="docs/api_reference_markdown/datatypes.md",
+#     filename="docs/src/api_reference_markdown/datatypes.md",
 # )
 
 
@@ -102,5 +102,5 @@ write_to_file(
 #             skip_empty_modules=True
 #         )
 #     ),
-#     filename="docs/api_reference_markdown/helper_classes.md",
+#     filename="docs/src/api_reference_markdown/helper_classes.md",
 # )

@@ -23,5 +23,5 @@ write_to_file(
             parser=ParserOptions(print_function=False),
         ),
     ),
-    filename="docs/api_reference_markdown/formatters.md",
+    filename="docs/src/api_reference_markdown/formatters.md",
 )

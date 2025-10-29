@@ -1,4 +1,3 @@
-docs/api_reference_markdown/
 openai_api_key.txt
 *__pycache__*
 data/*
@@ -14,7 +13,9 @@ settings.json
 site/*
 guardrails.log
 guardrails_ai.egg-info/
-build/*
+*/build/*
+docs/build
+!docs/dist/*
 dist/*
 *.rail_output*
 .idea/*
@@ -27,9 +28,8 @@ test.index
 htmlcov
 node_modules
 .docusaurus
-docs-build
 .vercel
-docusaurus/examples-toc.json
+!docs/examples-toc.json
 .python-version
 static/docs
 docusaurus/static/docs

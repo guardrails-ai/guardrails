@@ -1,0 +1,1 @@
+::: guardrails.classes.validation_outcome
