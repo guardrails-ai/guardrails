@@ -99,7 +99,7 @@ const sidebars = {
     {
       type: "link",
       label: "More Examples",
-      href: "https://github.com/guardrails-ai/guardrails/tree/main/docs/examples",
+      href: "https://github.com/guardrails-ai/guardrails/tree/main/docs/src/examples",
     },
   ],
   integrations: [

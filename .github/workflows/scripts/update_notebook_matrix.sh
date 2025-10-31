@@ -3,7 +3,7 @@
 notebook_names="["
 
 # Compile list of file names
-for file in $(ls docs/examples/*.ipynb); do
+for file in $(ls docs/src/examples/*.ipynb); do
   # Add the full filename with extension
   filename=$(basename "$file")
 

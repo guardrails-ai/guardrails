@@ -5,7 +5,7 @@ export NLTK_DATA=/tmp/nltk_data;
 rm -rf ./guardrails
 
 # Navigate to notebooks
-cd docs/examples
+cd docs/src/examples
 
 # Get the notebook name from the matrix variable
 notebook="$1"
