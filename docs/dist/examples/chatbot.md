@@ -33,7 +33,7 @@ guardrails hub install hub://guardrails/profanity_free --quiet
 
 ### Step 0 Download PDF and load it as string
 :::note
-    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/chatbots.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/chatbots.ipynb).
 :::
 
 In this example, we will set up Guardrails with a chat model that can answer questions about the card agreement.

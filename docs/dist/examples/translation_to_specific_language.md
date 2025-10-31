@@ -3,7 +3,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 # Translate text without profanities
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/translation_to_specific_language.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/translation_to_specific_language.ipynb).
 
 In this example, we will use Guardrails during the translation of a statement from another language to english. We will check whether the translated statement passes the profanity check or not.
 
