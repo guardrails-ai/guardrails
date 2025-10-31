@@ -3,7 +3,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 # Generating Bug Free Leetcode Solutions
 
 :::note
-To download this tutorial as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/bug_free_python_code.ipynb).
+To download this tutorial as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/bug_free_python_code.ipynb).
 :::
 
 In this example, we want to solve String Manipulation leetcode problems such that the code is bug free.

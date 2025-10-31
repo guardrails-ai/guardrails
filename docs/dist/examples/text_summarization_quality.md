@@ -20,7 +20,7 @@ guardrails hub install hub://guardrails/similar_to_document --quiet
 # Summarize text accurately
 
 :::note
-    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/text_summarization_quality.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/text_summarization_quality.ipynb).
 :::
 
 In this example, we will use Guardrails in the summarization of a text document. We will check whether the summarized document has a high semantic similarity with the original document.

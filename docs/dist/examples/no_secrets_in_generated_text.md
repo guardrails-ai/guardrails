@@ -3,7 +3,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 # Generating strings that don't have any secrets
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/no_secrets_in_generated_text.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/no_secrets_in_generated_text.ipynb).
 
 In this example, we will use Guardrails to generate strings that don't have any secrets.
 

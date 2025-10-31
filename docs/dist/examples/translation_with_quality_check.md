@@ -35,7 +35,7 @@ guardrails hub install hub://brainlogic/high_quality_translation -q
 # Translate text with quality checks
 
 **Note:**
-To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/translation_with_quality_check.ipynb).
+To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/translation_with_quality_check.ipynb).
 
 In this example, we will use Guardrails during the translation of a statement from another language to English. We will check whether the translated statement is likely of high quality.
 

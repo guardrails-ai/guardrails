@@ -20,7 +20,7 @@ guardrails hub install hub://guardrails/valid_sql --quiet
 # Natural Language to Bug Free SQL
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/syntax_error_free_sql.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/syntax_error_free_sql.ipynb).
 
 In this example, we will use Guardrails to generate SQL queries from natural language. We will check that the SQL is free of any syntax errors.
 

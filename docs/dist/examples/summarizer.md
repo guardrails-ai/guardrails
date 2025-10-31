@@ -5,7 +5,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 In this example we will use Guardrails to summarize text in terms of length, quality and output read time.
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/summarization.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/summarization.ipynb).
 
 In this example, we will use Guardrails in the summarization of a text document. We will check whether the summarized document has a high semantic similarity with the original document. We will ensure the ouptput meets a certain range of length and read time.
 

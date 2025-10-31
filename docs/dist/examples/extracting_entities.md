@@ -44,7 +44,7 @@ guardrails hub install hub://guardrails/one_line --quiet
 # Extracting entities from a Terms of Service document
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/extracting_entities.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/extracting_entities.ipynb).
 
 In this example, we will use Guardrails to extract key information from a Terms-of-Service document.
 
@@ -54,7 +54,7 @@ We want to extract structured information about all fees and interest rates asso
 
 ## Step 0: Download PDF and load it as string
 
-To get started, download the document from [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/data/chase_card_agreement.pdf) and save it in `data/chase_card_agreement.pdf`.
+To get started, download the document from [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/data/chase_card_agreement.pdf) and save it in `data/chase_card_agreement.pdf`.
 
 Guardrails has some built-in functions to help with common tasks. Here, we will use the `read_pdf` function to load the PDF as a string.
 

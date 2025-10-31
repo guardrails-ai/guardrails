@@ -36,7 +36,7 @@ guardrails hub install hub://guardrails/one_line --quiet
 # Using Guardrails with Chat Models
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/extracting_entities.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/extracting_entities.ipynb).
 
 In this example, we will set up Guardrails with a chat model.
 
@@ -46,7 +46,7 @@ We retry the [entity extraction example](./extracting_entities.ipynb) using a ch
 
 ## Step 0: Download PDF and load it as string
 
-To get started, download the document from [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/data/chase_card_agreement.pdf) and save it in `data/chase_card_agreement.pdf`.
+To get started, download the document from [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/data/chase_card_agreement.pdf) and save it in `data/chase_card_agreement.pdf`.
 
 Guardrails has some built-in functions to help with common tasks. Here, we will use the `read_pdf` function to load the PDF as a string.
 

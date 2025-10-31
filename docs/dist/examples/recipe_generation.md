@@ -3,7 +3,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 # Generating Vegan Recipes
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/examples/recipe_generation.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/ShreyaR/guardrails/blob/main/docs/src/examples/recipe_generation.ipynb).
 
 In this example, we will use Guardrails to generate vegan mac and cheese recipe.
 

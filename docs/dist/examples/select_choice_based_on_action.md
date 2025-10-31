@@ -20,7 +20,7 @@ guardrails hub install hub://guardrails/valid_choices --quiet
 # Enforcing Guardrails on Choice Selection
 
 !!! note
-    To download this tutorial as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/select_choice_based_on_action.ipynb).
+    To download this tutorial as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/select_choice_based_on_action.ipynb).
 
 In this example, we want the LLM to pick an action (e.g. `fight` or `flight`), and based on that action we want to return different JSON objects. For example, if the action is `fight`, we want to return a JSON object that contains the `weapon` field. If the action is `flight`, we want to return a JSON object that contains the `direction` and `distance` fields.
 

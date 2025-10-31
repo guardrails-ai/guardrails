@@ -3,7 +3,7 @@ import CodeOutputBlock from '../../code-output-block.jsx';
 # Playing Valid Chess Moves
 
 !!! note
-    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/examples/valid_chess_moves.ipynb).
+    To download this example as a Jupyter notebook, click [here](https://github.com/guardrails-ai/guardrails/blob/main/docs/src/examples/valid_chess_moves.ipynb).
 
 !!! warning
     This example is currently under development (it cannot be used to play a full chess game yet).
