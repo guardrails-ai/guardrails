@@ -105,7 +105,7 @@ guard = gd.Guard.for_pydantic(output_class=Orders)
 
 raw_llm_response, validated_response, *rest = guard(
     messages=[{"role": "user", "content": prompt}],
-    model="command-r",
+    model="command-r-08-2024",
     max_tokens=1024,
     temperature=0.3,
 )
