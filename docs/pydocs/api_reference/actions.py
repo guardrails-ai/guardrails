@@ -56,5 +56,5 @@ write_to_file(
             render_typehint_in_data_header=True,
         ),
     ),
-    filename="docs/api_reference_markdown/actions.md",
+    filename="docs/src/api_reference_markdown/actions.md",
 )

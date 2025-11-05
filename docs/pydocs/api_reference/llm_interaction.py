@@ -64,5 +64,5 @@ write_to_file(
             skip_empty_modules=True,
         ),
     ),
-    filename="docs/api_reference_markdown/llm_interaction.md",
+    filename="docs/src/api_reference_markdown/llm_interaction.md",
 )

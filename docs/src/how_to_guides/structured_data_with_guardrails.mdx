@@ -1,0 +1,220 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Generate structured data
+
+Guardrails AI is effective for generating structured data across from a variety of LLMs. This guide contains 
+the following:
+1. General instructions on generating structured data from Guardrails using `Pydantic` or Markup (i.e. `RAIL`), and
+2. Examples to generate structured data using `Pydantic` or Markup.
+
+## Syntax for generating structured data
+
+There are two ways to generate structured data with Guardrails AI: using `Pydantic` or Markup (i.e. `RAIL`).
+
+1. **Pydantic**: In order to generate structured data with Pydantic models, create a Pydantic model with the desired fields and types, then create a `Guard` object that uses the Pydantic model to generate structured data, and finally call the LLM of your choice with the `guard` object to generate structured data.
+2. **RAIL**: In order to generate structured data with RAIL specs, create a RAIL spec with the desired fields and types, then create a `Guard` object that uses the RAIL spec to generate structured data, and finally call the LLM of your choice with the `guard` object to generate structured data.
+
+Below is the syntax for generating structured data with Guardrails AI using `Pydantic` or Markup (i.e. `RAIL`).
+
+<Tabs>
+  <TabItem value="pydantic" label="Pydantic" default>
+    In order to generate structured data, first create a Pydantic model with the desired fields and types.
+    ```python
+    from pydantic import BaseModel
+
+    class Person(BaseModel):
+        name: str
+        age: int
+        is_employed: bool
+    ```
+
+    Then, create a `Guard` object that uses the Pydantic model to generate structured data.
+    ```python
+    from guardrails import Guard
+
+    guard = Guard.for_pydantic(Person)
+    ```
+
+    Finally, call the LLM of your choice with the `guard` object to generate structured data.
+    ```python
+    import openai
+
+    res = guard(
+        openai.chat.completion.create,
+        model="gpt-3.5-turbo",
+    )
+    ```
+  </TabItem>
+  <TabItem value="rail" label="RAIL">
+    In order to generate structured data, first create a RAIL spec with the desired fields and types.
+    ```xml
+    <rail version="0.1">
+      <output>
+        <string name="name" />
+        <integer name="age" />
+        <boolean name="is_employed" />
+      </output>
+    </rail>
+    ```
+
+    Then, create a `Guard` object that uses the RAIL spec to generate structured data.
+    ```python
+    from guardrails import Guard
+
+    guard = Guard.for_rail_string("""
+      <rail version="0.1">
+        <output>
+          <string name="name" />
+          <integer name="age" />
+          <boolean name="is_employed" />
+        </output>
+      </rail>
+    """)
+    ```
+
+    Finally, call the LLM of your choice with the `guard` object to generate structured data.
+    ```python
+    import openai
+
+    res = guard(
+        openai.chat.completion.create,
+        model="gpt-3.5-turbo",
+    )
+    ```
+  </TabItem>
+</Tabs>
+
+## Generate a JSON object with simple types
+
+<Tabs>
+  <TabItem value="json" label="JSON" default>
+    ```json
+    {
+      "name": "John Doe",
+      "age": 30,
+      "is_employed": true
+    }
+    ```
+  </TabItem>
+  <TabItem value="pydantic" label="Pydantic">
+    ```python
+    from pydantic import BaseModel
+
+    class Person(BaseModel):
+        name: str
+        age: int
+        is_employed: bool
+    ```
+  </TabItem>
+  <TabItem value="rail" label="Markup">
+    ```xml
+    <rail version="0.1">
+      <output>
+        <string name="name" />
+        <integer name="age" />
+        <boolean name="is_employed" />
+      </output>
+    </rail>
+    ```
+  </TabItem>
+</Tabs>
+
+
+## Generate a dictionary of nested types
+
+<Tabs>
+  <TabItem value="json" label="JSON" default>
+    ```json
+    {
+      "name": "John Doe",
+      "age": 30,
+      "is_employed": true,
+      "address": {
+        "street": "123 Main St",
+        "city": "Anytown",
+        "zip": "12345"
+      }
+    }
+    ```
+  </TabItem>
+  <TabItem value="pydantic" label="Pydantic">
+    ```python
+    from pydantic import BaseModel
+
+    class Address(BaseModel):
+        street: str
+        city: str
+        zip: str
+
+    class Person(BaseModel):
+        name: str
+        age: int
+        is_employed: bool
+        address: Address
+    ```
+  </TabItem>
+  <TabItem value="rail" label="Markup">
+    ```xml
+    <rail version="0.1">
+      <output>
+        <string name="name" />
+        <integer name="age" />
+        <boolean name="is_employed" />
+        <object name="address">
+          <string name="street" />
+          <string name="city" />
+          <string name="zip" />
+        </object>
+      </output>
+    </rail>
+    ```
+  </TabItem>
+</Tabs>
+
+
+## Generate a list of types
+
+<Tabs>
+  <TabItem value="json" label="JSON" default>
+    ```json
+    [
+      {
+        "name": "John Doe",
+        "age": 30,
+        "is_employed": true
+      },
+      {
+        "name": "Jane Smith",
+        "age": 25,
+        "is_employed": false
+      }
+    ]
+    ```
+  </TabItem>
+  <TabItem value="pydantic" label="Pydantic">
+    ```python
+    from pydantic import BaseModel
+
+    class Person(BaseModel):
+        name: str
+        age: int
+        is_employed: bool
+
+    people = list[Person]
+    ```
+  </TabItem>
+  <TabItem value="rail" label="Markup">
+    ```xml
+    <rail version="0.1">
+      <output type="list">
+        <object>
+          <string name="name" />
+          <integer name="age" />
+          <boolean name="is_employed" />
+        </object>
+      </output>
+    </rail>
+    ```
+  </TabItem>
+</Tabs>

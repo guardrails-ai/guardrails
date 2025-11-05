@@ -1,0 +1,183 @@
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+├── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+│   │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ You are a human in an enchanted forest. You come across opponents of different types. You should fight  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ smaller opponents, run away from bigger ones, and freeze if the opponent is a bear.                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ You run into a grizzly. What do you do?                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Here are a few examples                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ goblin: {"action": {"chosen_action": "fight", "weapon": "crossbow"}}                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ giant: {"action": {"chosen_action": "flight", "flight_direction": "north", "distance": 1}}              │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #fff0f2">╭───────────────────────────────────────────── Instructions ──────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #fff0f2">│ You are a helpful assistant, able to express yourself purely through JSON, strictly and precisely       │</span> │
+│   │ <span style="background-color: #fff0f2">│ adhering to the provided XML schemas.                                                                   │</span> │
+│   │ <span style="background-color: #fff0f2">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #e7dfeb">╭──────────────────────────────────────────── Message History ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #e7dfeb">│ No message history.                                                                                     │</span> │
+│   │ <span style="background-color: #e7dfeb">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f5f5dc">│ {"action": {"chosen_action": "freeze"}}                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0fff0">│ SkeletonReAsk(                                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│     incorrect_value={'action': {'chosen_action': 'freeze'}},                                            │</span> │
+│   │ <span style="background-color: #f0fff0">│     fail_results=[                                                                                      │</span> │
+│   │ <span style="background-color: #f0fff0">│         FailResult(                                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│             outcome='fail',                                                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│             metadata=None,                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│             error_message='JSON does not match schema',                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             fix_value=None                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         )                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│     ]                                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│ )                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+├── ╭────────────────────────────────────────────────── Step 1 ───────────────────────────────────────────────────╮
+│   │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ I was given the following JSON response, which had problems due to incorrect values.                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│   "incorrect_value": {                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│     "action": {                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│       "chosen_action": "freeze"                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│     }                                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│   },                                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│   "error_messages": [                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│     "JSON does not match schema"                                                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│   ]                                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+│   │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;choice name="action" discriminator="chosen_action"&gt;                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;case name="fight"&gt;                                                                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;string name="weapon" format="valid-choices: choices=['crossbow', 'axe', 'sword',           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 'fork']"/&gt;                                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;case name="flight"&gt;                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;string name="flight_direction" format="valid-choices: choices=['north', 'south', 'east',   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 'west']"/&gt;                                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;integer name="distance" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;case name="freeze"&gt;                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;integer name="duration" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;/choice&gt;                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+│   │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ enter `null`.                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #fff0f2">╭───────────────────────────────────────────── Instructions ──────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #fff0f2">│ You are a helpful assistant, able to express yourself purely through JSON, strictly and precisely       │</span> │
+│   │ <span style="background-color: #fff0f2">│ adhering to the provided XML schemas.                                                                   │</span> │
+│   │ <span style="background-color: #fff0f2">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #e7dfeb">╭──────────────────────────────────────────── Message History ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #e7dfeb">│ No message history.                                                                                     │</span> │
+│   │ <span style="background-color: #e7dfeb">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">│   "action": {                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│     "chosen_action": "freeze",                                                                          │</span> │
+│   │ <span style="background-color: #f5f5dc">│     "duration": null                                                                                    │</span> │
+│   │ <span style="background-color: #f5f5dc">│   }                                                                                                     │</span> │
+│   │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0fff0">│ SkeletonReAsk(                                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│     incorrect_value={'action': {'chosen_action': 'freeze', 'duration': None}},                          │</span> │
+│   │ <span style="background-color: #f0fff0">│     fail_results=[                                                                                      │</span> │
+│   │ <span style="background-color: #f0fff0">│         FailResult(                                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│             outcome='fail',                                                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│             metadata=None,                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│             error_message='JSON does not match schema',                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             fix_value=None                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         )                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│     ]                                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│ )                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+└── ╭────────────────────────────────────────────────── Step 2 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ I was given the following JSON response, which had problems due to incorrect values.                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│   "incorrect_value": {                                                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│     "action": {                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│       "chosen_action": "freeze",                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│       "duration": null                                                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│   },                                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│   "error_messages": [                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│     "JSON does not match schema"                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│   ]                                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;choice name="action" discriminator="chosen_action"&gt;                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;case name="fight"&gt;                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;string name="weapon" format="valid-choices: choices=['crossbow', 'axe', 'sword',           │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'fork']"/&gt;                                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;case name="flight"&gt;                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;string name="flight_direction" format="valid-choices: choices=['north', 'south', 'east',   │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'west']"/&gt;                                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;integer name="distance" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;case name="freeze"&gt;                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;integer name="duration" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;/case&gt;                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;/choice&gt;                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `null`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #fff0f2">╭───────────────────────────────────────────── Instructions ──────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #fff0f2">│ You are a helpful assistant, able to express yourself purely through JSON, strictly and precisely       │</span> │
+    │ <span style="background-color: #fff0f2">│ adhering to the provided XML schemas.                                                                   │</span> │
+    │ <span style="background-color: #fff0f2">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #e7dfeb">╭──────────────────────────────────────────── Message History ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #e7dfeb">│ No message history.                                                                                     │</span> │
+    │ <span style="background-color: #e7dfeb">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│   "action": {                                                                                           │</span> │
+    │ <span style="background-color: #f5f5dc">│     "chosen_action": "freeze",                                                                          │</span> │
+    │ <span style="background-color: #f5f5dc">│     "duration": 1                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│   }                                                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {'action': {'chosen_action': 'freeze', 'duration': 1}}                                                  │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>

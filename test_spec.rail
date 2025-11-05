@@ -1,0 +1,8 @@
+<rail version="0.1">
+<output>
+    <string name="answer" description="A simple answer"/>
+</output>
+<prompt>
+Answer the question: What is 2+2?
+</prompt>
+</rail>

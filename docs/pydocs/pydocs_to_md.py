@@ -12,13 +12,13 @@ def module_to_string(
     include_list=[],
     indents=1,
     visited=set(),
-    ignore_attrs=False
+    ignore_attrs=False,
 ):
     if module in visited:
         return ""
     visited.add(module)
 
-    module_str = f"{'#'*indents} {display_string}\n"
+    module_str = f"{'#' * indents} {display_string}\n"
     module_docs = inspect.getdoc(module)
     if module_docs:
         module_str += f"\n{module_docs}\n\n"
@@ -31,7 +31,8 @@ def module_to_string(
                 continue
 
             if inspect.isclass(obj) or inspect.ismodule(obj):
-                # ignore any class that does not belong to this module or do not have a module
+                # ignore any class that does not belong to this module
+                #   or do not have a module
                 # ignore if no module
                 if not hasattr(obj, "__module__") or not obj.__module__:
                     continue

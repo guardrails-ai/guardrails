@@ -34,7 +34,7 @@ async def test_entity_extraction_with_reask(mocker):
         ),
     ]
 
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
 
     final_output = await guard(
@@ -101,7 +101,7 @@ async def test_entity_extraction_with_noop(mocker):
             response_token_count=1234,
         )
     ]
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
     final_output = await guard(
         llm_api=mock_async_llm,
@@ -148,7 +148,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
             response_token_count=1234,
         )
     ]
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_pydantic(
         entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
         messages=[
@@ -200,7 +200,7 @@ async def test_entity_extraction_with_filter(mocker):
         )
     ]
 
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
     final_output = await guard(
         llm_api=mock_async_llm,
@@ -243,7 +243,7 @@ async def test_entity_extraction_with_fix(mocker):
         )
     ]
 
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
     final_output = await guard(
         llm_api=mock_async_llm,
@@ -283,7 +283,7 @@ async def test_entity_extraction_with_refrain(mocker):
         )
     ]
 
-    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    content = docs_utils.read_pdf("docs/src/examples/data/chase_card_agreement.pdf")
     guard = AsyncGuard.for_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
     final_output = await guard(
         llm_api=mock_async_llm,
