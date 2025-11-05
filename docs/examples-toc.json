@@ -1,0 +1,775 @@
+[
+  {
+    "type": "category",
+    "label": "Api Reference",
+    "items": [
+      {
+        "type": "doc",
+        "id": "api_reference/async_guard",
+        "label": "Async Guard"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/data_types",
+        "label": "Data Types"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/document_store",
+        "label": "Document Store"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/errors",
+        "label": "Errors"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/guard",
+        "label": "Guard"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/helper_classes",
+        "label": "Helper Classes"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/history_and_logs",
+        "label": "History And Logs"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/response_structures",
+        "label": "Response Structures"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/types",
+        "label": "Types"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference/validation_outcome",
+        "label": "Validation Outcome"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "category",
+    "label": "Api Reference Markdown",
+    "items": [
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/actions",
+        "label": "Actions"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/errors",
+        "label": "Errors"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/formatters",
+        "label": "Formatters"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/generics_and_base_classes",
+        "label": "Generics And Base Classes"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/guards",
+        "label": "Guards"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/history_and_logs",
+        "label": "History And Logs"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/llm_interaction",
+        "label": "Llm Interaction"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/types",
+        "label": "Types"
+      },
+      {
+        "type": "doc",
+        "id": "api_reference_markdown/validator",
+        "label": "Validator"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "cli",
+    "label": "Cli"
+  },
+  {
+    "type": "category",
+    "label": "Concepts",
+    "items": [
+      {
+        "type": "doc",
+        "id": "concepts/async_streaming",
+        "label": "Async Streaming"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/concurrency",
+        "label": "Concurrency"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/deploying",
+        "label": "Deploying"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/error_remediation",
+        "label": "Error Remediation"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/guard",
+        "label": "Guard"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/guardrails",
+        "label": "Guardrails"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/hub",
+        "label": "Hub"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/logs",
+        "label": "Logs"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/ml_based_validators",
+        "label": "Ml Based Validators"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/performance",
+        "label": "Performance"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/remote_validation_inference",
+        "label": "Remote Validation Inference"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/streaming",
+        "label": "Streaming"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/streaming_fixes",
+        "label": "Streaming Fixes"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/streaming_structured_data",
+        "label": "Streaming Structured Data"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/telemetry",
+        "label": "Telemetry"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/validator_on_fail_actions",
+        "label": "Validator On Fail Actions"
+      },
+      {
+        "type": "doc",
+        "id": "concepts/validators",
+        "label": "Validators"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "data_types",
+    "label": "Data Types"
+  },
+  {
+    "type": "category",
+    "label": "Examples",
+    "items": [
+      {
+        "type": "doc",
+        "id": "examples/bug_free_python_code",
+        "label": "Bug Free Python Code"
+      },
+      {
+        "type": "doc",
+        "id": "examples/chatbot",
+        "label": "Chatbot"
+      },
+      {
+        "type": "doc",
+        "id": "examples/check_for_pii",
+        "label": "Check For Pii"
+      },
+      {
+        "type": "doc",
+        "id": "examples/competitors_check",
+        "label": "Competitors Check"
+      },
+      {
+        "type": "doc",
+        "id": "examples/constrained_decoding",
+        "label": "Constrained Decoding"
+      },
+      {
+        "type": "doc",
+        "id": "examples/extracting_entities",
+        "label": "Extracting Entities"
+      },
+      {
+        "type": "doc",
+        "id": "examples/generate_structured_data",
+        "label": "Generate Structured Data"
+      },
+      {
+        "type": "doc",
+        "id": "examples/generate_structured_data_cohere",
+        "label": "Generate Structured Data Cohere"
+      },
+      {
+        "type": "doc",
+        "id": "examples/guard_use",
+        "label": "Guard Use"
+      },
+      {
+        "type": "doc",
+        "id": "examples/guardrails_server",
+        "label": "Guardrails Server"
+      },
+      {
+        "type": "doc",
+        "id": "examples/guardrails_with_chat_models",
+        "label": "Guardrails With Chat Models"
+      },
+      {
+        "type": "doc",
+        "id": "examples/input_validation",
+        "label": "Input Validation"
+      },
+      {
+        "type": "doc",
+        "id": "examples/json_function_calling_tools",
+        "label": "Json Function Calling Tools"
+      },
+      {
+        "type": "doc",
+        "id": "examples/lite_llm_defaults",
+        "label": "Lite Llm Defaults"
+      },
+      {
+        "type": "doc",
+        "id": "examples/llamaindex-output-parsing",
+        "label": "Llamaindex-output-parsing"
+      },
+      {
+        "type": "doc",
+        "id": "examples/no_secrets_in_generated_text",
+        "label": "No Secrets In Generated Text"
+      },
+      {
+        "type": "doc",
+        "id": "examples/provenance",
+        "label": "Provenance"
+      },
+      {
+        "type": "doc",
+        "id": "examples/recipe_generation",
+        "label": "Recipe Generation"
+      },
+      {
+        "type": "doc",
+        "id": "examples/regex_validation",
+        "label": "Regex Validation"
+      },
+      {
+        "type": "doc",
+        "id": "examples/response_is_on_topic",
+        "label": "Response Is On Topic"
+      },
+      {
+        "type": "doc",
+        "id": "examples/secrets_detection",
+        "label": "Secrets Detection"
+      },
+      {
+        "type": "doc",
+        "id": "examples/select_choice_based_on_action",
+        "label": "Select Choice Based On Action"
+      },
+      {
+        "type": "doc",
+        "id": "examples/summarizer",
+        "label": "Summarizer"
+      },
+      {
+        "type": "doc",
+        "id": "examples/syntax_error_free_sql",
+        "label": "Syntax Error Free Sql"
+      },
+      {
+        "type": "doc",
+        "id": "examples/text_summarization_quality",
+        "label": "Text Summarization Quality"
+      },
+      {
+        "type": "doc",
+        "id": "examples/toxic_language",
+        "label": "Toxic Language"
+      },
+      {
+        "type": "doc",
+        "id": "examples/translation_to_specific_language",
+        "label": "Translation To Specific Language"
+      },
+      {
+        "type": "doc",
+        "id": "examples/translation_with_quality_check",
+        "label": "Translation With Quality Check"
+      },
+      {
+        "type": "doc",
+        "id": "examples/valid_chess_moves",
+        "label": "Valid Chess Moves"
+      },
+      {
+        "type": "doc",
+        "id": "examples/value_within_distribution",
+        "label": "Value Within Distribution"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "faq",
+    "label": "Faq"
+  },
+  {
+    "type": "category",
+    "label": "Getting Started",
+    "items": [
+      {
+        "type": "doc",
+        "id": "getting_started/ai_validation",
+        "label": "Ai Validation"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/contributing",
+        "label": "Contributing"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/guardrails_server",
+        "label": "Guardrails Server"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/help",
+        "label": "Help"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/ml_based",
+        "label": "Ml Based"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/quickstart",
+        "label": "Quickstart"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/structured_data",
+        "label": "Structured Data"
+      },
+      {
+        "type": "doc",
+        "id": "getting_started/why_use_guardrails",
+        "label": "Why Use Guardrails"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "category",
+    "label": "Guardrails Ai",
+    "items": [
+      {
+        "type": "doc",
+        "id": "guardrails_ai/configuration",
+        "label": "Configuration"
+      },
+      {
+        "type": "doc",
+        "id": "guardrails_ai/faq",
+        "label": "Faq"
+      },
+      {
+        "type": "doc",
+        "id": "guardrails_ai/getting_started",
+        "label": "Getting Started"
+      },
+      {
+        "type": "doc",
+        "id": "guardrails_ai/installation",
+        "label": "Installation"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "guardrails_server_api",
+    "label": "Guardrails Server Api"
+  },
+  {
+    "type": "category",
+    "label": "How To Guides",
+    "items": [
+      {
+        "type": "doc",
+        "id": "how_to_guides/continuous_integration_continuous_deployment",
+        "label": "Continuous Integration Continuous Deployment"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/custom_validator",
+        "label": "Custom Validator"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/custom_validators",
+        "label": "Custom Validators"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/deploying_aws",
+        "label": "Deploying Aws"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/enable_streaming",
+        "label": "Enable Streaming"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/envvars",
+        "label": "Envvars"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/generate_structured_data",
+        "label": "Generate Structured Data"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/hosting_validator_models",
+        "label": "Hosting Validator Models"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/hosting_with_docker",
+        "label": "Hosting With Docker"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/instructions",
+        "label": "Instructions"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/llm_api_wrappers",
+        "label": "Llm Api Wrappers"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/messages",
+        "label": "Messages"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/otel_configuration",
+        "label": "Otel Configuration"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/output",
+        "label": "Output"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/prompt",
+        "label": "Prompt"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/rail",
+        "label": "Rail"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/structured_data_with_guardrails",
+        "label": "Structured Data With Guardrails"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/telemetry",
+        "label": "Telemetry"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/use_on_fail_actions",
+        "label": "Use On Fail Actions"
+      },
+      {
+        "type": "doc",
+        "id": "how_to_guides/using_llms",
+        "label": "Using Llms"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "category",
+    "label": "Hub",
+    "items": [
+      {
+        "type": "category",
+        "label": "Api Reference Markdown",
+        "items": [
+          {
+            "type": "doc",
+            "id": "hub/api_reference_markdown/validation_outcome",
+            "label": "Validation Outcome"
+          },
+          {
+            "type": "doc",
+            "id": "hub/api_reference_markdown/validators",
+            "label": "Validators"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "category",
+        "label": "Concepts",
+        "items": [
+          {
+            "type": "doc",
+            "id": "hub/concepts/on_fail_policies",
+            "label": "On Fail Policies"
+          },
+          {
+            "type": "doc",
+            "id": "hub/concepts/validators",
+            "label": "Validators"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "doc",
+        "id": "hub/getting_started",
+        "label": "Getting Started"
+      },
+      {
+        "type": "category",
+        "label": "How To Guides",
+        "items": [
+          {
+            "type": "doc",
+            "id": "hub/how_to_guides/custom_validator",
+            "label": "Custom Validator"
+          },
+          {
+            "type": "doc",
+            "id": "hub/how_to_guides/input_validation",
+            "label": "Input Validation"
+          },
+          {
+            "type": "doc",
+            "id": "hub/how_to_guides/metadata",
+            "label": "Metadata"
+          },
+          {
+            "type": "doc",
+            "id": "hub/how_to_guides/multiple_validators",
+            "label": "Multiple Validators"
+          },
+          {
+            "type": "doc",
+            "id": "hub/how_to_guides/structured_data_validation",
+            "label": "Structured Data Validation"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "doc",
+        "id": "hub/introduction",
+        "label": "Introduction"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "index",
+    "label": "Index"
+  },
+  {
+    "type": "category",
+    "label": "Integrations",
+    "items": [
+      {
+        "type": "doc",
+        "id": "integrations/azure_openai",
+        "label": "Azure Openai"
+      },
+      {
+        "type": "doc",
+        "id": "integrations/langchain",
+        "label": "Langchain"
+      },
+      {
+        "type": "doc",
+        "id": "integrations/llama_index",
+        "label": "Llama Index"
+      },
+      {
+        "type": "doc",
+        "id": "integrations/llamaindex",
+        "label": "Llamaindex"
+      },
+      {
+        "type": "doc",
+        "id": "integrations/openai_functions",
+        "label": "Openai Functions"
+      },
+      {
+        "type": "category",
+        "label": "Telemetry",
+        "items": [
+          {
+            "type": "doc",
+            "id": "integrations/telemetry/grafana",
+            "label": "Grafana"
+          },
+          {
+            "type": "doc",
+            "id": "integrations/telemetry/mlflow-tracing",
+            "label": "Mlflow-tracing"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "llm_api_wrappers",
+    "label": "Llm Api Wrappers"
+  },
+  {
+    "type": "category",
+    "label": "Migration Guides",
+    "items": [
+      {
+        "type": "doc",
+        "id": "migration_guides/0-2-migration",
+        "label": "0-2-migration"
+      },
+      {
+        "type": "doc",
+        "id": "migration_guides/0-3-migration",
+        "label": "0-3-migration"
+      },
+      {
+        "type": "doc",
+        "id": "migration_guides/0-4-migration",
+        "label": "0-4-migration"
+      },
+      {
+        "type": "doc",
+        "id": "migration_guides/0-5-migration",
+        "label": "0-5-migration"
+      },
+      {
+        "type": "doc",
+        "id": "migration_guides/0-6-migration",
+        "label": "0-6-migration"
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  },
+  {
+    "type": "doc",
+    "id": "the_guard",
+    "label": "The Guard"
+  },
+  {
+    "type": "category",
+    "label": "Use Cases",
+    "items": [
+      {
+        "type": "category",
+        "label": "Text2sql",
+        "items": [
+          {
+            "type": "doc",
+            "id": "use_cases/text2sql/text2sql",
+            "label": "Text2sql"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      }
+    ],
+    "collapsed": true,
+    "collapsible": true
+  }
+]

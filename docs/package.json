@@ -1,0 +1,54 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "dependencies": {
+    "@docusaurus/core": "^3.9.2",
+    "@docusaurus/plugin-google-gtag": "^3.9.2",
+    "@docusaurus/preset-classic": "^3.9.2",
+    "@docusaurus/theme-mermaid": "^3.9.2",
+    "@mdx-js/react": "^3.1.1",
+    "clsx": "^2.1.1",
+    "create-react-class": "^15.7.0",
+    "docusaurus-plugin-image-zoom": "^3.0.1",
+    "htmltojsx": "^0.3.0",
+    "plugin-image-zoom": "^1.2.0",
+    "posthog-docusaurus": "^2.0.5",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0"
+  },
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "prebuild": "node prebuild.js",
+    "generate-docs": "poetry install --all-extras; cd ..; make docs-gen; cd docs; npm run prebuild",
+    "start": "docusaurus start --config docusaurus.config.js --port 3002",
+    "clean-start": "rm -rf src/api_reference_markdown; rm -rf dist; mkdir -p dist; npm run generate-docs; npm run start",
+    "build": "docusaurus build --config docusaurus.config.js",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve --config docusaurus.config.js --port 3002",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "restart": "rm -rf src/api_reference_markdown; rm -rf dist; mkdir -p dist; npm run generate-docs; npm run start"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.9.2"
+  }
+}

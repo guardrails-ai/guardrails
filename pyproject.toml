@@ -50,7 +50,7 @@ dependencies = [
 
 [tool.poetry.dependencies]
 # since we specify project.requires-python, this is only for annotations and to help poetry lock wrt botocore, urllib3, and guardrails-api-client
-python = "^3.10"
+python = "^3.9"
 # boto3 requires urllib3 1.x for python < 3.10
 urllib3 = [
     { version = ">=1.25.4,<1.27", markers = "python_version < '3.10'" },
@@ -146,6 +146,9 @@ name = "PyPI"
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "E501"]
 ignore = ["E731", "E203", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E501"]
 
 [tool.pytest.ini_options]
 python_classes = ["Test"]
