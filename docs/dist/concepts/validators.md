@@ -114,7 +114,7 @@ Once the repository is cloned and the validator is created, you can register the
 Validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. There are a large collection of Validators which can be found at the [Guardrails Hub](https://hub.guardrailsai.com/).
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px" />
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/dist/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px" />
 </div>
 
 Once you have found a Validator on the hub, you can click on the Validator `README` to find the install link.
