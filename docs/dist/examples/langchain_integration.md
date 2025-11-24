@@ -51,6 +51,15 @@ from langchain_core.prompts import ChatPromptTemplate
 model = ChatOpenAI(model="gpt-4")
 ```
 
+<CodeOutputBlock lang="python">
+
+```
+    /Users/calebcourier/Projects/support/langchain/.venv/lib/python3.12/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+      from .autonotebook import tqdm as notebook_tqdm
+```
+
+</CodeOutputBlock>
+
 2. Create a Guard object with two validators: CompetitorCheck and ToxicLanguage.
 
 
@@ -64,28 +73,6 @@ guard = Guard().use_many(
     ToxicLanguage(on_fail="filter"),
 )
 ```
-
-<CodeOutputBlock lang="python">
-
-```
-    ---------------------------------------------------------------------------
-
-    ImportError                               Traceback (most recent call last)
-
-    Cell In[2], line 2
-          1 from guardrails import Guard
-    ----> 2 from guardrails.hub import CompetitorCheck, ToxicLanguage
-          4 competitors_list = ["delta", "american airlines", "united"]
-          5 guard = Guard().use_many(
-          6     CompetitorCheck(competitors=competitors_list, on_fail="fix"),
-          7     ToxicLanguage(on_fail="filter"),
-          8 )
-
-
-    ImportError: cannot import name 'CompetitorCheck' from 'guardrails.hub' (/Users/calebcourier/Projects/guardrails/.venv/lib/python3.10/site-packages/guardrails/hub/__init__.py)
-```
-
-</CodeOutputBlock>
 
 3. Define the LCEL chain components and pipe the prompt, model, output parser, and the Guard together.
 The `guard.to_runnable()` method converts the Guardrails guard into a LangChain-compatible runnable object.
@@ -105,6 +92,22 @@ chain = prompt | model | guard.to_runnable() | output_parser
 result = chain.invoke({"question": "What are the top five airlines for domestic travel in the US?"})
 print(result)
 ```
+
+<CodeOutputBlock lang="python">
+
+```
+    /Users/calebcourier/Projects/support/langchain/.venv/lib/python3.12/site-packages/guardrails/validator_service/__init__.py:84: UserWarning: Could not obtain an event loop. Falling back to synchronous validation.
+      warnings.warn(
+
+
+    1. Southwest Airlines
+    2. Delta Air Lines
+    3. American Airlines
+    4. United Airlines
+    5. JetBlue Airways
+```
+
+</CodeOutputBlock>
 
 Example output:
     ```
