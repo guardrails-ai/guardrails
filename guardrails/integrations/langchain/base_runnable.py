@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, Union, cast
 import json
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -8,16 +8,16 @@ from guardrails.classes.output_type import OT
 
 
 class BaseRunnable(Runnable):
-    name: str
+    name: Union[str, None]
 
     def invoke(
-        self, input: InputType, config: Optional[RunnableConfig] = None
+        self,
+        input: InputType,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> InputType:
         return self._call_with_config(
-            self._process_input,
-            input,
-            config,
-            run_type="parser",
+            self._process_input, input, config, run_type="parser", **kwargs
         )
 
     def _process_input(self, input: InputType) -> InputType:

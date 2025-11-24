@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 import io
 import sys
 
@@ -30,7 +30,10 @@ def test_validator_runnable(output: str, throws: bool, expected_error: Optional[
 
     class MockModel(Runnable):
         def invoke(
-            self, input: LanguageModelInput, config: Optional[RunnableConfig] = None
+            self,
+            input: LanguageModelInput,
+            config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> BaseMessage:
             return AIMessage(content=output)
 
