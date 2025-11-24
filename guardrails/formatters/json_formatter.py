@@ -149,3 +149,6 @@ class JsonFormatter(BaseFormatter):
             raise ValueError(
                 "JsonFormatter can only be used with HuggingFace*Callable."
             )
+
+    def wrap_async_callable(self, llm_callable):
+        raise NotImplementedError()
