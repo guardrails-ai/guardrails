@@ -89,7 +89,9 @@ chain = prompt | model | guard.to_runnable() | output_parser
 
 
 ```python
-result = chain.invoke({"question": "What are the top five airlines for domestic travel in the US?"})
+result = chain.invoke(
+    {"question": "What are the top five airlines for domestic travel in the US?"}
+)
 print(result)
 ```
 

@@ -148,7 +148,7 @@ This prints:
 
 ### Install the Javascript library
 
-**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.9 or greater installed on your system to use the Javascript library. 
+**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.10 or greater installed on your system to use the Javascript library. 
 
 
 ```bash
