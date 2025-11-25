@@ -10,12 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         typer-version: ["0.16.0", "0.17.0", "0.18.0", "0.19.2"]
         click-version: ["8.1.0", "8.2.0"]
         exclude:
-          - python-version: "3.9"
-            click-version: "8.2.0"
           - typer-version: "0.16.0"
             click-version: "8.2.0"
           - typer-version: "0.16.0"

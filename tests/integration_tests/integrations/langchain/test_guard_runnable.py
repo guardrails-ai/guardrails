@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 import io
 import sys
 
@@ -41,7 +41,10 @@ def test_guard_as_runnable(guard_runnable: GuardRunnable, output: str, throws: b
 
     class MockModel(Runnable):
         def invoke(
-            self, input: LanguageModelInput, config: Optional[RunnableConfig] = None
+            self,
+            input: LanguageModelInput,
+            config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> BaseMessage:
             return AIMessage(content=output)
 
