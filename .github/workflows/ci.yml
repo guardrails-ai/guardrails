@@ -11,101 +11,88 @@ on:
       - dev
       - feat/*
       - 0.*.*
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  UV_VERSION: "0.5.11"
+
 jobs:
-  LicenseChecks:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up Python
+        run: uv python install 3.12
 
-      - name: Install Dependencies
-        # TODO: fix errors so that we can run `make dev` instead
-        run: |
-          # Setup Virtual Environment
-          python3 -m venv ./.venv
-          source .venv/bin/activate
-          make dev
-
-      - name: Check license
-        run: |
-          source .venv/bin/activate
-          .venv/bin/pip install greenlet setuptools
-          .venv/bin/liccheck
-  Linting:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-
-      - name: Install Dependencies
-        run: |
-          # Setup Virtual Environment
-          python3 -m venv ./.venv
-          source .venv/bin/activate
-          make dev
+      - name: Install dependencies
+        run: uv sync --group dev
 
       - name: Lint with ruff
         run: |
-          source .venv/bin/activate
-          make lint
+          uv run ruff check guardrails/ tests/
+          uv run ruff format --check guardrails/ tests/
 
-  Typing:
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-      - name: Install Dependencies
-        run: |
-          # Setup Virtual Environment
-          python3 -m venv ./.venv
-          source .venv/bin/activate
-          make full
+      - name: Install dependencies
+        run: uv sync --group dev --all-extras
 
       - name: Static analysis with pyright
-        run: |
-          source .venv/bin/activate
-          make type
+        run: uv run pyright guardrails/
 
-  Pytests:
-    runs-on: LargeBois
+  liccheck:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Check licenses
+        run: uv run liccheck -s pyproject.toml
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-        # TODO: fix errors so that we can run both `make dev` and `make full`
-        # dependencies: ['dev', 'full']
-        # dependencies: ["full"]
     steps:
       - uses: actions/checkout@v4
 
@@ -114,43 +101,49 @@ jobs:
           echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
           echo 'enable_metrics=false' >> ~/.guardrailsrc
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-      - name: Install Dependencies
+      - name: Install dependencies
+        run: uv sync --group dev --all-extras
+
+      - name: Run tests with coverage
         run: |
-          # Setup Virtual Environment
-          python3 -m venv ./.venv
-          source .venv/bin/activate
-          
-          make full
-          
-          if [ "${{ matrix.python-version }}" == "3.12" ]; then
-            echo "Installing latest langchain-core and langsmith from PyPI"
-            pip install "langchain-core>=0.2" "langsmith<0.2.0,>=0.1.75"
-          fi
+          uv run pytest tests/ \
+            --cov=./guardrails/ \
+            --cov-report=xml \
+            --cov-report=term \
+            -v
 
-      - name: Run Pytests
-        run: |
-          source .venv/bin/activate
-
-          echo "langchain-core version:"
-          pip show langchain-core
-          echo "langsmith version:"
-          pip show langsmith
-
-          make test-cov
-
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
+          name: codecov-py${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+  # Pre-commit hooks (runs ruff + uv-lock check)
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - uses: pre-commit/action@v3.0.1

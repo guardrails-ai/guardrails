@@ -1,134 +1,204 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
 [project]
 name = "guardrails-ai"
 version = "0.7.1"
 description = "Adding guardrails to large language models."
-authors = [
-    {name = "Guardrails AI", email = "contact@guardrailsai.com"}
-]
-license = "Apache License 2.0"
-license-files = [
-    "LICENSE"
-]
-homepage = "https://www.guardrailsai.com/"
-documentation = "https://www.guardrailsai.com/docs"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.10,<3.15"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "Guardrails AI", email = "contact@guardrailsai.com"}
+]
+keywords = ["llm", "guardrails", "validation", "safety", "ai"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
 dependencies = [
-    "lxml>=4.9.3,<7.0.0",
-    "openai>=1.30.1,<2.0.0",    
-    "rich>=13.6.0,<15.0.0",
-    "pydantic>=2.0.0, <3.0",
-    "typer>=0.9.0,<0.20",
-    "click<=8.2.0",
-    "tenacity>=8.1.0,<10.0.0",
-    "rstr>=3.2.2,<4.0.0",
-    "typing-extensions>=4.8.0,<5.0.0",
-    "python-dateutil>=2.8.2,<3.0.0",
-    "tiktoken>=0.5.1,<1.0.0",
-    "litellm>=1.37.14,<2.0.0",    
-    "pydash>=7.0.6,<9.0.0",
-    "langchain-core>=1.0.0,<2.0",
-    "requests>=2.31.0,<3.0.0",    
-    "faker>=25.2.0,<38.0.0",
-    "jsonref>=1.1.0,<2.0.0",
-    "jsonschema[format-nongpl]>=4.22.0,<5.0.0",
-    
-    # TODO - drop this!
-    "pip>=22",
+  # Core LLM/AI
+  "openai>=1.30.1,<2.0.0",
+  "litellm>=1.37.14,<2.0.0",
+  "langchain-core>=1.0.0,<2.0.0",
+  "tiktoken>=0.5.1,<1.0.0",
 
-    "pyjwt>=2.8.0,<3.0.0",
-    "opentelemetry-sdk>=1.24.0,<2.0.0",
-    "opentelemetry-exporter-otlp-proto-grpc>=1.24.0,<2.0.0",
-    "opentelemetry-exporter-otlp-proto-http>=1.24.0,<2.0.0",
-    "guardrails-hub-types>=0.0.4,<0.1.0",
-    "guardrails-api-client==0.4.0a1,<0.5.0; python_version < '3.10'",
-    "guardrails-api-client>=0.4.0,<0.5.0; python_version >= '3.10'",
-    "diff-match-patch>=20230430,<20241101",
-    "semver>=3.0.2,<4.0.0"
+  # Data validation & schemas
+  "pydantic>=2.0.0,<3.0.0",
+  "jsonschema[format-nongpl]>=4.22.0,<5.0.0",
+  "jsonref>=1.1.0,<2.0.0",
+
+  # XML/HTML processing
+  "lxml>=4.9.3,<7.0.0",
+
+  # CLI & UX
+  "typer>=0.12.0,<0.21.0",
+  "rich>=13.6.0,<15.0.0",
+
+  # Utilities
+  "tenacity>=8.1.0,<10.0.0",
+  "rstr>=3.2.2,<4.0.0",
+  "typing-extensions>=4.8.0,<5.0.0",
+  "python-dateutil>=2.8.2,<3.0.0",
+  "pydash>=7.0.6,<9.0.0",
+  "requests>=2.31.0,<3.0.0",
+  "faker>=25.2.0,<39.0.0",
+  "diff-match-patch>=20230430,<20241101",
+  "semver>=3.0.2,<4.0.0",
+
+  # Auth
+  "pyjwt>=2.8.0,<3.0.0",
+
+  # Observability (OpenTelemetry)
+  "opentelemetry-sdk>=1.24.0,<2.0.0",
+  "opentelemetry-exporter-otlp-proto-grpc>=1.24.0,<2.0.0",
+  "opentelemetry-exporter-otlp-proto-http>=1.24.0,<2.0.0",
+
+  # Guardrails ecosystem
+  "guardrails-hub-types>=0.0.4,<0.1.0",
+  "guardrails-api-client>=0.4.0,<0.5.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.3",
-    "pytest-asyncio>=0.21.1",
-    "docformatter>=1.4",
-    "pytest-cov>=2.10.1",
-    "pre-commit>=2.9.3",
-    "twine>=4.0.2",
-    "pytest-mock>=3.12.0",
-    "pypdfium2>=4.23.1",
-    "pyright==1.1.334",
-    "lxml-stubs>=0.4.0",
-    "ruff>=0.4.1",
-    "liccheck>=0.9.2"
-]
-sql = [
-    "sqlvalidator>=0.0.20,<0.1.0",
-    "sqlalchemy>=2.0.9,<3.0.0",
-    "sqlglot>=19.0.3,<20.0.0",
-]
-vectordb = [
-    "faiss-cpu>=1.7.4,<2.0.0",
-    "numpy>=1.25, <3.0"
-]
-manifest = [
-    "manifest-ml>=0.1.8,<0.2.0"
-]
-anthropic = [
-    "anthropic>=0.7.2,<1.0.0"
-]
-docs-build = [
-    "nbdoc>=0.0.82,<0.1.0",
-    "docspec_python==2.2.1",
-    "pydoc-markdown==4.8.2"
-]
-huggingface = [
-    "transformers>=4.38.0,<5.0.0",
-    "torch>=2.1.1,<3.0.0",
-    "guardrails-jsonformer>=0.13.1,<1.0.0"
-]
-api = [
-    "guardrails-api>=0.1.0a1,<0.2.0",
-    "boto3>1,<2"
-]
-databricks = [
-    "mlflow>=2.0.1,<4.0.0"
-]
-uv = [
-    "uvloop>=0.20.0,<1.0.0"
-]
-llama = [
-    "llama-index>=0.11.0,<1.0.0"
-]
-docs = [
-    "mkdocs>=1.5.3",
-    "mkdocstrings[python]>=0.23.0",
-    "mkdocs-jupyter>=0.23",
-    "mkdocs-material>=9.4.8",
-    "mknotebooks>=0.8.0",
-    "griffe>=1.3.2",
-    "pillow>=10.1.0",
-    "cairosvg>=2.7.1",
-    "mkdocs-glightbox>=0.3.4"
-]
+[project.urls]
+Homepage = "https://www.guardrailsai.com/"
+Documentation = "https://www.guardrailsai.com/docs"
+Repository = "https://github.com/guardrails-ai/guardrails"
+Changelog = "https://github.com/guardrails-ai/guardrails/releases"
 
 [project.scripts]
 guardrails = "guardrails.cli:cli"
 
-[build-system]
-requires = ["poetry-core>=2.0.0"]
-build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
-package-mode = true
-packages = [
-    { include = "guardrails", from = "." }
+# =============================================================================
+# Optional Dependencies (Feature Extras)
+# =============================================================================
+
+[project.optional-dependencies]
+# SQL validation
+sql = [
+  "sqlvalidator>=0.0.20,<0.1.0",
+  "sqlalchemy>=2.0.9,<3.0.0",
+  "sqlglot>=19.0.3,<20.0.0",
+]
+
+# Vector database support
+vectordb = [
+  "faiss-cpu>=1.7.4,<2.0.0",
+  "numpy>=1.25.0,<3.0.0",
+]
+
+# Manifest ML integration
+manifest = [
+  "manifest-ml>=0.1.8,<0.2.0",
+]
+
+# Anthropic API support
+anthropic = [
+  "anthropic>=0.7.2,<1.0.0",
+]
+
+# Documentation building
+docs-build = [
+  "nbdoc>=0.0.82,<0.1.0",
+  "docspec-python>=2.2.1,<3.0.0",
+  "pydoc-markdown>=4.8.2,<5.0.0",
+]
+
+# HuggingFace transformers
+huggingface = [
+  "transformers>=4.38.0,<5.0.0",
+  "torch>=2.1.1,<3.0.0",
+  "guardrails-jsonformer>=0.13.1,<1.0.0",
+]
+
+# Guardrails API server
+api = [
+  "guardrails-api>=0.1.0a1,<0.2.0",
+  "boto3>=1.0.0,<2.0.0",
+]
+
+# Server deployment (uvicorn)
+server = [
+  "guardrails-api>=0.1.0a1,<0.2.0",
+  "boto3>=1.0.0,<2.0.0",
+  "uvicorn[standard]>=0.32.0,<1.0.0",
+]
+
+# Databricks/MLflow integration
+databricks = [
+  "mlflow>=2.0.1,<4.0.0",
+]
+
+# Async performance (uvloop)
+uvloop = [
+  "uvloop>=0.20.0,<1.0.0; sys_platform != 'win32'",
+]
+
+# LlamaIndex integration
+llama = [
+  "llama-index>=0.11.0,<1.0.0",
+]
+
+# MkDocs documentation
+docs = [
+  "mkdocs>=1.5.3",
+  "mkdocstrings[python]>=0.23.0",
+  "mkdocs-jupyter>=0.23.0",
+  "mkdocs-material>=9.4.8",
+  "mknotebooks>=0.8.0",
+  "griffe>=1.3.2",
+  "pillow>=10.1.0",
+  "cairosvg>=2.7.1",
+  "mkdocs-glightbox>=0.3.4",
 ]
 
 
-[[tool.poetry.source]]
-name = "PyPI"
+# =============================================================================
+# Development Dependencies (PEP 735 dependency-groups)
+# =============================================================================
+
+[dependency-groups]
+dev = [
+  "ruff>=0.14.0",
+  "pytest>=8.3.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-mock>=3.14.0",
+  "pytest-cov>=6.0.0",
+  "pre-commit>=4.0.0",
+  "pyright>=1.1.400",
+  "lxml-stubs>=0.5.1",
+  "liccheck>=0.9.2",
+  "twine>=6.0.0",
+  "nox>=2024.10.9",
+]
+
+
+# =============================================================================
+# Build Configuration
+# =============================================================================
+
+[tool.hatch.build.targets.wheel]
+packages = ["guardrails"]
+
+
+# =============================================================================
+# Tool Configuration
+# =============================================================================
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "E501"]
@@ -138,63 +208,74 @@ ignore = ["E731", "E203", "E741"]
 "*.ipynb" = ["E501"]
 
 [tool.pytest.ini_options]
-python_classes = ["Test"]
-python_functions = ["test_"]
-python_files = ["test_*.py"]
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 markers = [
-    "no_hub_telemetry_mock"
+  "no_hub_telemetry_mock: Skip hub telemetry mocking",
+]
+addopts = [
+  "-v",
+  "--strict-markers",
+  "--tb=short",
 ]
 
-[pytest]
-log_cli = "True"
-log_cli_level = "DEBUG"
+[tool.coverage.run]
+source = ["guardrails"]
+omit = [
+  "*/tests/*",
+  "*/test_*.py",
+  "*/__pycache__/*",
+]
 
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
 
 [tool.liccheck]
 authorized_licenses = [
-    "3-clause bsd",
-    "bsd",
-    "bsd3",
-    "bsd-3-clause",
-    "new bsd",
-    "bsd license",
-    "new bsd license",
-    "simplified bsd",
-    "academic free license (afl)",
-    "apache",
-    "apache 2.0",
-    "apache-2.0",
-    "apache license 2.0",
-    "apache software",
-    "apache software license",
-    "apache-2.0 and cnri-python",
-    "gnu lgpl",
-    "lgpl with exceptions or zpl",
-    "gnu library or lesser general public license (lgpl)",
-    "isc",
-    "isc license",
-    "isc license (iscl)",
-    "mit",
-    "mit license",
-    "mozilla public license 2.0 (mpl 2.0)",
-    "the unlicense (unlicense)",
-    "python software foundation",
-    "python software foundation license",
-    "psf-2.0",
-    "zpl 2.1",
-    "mit and python-2.0",
-    "apache-2.0 and mit",
-    "                                 Apache"
+  "3-clause bsd",
+  "bsd",
+  "bsd3",
+  "bsd-3-clause",
+  "new bsd",
+  "bsd license",
+  "new bsd license",
+  "simplified bsd",
+  "academic free license (afl)",
+  "apache",
+  "apache 2.0",
+  "apache-2.0",
+  "apache license 2.0",
+  "apache software",
+  "apache software license",
+  "apache-2.0 and cnri-python",
+  "gnu lgpl",
+  "lgpl with exceptions or zpl",
+  "gnu library or lesser general public license (lgpl)",
+  "isc",
+  "isc license",
+  "isc license (iscl)",
+  "mit",
+  "mit license",
+  "mozilla public license 2.0 (mpl 2.0)",
+  "the unlicense (unlicense)",
+  "python software foundation",
+  "python software foundation license",
+  "psf-2.0",
+  "zpl 2.1",
+  "mit and python-2.0",
+  "apache-2.0 and mit",
 ]
 unauthorized_licenses = [
-    "gpl v3",
+  "gpl v3",
 ]
 level = "Paranoid"
-dependencies = true # to load [tool.poetry.dependencies]
 
 [tool.liccheck.authorized_packages]
-aiocache = "0.12.3" # BSD 3-Clause
-aiohappyeyeballs = "2.4.3" # Python Software Foundation
-guardrails-api = "*" # Modified ELSSTIC
-pondpond = "1.4.1" # Apache 2.0
+aiocache = ">=0.12.3"
+aiohappyeyeballs = ">=2.4.3"
+guardrails-api = "*"
+pondpond = ">=1.4.1"

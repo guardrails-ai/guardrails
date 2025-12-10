@@ -1,50 +1,52 @@
-# New LiteLLM version has a dependency on madoka which requires g++ to build the wheel
-FROM python:3.13
+# Guardrails AI FastAPI Server
+# Uses uv for fast, reproducible dependency installation
+
+FROM python:3.13-slim
 
 ARG GUARDRAILS_TOKEN
 ARG GUARDRAILS_TEMPLATE="guard-template.json"
 
-# Set environment variables to avoid writing .pyc files and to unbuffer Python output
+# Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV LOGLEVEL="DEBUG"
 ENV GUARDRAILS_LOG_LEVEL="DEBUG"
 ENV APP_ENVIRONMENT="production"
 ENV GUARDRAILS_TEMPLATE=$GUARDRAILS_TEMPLATE
+ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
-# Install Git and necessary dependencies
+# Install system dependencies and uv
 RUN apt-get update && \
-    apt-get install -y make git curl gcc jq pipx && \
+    apt-get install -y --no-install-recommends \
+        git curl gcc g++ jq && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/root/.local/bin:$PATH"
+# Copy project files for dependency resolution
+COPY pyproject.toml uv.lock ./
 
-# Copy the entrypoint script
-COPY /server_ci/fastapi-entry.sh /app/fastapi-entry.sh
-COPY ../ /app/guardrails
+# Sync dependencies from lockfile (reproducible builds)
+RUN uv sync --frozen --no-dev --extra server
 
-# Install guardrails, the guardrails API, and gunicorn
-# openai optional. only used for integration testing
-RUN pip install "uvicorn[standard]" --no-cache-dir
+# Copy source code
+COPY guardrails/ ./guardrails/
 
-RUN pip install "/app/guardrails[api]"
+# Re-sync to install the package itself
+RUN uv sync --frozen --no-dev --extra server
 
-RUN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
+# Configure guardrails
+RUN uv run guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
 
-# bring in base template
-COPY /server_ci/$GUARDRAILS_TEMPLATE /app/$GUARDRAILS_TEMPLATE
+# Copy entrypoint and template
+COPY server_ci/fastapi-entry.sh ./fastapi-entry.sh
+COPY server_ci/$GUARDRAILS_TEMPLATE ./$GUARDRAILS_TEMPLATE
 
-# Install Hub Deps and create config.py
-RUN guardrails create --template /app/$GUARDRAILS_TEMPLATE
+# Install Hub deps and create config.py
+RUN uv run guardrails create --template /app/$GUARDRAILS_TEMPLATE
 
-
-# RUN cp -r /usr/local/lib/python3.11/site-packages/guardrails/hub/* /app/guardrails/guardrails/hub
-
-# Expose port 8000 for the application
 EXPOSE 8000
 
-# Command to start the Gunicorn server with specified settings
 CMD ["/bin/bash", "/app/fastapi-entry.sh"]

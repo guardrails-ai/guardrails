@@ -1,0 +1,137 @@
+# Mise configuration for Guardrails AI
+# Install: brew install mise && mise trust && mise install
+# Docs: https://mise.jdx.dev/
+
+[tools]
+python = "3.12"
+
+[env]
+# Auto-create virtualenv in .venv
+_.python.venv = { path = ".venv", create = true }
+# Disable tokenizer parallelism warnings
+TOKENIZERS_PARALLELISM = "false"
+
+
+# =============================================================================
+# Installation Tasks
+# =============================================================================
+
+[tasks.install]
+description = "Install dependencies"
+run = "uv sync"
+
+[tasks.install-dev]
+description = "Install with dev dependencies"
+run = "uv sync --group dev"
+
+[tasks.install-all]
+description = "Install with all optional extras"
+run = "uv sync --group dev --all-extras"
+
+[tasks.install-docs]
+description = "Install with documentation dependencies"
+run = "uv sync --group dev --extra docs"
+
+[tasks.install-api]
+description = "Install with API server dependencies"
+run = "uv sync --group dev --extra api"
+
+
+# =============================================================================
+# Development Tasks
+# =============================================================================
+
+[tasks.lint]
+description = "Run linter (ruff check + format)"
+run = "ruff check --fix . && ruff format ."
+
+[tasks.lint-check]
+description = "Check linting without fixing"
+run = "ruff check . && ruff format --check ."
+
+[tasks.type]
+description = "Run type checker (pyright)"
+run = "uv run pyright guardrails"
+
+[tasks.test]
+description = "Run tests"
+run = "uv run pytest tests/ -v"
+
+[tasks.test-cov]
+description = "Run tests with coverage"
+run = "uv run pytest tests/ -v --cov=guardrails --cov-report=term --cov-report=html"
+
+[tasks.test-unit]
+description = "Run unit tests only"
+run = "uv run pytest tests/unit_tests/ -v"
+
+[tasks.test-integration]
+description = "Run integration tests only"
+run = "uv run pytest tests/integration_tests/ -v"
+
+[tasks.nox]
+description = "Run nox for multi-version testing"
+run = "uv run nox"
+
+
+# =============================================================================
+# Build & Release Tasks
+# =============================================================================
+
+[tasks.build]
+description = "Build package"
+run = "uv build"
+
+[tasks.publish-test]
+description = "Publish to TestPyPI"
+run = "uv run twine upload --repository testpypi dist/*"
+
+[tasks.publish]
+description = "Publish to PyPI"
+run = "uv run twine upload dist/*"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "rm -rf dist/ build/ *.egg-info .pytest_cache .coverage htmlcov/"
+
+
+# =============================================================================
+# Documentation Tasks
+# =============================================================================
+
+[tasks.docs-serve]
+description = "Serve documentation locally"
+run = "uv run mkdocs serve"
+
+[tasks.docs-build]
+description = "Build documentation"
+run = "uv run mkdocs build"
+
+[tasks.docs-deploy]
+description = "Deploy documentation to GitHub Pages"
+run = "uv run mkdocs gh-deploy"
+
+
+# =============================================================================
+# CI/Validation Tasks
+# =============================================================================
+
+[tasks.precommit]
+description = "Run pre-commit hooks"
+run = "uv run pre-commit run --all-files"
+
+[tasks.precommit-install]
+description = "Install pre-commit hooks"
+run = "uv run pre-commit install"
+
+[tasks.liccheck]
+description = "Check license compliance"
+run = "uv run liccheck -s pyproject.toml"
+
+[tasks.check]
+description = "Run all checks (lint, type, test)"
+run = ["mise run lint-check", "mise run type", "mise run test"]
+
+[tasks.refresh]
+description = "Clean and reinstall everything"
+run = ["rm -rf .venv uv.lock", "uv sync --group dev"]
