@@ -69,6 +69,7 @@ from guardrails.stores.context import (
 from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
+from guardrails.utils.safe_get import safe_get
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -1130,13 +1131,18 @@ class Guard(IGuard, Generic[OT]):
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
+                call_log = safe_get(
+                    [c for c in guard_history if c.id == validation_output.call_id], 0
                 )
+                # Only append the history from this call
+                self.history.append(Call.from_interface(call_log))
 
             validation_summaries = []
-            if self.history.last and self.history.last.iterations.last:
-                validator_logs = self.history.last.iterations.last.validator_logs
+            call_log: Call = safe_get(
+                [c for c in self.history if c.id == validation_output.call_id], 0
+            )
+            if call_log and call_log.iterations.last:
+                validator_logs = call_log.iterations.last.validator_logs
                 validation_summaries = ValidationSummary.from_validator_logs_only_fails(
                     validator_logs
                 )

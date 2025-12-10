@@ -23,9 +23,10 @@ class ValidationSummary(IValidationSummary, ArbitraryModel):
             is_fail_result = isinstance(validation_result, FailResult)
             failure_reason = validation_result.error_message if is_fail_result else None
             error_spans = validation_result.error_spans if is_fail_result else []
+            outcome = validation_result.outcome if validation_result else None
             yield ValidationSummary(
                 validatorName=log.validator_name,
-                validatorStatus=log.validation_result.outcome,  # type: ignore
+                validatorStatus=outcome,  # type: ignore
                 propertyPath=log.property_path,
                 failureReason=failure_reason,
                 errorSpans=error_spans,  # type: ignore
