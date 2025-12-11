@@ -2,6 +2,7 @@ import json
 import pytest
 
 from guardrails.utils.parsing_utils import (
+    extract_json_from_ouput,
     get_code_block,
     has_code_block,
     prune_extra_keys,
@@ -75,10 +76,82 @@ js_code = """js
     ],
 )
 def test_get_code_block(llm_ouput, expected_output, code_type):
-    has, start, end = has_code_block(llm_ouput)
+    has, start, end = has_code_block(llm_ouput, code_type)
     actual_output = get_code_block(llm_ouput, start, end, code_type)
 
     assert actual_output == expected_output
+
+
+too_much_information = """
+Sure! Here's a bunch of code blocks you didn't ask for:
+
+```
+# Some Markdown
+This is markdown
+```
+
+```
+some_var = "this is python code"
+```
+
+```
+this:
+    - is
+    - yaml
+```
+
+{
+    "finally": "real json"
+}
+
+"""
+expected_from_tmi = {"finally": "real json"}
+
+expected_json_code = {"a": 1}
+
+non_json_block = """
+Sure! Here's a code block that's not JSON
+
+```
+Definitely not JSON
+```
+"""
+
+braces_but_not_json = """
+Sometimes I like to add braces around words { like this }
+"""
+
+# Ideally this should be supported, but our regex doesn't pick this up currently
+json_array_1 = """
+[{ "a": 1 }]
+"""
+json_array_2 = """
+[{ "a": 1 }, { "b": 2 }]
+"""
+
+
+@pytest.mark.parametrize(
+    "llm_ouput,expected_output,expect_error",
+    [
+        (json_code_block, expected_json_code, False),
+        (anonymous_code_block, expected_json_code, False),
+        (js_code_block, expected_json_code, False),
+        (no_code_block, expected_json_code, False),
+        (too_much_information, expected_from_tmi, False),
+        (not_even_json, None, True),
+        (non_json_block, None, True),
+        (braces_but_not_json, None, True),
+        # This is not desired behaviour, but it is descriptive of the current regex
+        (json_array_1, expected_json_code, False),
+        (json_array_2, None, True),
+    ],
+)
+def test_extract_json_from_ouput(llm_ouput, expected_output, expect_error):
+    output, error = extract_json_from_ouput(llm_ouput)
+
+    assert output == expected_output
+    if expect_error:
+        assert error is not None
 
 
 with open(
