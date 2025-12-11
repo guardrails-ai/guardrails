@@ -76,7 +76,7 @@ js_code = """js
     ],
 )
 def test_get_code_block(llm_ouput, expected_output, code_type):
-    has, start, end = has_code_block(llm_ouput, code_type)
+    has, start, end = has_code_block(llm_ouput)
     actual_output = get_code_block(llm_ouput, start, end, code_type)
 
     assert actual_output == expected_output
