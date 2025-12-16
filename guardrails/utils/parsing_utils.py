@@ -75,6 +75,15 @@ def get_code_block(
 def extract_json_from_ouput(
     output: str,
 ) -> Tuple[Optional[Union[Dict, List]], Optional[Exception]]:
+    # try to load the whole output as json first
+    # there can be corner cases with code blocks 
+    # and json/codeblocks inside json
+    try:
+        output_as_dict = json.loads(output, strict=False)
+        return output_as_dict, None
+    except json.decoder.JSONDecodeError:
+        pass
+
     # Find and extract json from code blocks
     extracted_code_block = output
     has_json_block, json_start, json_end = has_code_block(output, "json")
