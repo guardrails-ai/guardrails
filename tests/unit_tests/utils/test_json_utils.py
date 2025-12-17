@@ -81,6 +81,7 @@ codeblock_inside_json = """
 }
 """
 
+
 @pytest.mark.parametrize(
     "llm_ouput,expected_output,expected_error",
     [
@@ -89,7 +90,11 @@ codeblock_inside_json = """
         (no_code_block, {"a": 1}, None),
         (text_with_no_code_block, {"a": 1, "b": {"c": [{"d": 2}, {"e": 3}]}}, None),
         (text_with_json_code_block, {"a": 1}, None),
-        (codeblock_inside_json, {"data": "Here is a code block: ```json {\"a\": 1}```"}, None),
+        (
+            codeblock_inside_json,
+            {"data": 'Here is a code block: ```json {"a": 1}```'},
+            None,
+        ),
         (js_code_block, None, "Expecting value: line 1 column 1 (char 0)"),
         (
             invalid_json_code_block__quotes,

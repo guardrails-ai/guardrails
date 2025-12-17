@@ -76,7 +76,7 @@ def extract_json_from_ouput(
     output: str,
 ) -> Tuple[Optional[Union[Dict, List]], Optional[Exception]]:
     # try to load the whole output as json first
-    # there can be corner cases with code blocks 
+    # there can be corner cases with code blocks
     # and json/codeblocks inside json
     try:
         output_as_dict = json.loads(output, strict=False)
