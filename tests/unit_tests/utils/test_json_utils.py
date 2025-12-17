@@ -75,9 +75,8 @@ Here is the data you requested
 
 not_even_json = "This isn't even json..."
 
-codeblock_inside_json = json.dumps({
-    "data": 'hello ```json\n{\"foo\":\"<...>\"}\n```'
-    })
+codeblock_inside_json = json.dumps({"data": 'hello ```json\n{"foo":"<...>"}\n```'})
+
 
 @pytest.mark.parametrize(
     "llm_ouput,expected_output,expected_error",
@@ -89,7 +88,7 @@ codeblock_inside_json = json.dumps({
         (text_with_json_code_block, {"a": 1}, None),
         (
             codeblock_inside_json,
-            {"data": 'hello ```json\n{\"foo\":\"<...>\"}\n```'},
+            {"data": 'hello ```json\n{"foo":"<...>"}\n```'},
             None,
         ),
         (js_code_block, None, "Expecting value: line 1 column 1 (char 0)"),
