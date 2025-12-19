@@ -72,6 +72,16 @@ def get_code_block(
     return trimmed_output
 
 
+def try_to_parse(json_string: str) -> Tuple[Optional[Any], Optional[Exception]]:
+    error = None
+    try:
+        parsed = json.loads(json_string, strict=False)
+    except json.decoder.JSONDecodeError as e:
+        parsed = None
+        error = e
+    return parsed, error
+
+
 def extract_json_from_ouput(
     output: str,
 ) -> Tuple[Optional[Union[Dict, List]], Optional[Exception]]:
@@ -86,29 +96,32 @@ def extract_json_from_ouput(
 
     # Find and extract json from code blocks
     extracted_code_block = output
+    output_as_dict = None
+    error = None
     has_json_block, json_start, json_end = has_code_block(output, "json")
     if has_json_block and json_start is not None and json_end is not None:
         extracted_code_block = get_code_block(output, json_start, json_end, "json")
-    else:
+        output_as_dict, error = try_to_parse(extracted_code_block)
+
+    if not output_as_dict:
         has_block, block_start, block_end = has_code_block(output)
         if has_block and block_start is not None and block_end is not None:
             extracted_code_block = get_code_block(output, block_start, block_end)
-        else:
-            json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
-            json_groups = json_pattern.findall(output)
-            json_start, json_end = output.find("{"), output.rfind("}")
-            if len(json_groups) > 0 and len(json_groups[0]) == (
-                json_end - json_start + 1
-            ):
-                extracted_code_block = json_groups[0]
+            output_as_dict, error = try_to_parse(extracted_code_block)
 
-    # Treat the output as a JSON string, and load it into a dict.
-    error = None
-    try:
-        output_as_dict = json.loads(extracted_code_block, strict=False)
-    except json.decoder.JSONDecodeError as e:
-        output_as_dict = None
-        error = e
+    if not output_as_dict:
+        json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
+        json_groups = json_pattern.findall(output)
+        json_start, json_end = output.find("{"), output.rfind("}")
+        if len(json_groups) > 0 and len(json_groups[0]) == (json_end - json_start + 1):
+            extracted_code_block = json_groups[0]
+            output_as_dict, error = try_to_parse(extracted_code_block)
+
+    if output_as_dict:
+        error = None
+    elif not error:
+        error = ValueError("No valid JSON could be extracted from the llm output!")
+
     return output_as_dict, error
 
 
