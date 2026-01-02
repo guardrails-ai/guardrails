@@ -1,0 +1,41 @@
+name: Publish Pre-release
+
+on:
+  push:
+    tags:
+      - "v*-dev.*"
+      - "v*-rc.*"
+
+permissions:
+  contents: write
+
+env:
+  UV_VERSION: "0.5.11"
+
+jobs:
+  prerelease:
+    name: Build & Upload Pre-release Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build distribution artifacts
+        run: uv build
+
+      - name: Create/Update GitHub Pre-release and upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          prerelease: true
+          files: |
+            dist/*
