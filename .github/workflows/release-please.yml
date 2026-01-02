@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - dev
+      - cagyirey/dev
   workflow_dispatch:
 
 permissions:
@@ -28,22 +30,22 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Install uv
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
 
       - name: Set up Python
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         run: uv python install 3.12
 
       - name: Build distribution artifacts
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         run: uv build
 
       - name: Upload artifacts to GitHub Release
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag_name }}
