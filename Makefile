@@ -34,7 +34,7 @@ lint:
 	ruff format guardrails/ tests/ --check
 
 type:
-	uv run pyright guardrails/
+	uv run ty check guardrails/
 
 # =============================================================================
 # Testing

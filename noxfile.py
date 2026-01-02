@@ -38,8 +38,8 @@ def lint(session: nox.Session) -> None:
 def typecheck(session: nox.Session) -> None:
     """Run type checking."""
     session.install("-e", ".")
-    session.install("pyright", "lxml-stubs")
-    session.run("pyright", "guardrails/")
+    session.install("ty")
+    session.run("ty", "check", "guardrails/")
 
 
 @nox.session(python=["3.12"])

@@ -62,8 +62,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --all-extras
 
-      - name: Static analysis with pyright
-        run: uv run pyright guardrails/
+      - name: Static analysis with ty
+        run: uv run ty check --output-format github guardrails/
 
   liccheck:
     name: License Check

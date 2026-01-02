@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 [project]
 name = "guardrails-ai"
 version = "0.7.1"
-description = "Adding guardrails to large language models."
+description = "Guardrails for Large Language Models"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
 license = {text = "Apache-2.0"}
 authors = [
-  {name = "Guardrails AI", email = "contact@guardrailsai.com"}
+  {name = "Guardrails Team", email = "support@guardrailsai.com"},
 ]
 keywords = ["llm", "guardrails", "validation", "safety", "ai"]
 classifiers = [
@@ -29,8 +29,8 @@ classifiers = [
 
 dependencies = [
   # Core LLM/AI
-  "openai>=1.30.1,<2.0.0",
-  "litellm>=1.37.14,<2.0.0",
+  "openai>=2.8.0,<3.0.0",
+  "litellm>=1.80.11,<2.0.0",
   "langchain-core>=1.0.0,<2.0.0",
   "tiktoken>=0.5.1,<1.0.0",
 
@@ -43,7 +43,7 @@ dependencies = [
   "lxml>=4.9.3,<7.0.0",
 
   # CLI & UX
-  "typer>=0.12.0,<0.21.0",
+  "typer>=0.12.0,<0.22.0",
   "rich>=13.6.0,<15.0.0",
 
   # Utilities
@@ -53,7 +53,7 @@ dependencies = [
   "python-dateutil>=2.8.2,<3.0.0",
   "pydash>=7.0.6,<9.0.0",
   "requests>=2.31.0,<3.0.0",
-  "faker>=25.2.0,<39.0.0",
+  "faker>=25.2.0,<41.0.0",
   "diff-match-patch>=20230430,<20241101",
   "semver>=3.0.2,<4.0.0",
 
@@ -89,7 +89,7 @@ guardrails = "guardrails.cli:cli"
 sql = [
   "sqlvalidator>=0.0.20,<0.1.0",
   "sqlalchemy>=2.0.9,<3.0.0",
-  "sqlglot>=19.0.3,<20.0.0",
+  "sqlglot>=19.0.3,<30.0.0",
 ]
 
 # Vector database support
@@ -105,7 +105,7 @@ manifest = [
 
 # Anthropic API support
 anthropic = [
-  "anthropic>=0.7.2,<1.0.0",
+  "anthropic>=0.75.0,<1.0.0",
 ]
 
 # Documentation building
@@ -124,13 +124,13 @@ huggingface = [
 
 # Guardrails API server
 api = [
-  "guardrails-api>=0.1.0a1,<0.2.0",
+  "guardrails-api @ git+https://github.com/Kubedoll-Heavy-Industries/guardrails-api.git@cagyirey/fix/healthcheck_pgclient_invalid_ref",
   "boto3>=1.0.0,<2.0.0",
 ]
 
 # Server deployment (uvicorn)
 server = [
-  "guardrails-api>=0.1.0a1,<0.2.0",
+  "guardrails-api @ git+https://github.com/Kubedoll-Heavy-Industries/guardrails-api.git@cagyirey/fix/healthcheck_pgclient_invalid_ref",
   "boto3>=1.0.0,<2.0.0",
   "uvicorn[standard]>=0.32.0,<1.0.0",
 ]
@@ -163,6 +163,14 @@ docs = [
   "mkdocs-glightbox>=0.3.4",
 ]
 
+[tool.uv]
+conflicts = [
+  [
+    { extra = "anthropic" },
+    { extra = "docs-build" },
+  ],
+]
+
 
 # =============================================================================
 # Development Dependencies (PEP 735 dependency-groups)
@@ -176,7 +184,7 @@ dev = [
   "pytest-mock>=3.14.0",
   "pytest-cov>=6.0.0",
   "pre-commit>=4.0.0",
-  "pyright>=1.1.400",
+  "ty>=0.0.0a5",
   "lxml-stubs>=0.5.1",
   "liccheck>=0.9.2",
   "twine>=6.0.0",
