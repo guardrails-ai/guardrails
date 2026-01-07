@@ -323,13 +323,16 @@ class ReturnTempCallable(Callable):
     "llm_api, args, kwargs, expected_temperature",
     [
         (ReturnTempCallable(), [], {"temperature": 0.5}, 0.5),
-        (ReturnTempCallable(), [], {}, 0),
+        (ReturnTempCallable(), [], {}, None),
     ],
 )
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
-    assert "temperature" in result.init_kwargs
-    assert result.init_kwargs["temperature"] == expected_temperature
+    if expected_temperature is None:
+        assert "temperature" not in result.init_kwargs
+    else:
+        assert "temperature" in result.init_kwargs
+        assert result.init_kwargs["temperature"] == expected_temperature
 
 
 @pytest.mark.skipif(

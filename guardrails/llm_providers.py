@@ -508,9 +508,6 @@ def get_llm_ask(
     *args,
     **kwargs,
 ) -> Optional[PromptCallableBase]:
-    if "temperature" not in kwargs:
-        kwargs.update({"temperature": 0})
-
     try:
         from litellm import completion
 
