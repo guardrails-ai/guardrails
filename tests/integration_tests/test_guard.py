@@ -1615,5 +1615,4 @@ class TestCustomLLMApi:
                     "content": "Can you generate a list of 10 things that are not food?",  # noqa
                 },
             ],
-            temperature=0,
         )
