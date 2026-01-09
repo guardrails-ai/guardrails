@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List
 from unittest.mock import MagicMock
@@ -324,12 +325,25 @@ class ReturnTempCallable(Callable):
     [
         (ReturnTempCallable(), [], {"temperature": 0.5}, 0.5),
         (ReturnTempCallable(), [], {}, 0),
+        (ReturnTempCallable(), [], {"model": "gpt-5-nano"}, None),
     ],
 )
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
-    result = get_llm_ask(llm_api, *args, **kwargs)
-    assert "temperature" in result.init_kwargs
-    assert result.init_kwargs["temperature"] == expected_temperature
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = get_llm_ask(llm_api, *args, **kwargs)
+        if expected_temperature is None:
+            assert "temperature" not in result.init_kwargs
+            assert len(w) == 0
+        else:
+            assert "temperature" in result.init_kwargs
+            assert result.init_kwargs["temperature"] == expected_temperature
+            if "temperature" not in kwargs:
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "default value of 0 for temperature is deprecated" in str(
+                    w[0].message
+                )
 
 
 @pytest.mark.skipif(
