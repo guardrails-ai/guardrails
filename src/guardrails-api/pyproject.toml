@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "guardrails-api"
+version = "0.1.0a3"
+description = "Guardrails API"
+authors = [
+    {name = "Guardrails AI", email = "contact@guardrailsai.com"}
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+keywords = ["Guardrails", "Guardrails AI", "Guardrails API"]
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "guardrails-ai",
+    "jsonschema>=4.22.0,<5",
+    "referencing>=0.35.1,<1",
+    "boto3>=1.34.115,<2",
+    "psycopg2-binary>=2.9.9,<3",
+    "litellm>=1.39.3,<2",
+    "openai>=2.8.0,<3",
+    "typer>=0.9.0,<0.22",
+    "opentelemetry-api>=1.0.0,<2",
+    "opentelemetry-sdk>=1.0.0,<2",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.0.0,<2",
+    "opentelemetry-exporter-otlp-proto-http>=1.0.0,<2",
+    "opentelemetry-instrumentation-fastapi>=0.48b0",
+    "requests>=2.32.3",
+    "aiocache>=0.11.1",
+    "fastapi>=0.114.1",
+    "SQLAlchemy>=2.0.34",
+    "uvicorn>=0.30.6",
+]
+
+[tool.uv.sources]
+guardrails-ai = { workspace = true }
+
+[project.scripts]
+guardrails-api = "guardrails_api.cli:cli"
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pytest",
+    "coverage",
+    "pytest-mock",
+    "gunicorn>=22.0.0,<24",
+]
+
+
+# =============================================================================
+# Development Dependencies (PEP 735 dependency-groups)
+# =============================================================================
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.0",
+    "pytest>=8.3.0",
+    "pytest-mock>=3.14.0",
+    "coverage>=7.6.0",
+    "pre-commit>=4.0.0",
+    "ty>=0.0.0a5",
+    "nox>=2024.10.9",
+]
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "E501"]
+ignore = ["E731", "E203", "E741"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-rP"
+testpaths = [
+    "tests"
+]
+pythonpath = [
+    ".", "guardrails_api"
+]

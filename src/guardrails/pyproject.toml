@@ -1,0 +1,173 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "guardrails-ai"
+version = "0.7.1"
+description = "Guardrails for Large Language Models"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "Guardrails Team", email = "support@guardrailsai.com"},
+]
+keywords = ["llm", "guardrails", "validation", "safety", "ai"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+  # Core LLM/AI
+  "openai>=2.8.0,<3.0.0",
+  "litellm>=1.80.11,<2.0.0",
+  "langchain-core>=1.0.0,<2.0.0",
+  "tiktoken>=0.5.1,<1.0.0",
+
+  # Data validation & schemas
+  "pydantic>=2.0.0,<3.0.0",
+  "jsonschema[format-nongpl]>=4.22.0,<5.0.0",
+  "jsonref>=1.1.0,<2.0.0",
+
+  # XML/HTML processing
+  "lxml>=4.9.3,<7.0.0",
+
+  # CLI & UX
+  "typer>=0.12.0,<0.22.0",
+  "rich>=13.6.0,<15.0.0",
+
+  # Utilities
+  "tenacity>=8.1.0,<10.0.0",
+  "rstr>=3.2.2,<4.0.0",
+  "typing-extensions>=4.8.0,<5.0.0",
+  "python-dateutil>=2.8.2,<3.0.0",
+  "pydash>=7.0.6,<9.0.0",
+  "requests>=2.31.0,<3.0.0",
+  "faker>=25.2.0,<41.0.0",
+  "diff-match-patch>=20230430,<20241101",
+  "semver>=3.0.2,<4.0.0",
+
+  # Auth
+  "pyjwt>=2.8.0,<3.0.0",
+
+  # Observability (OpenTelemetry)
+  "opentelemetry-sdk>=1.24.0,<2.0.0",
+  "opentelemetry-exporter-otlp-proto-grpc>=1.24.0,<2.0.0",
+  "opentelemetry-exporter-otlp-proto-http>=1.24.0,<2.0.0",
+
+  # Guardrails ecosystem
+  "guardrails-hub-types>=0.0.4,<0.1.0",
+  "guardrails-api-client>=0.4.0,<0.5.0",
+]
+
+[project.urls]
+Homepage = "https://www.guardrailsai.com/"
+Documentation = "https://www.guardrailsai.com/docs"
+Repository = "https://github.com/guardrails-ai/guardrails"
+Changelog = "https://github.com/guardrails-ai/guardrails/releases"
+
+[project.scripts]
+guardrails = "guardrails.cli:cli"
+
+[project.optional-dependencies]
+# SQL validation
+sql = [
+  "sqlvalidator>=0.0.20,<0.1.0",
+  "sqlalchemy>=2.0.9,<3.0.0",
+  "sqlglot>=19.0.3,<30.0.0",
+]
+
+# Vector database support
+vectordb = [
+  "faiss-cpu>=1.7.4,<2.0.0",
+  "numpy>=1.25.0,<3.0.0",
+]
+
+# Manifest ML integration
+manifest = [
+  "manifest-ml>=0.1.8,<0.2.0",
+]
+
+# Anthropic API support
+anthropic = [
+  "anthropic>=0.75.0,<1.0.0",
+]
+
+# Documentation building
+docs-build = [
+  "nbdoc>=0.0.82,<0.1.0",
+  "docspec-python>=2.2.1,<3.0.0",
+  "pydoc-markdown>=4.8.2,<5.0.0",
+]
+
+# HuggingFace transformers
+huggingface = [
+  "transformers>=4.38.0,<5.0.0",
+  "torch>=2.1.1,<3.0.0",
+  "guardrails-jsonformer>=0.13.1,<1.0.0",
+]
+
+# Guardrails API server
+api = [
+  "guardrails-api",
+  "boto3>=1.0.0,<2.0.0",
+]
+
+# Server deployment (uvicorn)
+server = [
+  "guardrails-api",
+  "boto3>=1.0.0,<2.0.0",
+  "uvicorn[standard]>=0.32.0,<1.0.0",
+]
+
+# Databricks/MLflow integration
+databricks = [
+  "mlflow>=2.0.1,<4.0.0",
+]
+
+# Async performance (uvloop)
+uvloop = [
+  "uvloop>=0.20.0,<1.0.0; sys_platform != 'win32'",
+]
+
+# LlamaIndex integration
+llama = [
+  "llama-index>=0.11.0,<1.0.0",
+]
+
+# MkDocs documentation
+docs = [
+  "mkdocs>=1.5.3",
+  "mkdocstrings[python]>=0.23.0",
+  "mkdocs-jupyter>=0.23.0",
+  "mkdocs-material>=9.4.8",
+  "mknotebooks>=0.8.0",
+  "griffe>=1.3.2",
+  "pillow>=10.1.0",
+  "cairosvg>=2.7.1",
+  "mkdocs-glightbox>=0.3.4",
+]
+
+[tool.uv.sources]
+guardrails-api = { workspace = true }
+# NOTE: Distribution name on PyPI is "guardrails-ai" but package name is "guardrails"
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "anthropic" },
+    { extra = "docs-build" },
+  ],
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["guardrails"]
