@@ -2,7 +2,7 @@
 
 ARG PYTHON_VERSION=3.12
 ARG VARIANT=slim
-ARG UV_VERSION=0.5.11
+ARG UV_VERSION=latest
 
 ARG VERSION=dev
 ARG COMMIT=unknown
@@ -41,17 +41,11 @@ COPY src/guardrails/ ./src/guardrails/
 COPY src/guardrails-api/ ./src/guardrails-api/
 COPY docker/$GUARDRAILS_TEMPLATE ./$GUARDRAILS_TEMPLATE
 
-# Build workspace packages as wheels and install with dependencies (skips uv sync entirely)
-# Note: uv sync --no-editable is broken for workspace members, so we use uv pip as workaround
+# Install workspace packages with server extras
 # pip is needed for runtime hub extension installation
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv venv .venv && \
-    uv build --wheel --out-dir /tmp/wheels ./src/guardrails && \
-    uv build --wheel --out-dir /tmp/wheels ./src/guardrails-api && \
-    GUARDRAILS_WHL=$(ls /tmp/wheels/guardrails-*.whl) && \
-    GUARDRAILS_API_WHL=$(ls /tmp/wheels/guardrails_api-*.whl) && \
-    uv pip install --python .venv pip "${GUARDRAILS_WHL}[server]" "${GUARDRAILS_API_WHL}" && \
-    rm -rf /tmp/wheels
+    uv sync --no-dev --all-packages --frozen --no-editable --extra server && \
+    uv pip install pip
 
 ENV HOME=/app
 

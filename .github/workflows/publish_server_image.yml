@@ -15,25 +15,31 @@ on:
 permissions:
   contents: read
   packages: write
-  attestations: write
   id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  GUARDRAILS_EXTENSIONS: "hub://guardrails/detect_pii,hub://guardrails/toxic_language"
-
 jobs:
   publish:
-    name: Build & Push (py${{ matrix.python_version }}-${{ matrix.variant }})
+    name: Build & Push (${{ matrix.tag }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        variant: ["slim"]
+        include:
+          - python_version: "3.10"
+            tag: py310
+          - python_version: "3.11"
+            tag: py311
+          - python_version: "3.12"
+            tag: py312
+            default: true
+          - python_version: "3.13"
+            tag: py313
+          - python_version: "3.14"
+            tag: py314
 
     continue-on-error: ${{ matrix.python_version == '3.14' }}
 
@@ -57,62 +63,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load Guardrails Hub token from 1Password
-        if: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN != '' }}
-        uses: 1password/load-secrets-action@v2
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY_OP_PATH }}
-
-      - name: Validate Guardrails Hub token loaded
-        run: |
-          set -euo pipefail
-          if [ -z "${GUARDRAILS_API_KEY:-}" ]; then
-            echo "GUARDRAILS_API_KEY is not set. Configure either 1Password (OP_SERVICE_ACCOUNT_TOKEN + GUARDRAILS_API_KEY_OP_PATH) or provide GUARDRAILS_API_KEY as an Actions secret." >&2
-            exit 1
-          fi
-
-      - name: Compute image tags
-        id: tags
-        run: |
-          set -euo pipefail
-
-          image="ghcr.io/kubedoll-heavy-industries/guardrails"
-          # Strip guardrails-ai/ prefix from tag (e.g., guardrails-ai/v0.7.2 -> v0.7.2)
-          version="${{ github.ref_name }}"
-          version="${version#guardrails-ai/}"
-          py="${{ matrix.python_version }}"
-          variant="${{ matrix.variant }}"
-
-          tags="${image}:${version}-${variant}-py${py}"
-          if [ "${py}" = "3.12" ] && [ "${variant}" = "slim" ]; then
-            tags="${tags}\n${image}:${version}-${variant}"
-            tags="${tags}\n${image}:${version}"
-          fi
-
-          {
-            echo "image=${image}"
-            echo "version=${version}"
-            echo "tags<<EOF"
-            echo -e "${tags}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          images: ghcr.io/${{ github.repository_owner }}/guardrails
+          # Strip guardrails-ai/ prefix from tag
+          tags: |
+            type=match,pattern=guardrails-ai/v(.*),group=1,suffix=-${{ matrix.tag }}-slim
+            type=match,pattern=guardrails-ai/v(.*),group=1,suffix=-slim,enable=${{ matrix.default == true }}
+            type=match,pattern=guardrails-ai/v(.*),group=1,enable=${{ matrix.default == true }}
 
       - name: Build and push server image
         uses: ./.github/actions/build-guardrails-server
         with:
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
           load: "false"
           python_version: ${{ matrix.python_version }}
-          variant: ${{ matrix.variant }}
-          guardrails_extensions: ${{ env.GUARDRAILS_EXTENSIONS }}
-          version: ${{ steps.tags.outputs.version }}
+          variant: slim
+          version: ${{ steps.meta.outputs.version }}
           commit: ${{ github.sha }}
           oci_source: ${{ github.server_url }}/${{ github.repository }}
           oci_vendor: ${{ github.repository_owner }}
           oci_authors: ${{ github.repository_owner }}
-          guardrails_token: ${{ env.GUARDRAILS_API_KEY }}
