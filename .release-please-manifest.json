@@ -1,3 +1,4 @@
 {
-  ".": "0.7.1"
+  ".": "0.7.1",
+  "packages/guardrails-api": "0.1.0-alpha3"
 }

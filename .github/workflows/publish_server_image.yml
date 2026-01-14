@@ -3,7 +3,7 @@ name: Publish Server Image
 on:
   push:
     tags:
-      - "v*"
+      - "guardrails-ai/v*"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -80,18 +80,21 @@ jobs:
           set -euo pipefail
 
           image="ghcr.io/kubedoll-heavy-industries/guardrails"
-          ref_name="${{ github.ref_name }}"
+          # Strip guardrails-ai/ prefix from tag (e.g., guardrails-ai/v0.7.2 -> v0.7.2)
+          version="${{ github.ref_name }}"
+          version="${version#guardrails-ai/}"
           py="${{ matrix.python_version }}"
           variant="${{ matrix.variant }}"
 
-          tags="${image}:${ref_name}-${variant}-py${py}"
+          tags="${image}:${version}-${variant}-py${py}"
           if [ "${py}" = "3.12" ] && [ "${variant}" = "slim" ]; then
-            tags="${tags}\n${image}:${ref_name}-${variant}"
-            tags="${tags}\n${image}:${ref_name}"
+            tags="${tags}\n${image}:${version}-${variant}"
+            tags="${tags}\n${image}:${version}"
           fi
 
           {
             echo "image=${image}"
+            echo "version=${version}"
             echo "tags<<EOF"
             echo -e "${tags}"
             echo "EOF"
@@ -107,7 +110,7 @@ jobs:
           python_version: ${{ matrix.python_version }}
           variant: ${{ matrix.variant }}
           guardrails_extensions: ${{ env.GUARDRAILS_EXTENSIONS }}
-          version: ${{ github.ref_name }}
+          version: ${{ steps.tags.outputs.version }}
           commit: ${{ github.sha }}
           oci_source: ${{ github.server_url }}/${{ github.repository }}
           oci_vendor: ${{ github.repository_owner }}

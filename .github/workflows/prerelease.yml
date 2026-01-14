@@ -3,8 +3,10 @@ name: Publish Pre-release
 on:
   push:
     tags:
-      - "v*-dev.*"
-      - "v*-rc.*"
+      - "guardrails-ai/v*-dev.*"
+      - "guardrails-ai/v*-rc.*"
+      - "guardrails-api/v*-dev.*"
+      - "guardrails-api/v*-rc.*"
 
 permissions:
   contents: write
@@ -18,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -29,8 +31,21 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
+      - name: Detect package from tag
+        id: detect
+        run: |
+          tag="${{ github.ref_name }}"
+          if [[ "$tag" == guardrails-api/* ]]; then
+            echo "name=guardrails-api" >> "$GITHUB_OUTPUT"
+          elif [[ "$tag" == guardrails-ai/* ]]; then
+            echo "name=guardrails-ai" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unknown tag format: $tag"
+            exit 1
+          fi
+
       - name: Build distribution artifacts
-        run: uv build
+        run: uv build --package ${{ steps.detect.outputs.name }}
 
       - name: Create/Update GitHub Pre-release and upload artifacts
         uses: softprops/action-gh-release@v2

@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - dev
-      - cagyirey/dev
   workflow_dispatch:
 
 permissions:
@@ -19,9 +18,15 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      guardrails-ai-released: ${{ steps.release.outputs['guardrails-ai--release_created'] }}
+      guardrails-ai-tag: ${{ steps.release.outputs['guardrails-ai--tag_name'] }}
+      guardrails-api-released: ${{ steps.release.outputs['guardrails-api--release_created'] }}
+      guardrails-api-tag: ${{ steps.release.outputs['guardrails-api--tag_name'] }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: release
         uses: googleapis/release-please-action@v4
@@ -29,25 +34,58 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  publish-guardrails-ai:
+    name: Publish guardrails-ai
+    needs: release-please
+    if: ${{ needs.release-please.outputs.guardrails-ai-released == 'true' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
       - name: Install uv
-        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
 
       - name: Set up Python
-        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         run: uv python install 3.12
 
       - name: Build distribution artifacts
-        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
-        run: uv build
+        run: uv build --package guardrails-ai
 
       - name: Upload artifacts to GitHub Release
-        if: ${{ steps.release.outputs.release_created == 'true' && github.ref == 'refs/heads/main' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release.outputs.tag_name }}
+          tag_name: ${{ needs.release-please.outputs.guardrails-ai-tag }}
+          files: |
+            dist/*
+
+  publish-guardrails-api:
+    name: Publish guardrails-api
+    needs: release-please
+    if: ${{ needs.release-please.outputs.guardrails-api-released == 'true' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build distribution artifacts
+        run: uv build --package guardrails-api
+
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-please.outputs.guardrails-api-tag }}
           files: |
             dist/*
