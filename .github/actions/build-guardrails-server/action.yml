@@ -9,7 +9,7 @@ inputs:
   dockerfile:
     description: Path to Dockerfile
     required: false
-    default: server_ci/Dockerfile
+    default: docker/Dockerfile
 
   tags:
     description: Newline-separated image tags
@@ -34,10 +34,10 @@ inputs:
     description: Base image variant (e.g., slim)
     required: true
 
-  guardrails_extensions:
-    description: Comma-separated list of hub extensions to install in the image
+  guardrails_template:
+    description: Guard template JSON file to include in the image
     required: false
-    default: ""
+    default: "guard-template.json"
 
   version:
     description: Version label to bake into the image
@@ -45,10 +45,6 @@ inputs:
   commit:
     description: Git commit SHA to bake into the image
     required: true
-  build_date:
-    description: Build timestamp (RFC3339)
-    required: false
-    default: ""
 
   oci_source:
     description: OCI source label
@@ -60,23 +56,15 @@ inputs:
     description: OCI authors label
     required: true
 
-  guardrails_token:
-    description: Guardrails Hub token (used when guardrails_extensions is set)
-    required: false
-    default: ""
-
 runs:
   using: composite
   steps:
-    - name: Compute build date
-      shell: bash
-      run: |
-        set -euo pipefail
-        if [ -n "${{ inputs.build_date }}" ]; then
-          echo "BUILD_DATE=${{ inputs.build_date }}" >> "$GITHUB_ENV"
-        else
-          echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-        fi
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: guardrails-server
+        tags: ${{ inputs.tags }}
 
     - name: Build image
       uses: docker/build-push-action@v6
@@ -87,16 +75,16 @@ runs:
         push: ${{ inputs.push }}
         load: ${{ inputs.load }}
         tags: ${{ inputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
           PYTHON_VERSION=${{ inputs.python_version }}
           VARIANT=${{ inputs.variant }}
-          GUARDRAILS_EXTENSIONS=${{ inputs.guardrails_extensions }}
+          GUARDRAILS_TEMPLATE=${{ inputs.guardrails_template }}
           VERSION=${{ inputs.version }}
           COMMIT=${{ inputs.commit }}
-          BUILD_DATE=${{ env.BUILD_DATE }}
+          BUILD_DATE=${{ steps.meta.outputs.created }}
           OCI_SOURCE=${{ inputs.oci_source }}
           OCI_VENDOR=${{ inputs.oci_vendor }}
           OCI_AUTHORS=${{ inputs.oci_authors }}
-        secrets: ${{ inputs.guardrails_token != '' && format('guardrails_token={0}', inputs.guardrails_token) || '' }}
