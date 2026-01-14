@@ -1,0 +1,117 @@
+name: Integration / Server Image
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+    GUARDRAILS_EXTENSIONS: "hub://guardrails/detect_pii,hub://guardrails/toxic_language"
+    UV_VERSION: "0.5.11"
+
+jobs:
+    build-test-server:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out head
+              uses: actions/checkout@v6
+              with:
+                persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v4
+              with:
+                version: ${{ env.UV_VERSION }}
+                enable-cache: true
+                cache-dependency-glob: "uv.lock"
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+              with:
+                platforms: linux/amd64
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+              with:
+                platforms: linux/amd64
+
+            - name: Load Guardrails Hub token from 1Password
+              if: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN != '' }}
+              uses: 1password/load-secrets-action@v2
+              with:
+                export-env: true
+              env:
+                OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+                GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY_OP_PATH }}
+
+            - name: Validate Guardrails Hub token loaded
+              run: |
+                set -euo pipefail
+                if [ -z "${GUARDRAILS_API_KEY:-}" ]; then
+                  echo "GUARDRAILS_API_KEY is not set. Configure either 1Password (OP_SERVICE_ACCOUNT_TOKEN + GUARDRAILS_API_KEY_OP_PATH) or provide GUARDRAILS_API_KEY as an Actions secret." >&2
+                  exit 1
+                fi
+
+            - name: Build Docker image (with hub extensions)
+              uses: ./.github/actions/build-guardrails-server
+              with:
+                tags: guardrails-server:ci
+                platforms: linux/amd64
+                push: "false"
+                load: "true"
+                python_version: "3.12"
+                variant: "slim"
+                guardrails_extensions: ${{ env.GUARDRAILS_EXTENSIONS }}
+                version: ${{ github.sha }}
+                commit: ${{ github.sha }}
+                oci_source: ${{ github.server_url }}/${{ github.repository }}
+                oci_vendor: ${{ github.repository_owner }}
+                oci_authors: ${{ github.repository_owner }}
+                guardrails_token: ${{ env.GUARDRAILS_API_KEY }}
+
+            - name: Start Docker container
+              run: |
+                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} guardrails-server:ci
+        
+            - name: Wait for Docker container to be ready
+              run: |
+                set -euo pipefail
+                for _ in {1..30}; do
+                  status="$(docker inspect --format '{{.State.Health.Status}}' guardrails-container 2>/dev/null || true)"
+                  if [ "$status" = "healthy" ]; then
+                    echo "Server is healthy!"
+                    exit 0
+                  fi
+                  if [ "$status" = "unhealthy" ]; then
+                    echo "Server reported unhealthy." >&2
+                    docker logs guardrails-container || true
+                    exit 1
+                  fi
+                  echo "Waiting for server healthcheck... (status=${status:-unknown})"
+                  sleep 5
+                done
+
+                echo "Server did not become healthy in time." >&2
+                docker logs guardrails-container || true
+                exit 1
+    
+            - name: Run Pytest
+              run: |
+                uv python install 3.12
+                uv sync --group dev --all-packages
+                uv run pytest server_ci/tests -v --tb=short
+
+            - name: Dump container logs on failure
+              if: ${{ failure() }}
+              run: |
+                docker logs guardrails-container || true
+
+            - name: Clean up container
+              if: ${{ always() }}
+              run: |
+                docker rm -f guardrails-container || true

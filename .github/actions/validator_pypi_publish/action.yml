@@ -20,12 +20,12 @@ runs:
   using: "composite"
   steps:
     - name: Checkout "Validator" Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
       with:
         path: ${{ inputs.package_directory }}
 
     - name: Checkout "Action" repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
       with:
         repository: guardrails-ai/guardrails
         ref: main
@@ -34,7 +34,7 @@ runs:
           .github
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 

@@ -2,52 +2,52 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   pull_request:
-    branches:
-      - main
-      - dev
-      - feat/*
-      - 0.*.*
+    branches: [main, dev]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   UV_VERSION: "0.5.11"
 
 jobs:
   lint:
-    name: Lint
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --group dev --all-packages
 
       - name: Lint with ruff
         run: |
-          uv run ruff check guardrails/ tests/
-          uv run ruff format --check guardrails/ tests/
+          uv run ruff check guardrails/ tests/ packages/guardrails-api/guardrails_api/ packages/guardrails-api/tests/
+          uv run ruff format --check guardrails/ tests/ packages/guardrails-api/guardrails_api/ packages/guardrails-api/tests/
 
   typecheck:
-    name: Type Check
+    name: Type Check (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -60,7 +60,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group dev --all-extras
+        run: uv sync --group dev --all-packages
 
       - name: Static analysis with ty
         run: uv run ty check --output-format github guardrails/
@@ -69,32 +69,59 @@ jobs:
     name: License Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --group dev --all-packages
 
       - name: Check licenses
-        run: uv run liccheck -s pyproject.toml
+        run: |
+          uv run python -m pip freeze > requirements.txt
+          sed -E 's/(==.*)$//' requirements.txt | sed -E 's/( @ .*?$)//' | grep -v '^tomli$' | grep -v '^pywin32-ctypes$' | grep -v '^$' > requirements-liccheck.txt
+          uv run liccheck -s pyproject.toml -r requirements-liccheck.txt
+
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev --all-packages
+
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files
 
   test:
-    name: Test (Python ${{ matrix.python-version }})
+    name: Test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Create .guardrailsrc
         run: |
@@ -112,9 +139,18 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group dev --all-extras
+        run: uv sync --group dev --all-packages
+
+      - name: Run tests
+        run: |
+          uv run pytest tests/ -v --tb=short
+
+      - name: Run guardrails-api tests
+        run: |
+          uv run --package guardrails-api pytest packages/guardrails-api/tests/ -v --tb=short
 
       - name: Run tests with coverage
+        if: matrix.python-version == '3.12'
         run: |
           uv run pytest tests/ \
             --cov=./guardrails/ \
@@ -123,7 +159,8 @@ jobs:
             -v
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        if: ${{ matrix.python-version == '3.12' && secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
@@ -131,19 +168,26 @@ jobs:
           name: codecov-py${{ matrix.python-version }}
           fail_ci_if_error: false
 
-  # Pre-commit hooks (runs ruff + uv-lock check)
-  pre-commit:
-    name: Pre-commit
+  hub-install:
+    name: Hub Install
     runs-on: ubuntu-latest
+    env:
+      GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
-
       - name: Set up Python
-        run: uv python install 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-      - uses: pre-commit/action@v3.0.1
+      - name: pip install from branch
+        run: pip install git+https://github.com/${{ github.repository }}.git@${{ github.sha }}
+
+      - name: Install PII validator
+        if: ${{ env.GUARDRAILS_API_KEY != '' }}
+        run: |
+          guardrails configure --token $GUARDRAILS_API_KEY --disable-metrics --enable-remote-inferencing
+          guardrails hub install hub://guardrails/detect_pii
+
+      - name: Verify PII validator is addressable
+        if: ${{ env.GUARDRAILS_API_KEY != '' }}
+        run: echo 'from guardrails.hub import DetectPII' | python

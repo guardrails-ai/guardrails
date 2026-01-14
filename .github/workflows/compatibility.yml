@@ -1,0 +1,76 @@
+name: CLI Compatibility
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Weekly on Monday at 6:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.5.11"
+
+jobs:
+  cli-matrix:
+    name: CLI (py${{ matrix.python-version }}, typer ${{ matrix.typer-version }}, click ${{ matrix.click-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        typer-version: ["0.16.0", "0.17.0", "0.18.0", "0.19.2"]
+        click-version: ["8.1.0", "8.2.0"]
+        exclude:
+          - typer-version: "0.16.0"
+            click-version: "8.2.0"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies with specific typer/click versions
+        run: |
+          uv sync --group dev --all-packages
+          uv pip install typer==${{ matrix.typer-version }} click==${{ matrix.click-version }}
+
+      - name: Test CLI commands
+        run: |
+          # Test basic CLI help
+          uv run guardrails --help
+
+          # Test subcommand help
+          uv run guardrails validate --help
+          uv run guardrails hub --help
+          uv run guardrails configure --help
+
+          # Test hub list command (end-to-end)
+          uv run guardrails hub list
+
+          # Create a simple RAIL spec for testing validate command
+          cat > test_spec.rail << 'EOF'
+          <rail version="0.1">
+          <output>
+              <string name="answer" description="A simple answer"/>
+          </output>
+          <prompt>
+          Answer the question: What is 2+2?
+          </prompt>
+          </rail>
+          EOF
+
+          # Test validate command end-to-end with the RAIL spec
+          echo '{"answer": "4"}' | uv run guardrails validate test_spec.rail -
+
+          # Clean up
+          rm test_spec.rail
