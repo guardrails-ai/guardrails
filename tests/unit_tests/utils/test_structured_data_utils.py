@@ -73,8 +73,7 @@ def test_pydantic_model_to_schema():
                                 "type": "string",
                             },
                             "price": {
-                                "description": "price of delivery with"
-                                " currency symbol included",
+                                "description": "price of delivery with currency symbol included",
                                 "title": "Price",
                                 "type": "string",
                             },
@@ -185,8 +184,7 @@ def test_output_format_json_schema():
                                 "type": "string",
                             },
                             "price": {
-                                "description": "price of delivery with"
-                                " currency symbol included",
+                                "description": "price of delivery with currency symbol included",
                                 "title": "Price",
                                 "type": "string",
                             },

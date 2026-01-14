@@ -5,9 +5,7 @@ import pytest
 from guardrails.classes.generic.stack import Stack
 
 
-@pytest.mark.parametrize(
-    "stack,expected_value", [(Stack(1, 2, 3), False), (Stack(), True)]
-)
+@pytest.mark.parametrize("stack,expected_value", [(Stack(1, 2, 3), False), (Stack(), True)])
 def test_empty(stack: Stack, expected_value: bool):
     result = stack.empty()
 
@@ -44,9 +42,7 @@ def test_push():
     assert stack[-1] == 2
 
 
-@pytest.mark.parametrize(
-    "search_value,expected_index", [(1, 0), (2, 4), (3, 5), (5, None)]
-)
+@pytest.mark.parametrize("search_value,expected_index", [(1, 0), (2, 4), (3, 5), (5, None)])
 def test_search(search_value: int, expected_index: int):
     stack = Stack(1, 2, 3, 4, 2, 3)
 

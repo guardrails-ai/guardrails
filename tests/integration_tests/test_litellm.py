@@ -137,8 +137,7 @@ def test_litellm_openai_async_messages():
         messages=[
             {
                 "role": "user",
-                "content": "Name 10 unique fruits, "
-                "lowercase only, one per line, no numbers",
+                "content": "Name 10 unique fruits, lowercase only, one per line, no numbers",
             }
         ],
     )

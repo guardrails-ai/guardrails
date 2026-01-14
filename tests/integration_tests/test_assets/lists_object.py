@@ -17,9 +17,7 @@ PYDANTIC_RAIL_WITH_LIST = List[Item]
 
 
 message = (
-    '<message role="user">'
-    "Create a list of items that may be found in a grocery store."
-    "</message>"
+    '<message role="user">Create a list of items that may be found in a grocery store.</message>'
 )
 RAIL_SPEC_WITH_LIST = f"""
 <rail version="0.1">

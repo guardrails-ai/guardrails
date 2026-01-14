@@ -2,9 +2,7 @@ from tests.unit_tests.mocks.mock_file import MockFile
 
 
 def test_validate(mocker):
-    mock_validate_llm_output = mocker.patch(
-        "guardrails.cli.validate.validate_llm_output"
-    )
+    mock_validate_llm_output = mocker.patch("guardrails.cli.validate.validate_llm_output")
     mock_validate_llm_output.return_value = "validated output"
 
     mock_file = MockFile()

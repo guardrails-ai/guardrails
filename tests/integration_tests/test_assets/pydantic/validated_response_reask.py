@@ -41,9 +41,7 @@ class AgeMustBeBetween0And150(Validator):
 class ZipCodeInCalifornia(Validator):
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         if not value.startswith("9"):
-            return FailResult(
-                error_message="Zip code must be in California, and start with 9."
-            )
+            return FailResult(error_message="Zip code must be in California, and start with 9.")
         if value == "90210":
             return FailResult(error_message="Zip code must not be Beverly Hills.")
         return PassResult()
@@ -62,9 +60,7 @@ class Person(BaseModel):
 
     age: int = Field(
         ...,
-        json_schema_extra={
-            "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-        },
+        json_schema_extra={"validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]},
     )
     zip_code: str = Field(
         ...,

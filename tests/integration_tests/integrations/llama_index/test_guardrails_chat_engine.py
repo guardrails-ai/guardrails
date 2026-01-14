@@ -25,14 +25,10 @@ class MockChatEngine(BaseChatEngine):
     ) -> AgentChatResponse:
         return AgentChatResponse(response="Mock async chat response")
 
-    def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ):
+    def stream_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         return StreamingAgentChatResponse(response="Mock stream chat response")
 
-    async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ):
+    async def astream_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         return StreamingAgentChatResponse(response="Mock async stream chat response")
 
     @property

@@ -56,7 +56,5 @@ class TestPydanticSchema:
             )
         ]
         assert processed_schema.validator_map.get("$.action.weapon") == [
-            ValidChoices(
-                choices=["crossbow", "machine gun"], on_fail=OnFailAction.REASK
-            )
+            ValidChoices(choices=["crossbow", "machine gun"], on_fail=OnFailAction.REASK)
         ]

@@ -94,9 +94,7 @@ class TestValidatorConcurrency:
         )
 
         assert value == "value"
-        assert metadata == {
-            "order": ["test/validator2", "test/validator3", "test/validator1"]
-        }
+        assert metadata == {"order": ["test/validator2", "test/validator3", "test/validator1"]}
 
     def test_validate_with_sync_validators(self):
         from guardrails.validator_service import AsyncValidatorService
@@ -128,9 +126,7 @@ class TestValidatorConcurrency:
         )
 
         assert value == "value"
-        assert metadata == {
-            "order": ["test/validator2", "test/validator3", "test/validator1"]
-        }
+        assert metadata == {"order": ["test/validator2", "test/validator3", "test/validator1"]}
 
     @pytest.mark.asyncio
     async def test_async_validate_with_async_validators(self):

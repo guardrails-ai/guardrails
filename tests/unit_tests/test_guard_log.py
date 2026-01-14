@@ -93,9 +93,7 @@ def _acquired_logger(msg):
     start = time.time()
     trace_logger = TraceHandler()
     end = time.time()
-    trace_logger.log(
-        "acquired", start, end, "Testing behavior of an acquired logger.", msg, ""
-    )
+    trace_logger.log("acquired", start, end, "Testing behavior of an acquired logger.", msg, "")
 
 
 def _write_to_logs_a_bunch(count: int, delay: float):

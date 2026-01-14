@@ -356,9 +356,7 @@ STR_LLM_CHUNKS = [
         (
             gd.Guard.for_string(
                 # only the middle sentence should pass
-                validators=[
-                    MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)
-                ],
+                validators=[MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)],
                 messages=STR_MESSAGES,
             ),
             # each value is a tuple

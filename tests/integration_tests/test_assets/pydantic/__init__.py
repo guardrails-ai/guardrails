@@ -18,9 +18,7 @@ from .validated_response_reask import prompt as VALIDATED_RESPONSE_REASK_PROMPT
 from .with_msg_history import Movie as WITH_MSG_HISTORY
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
-reader = (
-    lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
-)
+reader = lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 COMPILED_PROMPT_CHAT = reader("compiled_prompt_chat.txt")

@@ -202,8 +202,7 @@ async def test_async_manifest_callable():
 
 
 @pytest.mark.skipif(
-    not importlib.util.find_spec("transformers")
-    and not importlib.util.find_spec("torch"),
+    not importlib.util.find_spec("transformers") and not importlib.util.find_spec("torch"),
     reason="transformers or torch is not installed",
 )
 @pytest.mark.parametrize(
@@ -247,8 +246,7 @@ def test_hugging_face_model_callable(mocker, model_inputs, tokenizer_call_count)
 
 
 @pytest.mark.skipif(
-    not importlib.util.find_spec("transformers")
-    and not importlib.util.find_spec("torch"),
+    not importlib.util.find_spec("transformers") and not importlib.util.find_spec("torch"),
     reason="transformers or torch is not installed",
 )
 def test_hugging_face_pipeline_callable():
@@ -258,9 +256,7 @@ def test_hugging_face_pipeline_callable():
     from guardrails.llm_providers import HuggingFacePipelineCallable
 
     hf_model_callable = HuggingFacePipelineCallable()
-    response = hf_model_callable(
-        pipeline=pipeline, messages=[{"role": "user", "content": "Hello"}]
-    )
+    response = hf_model_callable(pipeline=pipeline, messages=[{"role": "user", "content": "Hello"}])
 
     assert isinstance(response, LLMResponse) is True
     assert response.output == "Hello there!"
@@ -460,9 +456,7 @@ def test_get_llm_ask_custom_llm_must_accept_kwargs():
     def my_llm(messages: str) -> str:
         return f"Hello {messages}!"
 
-    with pytest.raises(
-        ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"
-    ):
+    with pytest.raises(ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"):
         get_llm_ask(my_llm)
 
 
@@ -501,9 +495,7 @@ def test_get_async_llm_ask_custom_llm_must_accept_kwargs():
     def my_llm(prompt: str) -> str:
         return f"Hello {prompt}!"
 
-    with pytest.raises(
-        ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"
-    ):
+    with pytest.raises(ValueError, match="Custom LLM callables must accept \\*\\*kwargs!"):
         get_async_llm_ask(my_llm)
 
 

@@ -85,9 +85,7 @@ ONLY return a valid JSON object (no other text is necessary), where the key of t
 
 class PersonalDetails(BaseModel):
     name: str = Field(..., description="What is the candidate name?")
-    contact_number: str = Field(
-        ..., description="What is the candidate contact number?"
-    )
+    contact_number: str = Field(..., description="What is the candidate contact number?")
     contact_email: str = Field(..., description="What is the candidate email address?")
 
 

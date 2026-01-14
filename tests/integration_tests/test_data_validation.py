@@ -109,9 +109,7 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
             )
         )
         flight_speed: int = Field(
-            validators=ValidChoices(
-                choices=[1, 2, 3, 4], on_fail=OnFailAction.EXCEPTION
-            )
+            validators=ValidChoices(choices=[1, 2, 3, 4], on_fail=OnFailAction.EXCEPTION)
         )
 
     class Choice(BaseModel):

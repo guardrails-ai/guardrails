@@ -6,6 +6,7 @@ repos:
         name: ruff
         description: "Run 'ruff' for linting"
         args: ["--fix"]
+        exclude: ^docs-graveyard/
       - id: ruff-format
         name: ruff-format
         description: "Run 'ruff format' for formatting"

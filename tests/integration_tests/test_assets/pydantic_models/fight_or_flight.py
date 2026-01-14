@@ -14,17 +14,13 @@ ${gr.complete_json_suffix_v2}"""
 
 class Fight(BaseModel):
     chosen_action: Literal["fight"]
-    weapon: str = Field(
-        validators=[ValidChoices(["crossbow", "machine gun"], on_fail="reask")]
-    )
+    weapon: str = Field(validators=[ValidChoices(["crossbow", "machine gun"], on_fail="reask")])
 
 
 class Flight(BaseModel):
     chosen_action: Literal["flight"]
     flight_direction: Optional[str] = Field(
-        validators=[
-            ValidChoices(["north", "south", "east", "west"], on_fail="exception")
-        ]
+        validators=[ValidChoices(["north", "south", "east", "west"], on_fail="exception")]
     )
     distance: int = Field(validators=[ValidChoices([1, 2, 3, 4], on_fail="exception")])
 

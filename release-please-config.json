@@ -1,6 +1,6 @@
 {
   "packages": {
-    ".": {
+    "src/guardrails": {
       "release-type": "python",
       "package-name": "guardrails-ai",
       "component": "guardrails-ai",
@@ -10,14 +10,14 @@
         "pyproject.toml"
       ]
     },
-    "packages/guardrails-api": {
+    "src/guardrails-api": {
       "release-type": "python",
       "package-name": "guardrails-api",
       "component": "guardrails-api",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
       "extra-files": [
-        "guardrails_api/__init__.py"
+        "pyproject.toml"
       ]
     }
   }

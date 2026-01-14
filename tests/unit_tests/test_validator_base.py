@@ -467,9 +467,7 @@ def test_input_validation_fix(mocker):
         ],
     )
 
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response == "What kind"
-    )
+    assert guard.history.first.iterations.first.outputs.validation_response == "What kind"
 
     # but raises for messages validation
     guard = Guard.for_pydantic(output_class=Pet)
@@ -510,9 +508,7 @@ def test_input_validation_fix(mocker):
     guard(
         mock_llm_api,
     )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response == "This also"
-    )
+    assert guard.history.first.iterations.first.outputs.validation_response == "This also"
 
 
 @pytest.mark.asyncio
@@ -533,9 +529,7 @@ async def test_async_messages_validation_fix(mocker):
             }
         ],
     )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response == "What kind"
-    )
+    assert guard.history.first.iterations.first.outputs.validation_response == "What kind"
 
     guard = AsyncGuard.for_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
@@ -549,10 +543,7 @@ async def test_async_messages_validation_fix(mocker):
             }
         ],
     )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response
-        == "But really,"
-    )
+    assert guard.history.first.iterations.first.outputs.validation_response == "But really,"
 
     # but raises for messages validation
     guard = AsyncGuard.for_pydantic(output_class=Pet)

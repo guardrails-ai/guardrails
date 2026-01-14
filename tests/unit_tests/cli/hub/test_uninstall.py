@@ -71,20 +71,14 @@ def test_uninstall_valid_uri(mocker):
         return_value=manifest_mock,
     )
 
-    mock_uninstall_hub_module = mocker.patch(
-        "guardrails.cli.hub.uninstall.uninstall_hub_module"
-    )
-    mock_remove_from_hub_inits = mocker.patch(
-        "guardrails.cli.hub.uninstall.remove_from_hub_inits"
-    )
+    mock_uninstall_hub_module = mocker.patch("guardrails.cli.hub.uninstall.uninstall_hub_module")
+    mock_remove_from_hub_inits = mocker.patch("guardrails.cli.hub.uninstall.remove_from_hub_inits")
     mocker.patch("guardrails.cli.hub.uninstall.console")
 
     validator_package_service_mock = mocker.patch(
         "guardrails.hub.validator_package_service.ValidatorPackageService",
     )
-    validator_package_service_mock.get_site_packages_location.return_value = (
-        "/site-packages"
-    )
+    validator_package_service_mock.get_site_packages_location.return_value = "/site-packages"
 
     from guardrails.cli.hub.uninstall import uninstall
 

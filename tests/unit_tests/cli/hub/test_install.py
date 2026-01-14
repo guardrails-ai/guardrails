@@ -233,9 +233,7 @@ class TestPipProcess:
                 [mock_sys_executable, "-m", "pip", "inspect"]
             )
 
-            mock_logger_error.assert_called_once_with(
-                "Failed to inspect \nExit code: 1\nstdout: "
-            )
+            mock_logger_error.assert_called_once_with("Failed to inspect \nExit code: 1\nstdout: ")
 
             sys_exit_spy.assert_called_once_with(1)
 

@@ -14,9 +14,7 @@ from tests.unit_tests.mocks.mock_file import MockFile
     ],
 )
 def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
-    mock_save_configuration_file = mocker.patch(
-        "guardrails.cli.configure.save_configuration_file"
-    )
+    mock_save_configuration_file = mocker.patch("guardrails.cli.configure.save_configuration_file")
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
     mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
@@ -31,6 +29,8 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
         CLI_COMMAND_ARGS.append("y")
     else:
         CLI_COMMAND_ARGS.append("n")
+
+    CLI_COMMAND_ARGS.append("")
 
     if clear_token:
         CLI_COMMAND.append("--clear-token")
@@ -55,9 +55,7 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
 
     assert mock_logger_info.call_count == 2
     mock_logger_info.assert_has_calls(expected_calls)
-    mock_save_configuration_file.assert_called_once_with(
-        expected_token, enable_metrics, True
-    )
+    mock_save_configuration_file.assert_called_once_with(expected_token, enable_metrics, True)
 
 
 def test_save_configuration_file(mocker):

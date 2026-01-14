@@ -32,8 +32,7 @@ class TestValidatePayload:
         assert isinstance(excinfo.value, SchemaValidationError) is True
         schema_error: SchemaValidationError = excinfo.value
         assert (
-            str(schema_error)
-            == "The provided payload is not compliant with the provided schema!"
+            str(schema_error) == "The provided payload is not compliant with the provided schema!"
         )
         assert schema_error.fields == {
             "$.action.chosen_action": ["'dance' is not one of ['fight', 'flight']"]
@@ -54,13 +53,10 @@ class TestValidatePayload:
         assert isinstance(excinfo.value, SchemaValidationError) is True
         schema_error: SchemaValidationError = excinfo.value
         assert (
-            str(schema_error)
-            == "The provided payload is not compliant with the provided schema!"
+            str(schema_error) == "The provided payload is not compliant with the provided schema!"
         )
         # Type coercion is not automatic!
-        assert schema_error.fields == {
-            "$.action.distance": ["'2' is not of type 'integer'"]
-        }
+        assert schema_error.fields == {"$.action.distance": ["'2' is not of type 'integer'"]}
 
     # NOTE: Technically the same as an invalid type
     def test_failure_invalid_structure(self):
@@ -80,8 +76,7 @@ class TestValidatePayload:
         assert isinstance(excinfo.value, SchemaValidationError) is True
         schema_error: SchemaValidationError = excinfo.value
         assert (
-            str(schema_error)
-            == "The provided payload is not compliant with the provided schema!"
+            str(schema_error) == "The provided payload is not compliant with the provided schema!"
         )
         assert schema_error.fields == {
             "$.action": [
@@ -98,13 +93,10 @@ class TestValidatePayload:
         assert isinstance(excinfo.value, SchemaValidationError) is True
         schema_error: SchemaValidationError = excinfo.value
         assert (
-            str(schema_error)
-            == "The provided payload is not compliant with the provided schema!"
+            str(schema_error) == "The provided payload is not compliant with the provided schema!"
         )
 
-        assert schema_error.fields == {
-            "$.action": ["'distance' is a required property"]
-        }
+        assert schema_error.fields == {"$.action": ["'distance' is a required property"]}
 
     def test_subschema_validation(self):
         # Missing required properites, but that's allowed with validate_subschema

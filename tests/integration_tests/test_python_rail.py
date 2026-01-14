@@ -62,9 +62,7 @@ class Details(BaseModel):
     budget: float
     is_sequel: bool = Field(default=False)
     website: str = Field(
-        json_schema_extra={
-            "validators": [ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]
-        }
+        json_schema_extra={"validators": [ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]}
     )
 
     # Root-level validation using Pydantic (Not in Guardrails)
@@ -79,9 +77,7 @@ class Details(BaseModel):
         return values
 
     contact_email: str
-    revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
-        ..., discriminator="revenue_type"
-    )
+    revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(..., discriminator="revenue_type")
 
 
 class Movie(BaseModel):
@@ -96,9 +92,7 @@ class Director(BaseModel):
 
 
 def test_python_rail(mocker):
-    mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
-    )
+    mock_invoke_llm = mocker.patch("guardrails.llm_providers.LiteLLMCallable._invoke_llm")
     mock_invoke_llm.side_effect = [
         LLMResponse(
             output=python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
@@ -157,18 +151,14 @@ def test_python_rail(mocker):
         == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
     )
 
-    assert (
-        call.iterations.first.raw_output
-        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
-    )
+    assert call.iterations.first.raw_output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
 
     assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
     # Same as above
     assert (
-        call.reask_messages[0][1]["content"]
-        == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+        call.reask_messages[0][1]["content"] == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
     assert (
         call.raw_outputs.last
@@ -179,9 +169,7 @@ def test_python_rail(mocker):
         Director.model_validate_json(
             python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
         )
-    Director.model_validate_json(
-        python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
-    )
+    Director.model_validate_json(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
 
 
 def test_python_string(mocker):
@@ -245,10 +233,7 @@ ${ingredients}
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert (
-        call.iterations.last.inputs.messages[1]["content"]
-        == string.COMPILED_PROMPT_REASK
-    )
+    assert call.iterations.last.inputs.messages[1]["content"] == string.COMPILED_PROMPT_REASK
     # Same as above
     assert call.reask_messages.last[-1]["content"] == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK

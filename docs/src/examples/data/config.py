@@ -19,13 +19,13 @@ from guardrails.validators import (
 )
 from guardrails.hub import RegexMatch
 
-name_case = Guard(
-    name="name-case", description="Checks that a string is in Name Case format."
-).use(RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail=OnFailAction.NOOP))
+name_case = Guard(name="name-case", description="Checks that a string is in Name Case format.").use(
+    RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail=OnFailAction.NOOP)
+)
 
-all_caps = Guard(
-    name="all-caps", description="Checks that a string is all capital."
-).use(RegexMatch(regex="^[A-Z\\s]*$", on_fail=OnFailAction.NOOP))
+all_caps = Guard(name="all-caps", description="Checks that a string is all capital.").use(
+    RegexMatch(regex="^[A-Z\\s]*$", on_fail=OnFailAction.NOOP)
+)
 
 
 @register_validator(name="custom/dynamic-enum", data_type="all")

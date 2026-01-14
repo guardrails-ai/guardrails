@@ -52,14 +52,10 @@ Dummy prompt.
 
     guard = Guard.for_rail_string(rail_spec)
     # This should not raise an exception
-    guard.parse(
-        llm_output='{"name": "John Doe", "dob": "' + date_string + '"}', num_reasks=0
-    )
+    guard.parse(llm_output='{"name": "John Doe", "dob": "' + date_string + '"}', num_reasks=0)
 
 
-@pytest.mark.skip(
-    "Must add custom format validators to guardrails/schema/validator.py!"
-)
+@pytest.mark.skip("Must add custom format validators to guardrails/schema/validator.py!")
 @pytest.mark.parametrize(
     "date_string,error_type",
     [
@@ -67,9 +63,7 @@ Dummy prompt.
         ("1697579939213", OverflowError),  # Unix timestamp/milliseconds
     ],
 )
-def test_defaulted_date_parser_unsupported_values(
-    date_string: str, error_type: Exception
-):
+def test_defaulted_date_parser_unsupported_values(date_string: str, error_type: Exception):
     rail_spec = """
 <rail version="0.1">
 

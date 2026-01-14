@@ -74,9 +74,7 @@ def test_non_empty_initialization():
     )
     parsed_output = "Hello there!"
     guarded_output = "Hello there"
-    reask = FieldReAsk(
-        incorrect_value="Hello there!", fail_results=[validation_result], path=[]
-    )
+    reask = FieldReAsk(incorrect_value="Hello there!", fail_results=[validation_result], path=[])
     reasks = [reask]
     validator_logs = [
         ValidatorLogs(

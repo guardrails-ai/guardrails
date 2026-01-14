@@ -48,9 +48,7 @@ class TestInstall:
         )
         mocker.patch(
             "guardrails.hub.install.RC.load",
-            return_value=RC.from_dict(
-                {"use_remote_inferencing": use_remote_inferencing}
-            ),
+            return_value=RC.from_dict({"use_remote_inferencing": use_remote_inferencing}),
         )
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -83,8 +81,7 @@ class TestInstall:
             call(level=5, msg="Installing hub://guardrails/id..."),
             call(
                 level=5,
-                msg="Skipping post install, models will not be downloaded for local "
-                "inference.",
+                msg="Skipping post install, models will not be downloaded for local inference.",
             ),
             call(
                 level=5,
@@ -108,9 +105,7 @@ class TestInstall:
         )
         mocker.patch(
             "guardrails.hub.install.RC.load",
-            return_value=RC.from_dict(
-                {"use_remote_inferencing": use_remote_inferencing}
-            ),
+            return_value=RC.from_dict({"use_remote_inferencing": use_remote_inferencing}),
         )
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -170,9 +165,7 @@ class TestInstall:
         )
         mocker.patch(
             "guardrails.hub.install.RC.load",
-            return_value=RC.from_dict(
-                {"use_remote_inferencing": use_remote_inferencing}
-            ),
+            return_value=RC.from_dict({"use_remote_inferencing": use_remote_inferencing}),
         )
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -229,9 +222,7 @@ class TestInstall:
         )
         mocker.patch(
             "guardrails.hub.install.RC.load",
-            return_value=RC.from_dict(
-                {"use_remote_inferencing": use_remote_inferencing}
-            ),
+            return_value=RC.from_dict({"use_remote_inferencing": use_remote_inferencing}),
         )
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
@@ -381,9 +372,7 @@ class TestInstall:
         )
         mocker.patch(
             "guardrails.hub.install.RC.load",
-            return_value=RC.from_dict(
-                {"use_remote_inferencing": use_remote_inferencing}
-            ),
+            return_value=RC.from_dict({"use_remote_inferencing": use_remote_inferencing}),
         )
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")

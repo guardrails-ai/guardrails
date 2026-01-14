@@ -68,8 +68,7 @@ class MockDetectPII(Validator):
             import nltk
         except ImportError:
             raise ImportError(
-                "nltk is required for sentence splitting. Please install it using "
-                "`poetry add nltk`"
+                "nltk is required for sentence splitting. Please install it using `poetry add nltk`"
             )
 
         # using the sentence tokenizer is expensive
@@ -139,14 +138,10 @@ class MockDetectPII(Validator):
         elif isinstance(pii_entities, list):
             entities_to_filter = pii_entities
         else:
-            raise ValueError(
-                f"`pii_entities` must be one of {pii_keys} or a list of strings."
-            )
+            raise ValueError(f"`pii_entities` must be one of {pii_keys} or a list of strings.")
 
         # Analyze the text, and anonymize it if there is PII
-        anonymized_text = self.get_anonymized_text(
-            text=value, entities=entities_to_filter
-        )
+        anonymized_text = self.get_anonymized_text(text=value, entities=entities_to_filter)
         if anonymized_text == value:
             return PassResult()
 

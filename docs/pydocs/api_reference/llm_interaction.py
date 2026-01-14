@@ -40,9 +40,7 @@ export_map = {
 
 conditionals = []
 for k, v in export_map.items():
-    conditionals.append(
-        f"((name in {v}) if ('{k}' in obj.location.filename) else False)"
-    )
+    conditionals.append(f"((name in {v}) if ('{k}' in obj.location.filename) else False)")
 
 export_string = " or ".join(conditionals)
 

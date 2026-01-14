@@ -96,9 +96,7 @@ def test_non_empty_initialization():
     )
     first_parsed_output = "Hello there!"
     first_validated_output = "Hello there"
-    first_reasks = [
-        ReAsk(incorrect_value="Hello there!", fail_results=[first_validation_result])
-    ]
+    first_reasks = [ReAsk(incorrect_value="Hello there!", fail_results=[first_validation_result])]
     first_validator_log = ValidatorLogs(
         registered_name="no-punctuation",
         validator_name="no-punctuation",
@@ -116,9 +114,7 @@ def test_non_empty_initialization():
         validator_logs=first_validator_logs,
     )
 
-    first_iteration = Iteration(
-        call_id="mock-call", index=0, inputs=inputs, outputs=first_outputs
-    )
+    first_iteration = Iteration(call_id="mock-call", index=0, inputs=inputs, outputs=first_outputs)
 
     second_iter_messages = [
         {

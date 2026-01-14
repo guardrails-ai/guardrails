@@ -222,9 +222,7 @@ def test_format_instructions():
         .safe_substitute(output_schema=output_schema)
         .rstrip()
     )
-    prompt = Prompt(
-        guard._exec_opts.messages[1]["content"], output_schema=output_schema
-    )
+    prompt = Prompt(guard._exec_opts.messages[1]["content"], output_schema=output_schema)
     assert prompt.format_instructions.rstrip() == expected_instructions
 
 

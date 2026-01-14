@@ -32,8 +32,8 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          uv run ruff check guardrails/ tests/ packages/guardrails-api/guardrails_api/ packages/guardrails-api/tests/
-          uv run ruff format --check guardrails/ tests/ packages/guardrails-api/guardrails_api/ packages/guardrails-api/tests/
+          uv run ruff check src/guardrails/guardrails/ src/guardrails-api/guardrails_api/ tests/
+          uv run ruff format --check src/guardrails/guardrails/ src/guardrails-api/guardrails_api/ tests/
 
   typecheck:
     name: Type Check (py${{ matrix.python-version }})
@@ -58,7 +58,7 @@ jobs:
         run: uv sync --group dev --all-packages
 
       - name: Static analysis with ty
-        run: uv run ty check --output-format github guardrails/
+        run: uv run ty check --output-format github src/guardrails/guardrails/
 
   liccheck:
     name: License Check
@@ -135,23 +135,15 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest tests/ -v --tb=short
+          uv run pytest tests/ -v --tb=short \
+            ${{ matrix.python-version == '3.12' && '--cov=./src/guardrails/guardrails/ --cov-report=xml --cov-report=term' || '' }}
 
       - name: Run guardrails-api tests
         run: |
-          uv run --package guardrails-api pytest packages/guardrails-api/tests/ -v --tb=short
-
-      - name: Run tests with coverage
-        if: matrix.python-version == '3.12'
-        run: |
-          uv run pytest tests/ \
-            --cov=./guardrails/ \
-            --cov-report=xml \
-            --cov-report=term \
-            -v
+          uv run --package guardrails-api pytest src/guardrails-api/tests/ -v --tb=short
 
       - name: Upload coverage to Codecov
-        if: ${{ matrix.python-version == '3.12' && secrets.CODECOV_TOKEN != '' }}
+        if: ${{ matrix.python-version == '3.12' && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

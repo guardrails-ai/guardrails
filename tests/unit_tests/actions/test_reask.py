@@ -40,9 +40,7 @@ from guardrails.schema.rail_schema import rail_string_to_schema
                     "c": 2,
                     "d": FieldReAsk(
                         incorrect_value=-1,
-                        fail_results=[
-                            FailResult(error_message="Error Msg", fix_value=2)
-                        ],
+                        fail_results=[FailResult(error_message="Error Msg", fix_value=2)],
                     ),
                 },
             },
@@ -338,9 +336,7 @@ def test_gather_reasks():
                 FieldReAsk(
                     path=["$.failed_prop.child"],
                     fail_results=[
-                        FailResult(
-                            error_message="child should not be None", outcome="fail"
-                        )
+                        FailResult(error_message="child should not be None", outcome="fail")
                     ],
                     incorrect_value=None,
                 ),
@@ -350,9 +346,7 @@ def test_gather_reasks():
                 FieldReAsk(
                     path=["$.failed_prop.child"],
                     fail_results=[
-                        FailResult(
-                            error_message="child should not be None", outcome="fail"
-                        )
+                        FailResult(error_message="child should not be None", outcome="fail")
                     ],
                     incorrect_value=None,
                 )

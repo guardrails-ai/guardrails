@@ -76,9 +76,7 @@ def test_get_value_from_path(path: str, expected_value: Any):
         ),
     ],
 )
-def test_write_value_to_path(
-    existing_value: Any, path: str, write_value: Any, expected_value: Any
-):
+def test_write_value_to_path(existing_value: Any, path: str, write_value: Any, expected_value: Any):
     actual_value = write_value_to_path(existing_value, path, write_value)
     assert actual_value == expected_value
 
@@ -98,9 +96,7 @@ with open(
 ) as credit_card_agreement_file:
     credit_card_agreement_schema = json.loads(credit_card_agreement_file.read())
 
-with open(
-    "tests/integration_tests/test_assets/json_schemas/string.json", "r"
-) as string_file:
+with open("tests/integration_tests/test_assets/json_schemas/string.json", "r") as string_file:
     string_schema = json.loads(string_file.read())
 
 

@@ -13,21 +13,15 @@ iteration = Iteration(
 
 class TestShouldRunSync:
     def test_process_count_of_1(self, mocker):
-        mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["1", "false"]
-        )
+        mocker.patch("guardrails.validator_service.os.environ.get", side_effect=["1", "false"])
         assert vs.should_run_sync() is True
 
     def test_run_sync_set_to_true(self, mocker):
-        mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["10", "True"]
-        )
+        mocker.patch("guardrails.validator_service.os.environ.get", side_effect=["10", "True"])
         assert vs.should_run_sync() is True
 
     def test_should_run_sync_default(self, mocker):
-        mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["10", "false"]
-        )
+        mocker.patch("guardrails.validator_service.os.environ.get", side_effect=["10", "false"])
         assert vs.should_run_sync() is False
 
 
@@ -53,9 +47,7 @@ class TestGetLoop:
 
     def test_get_loop_with_uvloop(self, mocker):
         mocker.patch("guardrails.validator_service.uvloop")
-        mock_event_loop_policy = mocker.patch(
-            "guardrails.validator_service.uvloop.EventLoopPolicy"
-        )
+        mock_event_loop_policy = mocker.patch("guardrails.validator_service.uvloop.EventLoopPolicy")
         mocker.patch(
             "guardrails.validator_service.asyncio.get_running_loop",
             side_effect=RuntimeError,
@@ -69,9 +61,7 @@ class TestGetLoop:
         assert vs.get_loop() == "event loop"
 
         mock_event_loop_policy.assert_called_once()
-        mock_set_event_loop_policy.assert_called_once_with(
-            mock_event_loop_policy.return_value
-        )
+        mock_set_event_loop_policy.assert_called_once_with(mock_event_loop_policy.return_value)
 
 
 class TestValidate:
@@ -157,9 +147,7 @@ class TestValidate:
 
 @pytest.mark.asyncio
 async def test_async_validate(mocker):
-    mocker.patch(
-        "guardrails.validator_service.AsyncValidatorService", return_value=AsyncMock()
-    )
+    mocker.patch("guardrails.validator_service.AsyncValidatorService", return_value=AsyncMock())
     await vs.async_validate(
         value=True,
         metadata={},

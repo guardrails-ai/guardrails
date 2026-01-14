@@ -1,4 +1,4 @@
 {
-  ".": "0.7.1",
-  "packages/guardrails-api": "0.1.0-alpha3"
+  "src/guardrails": "0.7.1",
+  "src/guardrails-api": "0.1.0-alpha3"
 }

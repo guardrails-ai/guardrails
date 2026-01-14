@@ -5,9 +5,7 @@ from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
 from .validated_output_reask import VALIDATED_OUTPUT_REASK
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
-reader = (
-    lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
-)
+reader = lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 COMPILED_PROMPT = reader("compiled_prompt.txt")

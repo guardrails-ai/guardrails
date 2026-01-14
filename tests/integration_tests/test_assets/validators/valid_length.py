@@ -47,9 +47,7 @@ class ValidLength(Validator):
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
-        logger.debug(
-            f"Validating {value} is in length range {self._min} - {self._max}..."
-        )
+        logger.debug(f"Validating {value} is in length range {self._min} - {self._max}...")
 
         if self._min is not None and len(value) < self._min:
             logger.debug(f"Value {value} is less than {self._min}.")

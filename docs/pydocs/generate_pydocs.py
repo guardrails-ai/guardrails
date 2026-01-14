@@ -17,9 +17,7 @@ from docs.pydocs.api_reference import validation  # noqa
 write_to_file(
     str="# Validators\n\n"
     + render_loader(
-        PythonLoader(
-            search_path=["validators"], parser=ParserOptions(print_function=False)
-        )
+        PythonLoader(search_path=["validators"], parser=ParserOptions(print_function=False))
     ),
     filename="docs/src/hub/api_reference_markdown/validators.md",
 )

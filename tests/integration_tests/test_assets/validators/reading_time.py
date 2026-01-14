@@ -36,9 +36,7 @@ class ReadingTime(Validator):
         self._max_time = reading_time
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        logger.debug(
-            f"Validating {value} can be read in less than {self._max_time} minutes..."
-        )
+        logger.debug(f"Validating {value} can be read in less than {self._max_time} minutes...")
 
         # Estimate the reading time of the string
         reading_time = len(value.split()) / 200
@@ -47,8 +45,7 @@ class ReadingTime(Validator):
         if (reading_time - self._max_time) > 0:
             logger.error(f"{value} took {reading_time} minutes to read")
             return FailResult(
-                error_message=f"String should be readable "
-                f"within {self._max_time} minutes."
+                error_message=f"String should be readable within {self._max_time} minutes."
             )
 
         return PassResult()

@@ -14,9 +14,7 @@ from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
-    )
+    mock_invoke_llm = mocker.patch("guardrails.llm_providers.LiteLLMCallable._invoke_llm")
     mock_invoke_llm.side_effect = [
         LLMResponse(
             output=pydantic.LLM_OUTPUT,
@@ -59,9 +57,7 @@ def test_pydantic_with_reask(mocker):
     # For original prompt and output
     assert call.compiled_messages[0]["content"] == pydantic.COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
-    assert (
-        call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
-    )
+    assert call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
     # Assert through iteration
@@ -81,13 +77,9 @@ def test_pydantic_with_reask(mocker):
     # )
 
     # We can, however, merge down to achieve the same thing
-    intermediate_call_state = Call(
-        iterations=Stack(call.iterations.first, call.iterations.at(1))
-    )
+    intermediate_call_state = Call(iterations=Stack(call.iterations.first, call.iterations.at(1)))
     intermediate_call_state.inputs.full_schema_reask = False
-    assert (
-        intermediate_call_state.validation_response == pydantic.VALIDATED_OUTPUT_REASK_2
-    )
+    assert intermediate_call_state.validation_response == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
     assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(
@@ -102,9 +94,7 @@ def test_pydantic_with_reask(mocker):
 
 def test_pydantic_with_full_schema_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
-    )
+    mock_invoke_llm = mocker.patch("guardrails.llm_providers.LiteLLMCallable._invoke_llm")
     mock_invoke_llm.side_effect = [
         LLMResponse(
             output=pydantic.LLM_OUTPUT,
@@ -152,9 +142,7 @@ def test_pydantic_with_full_schema_reask(mocker):
     # For original prompt and output
     assert call.compiled_messages[0]["content"] == pydantic.COMPILED_PROMPT_CHAT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
-    assert (
-        call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
-    )
+    assert call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
     assert (
@@ -166,9 +154,7 @@ def test_pydantic_with_full_schema_reask(mocker):
         == pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_FULL_REASK_1
-    assert (
-        call.iterations.at(1).validation_response == pydantic.VALIDATED_OUTPUT_REASK_2
-    )
+    assert call.iterations.at(1).validation_response == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
     assert call.iterations.last.inputs.messages[1]["content"] == gd.Prompt(

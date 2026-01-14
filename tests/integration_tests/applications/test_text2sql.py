@@ -8,9 +8,7 @@ from guardrails.applications.text2sql import Text2Sql
 CURRENT_DIR_PARENT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_PATH = os.path.join(CURRENT_DIR_PARENT, "test_assets/text2sql/schema.sql")
 EXAMPLES_PATH = os.path.join(CURRENT_DIR_PARENT, "test_assets/text2sql/examples.json")
-DB_PATH = os.path.join(
-    CURRENT_DIR_PARENT, "test_assets/text2sql/department_management.sqlite"
-)
+DB_PATH = os.path.join(CURRENT_DIR_PARENT, "test_assets/text2sql/department_management.sqlite")
 
 
 @pytest.mark.parametrize(

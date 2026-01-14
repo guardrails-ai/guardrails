@@ -20,10 +20,7 @@ class TestEphemeralDocumentStore:
         }
         db = Faiss.new_flat_l2_index(1536, OpenAIEmbedding())
         store = EphemeralDocumentStore(db)
-        _ = [
-            store.add_text(text, {"ctx": addn_ctx})
-            for text, addn_ctx in sentences.items()
-        ]
+        _ = [store.add_text(text, {"ctx": addn_ctx}) for text, addn_ctx in sentences.items()]
         pages = store.search("mvp", 1)
         assert len(pages) == 1
         assert pages[0].text == "who is the current mvp"

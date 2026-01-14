@@ -254,10 +254,7 @@ class TestValidate:
         async def callback():
             with pytest.warns(
                 Warning,
-                match=(
-                    "Could not obtain an event loop."
-                    " Falling back to synchronous validation."
-                ),
+                match=("Could not obtain an event loop. Falling back to synchronous validation."),
             ):
                 value, metadata = validate(
                     value="value",

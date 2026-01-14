@@ -58,9 +58,7 @@ class RegexMatch(Validator):
         """Validates that value matches the provided regular expression."""
         # Pad matching string on either side for fix
         # example if we are performing a regex search
-        str_padding = (
-            "" if self._match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
-        )
+        str_padding = "" if self._match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
         self._fix_str = str_padding + rstr.xeger(self._regex) + str_padding
 
         if not getattr(p, self._match_type)(value):

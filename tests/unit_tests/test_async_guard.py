@@ -103,9 +103,7 @@ async def test_required_metadata(spec, metadata, error_message):
         await guard.parse("{}", llm_api=mock_async_llm, num_reasks=0)
     assert str(excinfo.value) == error_message
 
-    response = await guard.parse(
-        "{}", metadata=metadata, llm_api=mock_async_llm, num_reasks=0
-    )
+    response = await guard.parse("{}", metadata=metadata, llm_api=mock_async_llm, num_reasks=0)
     assert response.error is None
 
 
@@ -122,17 +120,13 @@ class EmptyModel(BaseModel):
 
 
 r_guard_none = AsyncGuard.for_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = AsyncGuard.for_rail(
-    "tests/unit_tests/test_assets/empty.rail", num_reasks=2
-)
+r_guard_two = AsyncGuard.for_rail("tests/unit_tests/test_assets/empty.rail", num_reasks=2)
 rs_guard_none = AsyncGuard.for_rail_string(empty_rail_string)
 rs_guard_two = AsyncGuard.for_rail_string(empty_rail_string, num_reasks=2)
 py_guard_none = AsyncGuard.for_pydantic(output_class=EmptyModel)
 py_guard_two = AsyncGuard.for_pydantic(output_class=EmptyModel, num_reasks=2)
 s_guard_none = AsyncGuard.from_string(validators=[], description="empty railspec")
-s_guard_two = AsyncGuard.from_string(
-    validators=[], description="empty railspec", num_reasks=2
-)
+s_guard_two = AsyncGuard.from_string(validators=[], description="empty railspec", num_reasks=2)
 
 
 def guard_init_for_rail():
@@ -159,9 +153,7 @@ def test_use():
 
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
+    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
@@ -181,9 +173,7 @@ def test_use():
     assert guard._validators[4]._kwargs["min"] == 0
     assert guard._validators[4]._max == 12
     assert guard._validators[4]._kwargs["max"] == 12
-    assert (
-        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
-    )  # bc we set it
+    assert guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN  # bc we set it
 
     # No longer a constraint
     # Raises error when trying to `use` a validator on a non-string
@@ -205,12 +195,8 @@ def test_use():
         .use(OneLine, on="prompt")
         .use(UpperCase, on="instructions")
         .use(LowerCase, on="messages")
-        .use(
-            EndsWith, end="a", on="output"
-        )  # default on="output", still explicitly set
-        .use(
-            TwoWords, on_fail=OnFailAction.REASK
-        )  # default on="output", implicitly set
+        .use(EndsWith, end="a", on="output")  # default on="output", still explicitly set
+        .use(TwoWords, on_fail=OnFailAction.REASK)  # default on="output", implicitly set
     )
 
     # Check schemas for prompt, instructions and messages validators
@@ -232,9 +218,7 @@ def test_use():
 
     assert isinstance(guard._validators[4], EndsWith)
     assert guard._validators[4]._kwargs["end"] == "a"
-    assert (
-        guard._validators[4].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
+    assert guard._validators[4].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
 
     assert isinstance(guard._validators[5], TwoWords)
     assert guard._validators[5].on_fail_descriptor == OnFailAction.REASK  # bc we set it
@@ -259,9 +243,7 @@ def test_use_many_instances():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
+    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
@@ -311,9 +293,7 @@ def test_use_many_instances():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
+    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
@@ -391,9 +371,7 @@ def test_use_many_tuple():
     assert isinstance(guard._validators[1], EndsWith)
     assert guard._validators[1]._end == "a"
     assert guard._validators[1]._kwargs["end"] == "a"
-    assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc we set it
+    assert guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION  # bc we set it
 
     assert isinstance(guard._validators[2], LowerCase)
     assert guard._validators[2]._kwargs["some_other_kwarg"] == "kwarg"
@@ -409,9 +387,7 @@ def test_use_many_tuple():
     assert guard._validators[4]._kwargs["min"] == 0
     assert guard._validators[4]._max == 12
     assert guard._validators[4]._kwargs["max"] == 12
-    assert (
-        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
-    )  # bc we set it
+    assert guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN  # bc we set it
 
     # Test with explicitly setting the "on" parameter
     guard: AsyncGuard = AsyncGuard().use_many(
@@ -425,9 +401,7 @@ def test_use_many_tuple():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc we set it
+    assert guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION  # bc we set it
 
     assert isinstance(guard._validators[1], OneLine)
     assert (
@@ -558,9 +532,7 @@ def test_use_and_use_many():
     assert guard._validators[2]._kwargs["min"] == 0
     assert guard._validators[2]._max == 12
     assert guard._validators[2]._kwargs["max"] == 12
-    assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.REFRAIN
-    )  # bc we set it
+    assert guard._validators[2].on_fail_descriptor == OnFailAction.REFRAIN  # bc we set it
 
     # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):

@@ -72,9 +72,7 @@ async def test_sync_async_validate_equivalence(mocker):
     parsed_output, _ = runner_instance(True).parse(OUTPUT, OUTPUT_SCHEMA)
 
     # Call the 'validate' method synchronously
-    result_sync = runner_instance(True).validate(
-        iteration, 1, parsed_output, OUTPUT_SCHEMA
-    )
+    result_sync = runner_instance(True).validate(iteration, 1, parsed_output, OUTPUT_SCHEMA)
 
     # Call the 'async_validate' method asynchronously
     result_async = await runner_instance(False).async_validate(

@@ -54,9 +54,7 @@ def test_cli():
 
         validated_output_path = os.path.join(tmpdir, "validated_output")
 
-        subprocess.run(
-            ["guardrails", "hub", "install", "hub://guardrails/valid_range", "--quiet"]
-        )
+        subprocess.run(["guardrails", "hub", "install", "hub://guardrails/valid_range", "--quiet"])
 
         # Run the cli command
         result = subprocess.run(

@@ -39,9 +39,7 @@ def test_validator_runnable(output: str, throws: bool, expected_error: Optional[
 
     prompt = ChatPromptTemplate.from_template("ELIF: {topic}")
     model = MockModel()
-    regex_match = RegexMatch(
-        "Ice cream", match_type="search", on_fail="refrain"
-    ).to_runnable()
+    regex_match = RegexMatch("Ice cream", match_type="search", on_fail="refrain").to_runnable()
     reading_time = ReadingTime(0.05, on_fail="refrain").to_runnable()
 
     output_parser = StrOutputParser()
@@ -72,9 +70,7 @@ def test_validator_runnable_with_callback_config():
     callback_manager = CallbackManager([console_handler])
     config_with_callbacks = RunnableConfig(callbacks=callback_manager)
 
-    regex_match = RegexMatch(
-        "Ice cream", match_type="search", on_fail="exception"
-    ).to_runnable()
+    regex_match = RegexMatch("Ice cream", match_type="search", on_fail="exception").to_runnable()
 
     captured_output = io.StringIO()
     sys.stdout = captured_output

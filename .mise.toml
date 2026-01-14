@@ -3,7 +3,7 @@
 # Docs: https://mise.jdx.dev/
 
 [tools]
-python = "3.12"
+python = "3.13"
 
 [env]
 # Auto-create virtualenv in .venv
@@ -26,7 +26,7 @@ run = "uv sync --group dev"
 
 [tasks.install-all]
 description = "Install with all optional extras"
-run = "uv sync --group dev --all-extras"
+run = "uv sync --group dev --extra sql --extra vectordb --extra manifest --extra anthropic --extra huggingface --extra api --extra server --extra databricks --extra uvloop --extra llama --extra docs"
 
 [tasks.install-docs]
 description = "Install with documentation dependencies"
@@ -50,8 +50,8 @@ description = "Check linting without fixing"
 run = "ruff check . && ruff format --check ."
 
 [tasks.type]
-description = "Run type checker (pyright)"
-run = "uv run pyright guardrails"
+description = "Run type checker (ty)"
+run = "uv run ty check guardrails packages/guardrails-api/guardrails_api"
 
 [tasks.test]
 description = "Run tests"

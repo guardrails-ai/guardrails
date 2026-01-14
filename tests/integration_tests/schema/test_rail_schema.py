@@ -35,9 +35,7 @@ with open(
 ) as credit_card_agreement_file:
     credit_card_agreement_schema = json.loads(credit_card_agreement_file.read())
 
-with open(
-    "tests/integration_tests/test_assets/json_schemas/string.json", "r"
-) as string_file:
+with open("tests/integration_tests/test_assets/json_schemas/string.json", "r") as string_file:
     string_schema = json.loads(string_file.read())
 
 
@@ -86,9 +84,7 @@ class TestRailToJsonSchema:
             )
         ]
         assert processed_schema.validator_map.get("$.action.weapon") == [
-            ValidChoices(
-                choices=["crossbow", "machine gun"], on_fail=OnFailAction.REASK
-            )
+            ValidChoices(choices=["crossbow", "machine gun"], on_fail=OnFailAction.REASK)
         ]
 
 
