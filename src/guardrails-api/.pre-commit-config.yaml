@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.8
+    hooks:
+      - id: ruff
+        name: ruff
+        description: "Run 'ruff' for linting"
+        args: ["--fix"]
+      - id: ruff-format
+        name: ruff-format
+        description: "Run 'ruff format' for formatting"
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.5.11
+    hooks:
+      - id: uv-lock
+        name: uv-lock
+        description: "Keep uv.lock in sync with pyproject.toml"

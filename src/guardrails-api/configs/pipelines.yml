@@ -1,0 +1,102 @@
+# Trace Pipeline Config
+# Reference: https://opensearch.org/docs/latest/data-prepper/common-use-cases/trace-analytics/
+entry-pipeline:
+  delay: 100
+  source:
+    otel_trace_source:
+      port: 21890
+      ssl: false
+      authentication:
+        unauthenticated:
+  buffer:
+    bounded_blocking:
+      buffer_size: 10240
+      batch_size: 160
+  sink:
+    - pipeline:
+        name: raw-pipeline
+    - pipeline:
+        name: service-map-pipeline
+
+raw-pipeline:
+  source:
+    pipeline:
+      name: entry-pipeline
+  buffer:
+    bounded_blocking:
+      buffer_size: 10240
+      batch_size: 160
+  processor:
+    - otel_trace_raw:
+  sink:
+    - opensearch:
+        hosts: 
+          - http://opensearch-node1:9200
+        insecure: true
+        index_type: trace-analytics-raw
+        # username: admin
+        # password: admin
+
+service-map-pipeline:
+  delay: 100
+  source:
+    pipeline:
+      name: entry-pipeline
+  buffer:
+    bounded_blocking:
+      buffer_size: 10240
+      batch_size: 160
+  processor:
+    - service_map_stateful:
+  sink:
+    - opensearch:
+        hosts:
+          - http://opensearch-node1:9200
+        insecure: true
+        index_type: trace-analytics-service-map
+        # username: admin
+        # password: admin
+
+log-pipeline:
+  source:
+    otel_logs_source:
+      port: 21892
+      ssl: false
+      authentication:
+        unauthenticated:
+  
+  sink:
+    - opensearch:
+        hosts: 
+          - http://opensearch-node1:9200
+        index_type: custom
+        index: logs-%{yyyy.MM.dd}
+        # Change to your credentials
+        # username: "admin"
+        # password: "admin"
+        # Add a certificate file if you are accessing an OpenSearch cluster with a self-signed certificate  
+        # cert: /path/to/cert
+        # If you are connecting to an Amazon OpenSearch Service domain without
+        # Fine-Grained Access Control, enable these settings. Comment out the
+        # username and password above.
+        # aws_sigv4: true
+        # aws_region: us-east-1
+
+metrics-pipeline:
+  source:
+    otel_metrics_source:
+      port: 21891
+      ssl: false
+      authentication:
+        unauthenticated:
+  processor:
+    - otel_metrics:
+  sink:
+    - opensearch:
+        hosts: 
+          - http://opensearch-node1:9200
+        insecure: true
+        index_type: custom
+        index: metrics-%{yyyy.MM.dd}
+      # username: admin
+      # password: admin

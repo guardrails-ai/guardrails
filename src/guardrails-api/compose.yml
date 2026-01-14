@@ -1,0 +1,146 @@
+services:
+  postgres:
+    profiles: ["all", "db", "infra"]
+    image: ankane/pgvector
+    environment:
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-changeme}
+      POSTGRES_DATA: /data/postgres
+    volumes:
+       - ./postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: always
+  pgadmin:
+    profiles: ["all", "db", "infra"]
+    image: dpage/pgadmin4
+    logging:
+      driver: none
+    restart: always
+    ports:
+      - "8088:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGUSER:-postgres}@guardrails.com"
+      PGADMIN_DEFAULT_PASSWORD: ${PGPASSWORD:-changeme}
+      PGADMIN_SERVER_JSON_FILE: /var/lib/pgadmin/servers.json
+    # FIXME: Copy over server.json file and create passfile
+    volumes:
+      - ./pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+  guardrails-api:
+    profiles: ["all", "api"]
+    image: guardrails-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PORT: "8000"
+    ports:
+      - "8000:8000"
+    environment:
+      # APP_ENVIRONMENT: local
+      # AWS_PROFILE: dev
+      # AWS_DEFAULT_REGION: us-east-1
+      # PGPORT: 5432
+      # PGDATABASE: postgres
+      # PGHOST: postgres
+      # PGUSER: ${PGUSER:-postgres}
+      # PGPASSWORD: ${PGPASSWORD:-changeme}
+      NLTK_DATA: /opt/nltk_data
+      # OTEL_PYTHON_TRACER_PROVIDER: sdk_tracer_provider
+      # OTEL_SERVICE_NAME: guardrails-api
+      # OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      # OTEL_TRACES_EXPORTER: otlp #,console
+      # OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST: "Accept-Encoding,User-Agent,Referer"
+      # OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE: "Last-Modified,Content-Type"
+      # OTEL_METRICS_EXPORTER: otlp #,console
+      # OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      # # Disable logging for now to reduce noise
+      # OTEL_LOGS_EXPORTER: otlp,console
+      # OTEL_PYTHON_LOG_CORRELATION: true
+      # OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: true
+      # OTEL_PYTHON_LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: 1
+      LOGLEVEL: INFO
+      # # Use the below env vars if we ever split up sinks
+      # OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
+      # OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
+      # OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4317
+      # OTEL_PYTHON_LOG_FORMAT: "%(msg)s [span_id=%(span_id)s]"
+    # depends_on:
+    #   - postgres
+    #   - otel-collector
+  opensearch-node1:
+    profiles: ["all", "otel", "infra"]
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster # Name the cluster
+      - node.name=opensearch-node1 # Name the node that will run in this container
+      - discovery.type=single-node
+      # - discovery.seed_hosts=opensearch-node1 # Nodes to look for when discovering the cluster
+      # - cluster.initial_cluster_manager_nodes=opensearch-node1 # Nodes eligibile to serve as cluster manager
+      - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+      - DISABLE_INSTALL_DEMO_CONFIG=true # Prevents execution of bundled demo script which installs demo certificates and security configurations to OpenSearch
+      - DISABLE_SECURITY_PLUGIN=true # Disables Security plugin
+    ulimits:
+      memlock:
+        soft: -1 # Set memlock to unlimited (no soft or hard limit)
+        hard: -1
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
+    volumes:
+      - ./opensearch/opensearch-data1:/usr/share/opensearch/data # Creates volume called opensearch-data1 and mounts it to the container
+    ports:
+      - 9200:9200 # REST API
+      - 9600:9600 # Performance Analyzer
+  opensearch-dashboards:
+    profiles: ["all", "otel", "infra"]
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601 # Map host port 5601 to container port 5601
+    expose:
+      - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch-node1:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true # disables security dashboards plugin in OpenSearch Dashboards
+  data-prepper:
+    profiles: ["all", "otel", "infra"]
+    restart: unless-stopped
+    container_name: data-prepper
+    image: opensearchproject/data-prepper:latest
+    volumes:
+      - ./configs/pipelines.yml:/usr/share/data-prepper/pipelines/pipelines.yaml
+      - ./configs/data-prepper-config.yml:/usr/share/data-prepper/config/data-prepper-config.yaml
+    ports:
+      - 21890:21890
+      - 21891:21891
+      - 21892:21892
+    expose:
+      - "21890"
+      - "21891"
+      - "21892"
+    depends_on:
+      - opensearch-node1
+  otel-collector:
+    profiles: ["all", "otel", "infra"]
+    restart: unless-stopped
+    container_name: otel-collector
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./configs/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - 1888:1888 # pprof extension
+      # - 8888:8888 # Prometheus metrics exposed by the collector
+      # - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      # - 4318:4318 # OTLP http receiver
+      # - 55679:55679 # zpages extension
+    depends_on:
+      - data-prepper

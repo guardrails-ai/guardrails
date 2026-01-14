@@ -1,0 +1,73 @@
+# Based on https://docs.aws.amazon.com/opensearch-service/latest/developerguide/configure-client-otel.html
+# Still had to add tls block
+# Not tested for metrics or logs
+extensions:
+  sigv4auth:
+    region: ${env:AWS_REGION}
+    service: "osis"
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 'localhost:4317'
+      http:
+        endpoint: 'localhost:4318'
+
+exporters:
+  logging:
+    loglevel: ${env:OTEL_PYTHON_LOG_LEVEL}
+  # AWS OpenSearch Ingestion Pipeline forces you to use a path
+  # Because of that, you can't use the standard otlp exporter because it's grpc based
+  otlphttp:
+    traces_endpoint: ${env:OTEL_TRACE_SINK}
+    auth:
+      authenticator: sigv4auth
+    compression: none
+    tls:
+      insecure: false
+      insecure_skip_verify: true
+  # otlp/traces:
+  #   endpoint: ${env:OTEL_TRACE_SINK}
+    # tls:
+    #   insecure: true
+    #   insecure_skip_verify: true
+  # otlp/metrics:
+  #   endpoint: ${env:OTEL_METRIC_SINK}
+    # tls:
+    #   insecure: true
+    #   insecure_skip_verify: true
+  # otlp/logs:
+  #   endpoint: ${env:OTEL_LOG_SINK}
+    # tls:
+    #   insecure: true
+    #   insecure_skip_verify: true
+
+service:
+  extensions: [sigv4auth]
+  pipelines:
+    traces:
+      receivers: 
+        - otlp
+      exporters: 
+        - logging
+        - otlphttp
+        # - otlp/traces
+    metrics:
+      receivers: 
+        - otlp
+      exporters: 
+        - logging
+        # - otlphttp
+        # - otlp/metrics
+        # - prometheus
+    logs:
+      receivers: 
+        - otlp
+      exporters: 
+        - logging
+        # - otlphttp
+        # - otlp/logs
+  telemetry:
+    logs:
+      level: info

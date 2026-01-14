@@ -1,0 +1,10 @@
+.venv*
+diagrams
+.github
+buildspecs
+tests
+docker*
+Docker*
+*.sh
+!buildspecs/hub-install.sh
+ingestion-service-spec.yml
