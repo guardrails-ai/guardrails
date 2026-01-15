@@ -64,12 +64,15 @@ async def get_guards():
 
 @router.post("/guards")
 @handle_error
-async def create_guard(guard: GuardStruct):
+async def create_guard(request: Request):
     if not postgres_is_enabled():
         raise HTTPException(
             status_code=501,
             detail="Not Implemented POST /guards is not implemented for in-memory guards.",
         )
+    # Use from_dict() to handle ValidationType deserialization from JSON strings
+    payload = await request.json()
+    guard = GuardStruct.from_dict(payload)
     new_guard = guard_client.create_guard(guard)
     return new_guard.to_dict()
 
@@ -89,12 +92,15 @@ async def get_guard(guard_name: str, asOf: Optional[str] = None):
 
 @router.put("/guards/{guard_name}")
 @handle_error
-async def update_guard(guard_name: str, guard: GuardStruct):
+async def update_guard(guard_name: str, request: Request):
     if not postgres_is_enabled():
         raise HTTPException(
             status_code=501,
             detail="PUT /<guard_name> is not implemented for in-memory guards.",
         )
+    # Use from_dict() to handle ValidationType deserialization from JSON strings
+    payload = await request.json()
+    guard = GuardStruct.from_dict(payload)
     decoded_guard_name = unquote_plus(guard_name)
     updated_guard = guard_client.upsert_guard(decoded_guard_name, guard)
     return updated_guard.to_dict()

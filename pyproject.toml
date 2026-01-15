@@ -46,6 +46,7 @@ addopts = [
   "-v",
   "--strict-markers",
   "--tb=short",
+  "-m", "not integration",
 ]
 
 [tool.ty]
