@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "guardrails-api"
-version = "0.1.0a3"
+version = "0.1.0rc1"
 description = "Guardrails API"
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}

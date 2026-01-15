@@ -2200,7 +2200,7 @@ wheels = [
 
 [[package]]
 name = "guardrails-ai"
-version = "0.7.1"
+version = "0.8.0rc1"
 source = { editable = "src/guardrails" }
 dependencies = [
     { name = "diff-match-patch" },
@@ -2349,7 +2349,7 @@ provides-extras = ["sql", "vectordb", "manifest", "anthropic", "docs-build", "hu
 
 [[package]]
 name = "guardrails-api"
-version = "0.1.0a3"
+version = "0.1.0rc1"
 source = { editable = "src/guardrails-api" }
 dependencies = [
     { name = "aiocache" },
