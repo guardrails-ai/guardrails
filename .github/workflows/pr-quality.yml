@@ -1,0 +1,81 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  liccheck:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev --all-packages
+
+      - name: Check licenses
+        run: |
+          uv run python -m pip freeze > requirements.txt
+          sed -E 's/(==.*)$//' requirements.txt | sed -E 's/( @ .*?$)//' | grep -v '^tomli$' | grep -v '^pywin32-ctypes$' | grep -v '^$' > requirements-liccheck.txt
+          uv run liccheck -s pyproject.toml -r requirements-liccheck.txt
+
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev --all-packages
+
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files
+
+  hub-install:
+    name: Hub Install
+    runs-on: ubuntu-latest
+    env:
+      GUARDRAILS_API_KEY: ${{ secrets.GUARDRAILS_API_KEY }}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: pip install from branch
+        run: pip install git+https://github.com/${{ github.repository }}.git@${{ github.sha }}
+
+      - name: Install PII validator
+        if: ${{ env.GUARDRAILS_API_KEY != '' }}
+        run: |
+          guardrails configure --token $GUARDRAILS_API_KEY --disable-metrics --enable-remote-inferencing
+          guardrails hub install hub://guardrails/detect_pii
+
+      - name: Verify PII validator is addressable
+        if: ${{ env.GUARDRAILS_API_KEY != '' }}
+        run: echo 'from guardrails.hub import DetectPII' | python
