@@ -18,8 +18,12 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Library version:**
-Version (e.g. 0.1.5)
+**Libraries used w/ versions:**
+Example: guardrails-ai==0.7.2, guardrails-api==0.1.0a2, any Hub validators, etc.
+
+**Environment details:**
+Example: Docker python:3.13-slim vs Windows Server 2022 w/ python 3.11, etc
+_Are you using a virtual environment? If so what kind (venv, conda, etc.)?_
 
 **Additional context**
 Add any other context about the problem here.
