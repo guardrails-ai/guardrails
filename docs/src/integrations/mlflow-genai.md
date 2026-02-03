@@ -1,4 +1,4 @@
-# MLflow
+# MLflow GenAI
 
 ## Overview
 
