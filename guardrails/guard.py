@@ -162,7 +162,7 @@ class Guard(IGuard, Generic[OT]):
         model_schema = ModelSchema.from_dict(output_schema)
 
         # TODO: Support a sink for history so that it is not solely held in memory
-        history: Stack[Call] = Stack()
+        history: Stack[Call] = Stack(max_length=10)
 
         # Super Init
         super().__init__(
@@ -1336,7 +1336,7 @@ class Guard(IGuard, Generic[OT]):
             if i_guard.history
             else []
         )
-        guard.history = Stack(*history)
+        guard.history = Stack(*history, max_length=10)
         return guard
 
     # attempts to get a guard from the server

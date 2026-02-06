@@ -4,8 +4,14 @@ T = TypeVar("T")
 
 
 class Stack(List[T]):
-    def __init__(self, *args):
-        super().__init__(args)
+    _max_length: Optional[int]
+
+    def __init__(self, *args, max_length: Optional[int] = None):
+        initial_entries = args
+        if max_length:
+            initial_entries = initial_entries[:max_length]
+        super().__init__(initial_entries)
+        self._max_length = max_length
 
     def empty(self) -> bool:
         """Tests if this stack is empty."""
@@ -29,8 +35,12 @@ class Stack(List[T]):
         """Pushes an item onto the top of this stack.
 
         Proxy of List.append
+
+        Limits Stack Length to _max_length entries
         """
         self.append(item)
+        if self._max_length:
+            self = self[: self._max_length]
 
     def search(self, x: T) -> Optional[int]:
         """Returns the 0-based position of the last item whose value is equal
