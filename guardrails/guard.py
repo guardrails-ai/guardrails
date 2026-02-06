@@ -123,6 +123,7 @@ class Guard(IGuard, Generic[OT]):
     validators: List[ValidatorReference]
     output_schema: ModelSchema
     history: Stack[Call]
+    _history_max_length: int
 
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -137,6 +138,7 @@ class Guard(IGuard, Generic[OT]):
         output_schema: Optional[Dict[str, Any]] = None,
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
+        history_max_length: Optional[int] = None,
     ):
         """Initialize the Guard with serialized validator references and an
         output schema.
@@ -153,6 +155,7 @@ class Guard(IGuard, Generic[OT]):
         # Defaults
         validators = validators or []
         output_schema = output_schema or {"type": "string"}
+        history_max_length = history_max_length or 10
 
         # Init ModelSchema class
         # schema_with_type = {**output_schema}
@@ -162,7 +165,7 @@ class Guard(IGuard, Generic[OT]):
         model_schema = ModelSchema.from_dict(output_schema)
 
         # TODO: Support a sink for history so that it is not solely held in memory
-        history: Stack[Call] = Stack()
+        history: Stack[Call] = Stack(max_length=history_max_length)
 
         # Super Init
         super().__init__(
@@ -185,6 +188,7 @@ class Guard(IGuard, Generic[OT]):
 
         ### Overrides ###
         self.validators = validators
+        self._history_max_length = history_max_length
 
         ### Legacy ##
         self._num_reasks = None
@@ -1336,7 +1340,7 @@ class Guard(IGuard, Generic[OT]):
             if i_guard.history
             else []
         )
-        guard.history = Stack(*history)
+        guard.history = Stack(*history, max_length=guard._history_max_length)
         return guard
 
     # attempts to get a guard from the server

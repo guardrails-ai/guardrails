@@ -127,7 +127,8 @@ class MlFlowInstrumentor:
                 },
             ) as guard_span:
                 guard_self = args[0]
-                history = Stack()
+                # Use default bc we don't know if the Guard instance exists yet or not
+                history = Stack(max_length=10)
 
                 if guard_self is not None and isinstance(guard_self, Guard):
                     guard_span.set_attribute("guard.name", guard_self.name)
@@ -180,7 +181,8 @@ class MlFlowInstrumentor:
                 },
             ) as guard_span:
                 guard_self = args[0]
-                history = Stack()
+                # Use default bc we don't know if the Guard instance exists yet or not
+                history = Stack(max_length=10)
 
                 if guard_self is not None and isinstance(guard_self, Guard):
                     guard_span.set_attribute("guard.name", guard_self.name)
