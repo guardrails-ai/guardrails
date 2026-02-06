@@ -1,6 +1,6 @@
 [project]
 name = "guardrails-ai"
-version = "0.7.2"
+version = "0.7.3"
 description = "Adding guardrails to large language models."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
