@@ -1,3 +1,4 @@
+.PHONY: autoformat type lint test test-basic test-cov view-test-cov view-test-cov-file docs-serve docs-deploy dev full install docs-gen self-install all precommit refresh update-lock
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
 autoformat:
@@ -5,7 +6,6 @@ autoformat:
 	ruff format guardrails/ tests/
 	docformatter --in-place --recursive guardrails tests
 
-.PHONY: type
 type:
 	pyright guardrails/
 
@@ -42,6 +42,9 @@ dev:
 
 full:
 	poetry install --all-extras
+
+install:
+	poetry install
 
 docs-gen:
 	poetry run python ./docs/pydocs/generate_pydocs.py
