@@ -389,7 +389,7 @@ class Validator:
             inference endpoint to run.
 
         Raises:
-            HttpError: If the recieved reply was not ok.
+            HttpError: If the received reply was not ok.
 
         Returns:
             Any: Post request response from the ML based validation model.

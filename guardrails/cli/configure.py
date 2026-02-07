@@ -111,7 +111,7 @@ def configure(
         # update setting singleton
         logger.info("Configuration saved.")
     except Exception as e:
-        logger.error("An unexpected error occured saving configuration!")
+        logger.error("An unexpected error occurred saving configuration!")
         logger.error(e)
         sys.exit(1)
 
