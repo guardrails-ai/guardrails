@@ -59,7 +59,7 @@ from guardrails.hub import ProfanityFree, ToxicLanguage
 
 guard = Guard()
 guard.name = "ChatBotGuard"
-guard.use_many(ProfanityFree(), ToxicLanguage())
+guard.use(ProfanityFree(), ToxicLanguage())
 ```
 
 <CodeOutputBlock lang="python">

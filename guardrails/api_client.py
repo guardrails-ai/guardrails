@@ -35,7 +35,9 @@ class GuardrailsApiClient:
             else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:8000")
         )
         self.api_key = (
-            api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
+            api_key
+            if api_key is not None
+            else os.environ.get("GUARDRAILS_API_KEY", "x-guardrails-api-key")
         )
         self.timeout = 300
 
@@ -62,6 +64,11 @@ class GuardrailsApiClient:
         except Exception as e:
             logger.error(f"Error fetching guard {guard_name}: {e}")
             return None
+
+    def delete_guard(self, guard_name: str):
+        self._guard_api.delete_guard(
+            guard_name=guard_name, _request_timeout=self.timeout
+        )
 
     def validate(
         self,
