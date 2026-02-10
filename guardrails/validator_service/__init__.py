@@ -28,22 +28,13 @@ except ImportError:
 
 
 def should_run_sync():
-    process_count = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-    if process_count is not None:
-        warnings.warn(
-            "GUARDRAILS_PROCESS_COUNT is deprecated"
-            " and will be removed in a future release."
-            " To force synchronous validation, please use GUARDRAILS_RUN_SYNC instead.",
-            DeprecationWarning,
-        )
-        process_count = int(process_count)
     run_sync = os.environ.get("GUARDRAILS_RUN_SYNC", "false")
     bool_values = ["true", "false"]
     if run_sync.lower() not in bool_values:
         warnings.warn(
             f"GUARDRAILS_RUN_SYNC must be one of {bool_values}! Defaulting to 'false'."
         )
-    return process_count == 1 or run_sync.lower() == "true"
+    return run_sync.lower() == "true"
 
 
 def get_loop() -> asyncio.AbstractEventLoop:

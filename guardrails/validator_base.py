@@ -13,9 +13,7 @@ from dataclasses import dataclass
 import re
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
-from typing_extensions import deprecated
 from warnings import warn
-import warnings
 
 import requests
 from langchain_core.runnables import Runnable
@@ -164,18 +162,6 @@ class Validator:
             f"Validator {self.__class__.__name__} is not registered. "
         )
 
-    @property
-    @deprecated(
-        (
-            "The `creds` attribute is deprecated and will be removed in version 0.6.x."
-            " Use `settings.rc` instead."
-        )
-    )
-    def creds(self):
-        from guardrails.classes.credentials import Credentials  # type: ignore
-
-        return Credentials.from_rc_file()  # type: ignore
-
     def _set_on_fail_method(self, on_fail: Callable[[Any, FailResult], Any]):
         """Set the on_fail method for the validator."""
         on_fail_args = inspect.getfullargspec(on_fail)
@@ -185,21 +171,8 @@ class Validator:
                 "The on_fail method must take two arguments: "
                 "the value being validated and the FailResult."
             )
-        second_arg_type = on_fail_args.annotations.get(second_arg)
-        if second_arg_type == List[FailResult]:
-            warnings.warn(
-                "Specifying a List[FailResult] as the second argument"
-                " for a custom on_fail handler is deprecated. "
-                "Please use FailResult instead.",
-                DeprecationWarning,
-            )
 
-            def on_fail_wrapper(value: Any, fail_result: FailResult) -> Any:
-                return on_fail(value, [fail_result])  # type: ignore
-
-            self.on_fail_method = on_fail_wrapper
-        else:
-            self.on_fail_method = on_fail
+        self.on_fail_method = on_fail
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.

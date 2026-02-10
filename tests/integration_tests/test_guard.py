@@ -900,8 +900,8 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
         ),
     )
 
-    proc_count_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-    os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
+    run_sync_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
+    os.environ["GUARDRAILS_RUN_SYNC"] = "true"
     try:
         content = gd.docs_utils.read_pdf(
             "docs/src/examples/data/chase_card_agreement.pdf"
@@ -930,10 +930,10 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
         )
 
     finally:
-        if proc_count_bak is None:
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
+        if run_sync_bak is None:
+            del os.environ["GUARDRAILS_RUN_SYNC"]
         else:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = proc_count_bak
+            os.environ["GUARDRAILS_RUN_SYNC"] = run_sync_bak
 
 
 def test_in_memory_validator_log_is_not_duplicated(mocker):

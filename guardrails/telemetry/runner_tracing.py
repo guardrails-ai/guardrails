@@ -23,7 +23,6 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.stores.context import get_guard_name
 from guardrails.telemetry.common import (
-    get_tracer,
     add_user_attributes,
     serialize,
     recursive_key_operation,
@@ -81,8 +80,7 @@ def trace_step(fn: Callable[..., Iteration]):
     def trace_step_wrapper(*args, **kwargs) -> Iteration:
         if not settings.disable_tracing:
             current_otel_context = context.get_current()
-            tracer = get_tracer()
-            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+            tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
                 name="step",  # type: ignore
@@ -112,8 +110,7 @@ def trace_stream_step_generator(
     fn: Callable[..., Iterator[ValidationOutcome[OT]]], *args, **kwargs
 ) -> Iterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
-    tracer = get_tracer()
-    tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+    tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
     exception = None
     with tracer.start_as_current_span(
@@ -161,8 +158,7 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
     async def trace_async_step_wrapper(*args, **kwargs) -> Iteration:
         if not settings.disable_tracing:
             current_otel_context = context.get_current()
-            tracer = get_tracer()
-            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+            tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
                 name="step",  # type: ignore
@@ -194,8 +190,7 @@ async def trace_async_stream_step_generator(
     fn: Callable[..., AsyncIterator[ValidationOutcome[OT]]], *args, **kwargs
 ) -> AsyncIterator[ValidationOutcome[OT]]:
     current_otel_context = context.get_current()
-    tracer = get_tracer()
-    tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+    tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
     exception = None
     with tracer.start_as_current_span(
@@ -286,8 +281,7 @@ def trace_call(fn: Callable[..., LLMResponse]):
     def trace_call_wrapper(*args, **kwargs):
         if not settings.disable_tracing:
             current_otel_context = context.get_current()
-            tracer = get_tracer()
-            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+            tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
                 name="call",  # type: ignore
@@ -317,8 +311,7 @@ def trace_async_call(fn: Callable[..., Awaitable[LLMResponse]]):
     async def trace_async_call_wrapper(*args, **kwargs):
         if not settings.disable_tracing:
             current_otel_context = context.get_current()
-            tracer = get_tracer()
-            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+            tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
                 name="call",  # type: ignore

@@ -3,6 +3,7 @@
 
 from ast import literal_eval
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+import warnings
 
 from guardrails_api_client import ValidatorReference
 
@@ -124,12 +125,26 @@ def get_validator(
         return validator
     # Guard.use syntax
     elif isinstance(validator, Type) and issubclass(validator, Validator):
+        warnings.warn(
+            "Calling Guard.use or Guard.use_many with uninstantiated Validators and its arguments "
+            "is deprecated and will be removed in future versions.  "
+            "Call Guard.use or Guard.use_many with a properly "
+            "instantiated Validator class instead.",
+            DeprecationWarning,
+        )
         return validator(*args, **kwargs)
     # Guard.useMany or Guard.for_pydantic syntax
     elif isinstance(validator, Tuple):
         first_arg = safe_get(validator, 0)
         # useMany Tuple Syntax
         if isinstance(first_arg, type) and issubclass(first_arg, Validator):
+            warnings.warn(
+                "Calling Guard.use or Guard.use_many with uninstantiated Validators and its arguments "
+                "is deprecated and will be removed in future versions.  "
+                "Call Guard.use or Guard.use_many with a properly "
+                "instantiated Validator class instead.",
+                DeprecationWarning,
+            )
             v = parse_use_many_validator(first_arg, validator)  # type: ignore
             if v:
                 return v

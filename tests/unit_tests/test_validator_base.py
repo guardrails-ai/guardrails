@@ -1,6 +1,5 @@
 import json
-import re
-from typing import Any, Dict, List
+from typing import Any, Dict
 import pytest
 from pydantic import BaseModel, Field
 
@@ -206,10 +205,6 @@ def test_to_xml_attrib(min, max, expected_xml):
     assert xml_validator == expected_xml
 
 
-def custom_deprecated_on_fail_handler(value: Any, fail_results: List[FailResult]):
-    return value + " deprecated"
-
-
 def custom_fix_on_fail_handler(value: Any, fail_result: FailResult):
     return value + " " + value
 
@@ -231,46 +226,6 @@ def custom_refrain_on_fail_handler(value: Any, fail_result: FailResult):
 
 
 class TestCustomOnFailHandler:
-    def test_deprecated_on_fail_handler(self):
-        prompt = """
-            What kind of pet should I get and what should I name it?
-
-            ${gr.complete_json_suffix_v2}
-        """
-        messages = [
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ]
-        output = """
-        {
-        "pet_type": "dog",
-        "name": "Fido"
-        }
-        """
-        expected_result = {"pet_type": "dog deprecated", "name": "Fido"}
-
-        with pytest.warns(
-            DeprecationWarning,
-            match=re.escape(  # Becuase of square brackets in the message
-                "Specifying a List[FailResult] as the second argument"
-                " for a custom on_fail handler is deprecated. "
-                "Please use FailResult instead."
-            ),
-        ):
-            validator: Validator = TwoWords(on_fail=custom_deprecated_on_fail_handler)  # type: ignore
-
-        class Pet(BaseModel):
-            pet_type: str = Field(description="Species of pet", validators=[validator])
-            name: str = Field(description="a unique pet name")
-
-        guard = Guard.for_pydantic(output_class=Pet, messages=messages)
-
-        response = guard.parse(output, num_reasks=0)
-        assert response.validation_passed is True
-        assert response.validated_output == expected_result
-
     def test_custom_fix(self):
         prompt = """
             What kind of pet should I get and what should I name it?

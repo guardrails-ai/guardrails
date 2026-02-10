@@ -97,7 +97,7 @@ def test_validator_instance_attr_equality(mocker, instance_attr):
 
     assert validator.an_instance_attr is instance_attr
 
-    guard = Guard.from_string(
+    guard = Guard.for_string(
         validators=[validator],
     )
 

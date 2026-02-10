@@ -6,7 +6,6 @@ from typing import (
     Callable,
     Coroutine,
     Iterator,
-    Optional,
     Union,
 )
 
@@ -15,7 +14,7 @@ try:
 except ImportError:
     SpanAttributes = None
 from opentelemetry import context, trace
-from opentelemetry.trace import StatusCode, Tracer, Span, Link, get_tracer
+from opentelemetry.trace import StatusCode, Span, Link, get_tracer
 
 from guardrails.settings import settings
 from guardrails.classes.generic.stack import Stack
@@ -172,13 +171,12 @@ def trace_guard_execution(
     _execute_fn: Callable[
         ..., Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]
     ],
-    tracer: Optional[Tracer] = None,
     *args,
     **kwargs,
 ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
-        tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+        tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
             name="guard",  # type: ignore
@@ -255,7 +253,6 @@ async def trace_async_guard_execution(
             ],
         ],
     ],
-    tracer: Optional[Tracer] = None,
     *args,
     **kwargs,
 ) -> Union[
@@ -265,7 +262,7 @@ async def trace_async_guard_execution(
 ]:
     if not settings.disable_tracing:
         current_otel_context = context.get_current()
-        tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+        tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
             name="guard",  # type: ignore

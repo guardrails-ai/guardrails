@@ -121,17 +121,17 @@ class EmptyModel(BaseModel):
 
 
 r_guard_none = AsyncGuard.for_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = AsyncGuard.for_rail(
-    "tests/unit_tests/test_assets/empty.rail", num_reasks=2
-)
+r_guard_two = AsyncGuard.for_rail("tests/unit_tests/test_assets/empty.rail")
+r_guard_two.configure(num_reasks=2)
 rs_guard_none = AsyncGuard.for_rail_string(empty_rail_string)
-rs_guard_two = AsyncGuard.for_rail_string(empty_rail_string, num_reasks=2)
+rs_guard_two = AsyncGuard.for_rail_string(empty_rail_string)
+rs_guard_two.configure(num_reasks=2)
 py_guard_none = AsyncGuard.for_pydantic(output_class=EmptyModel)
-py_guard_two = AsyncGuard.for_pydantic(output_class=EmptyModel, num_reasks=2)
-s_guard_none = AsyncGuard.from_string(validators=[], description="empty railspec")
-s_guard_two = AsyncGuard.from_string(
-    validators=[], description="empty railspec", num_reasks=2
-)
+py_guard_two = AsyncGuard.for_pydantic(output_class=EmptyModel)
+py_guard_two.configure(num_reasks=2)
+s_guard_none = AsyncGuard.for_string(validators=[], description="empty railspec")
+s_guard_two = AsyncGuard.for_string(validators=[], description="empty railspec")
+s_guard_two.configure(num_reasks=2)
 
 
 def guard_init_for_rail():
