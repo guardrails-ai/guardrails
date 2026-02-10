@@ -842,8 +842,8 @@ class Guard(IGuard, Generic[OT]):
         return self
 
     def get_validators(self, on: str) -> List[Validator]:
-        """The read-only counterpart to `Guard.use`.
-        Retrieves the validators applied to the specified property.
+        """The read-only counterpart to `Guard.use`. Retrieves the validators
+        applied to the specified property.
 
         Args:
             on: The property for which to return configured validators.
