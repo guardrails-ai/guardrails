@@ -21,6 +21,7 @@ dist/*
 .idea/*
 .cache
 scratch/
+scratch.py
 .coverage*
 coverage.xml
 test.db

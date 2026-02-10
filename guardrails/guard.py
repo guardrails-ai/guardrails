@@ -16,6 +16,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import deprecated
 import warnings
 from langchain_core.runnables import Runnable
 
@@ -225,6 +226,16 @@ class Guard(IGuard, Generic[OT]):
                     )
                     self.output_schema = loaded_output_schema
                     _loaded = True
+                    warnings.warn(
+                        "Fetching a Guard from the server"
+                        " by specifying the `name` keyword "
+                        "argument on init is deprecated and "
+                        "will be removed in future version. "
+                        " Future versions will provide an explicit "
+                        "`Guard.load(name: str)` method to "
+                        "facilitate this functionality instead.",
+                        DeprecationWarning,
+                    )
                 else:
                     logger.warning(
                         f"use_server is True and Guard '{self.name}' "
@@ -877,6 +888,12 @@ class Guard(IGuard, Generic[OT]):
     @overload
     def use(self, validator: Validator, *, on: str = "output") -> "Guard": ...
 
+    @deprecated(
+        "Calling Guard.use with an uninstantiated Validator and its arguments "
+        "is deprecated and will be removed in future versions.  "
+        "Call Guard.use with a properly "
+        "instantiated Validator class instead."
+    )
     @overload
     def use(
         self, validator: Type[Validator], *args, on: str = "output", **kwargs
@@ -917,9 +934,19 @@ class Guard(IGuard, Generic[OT]):
         self._save()
         return self
 
+    @deprecated(
+        "Guard.use_many is deprecated and will be removed in future versions.  "
+        "When it is removed, Guard.use will support multiple instantiated Validators."
+    )
     @overload
     def use_many(self, *validators: Validator, on: str = "output") -> "Guard": ...
 
+    @deprecated(
+        "Calling Guard.use_many with uninstantiated Validators and its arguments "
+        "is deprecated and will be removed in future versions.  "
+        "Call Guard.use_many with a properly "
+        "instantiated Validator class instead."
+    )
     @overload
     def use_many(
         self,
@@ -927,6 +954,10 @@ class Guard(IGuard, Generic[OT]):
         on: str = "output",
     ) -> "Guard": ...
 
+    @deprecated(
+        "Guard.use_many is deprecated and will be removed in future versions.  "
+        "When it is removed, Guard.use will support multiple instantiated Validators."
+    )
     def use_many(
         self,
         *validators: UseManyValidatorSpec,
@@ -953,6 +984,10 @@ class Guard(IGuard, Generic[OT]):
     # def to_dict(self) -> Dict[str, Any]:
     #     pass
 
+    @deprecated(
+        """Guard.upsert_guard is deprecated and will be removed in future versions.
+            Future versions will replace this method with Guard.save""",
+    )
     def upsert_guard(self):
         if settings.use_server and self._api_client:
             self._api_client.upsert_guard(self)
@@ -1117,7 +1152,7 @@ class Guard(IGuard, Generic[OT]):
                 self._api_client = GuardrailsApiClient(
                     api_key=self._api_key, base_url=self._base_url
                 )
-            self.upsert_guard()
+            self.upsert_guard()  # type: ignore
 
     def to_runnable(self) -> Runnable:
         """Convert a Guard to a LangChain Runnable."""
@@ -1189,6 +1224,10 @@ class Guard(IGuard, Generic[OT]):
     # attempts to get a guard from the server
     # if a name is unspecified, the guard will be created on the client
     # in the future, this may create a guard on the server
+    @deprecated(
+        """Guard.fetch_guard is deprecated and will be removed in future versions.
+            Future versions will replace this method with Guard.load""",
+    )
     @experimental
     @staticmethod
     def fetch_guard(
