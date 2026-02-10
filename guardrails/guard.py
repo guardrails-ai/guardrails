@@ -987,7 +987,7 @@ class Guard(IGuard, Generic[OT]):
 
     def use(self, *validators: Validator, on: str = "output") -> "Guard":
         """Applies validators to the property specified in the `on` argument.
-        Calling Guard.use with the same `on` value multiple times will
+        Calling `Guard.use` with the same `on` value multiple times will
         overwrite previously configured validators on the specified property.
 
         Args:
@@ -997,6 +997,17 @@ class Guard(IGuard, Generic[OT]):
         """
         self.__add_validators(list(validators), on=on)
         return self
+
+    def get_validators(self, on: str) -> List[Validator]:
+        """The read-only counterpart to `Guard.use`.
+        Retrieves the validators applied to the specified property.
+
+        Args:
+            on: The property for which to return configured validators.
+                Valid options include "output", "messages",
+                or a JSON path starting with "$.".
+        """
+        return self._validator_map.get(on) or []
 
     @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:

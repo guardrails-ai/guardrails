@@ -264,12 +264,29 @@ def use(*validators: Validator, on: str = "output") -> "Guard"
 ```
 
 Applies validators to the property specified in the `on` argument.
-Calling Guard.use with the same `on` value multiple times will overwrite previously configured validators on the specified property.
+Calling `Guard.use` with the same `on` value multiple times will
+overwrite previously configured validators on the specified property.
 
 **Arguments**:
 
 - `validators` - The validators to use.
-- `on` - The property to validate. Valid options include "output", "messages", or a JSON path starting with "$.". Defaults to "output".
+- `on` - The property to validate. Valid options include "output", "messages",
+  or a JSON path starting with "$.". Defaults to "output".
+
+#### get\_validators
+
+```python
+def get_validators(on: str) -> List[Validator]
+```
+
+The read-only counterpart to `Guard.use`.
+Retrieves the validators applied to the specified property.
+
+**Arguments**:
+
+- `on` - The property for which to return configured validators.
+  Valid options include "output", "messages",
+  or a JSON path starting with "$.".
 
 #### validate
 
