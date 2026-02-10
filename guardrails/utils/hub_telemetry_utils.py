@@ -118,9 +118,6 @@ class HubTelemetry:
         self,
         span_name: str,
         attributes: list,
-        # todo deprecate these in 060
-        is_parent: bool,  #
-        has_parent: bool,  # no-qa
     ):
         """Creates a new span within the tracer with the given name and
         attributes.

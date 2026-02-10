@@ -137,15 +137,17 @@ class EmptyModel(BaseModel):
 # i_guard_none = Guard(rail)
 # i_guard_two = Guard(rail, 2)
 r_guard_none = Guard.for_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = Guard.for_rail("tests/unit_tests/test_assets/empty.rail", num_reasks=2)
+r_guard_two = Guard.for_rail("tests/unit_tests/test_assets/empty.rail")
+r_guard_two.configure(num_reasks=2)
 rs_guard_none = Guard.for_rail_string(empty_rail_string)
-rs_guard_two = Guard.for_rail_string(empty_rail_string, num_reasks=2)
+rs_guard_two = Guard.for_rail_string(empty_rail_string)
+rs_guard_two.configure(num_reasks=2)
 py_guard_none = Guard.for_pydantic(output_class=EmptyModel)
-py_guard_two = Guard.for_pydantic(output_class=EmptyModel, num_reasks=2)
-s_guard_none = Guard.from_string(validators=[], string_description="empty railspec")
-s_guard_two = Guard.from_string(
-    validators=[], description="empty railspec", num_reasks=2
-)
+py_guard_two = Guard.for_pydantic(output_class=EmptyModel)
+py_guard_two.configure(num_reasks=2)
+s_guard_none = Guard.for_string(validators=[], string_description="empty railspec")
+s_guard_two = Guard.for_string(validators=[], description="empty railspec")
+s_guard_two.configure(num_reasks=2)
 
 
 class TestConfigure:
@@ -158,38 +160,6 @@ class TestConfigure:
         guard.configure(num_reasks=2)
 
         assert guard._num_reasks == 2
-
-    def test_tracer(self, mocker):
-        mocker.patch("guardrails.guard.Tracer")
-        mock_set_tracer = mocker.patch("guardrails.guard.set_tracer")
-        mock_set_tracer_context = mocker.patch("guardrails.guard.set_tracer_context")
-        mock_get_tracer_context = mocker.patch("guardrails.guard.get_tracer_context")
-
-        from guardrails.guard import Tracer, Guard
-
-        guard = Guard()
-        tracer = Tracer()
-
-        guard.configure()
-
-        assert guard._tracer is None
-
-        guard.configure(tracer=tracer)
-
-        assert guard._tracer == tracer
-
-        assert mock_set_tracer.call_count == 1
-        assert mock_set_tracer_context.call_count == 1
-        assert mock_get_tracer_context.call_count == 1
-
-
-def guard_init_for_rail():
-    guard = Guard.for_rail("tests/unit_tests/test_assets/simple.rail")
-    assert (
-        guard.instructions.format().source.strip()
-        == "You are a helpful bot, who answers only with valid JSON"
-    )
-    assert guard.prompt.format().source.strip() == "Extract a string from the text"
 
 
 def test_use():

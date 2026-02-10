@@ -216,7 +216,7 @@ Given the following ingredients, what would you call this pizza?
 ${ingredients}
 """
 
-    guard = gd.Guard.from_string(
+    guard = gd.Guard.for_string(
         validators,
         string_description=description,
         messages=[

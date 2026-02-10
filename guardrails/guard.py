@@ -16,7 +16,6 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import deprecated
 import warnings
 from langchain_core.runnables import Runnable
 
@@ -56,16 +55,7 @@ from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 from guardrails.schema.rail_schema import rail_file_to_schema, rail_string_to_schema
 from guardrails.schema.validator import SchemaValidationError, validate_json_schema
-from guardrails.stores.context import (
-    Tracer,
-    Context,
-    get_call_kwarg,
-    get_tracer_context,
-    set_call_kwargs,
-    set_guard_name,
-    set_tracer,
-    set_tracer_context,
-)
+from guardrails.stores.context import get_call_kwarg, set_call_kwargs, set_guard_name
 from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
@@ -200,8 +190,6 @@ class Guard(IGuard, Generic[OT]):
         self._validators: List[Validator] = []
         self._output_type: OutputTypes = OutputTypes.__from_json_schema__(output_schema)
         self._exec_opts: GuardExecutionOptions = GuardExecutionOptions()
-        self._tracer: Optional[Tracer] = None
-        self._tracer_context: Optional[Context] = None
         self._hub_telemetry: HubTelemetry
         self._user_id: Optional[str] = None
         self._api_client: Optional[GuardrailsApiClient] = None
@@ -263,7 +251,6 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         allow_metrics_collection: Optional[bool] = None,
     ):
         """Configure the Guard.
@@ -271,8 +258,6 @@ class Guard(IGuard, Generic[OT]):
         Args:
             num_reasks (int, optional): The max times to re-ask the LLM
                 if validation fails. Defaults to None.
-            tracer (Tracer, optional): An OpenTelemetry tracer to use for
-                sending traces to your OpenTelemetry sink. Defaults to None.
             allow_metrics_collection (bool, optional): Whether to allow
                 Guardrails to collect anonymous metrics.
                 Defaults to None, and falls back to waht is
@@ -280,8 +265,6 @@ class Guard(IGuard, Generic[OT]):
         """
         if num_reasks:
             self._set_num_reasks(num_reasks)
-        if tracer:
-            self._set_tracer(tracer)
         self._load_rc()
         self._configure_hub_telemtry(allow_metrics_collection)
 
@@ -294,20 +277,6 @@ class Guard(IGuard, Generic[OT]):
             self._num_reasks = 1
         else:
             self._num_reasks = num_reasks
-
-    def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
-        if tracer is not None:
-            warnings.warn(
-                "Setting tracer during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "Configure a TracerProvider instead and we will"
-                " obtain a tracer from it via the Tracer API.",
-                DeprecationWarning,
-            )
-        self._tracer = tracer
-        set_tracer(tracer)
-        set_tracer_context()
-        self._tracer_context = get_tracer_context()
 
     def _load_rc(self) -> None:
         rc = RC.load(logger)
@@ -387,8 +356,6 @@ class Guard(IGuard, Generic[OT]):
         schema: ProcessedSchema,
         rail: str,
         *,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -404,7 +371,7 @@ class Guard(IGuard, Generic[OT]):
             guard = cast(Guard[List], guard)
         else:
             guard = cast(Guard[Dict], guard)
-        guard.configure(num_reasks=num_reasks, tracer=tracer)
+        guard.configure()
         guard._validator_map = schema.validator_map
         guard._exec_opts = schema.exec_opts
         guard._output_type = schema.output_type
@@ -412,20 +379,11 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
-    @deprecated(
-        "Use `for_rail` instead. This method will be removed in 0.6.x.", category=None
-    )
-    @classmethod
-    def from_rail(cls, rail_file: str, *args, **kwargs):
-        return cls.for_rail(rail_file, *args, **kwargs)
-
     @classmethod
     def for_rail(
         cls,
         rail_file: str,
         *,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -434,8 +392,6 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             rail_file: The path to the `.rail` file.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
-            tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
 
@@ -443,51 +399,19 @@ class Guard(IGuard, Generic[OT]):
             An instance of the `Guard` class.
         """  # noqa
 
-        if num_reasks:
-            warnings.warn(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'.",
-                DeprecationWarning,
-            )
-
-        # We have to set the tracer in the ContextStore before the Rail,
-        #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)  # type: ignore
-
         schema = rail_file_to_schema(rail_file)
         return cls._for_rail_schema(
             schema,
             rail=rail_file,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
-
-    @deprecated(
-        "Use `for_rail_string` instead. This method will be removed in 0.6.x.",
-        category=None,
-    )
-    @classmethod
-    def from_rail_string(
-        cls,
-        rail_string: str,
-        *args,
-        **kwargs,
-    ):
-        return cls.for_rail_string(rail_string, *args, **kwargs)
 
     @classmethod
     def for_rail_string(
         cls,
         rail_string: str,
         *,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -496,8 +420,6 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             rail_string: The `.rail` string.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
-            tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
 
@@ -505,48 +427,21 @@ class Guard(IGuard, Generic[OT]):
             An instance of the `Guard` class.
         """  # noqa
 
-        if num_reasks:
-            warnings.warn(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'.",
-                DeprecationWarning,
-            )
-
-        # We have to set the tracer in the ContextStore before the Rail,
-        #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)  # type: ignore
-
         schema = rail_string_to_schema(rail_string)
         return cls._for_rail_schema(
             schema,
             rail=rail_string,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
-
-    @deprecated(
-        "Use `for_pydantic` instead. This method will be removed in 0.6.x.",
-        category=None,
-    )
-    @classmethod
-    def from_pydantic(cls, output_class: ModelOrListOfModels, *args, **kwargs):
-        return cls.for_pydantic(output_class, **kwargs)
 
     @classmethod
     def for_pydantic(
         cls,
         output_class: ModelOrListOfModels,
         *,
-        num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,
         messages: Optional[List[Dict]] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         output_formatter: Optional[Union[str, BaseFormatter]] = None,
@@ -559,27 +454,10 @@ class Guard(IGuard, Generic[OT]):
             the desired structure of the output.
             messages (List[Dict], optional): A list of messages to give to the llm. Defaults to None.
             reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
-            tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
             output_formatter (str | Formatter, optional): 'none' (default), 'jsonformer', or a Guardrails Formatter.
         """  # noqa
-
-        if num_reasks:
-            warnings.warn(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'.",
-                DeprecationWarning,
-            )
-
-        # We have to set the tracer in the ContextStore before the Rail,
-        #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = pydantic_model_to_schema(output_class)
         exec_opts = GuardExecutionOptions(
@@ -596,7 +474,7 @@ class Guard(IGuard, Generic[OT]):
             guard = cast(Guard[List], guard)
         else:
             guard = cast(Guard[Dict], guard)
-        guard.configure(num_reasks=num_reasks, tracer=tracer)
+        guard.configure()
         guard._validator_map = schema.validator_map
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
@@ -614,20 +492,6 @@ class Guard(IGuard, Generic[OT]):
         guard._fill_validators()
         return guard
 
-    @deprecated(
-        """Use `use`, `use_many`, or `for_string` instead.
-                This method will be removed in 0.6.x.""",
-        category=None,
-    )
-    @classmethod
-    def from_string(
-        cls,
-        validators: Sequence[Validator],
-        *args,
-        **kwargs,
-    ):
-        return cls.for_string(validators, *args, **kwargs)
-
     @classmethod
     def for_string(
         cls,
@@ -636,8 +500,6 @@ class Guard(IGuard, Generic[OT]):
         string_description: Optional[str] = None,
         reask_messages: Optional[List[Dict]] = None,
         messages: Optional[List[Dict]] = None,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -648,24 +510,9 @@ class Guard(IGuard, Generic[OT]):
             string_description (str, optional): A description for the string to be generated. Defaults to None.
             messages (List[Dict], optional): A list of messages to pass to llm. Defaults to None.
             reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
-            tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
         """  # noqa
-        if num_reasks:
-            warnings.warn(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'.",
-                DeprecationWarning,
-            )
-
-        # This might not be necessary anymore
-        cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = primitive_to_schema(
             list(validators), type=SimpleTypes.STRING, description=string_description
@@ -683,7 +530,7 @@ class Guard(IGuard, Generic[OT]):
                 validators=schema.validators,
             ),
         )
-        guard.configure(num_reasks=num_reasks, tracer=tracer)
+        guard.configure()
         guard._validator_map = schema.validator_map
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
@@ -739,8 +586,6 @@ class Guard(IGuard, Generic[OT]):
                 full_schema_reask = self._base_model is not None
 
             set_call_kwargs(kwargs)
-            set_tracer(self._tracer)
-            set_tracer_context(self._tracer_context)
             set_guard_name(self.name)
 
             self._set_num_reasks(num_reasks=num_reasks)
@@ -924,7 +769,6 @@ class Guard(IGuard, Generic[OT]):
             self.name,
             self.history,
             self._execute,
-            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -979,7 +823,6 @@ class Guard(IGuard, Generic[OT]):
             self.name,
             self.history,
             self._execute,  # type: ignore # streams are supported for parse
-            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,

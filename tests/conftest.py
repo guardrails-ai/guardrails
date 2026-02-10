@@ -6,11 +6,11 @@ from unittest.mock import patch, MagicMock
 os.environ["OPENAI_API_KEY"] = "mocked"
 
 
-@pytest.fixture(scope="session", autouse=True)
-def mock_tracer():
-    with patch("guardrails.telemetry.common.get_tracer") as mock_get_tracer:
-        mock_get_tracer.return_value = None
-        yield mock_get_tracer
+# @pytest.fixture(scope="session", autouse=True)
+# def mock_tracer():
+#     with patch("guardrails.telemetry.common.get_tracer") as mock_get_tracer:
+#         mock_get_tracer.return_value = None
+#         yield mock_get_tracer
 
 
 @pytest.fixture(scope="session", autouse=True)

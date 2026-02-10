@@ -19,6 +19,4 @@ def trace_if_enabled(command_name: str):
                 ("machine", platform.machine()),
                 ("processor", platform.processor()),
             ],
-            False,
-            False,
         )

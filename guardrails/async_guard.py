@@ -27,16 +27,11 @@ from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
-from guardrails.stores.context import (
-    Tracer,
-    get_call_kwarg,
-    set_call_kwargs,
-    set_tracer,
-    set_tracer_context,
-)
+from guardrails.stores.context import get_call_kwarg, set_call_kwargs
 from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
@@ -68,16 +63,12 @@ class AsyncGuard(Guard, Generic[OT]):
         schema: ProcessedSchema,
         rail: str,
         *,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
         guard = super()._for_rail_schema(
             schema,
             rail,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
@@ -94,20 +85,18 @@ class AsyncGuard(Guard, Generic[OT]):
         output_class: ModelOrListOfModels,
         *,
         messages: Optional[List[Dict]] = None,
-        num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         guard = super().for_pydantic(
             output_class,
-            num_reasks=num_reasks,
             messages=messages,
             reask_messages=reask_messages,
-            tracer=tracer,
             name=name,
             description=description,
+            output_formatter=output_formatter,
         )
         if guard._output_type == OutputTypes.LIST:
             return cast(AsyncGuard[List], guard)
@@ -122,8 +111,6 @@ class AsyncGuard(Guard, Generic[OT]):
         string_description: Optional[str] = None,
         messages: Optional[List[Dict]] = None,
         reask_messages: Optional[List[Dict]] = None,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -132,8 +119,6 @@ class AsyncGuard(Guard, Generic[OT]):
             string_description=string_description,
             messages=messages,
             reask_messages=reask_messages,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
@@ -212,8 +197,6 @@ class AsyncGuard(Guard, Generic[OT]):
                 full_schema_reask = self._base_model is not None
 
             set_call_kwargs(kwargs)
-            set_tracer(self._tracer)
-            set_tracer_context(self._tracer_context)
 
             self._set_num_reasks(num_reasks=num_reasks)
             if self._num_reasks is None:
@@ -434,7 +417,6 @@ class AsyncGuard(Guard, Generic[OT]):
             self.name,
             self.history,
             self._execute,
-            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -490,7 +472,6 @@ class AsyncGuard(Guard, Generic[OT]):
             self.name,
             self.history,
             self._execute,
-            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
