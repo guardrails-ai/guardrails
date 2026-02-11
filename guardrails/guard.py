@@ -115,6 +115,7 @@ class Guard(IGuard, Generic[OT]):
     output_schema: ModelSchema
     history: Stack[Call]
     _history_max_length: int
+    _use_server: bool
 
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -130,6 +131,8 @@ class Guard(IGuard, Generic[OT]):
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
         history_max_length: Optional[int] = None,
+        use_server: Optional[bool] = None,
+        preloaded: Optional[bool] = None,
     ):
         """Initialize the Guard with serialized validator references and an
         output schema.
@@ -137,7 +140,7 @@ class Guard(IGuard, Generic[OT]):
         Output schema must be a valid JSON Schema.
         """
 
-        _try_to_load = name is not None
+        _try_to_load = name is not None and not preloaded
 
         # Shared Interface Properties
         id = id or random_id()
@@ -198,9 +201,10 @@ class Guard(IGuard, Generic[OT]):
         self._output_formatter: Optional[BaseFormatter] = None
         self._api_key: Optional[str] = None
         self._base_url: Optional[str] = None
+        self._use_server = use_server or settings.use_server or False
 
         # Gaurdrails As A Service Initialization
-        if settings.use_server:
+        if self._use_server:
             self._api_key = api_key
             self._base_url = base_url
             self._api_client = GuardrailsApiClient(
@@ -231,9 +235,7 @@ class Guard(IGuard, Generic[OT]):
                         " by specifying the `name` keyword "
                         "argument on init is deprecated and "
                         "will be removed in future version. "
-                        " Future versions will provide an explicit "
-                        "`Guard.load(name: str)` method to "
-                        "facilitate this functionality instead.",
+                        " Use `Guard.load(name: str)` instead.",
                         DeprecationWarning,
                     )
                 else:
@@ -242,7 +244,7 @@ class Guard(IGuard, Generic[OT]):
                         "not found on the server. Creating a new empty Guard."
                     )
             if not _loaded:
-                self._save()
+                self.save()
         else:
             self.configure()
 
@@ -314,7 +316,7 @@ class Guard(IGuard, Generic[OT]):
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
-        if settings.use_server:
+        if self._use_server:
             return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
@@ -618,7 +620,7 @@ class Guard(IGuard, Generic[OT]):
                 kwargs=kwargs,
             )
 
-            if settings.use_server and model_is_supported_server_side(
+            if self._use_server and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
                 return self._call_server(
@@ -854,6 +856,7 @@ class Guard(IGuard, Generic[OT]):
                 if iter:
                     llm_spans = iter.error_spans_in_output
                     return llm_spans
+                return []
             return []
         except (AttributeError, TypeError):
             return []
@@ -931,7 +934,7 @@ class Guard(IGuard, Generic[OT]):
 
         hydrated_validator = get_validator(validator, *args, **kwargs)
         self.__add_validator(hydrated_validator, on=on)
-        self._save()
+        self.save()
         return self
 
     @deprecated(
@@ -968,7 +971,7 @@ class Guard(IGuard, Generic[OT]):
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
-        self._save()
+        self.save()
         return self
 
     @trace(name="/guard_call", origin="Guard.validate")
@@ -986,16 +989,16 @@ class Guard(IGuard, Generic[OT]):
 
     @deprecated(
         """Guard.upsert_guard is deprecated and will be removed in future versions.
-            Future versions will replace this method with Guard.save""",
+            Use Guard.save instead.""",
     )
     def upsert_guard(self):
-        if settings.use_server and self._api_client:
+        if self._use_server and self._api_client:
             self._api_client.upsert_guard(self)
         else:
             raise ValueError("Using the Guardrails server is not enabled!")
 
     def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
-        if settings.use_server and self._api_client:
+        if self._use_server and self._api_client:
             validation_output: IValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
@@ -1054,7 +1057,7 @@ class Guard(IGuard, Generic[OT]):
         *,
         payload: Dict[str, Any],
     ) -> Iterator[ValidationOutcome[OT]]:
-        if settings.use_server and self._api_client:
+        if self._use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
@@ -1106,7 +1109,7 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterator[ValidationOutcome[OT]]]:
-        if settings.use_server and self._api_client:
+        if self._use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),
                 "full_schema_reask": full_schema_reask,
@@ -1138,21 +1141,35 @@ class Guard(IGuard, Generic[OT]):
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def _save(self):
-        if settings.use_server:
-            if self.name is None:
-                self.name = f"gr-{str(self.id)}"
-                logger.warning("No name passed to guard!")
-                logger.warning(
-                    "Use this auto-generated name to re-use this guard: {name}".format(
-                        name=self.name
-                    )
+    def save(self, *, use_server: Optional[bool] = None):
+        """Upserts a Guard to your guardrails-api server.
+
+        Only valid for servers using a database to persist Guards. Not
+        valid for servers using a config.py file.
+        """
+        if not self._use_server and not use_server:
+            return
+        if self.name is None:
+            self.name = f"gr-{str(self.id)}"
+            logger.warning("No name passed to guard!")
+            logger.warning(
+                "Use this auto-generated name to re-use this guard: {name}".format(
+                    name=self.name
                 )
-            if not self._api_client:
-                self._api_client = GuardrailsApiClient(
-                    api_key=self._api_key, base_url=self._base_url
-                )
-            self.upsert_guard()  # type: ignore
+            )
+        if not self._api_client:
+            self._api_client = GuardrailsApiClient(
+                api_key=self._api_key, base_url=self._base_url
+            )
+        try:
+            self._api_client.upsert_guard(self)
+        except Exception as e:
+            logger.error(
+                f"Failed to save Guard with name {self.name}! "
+                "Make sure your Guard is properly configured "
+                "with an API Key and base url for your guardrails-api server."
+            )
+            raise e
 
     def to_runnable(self) -> Runnable:
         """Convert a Guard to a LangChain Runnable."""
@@ -1226,7 +1243,7 @@ class Guard(IGuard, Generic[OT]):
     # in the future, this may create a guard on the server
     @deprecated(
         """Guard.fetch_guard is deprecated and will be removed in future versions.
-            Future versions will replace this method with Guard.load""",
+            Use Guard.load instead.""",
     )
     @experimental
     @staticmethod
@@ -1240,10 +1257,68 @@ class Guard(IGuard, Generic[OT]):
         if not name:
             raise ValueError("Name must be specified to fetch a guard")
 
-        settings.use_server = True
         api_client = GuardrailsApiClient(api_key=api_key, base_url=base_url)
         guard = api_client.fetch_guard(name)
         if guard:
-            return Guard(name=name, base_url=base_url, api_key=api_key, *args, **kwargs)
+            return Guard(
+                name=name,
+                base_url=base_url,
+                api_key=api_key,
+                use_server=True,
+                preloaded=True,
+                *args,
+                **kwargs,
+            )
 
         raise ValueError(f"Guard with name {name} not found")
+
+    @classmethod
+    def load(
+        cls,
+        name: str,
+        *,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        history_max_length: Optional[int] = None,
+    ) -> Optional["Guard"]:
+        """Fetches and loads a Guard from your guardrails-api server."""
+        api_client = GuardrailsApiClient(api_key=api_key, base_url=base_url)
+        guard = api_client.fetch_guard(name)
+        if guard:
+            validators = [
+                ValidatorReference.from_interface(v) for v in guard.validators or []
+            ]
+
+            output_schema = (
+                guard.output_schema.to_dict()
+                if guard.output_schema
+                else {"type": "string"}
+            )
+
+            return Guard(
+                id=guard.id,
+                name=guard.name,
+                description=guard.description,
+                validators=validators,
+                output_schema=output_schema,
+                base_url=base_url,
+                api_key=api_key,
+                history_max_length=history_max_length,
+                use_server=True,
+                preloaded=True,
+            )
+        return None
+
+    def delete(self):
+        """Deletes a Guard on your guardrails-api server.
+
+        Only valid for servers using a database to persist Guards. Not
+        valid for servers using a config.py file.
+        """
+        if self.name is None:
+            self.name = f"gr-{str(self.id)}"
+        if not self._api_client:
+            self._api_client = GuardrailsApiClient(
+                api_key=self._api_key, base_url=self._base_url
+            )
+        self._api_client.delete_guard(self.name)
