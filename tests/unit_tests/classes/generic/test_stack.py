@@ -44,6 +44,18 @@ def test_push():
     assert stack[-1] == 2
 
 
+def test_push_truncates():
+    stack = Stack(max_length=1)
+
+    stack.push(1)
+    assert stack[0] == 1
+    assert stack[-1] == 1
+
+    stack.push(2)
+    assert stack[0] == 2
+    assert stack[-1] == 2
+
+
 @pytest.mark.parametrize(
     "search_value,expected_index", [(1, 0), (2, 4), (3, 5), (5, None)]
 )
