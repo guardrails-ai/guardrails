@@ -73,3 +73,38 @@ class TestRC:
             expected_dict = {}
 
         mock_from_dict.assert_called_once_with(expected_dict)
+
+    @pytest.mark.parametrize(
+        ("rc_line", "expected_value"),
+        [
+            ('token=""', ""),
+            ("token=''", ""),
+            ('token="my-secret-key"', "my-secret-key"),
+            ("token='my-secret-key'", "my-secret-key"),
+            ("token=plain-value", "plain-value"),
+            ("token=", ""),
+        ],
+        ids=[
+            "double-quoted-empty",
+            "single-quoted-empty",
+            "double-quoted-value",
+            "single-quoted-value",
+            "unquoted-value",
+            "bare-empty",
+        ],
+    )
+    def test_load_strips_surrounding_quotes(self, mocker, rc_line, expected_value):
+        mocker.patch("guardrails.classes.rc.expanduser", return_value="/Home")
+
+        mock_file = MockFile()
+        mocker.patch("guardrails.classes.rc.open", return_value=mock_file)
+        mocker.patch.object(mock_file, "readlines", return_value=[rc_line])
+
+        from guardrails.classes.rc import RC
+
+        mock_from_dict = mocker.patch.object(RC, "from_dict")
+
+        RC.load()
+
+        call_args = mock_from_dict.call_args[0][0]
+        assert call_args["token"] == expected_value
