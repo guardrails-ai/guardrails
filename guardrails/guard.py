@@ -831,7 +831,12 @@ class Guard(IGuard, Generic[OT]):
 
         self._validators = [v for on_vs in self._validator_map.values() for v in on_vs]
 
-    def use(self, *validators: Validator, on: str = "output") -> "Guard":
+    def use(
+        self,
+        *validator_spread: Validator,
+        validators: List[Validator] = [],
+        on: str = "output",
+    ) -> "Guard":
         """Applies validators to the property specified in the `on` argument.
         Calling `Guard.use` with the same `on` value multiple times will
         overwrite previously configured validators on the specified property.
@@ -841,7 +846,8 @@ class Guard(IGuard, Generic[OT]):
             on: The property to validate. Valid options include "output", "messages",
              or a JSON path starting with "$.". Defaults to "output".
         """
-        self.__add_validators(list(validators), on=on)
+        vals = [*list(validator_spread), *validators]
+        self.__add_validators(vals, on=on)
         return self
 
     def get_validators(self, on: str) -> List[Validator]:

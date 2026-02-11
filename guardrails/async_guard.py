@@ -133,10 +133,11 @@ class AsyncGuard(Guard, Generic[OT]):
 
     def use(
         self,
-        *validator: Validator,
+        *validator_spread: Validator,
+        validators: List[Validator] = [],
         on: str = "output",
     ) -> "AsyncGuard":
-        guard = super().use(*validator, on=on)
+        guard = super().use(*validator_spread, validators=validators, on=on)
         return cast(AsyncGuard, guard)
 
     async def _execute(

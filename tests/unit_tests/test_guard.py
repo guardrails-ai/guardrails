@@ -401,7 +401,7 @@ class TestGuardSerialization:
 
     def test_to_dict_with_validators(self):
         """Test to_dict with validators."""
-        guard = Guard().use(LowerCase()).use(OneLine())
+        guard = Guard().use(LowerCase(), OneLine())
         guard_dict = guard.to_dict()
 
         assert isinstance(guard_dict, dict)
@@ -454,20 +454,14 @@ class TestGuardSerialization:
         assert len(restored_guard.validators) == len(original_guard.validators)
 
 
-class TestFetchGuard:
-    """Test Guard.fetch_guard functionality."""
+class TestLoadGuard:
+    """Test Guard.load functionality."""
 
-    def test_fetch_guard_without_name(self):
-        """Test that fetch_guard raises ValueError when name is not
-        specified."""
-        with pytest.raises(ValueError, match="Name must be specified to fetch a guard"):
-            Guard.fetch_guard()
-
-    def test_fetch_guard_with_name(self, mocker):
+    def test_load_guard_with_name(self, mocker):
         """Test fetch_guard with a valid name."""
         # Create a real Guard to return from the mock
         mock_fetched_guard = Guard()
-        mock_fetched_guard.name = "fetched-guard"
+        mock_fetched_guard.name = "test-guard"
 
         # Mock the API client
         mock_api_client = mocker.Mock()
@@ -482,7 +476,7 @@ class TestFetchGuard:
         mock_settings = mocker.patch("guardrails.guard.settings")
         mock_settings.use_server = True
 
-        result = Guard.fetch_guard(name="test-guard")
+        result = Guard.load(name="test-guard")
 
         # Should return a Guard instance
         assert isinstance(result, Guard)
@@ -491,7 +485,7 @@ class TestFetchGuard:
         # Should have called the API client's fetch_guard
         mock_api_client.fetch_guard.assert_called()
 
-    def test_fetch_guard_with_api_key_and_base_url(self, mocker):
+    def test_load_guard_with_api_key_and_base_url(self, mocker):
         """Test fetch_guard with custom api_key and base_url."""
         # Create a real Guard to return from the mock
         mock_fetched_guard = Guard()
@@ -505,7 +499,7 @@ class TestFetchGuard:
         mock_settings = mocker.patch("guardrails.guard.settings")
         mock_settings.use_server = True
 
-        result = Guard.fetch_guard(
+        result = Guard.load(
             name="test-guard", api_key="test-api-key", base_url="https://test.api.com"
         )
 
@@ -521,7 +515,7 @@ class TestFetchGuard:
             api_key="test-api-key", base_url="https://test.api.com"
         )
 
-    def test_fetch_guard_not_found(self, mocker):
+    def test_load_guard_not_found(self, mocker):
         """Test fetch_guard when guard is not found on server."""
         mock_api_client = mocker.Mock()
         mock_api_client.fetch_guard.return_value = None
@@ -531,8 +525,9 @@ class TestFetchGuard:
         )
         mocker.patch("guardrails.guard.settings")
 
-        with pytest.raises(ValueError, match="Guard with name test-guard not found"):
-            Guard.fetch_guard(name="test-guard")
+        guard = Guard.load(name="test-guard")
+
+        assert guard is None
 
 
 class TestErrorSpansInOutput:
@@ -620,18 +615,17 @@ class TestResponseFormatJsonSchema:
         assert "strict" in result_json_schema
 
 
-class TestUpsertGuard:
-    """Test upsert_guard functionality."""
+class TestSaveGuard:
+    """Test save functionality."""
 
     @patch("guardrails.guard.GuardrailsApiClient")
-    def test_upsert_guard(self, mock_api_client):
-        """Test upsert_guard saves guard to server."""
-        guard = Guard(name="test-guard", use_server=True, preloaded=True)
+    def test_save_guard(self, mock_api_client):
+        """Test save upserts guard to server."""
+        guard = Guard(name="test-guard", use_server=True)
 
-        guard.upsert_guard()
+        guard.save()
 
-        # Once from save on init, once from upsert
-        assert guard._api_client.upsert_guard.call_count == 2
+        assert guard._api_client.upsert_guard.call_count == 1
 
 
 class TestConfigureExtended:
