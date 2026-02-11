@@ -14,7 +14,7 @@ from guardrails_api_client.models import (
 
 
 class TestGuardrailsApiClientInit:
-    """Test initialization of GuardrailsApiClient"""
+    """Test initialization of GuardrailsApiClient."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -23,7 +23,8 @@ class TestGuardrailsApiClientInit:
     def test_init_with_no_params(
         self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
     ):
-        """Test initialization with no parameters uses environment variables"""
+        """Test initialization with no parameters uses environment
+        variables."""
         with patch.dict(
             os.environ,
             {
@@ -44,7 +45,8 @@ class TestGuardrailsApiClientInit:
     def test_init_with_explicit_params(
         self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
     ):
-        """Test initialization with explicit parameters overrides environment"""
+        """Test initialization with explicit parameters overrides
+        environment."""
         with patch.dict(
             os.environ,
             {
@@ -67,7 +69,8 @@ class TestGuardrailsApiClientInit:
     def test_init_default_values(
         self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
     ):
-        """Test initialization uses defaults when environment variables are missing"""
+        """Test initialization uses defaults when environment variables are
+        missing."""
         with patch.dict(os.environ, {}, clear=True):
             client = GuardrailsApiClient()
 
@@ -82,7 +85,7 @@ class TestGuardrailsApiClientInit:
     def test_init_partial_params(
         self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
     ):
-        """Test initialization with only base_url provided"""
+        """Test initialization with only base_url provided."""
         with patch.dict(os.environ, {"GUARDRAILS_API_KEY": "env-key"}, clear=True):
             client = GuardrailsApiClient(base_url="http://custom.com")
 
@@ -124,7 +127,7 @@ class TestGuardrailsApiClientInit:
         mock_validate_api,
         mock_version,
     ):
-        """Test API key format for Python 3.9"""
+        """Test API key format for Python 3.9."""
         mock_version.minor = 9
         _ = GuardrailsApiClient(base_url="http://test.com", api_key="test-key")
 
@@ -140,7 +143,8 @@ class TestGuardrailsApiClientInit:
     def test_init_creates_api_instances(
         self, _mock_config, _mock_api_client, mock_guard_api, mock_validate_api
     ):
-        """Test that initialization creates GuardApi and ValidateApi instances"""
+        """Test that initialization creates GuardApi and ValidateApi
+        instances."""
         client = GuardrailsApiClient()
 
         mock_guard_api.assert_called_once()
@@ -150,7 +154,7 @@ class TestGuardrailsApiClientInit:
 
 
 class TestGuardrailsApiClientUpsertGuard:
-    """Test upsert_guard method"""
+    """Test upsert_guard method."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -159,7 +163,7 @@ class TestGuardrailsApiClientUpsertGuard:
     def test_upsert_guard_success(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test upsert_guard calls update_guard with correct parameters"""
+        """Test upsert_guard calls update_guard with correct parameters."""
         mock_guard_api = Mock()
         mock_guard_api_class.return_value = mock_guard_api
 
@@ -180,7 +184,7 @@ class TestGuardrailsApiClientUpsertGuard:
     def test_upsert_guard_uses_timeout(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test upsert_guard uses the client's timeout value"""
+        """Test upsert_guard uses the client's timeout value."""
         mock_guard_api = Mock()
         mock_guard_api_class.return_value = mock_guard_api
 
@@ -197,7 +201,7 @@ class TestGuardrailsApiClientUpsertGuard:
 
 
 class TestGuardrailsApiClientFetchGuard:
-    """Test fetch_guard method"""
+    """Test fetch_guard method."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -206,7 +210,7 @@ class TestGuardrailsApiClientFetchGuard:
     def test_fetch_guard_success(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test fetch_guard returns guard when successful"""
+        """Test fetch_guard returns guard when successful."""
         mock_guard_api = Mock()
         mock_guard = Mock(spec=Guard)
         mock_guard.name = "test-guard"
@@ -232,7 +236,7 @@ class TestGuardrailsApiClientFetchGuard:
         _mock_validate_api,
         mock_logger,
     ):
-        """Test fetch_guard returns None and logs error on exception"""
+        """Test fetch_guard returns None and logs error on exception."""
         mock_guard_api = Mock()
         mock_guard_api.get_guard.side_effect = Exception("API Error")
         mock_guard_api_class.return_value = mock_guard_api
@@ -259,7 +263,7 @@ class TestGuardrailsApiClientFetchGuard:
         _mock_validate_api,
         mock_logger,
     ):
-        """Test fetch_guard handles 404 errors gracefully"""
+        """Test fetch_guard handles 404 errors gracefully."""
         mock_guard_api = Mock()
         mock_guard_api.get_guard.side_effect = Exception("404 Not Found")
         mock_guard_api_class.return_value = mock_guard_api
@@ -272,7 +276,7 @@ class TestGuardrailsApiClientFetchGuard:
 
 
 class TestGuardrailsApiClientDeleteGuard:
-    """Test delete_guard method"""
+    """Test delete_guard method."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -281,7 +285,7 @@ class TestGuardrailsApiClientDeleteGuard:
     def test_delete_guard_success(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test delete_guard calls delete_guard with correct parameters"""
+        """Test delete_guard calls delete_guard with correct parameters."""
         mock_guard_api = Mock()
         mock_guard_api_class.return_value = mock_guard_api
 
@@ -299,7 +303,7 @@ class TestGuardrailsApiClientDeleteGuard:
     def test_delete_guard_uses_timeout(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test delete_guard uses the client's timeout value"""
+        """Test delete_guard uses the client's timeout value."""
         mock_guard_api = Mock()
         mock_guard_api_class.return_value = mock_guard_api
 
@@ -312,7 +316,7 @@ class TestGuardrailsApiClientDeleteGuard:
 
 
 class TestGuardrailsApiClientValidate:
-    """Test validate method"""
+    """Test validate method."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -321,7 +325,7 @@ class TestGuardrailsApiClientValidate:
     def test_validate_success(
         self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
     ):
-        """Test validate calls validate API with correct parameters"""
+        """Test validate calls validate API with correct parameters."""
         mock_validate_api = Mock()
         mock_outcome = Mock(spec=IValidationOutcome)
         mock_validate_api.validate.return_value = mock_outcome
@@ -348,7 +352,7 @@ class TestGuardrailsApiClientValidate:
     def test_validate_uses_env_openai_key(
         self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
     ):
-        """Test validate uses environment OPENAI_API_KEY when not provided"""
+        """Test validate uses environment OPENAI_API_KEY when not provided."""
         mock_validate_api = Mock()
         mock_validate_api_class.return_value = mock_validate_api
 
@@ -371,7 +375,7 @@ class TestGuardrailsApiClientValidate:
     def test_validate_no_openai_key(
         self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
     ):
-        """Test validate passes None when no OpenAI key is available"""
+        """Test validate passes None when no OpenAI key is available."""
         mock_validate_api = Mock()
         mock_validate_api_class.return_value = mock_validate_api
 
@@ -394,7 +398,8 @@ class TestGuardrailsApiClientValidate:
     def test_validate_raises_validation_error_on_bad_request(
         self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
     ):
-        """Test validate raises ValidationError when BadRequestException occurs"""
+        """Test validate raises ValidationError when BadRequestException
+        occurs."""
         mock_validate_api = Mock()
         bad_request = BadRequestException(status=400, reason="Bad Request")
         bad_request.body = "Validation failed: invalid input"
@@ -414,7 +419,7 @@ class TestGuardrailsApiClientValidate:
 
 
 class TestGuardrailsApiClientStreamValidate:
-    """Test stream_validate method"""
+    """Test stream_validate method."""
 
     @patch("guardrails.api_client.requests.Session")
     @patch("guardrails.api_client.ValidateApi")
@@ -429,7 +434,7 @@ class TestGuardrailsApiClientStreamValidate:
         _mock_validate_api,
         mock_session,
     ):
-        """Test stream_validate yields validation outcomes"""
+        """Test stream_validate yields validation outcomes."""
         mock_response = MagicMock()
         mock_response.ok = True
         mock_response.iter_lines.return_value = [
@@ -479,7 +484,8 @@ class TestGuardrailsApiClientStreamValidate:
         _mock_validate_api,
         mock_session,
     ):
-        """Test stream_validate uses environment OPENAI_API_KEY when not provided"""
+        """Test stream_validate uses environment OPENAI_API_KEY when not
+        provided."""
         mock_response = MagicMock()
         mock_response.ok = True
         mock_response.iter_lines.return_value = []
@@ -514,7 +520,7 @@ class TestGuardrailsApiClientStreamValidate:
         _mock_validate_api,
         mock_session,
     ):
-        """Test stream_validate raises ValueError on non-OK response"""
+        """Test stream_validate raises ValueError on non-OK response."""
         mock_response = MagicMock()
         mock_response.ok = False
         mock_response.status_code = 400
@@ -551,7 +557,8 @@ class TestGuardrailsApiClientStreamValidate:
         _mock_validate_api,
         mock_session,
     ):
-        """Test stream_validate raises Exception when error in JSON response"""
+        """Test stream_validate raises Exception when error in JSON
+        response."""
         mock_response = MagicMock()
         mock_response.ok = True
         mock_response.iter_lines.return_value = [
@@ -587,7 +594,7 @@ class TestGuardrailsApiClientStreamValidate:
         _mock_validate_api,
         mock_session,
     ):
-        """Test stream_validate skips empty lines in response"""
+        """Test stream_validate skips empty lines in response."""
         mock_response = MagicMock()
         mock_response.ok = True
         mock_response.iter_lines.return_value = [
@@ -616,7 +623,7 @@ class TestGuardrailsApiClientStreamValidate:
 
 
 class TestGuardrailsApiClientGetHistory:
-    """Test get_history method"""
+    """Test get_history method."""
 
     @patch("guardrails.api_client.ValidateApi")
     @patch("guardrails.api_client.GuardApi")
@@ -625,7 +632,7 @@ class TestGuardrailsApiClientGetHistory:
     def test_get_history_success(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test get_history calls get_guard_history with correct parameters"""
+        """Test get_history calls get_guard_history with correct parameters."""
         mock_guard_api = Mock()
         mock_history = {"call_id": "123", "data": "test"}
         mock_guard_api.get_guard_history.return_value = mock_history
@@ -646,7 +653,7 @@ class TestGuardrailsApiClientGetHistory:
     def test_get_history_with_different_ids(
         self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
     ):
-        """Test get_history with various guard names and call IDs"""
+        """Test get_history with various guard names and call IDs."""
         mock_guard_api = Mock()
         mock_guard_api_class.return_value = mock_guard_api
 
@@ -665,7 +672,7 @@ class TestGuardrailsApiClientGetHistory:
 
 
 class TestGuardrailsApiClientIntegration:
-    """Integration-style tests for GuardrailsApiClient"""
+    """Integration-style tests for GuardrailsApiClient."""
 
     @patch("guardrails.api_client.requests.Session")
     @patch("guardrails.api_client.ValidateApi")
@@ -724,7 +731,7 @@ class TestGuardrailsApiClientIntegration:
     def test_client_maintains_state(
         self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
     ):
-        """Test that client maintains its state across method calls"""
+        """Test that client maintains its state across method calls."""
         client = GuardrailsApiClient(base_url="http://custom.com", api_key="custom-key")
 
         assert client.base_url == "http://custom.com"
