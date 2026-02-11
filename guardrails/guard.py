@@ -201,7 +201,9 @@ class Guard(IGuard, Generic[OT]):
         self._output_formatter: Optional[BaseFormatter] = None
         self._api_key: Optional[str] = None
         self._base_url: Optional[str] = None
-        self._use_server = use_server or settings.use_server or False
+        self._use_server = (
+            use_server if use_server is not None else settings.use_server or False
+        )
 
         # Gaurdrails As A Service Initialization
         if self._use_server:
