@@ -7,6 +7,9 @@ on:
     branches:
       - main
       - dev
+    paths:
+      - guardrails/**
+      - pyproject.toml
   workflow_dispatch:  # This enables manual triggering
 
 jobs:
