@@ -178,7 +178,9 @@ class Guard(IGuard, Generic[OT]):
             api_key=self._api_key, base_url=self._base_url
         )
         self._history_max_length = history_max_length
-        self._use_server = use_server or settings.use_server or False
+        self._use_server = (
+            use_server if use_server is not None else settings.use_server or False
+        )
 
         self.configure()
 
