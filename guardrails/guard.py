@@ -790,6 +790,7 @@ class Guard(IGuard, Generic[OT]):
                 if iter:
                     llm_spans = iter.error_spans_in_output
                     return llm_spans
+                return []
             return []
         except (AttributeError, TypeError):
             return []

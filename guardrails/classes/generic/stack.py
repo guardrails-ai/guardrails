@@ -40,7 +40,7 @@ class Stack(List[T]):
         """
         self.append(item)
         if self._max_length:
-            self = self[: self._max_length]
+            del self[: -self._max_length]
 
     def search(self, x: T) -> Optional[int]:
         """Returns the 0-based position of the last item whose value is equal

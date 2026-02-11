@@ -1,11 +1,10 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 from guardrails.logger import logger
-from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.types.pydantic import ModelOrListOfModels
 
 
 # takes processed schema and converts it to a openai tool object
-def schema_to_tool(schema) -> dict:
+def schema_to_tool(schema: Dict) -> dict:
     tool = {
         "type": "function",
         "function": {
@@ -13,7 +12,7 @@ def schema_to_tool(schema) -> dict:
             "description": "A tool for generating responses to guardrails."
             " It must be called last in every response.",
             "parameters": schema,
-            "required": schema["required"] or [],
+            "required": schema.get("required") or [],
         },
     }
     return tool
@@ -52,7 +51,7 @@ def set_additional_properties_false_iteratively(schema):
 
 
 def json_function_calling_tool(
-    schema: ProcessedSchema,
+    schema: Dict,
     tools: Optional[List] = None,
 ) -> List:
     tools = tools or []
