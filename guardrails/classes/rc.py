@@ -49,6 +49,15 @@ class RC(Serializeable):
                         key, value = line_content
                         key = key.strip()
                         value = value.strip()
+                        # Strip surrounding matching quotes so that
+                        # e.g. token="" is treated as an empty string
+                        # rather than the literal two-character value '""'.
+                        if (
+                            len(value) >= 2
+                            and value[0] == value[-1]
+                            and value[0] in ('"', "'")
+                        ):
+                            value = value[1:-1]
                         if key in BOOL_CONFIGS:
                             value = to_bool(value)
 
