@@ -526,3 +526,20 @@ class AsyncGuard(Guard, Generic[OT]):
         self, llm_output: str, *args, **kwargs
     ) -> Awaitable[ValidationOutcome[OT]]:
         return await self.parse(llm_output=llm_output, *args, **kwargs)
+
+    @classmethod
+    def load(
+        cls,
+        name: str,
+        *,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        history_max_length: Optional[int] = None,
+    ) -> Optional["AsyncGuard"]:
+        guard = super().load(
+            name,
+            api_key=api_key,
+            base_url=base_url,
+            history_max_length=history_max_length,
+        )
+        return cast(AsyncGuard, guard)
