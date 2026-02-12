@@ -251,9 +251,6 @@ class Guard(IGuard, Generic[OT]):
             self._user_id = settings.rc.id or ""
 
     def _fill_validator_map(self):
-        # dont init validators if were going to call the server
-        if self._use_server:
-            return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
@@ -1111,6 +1108,9 @@ class Guard(IGuard, Generic[OT]):
             else []
         )
         guard.history = Stack(*history, max_length=guard._history_max_length)
+
+        guard._fill_validator_map()
+        guard._fill_validators()
         return guard
 
     @classmethod
@@ -1136,7 +1136,7 @@ class Guard(IGuard, Generic[OT]):
                 else {"type": "string"}
             )
 
-            return Guard(
+            guard = Guard(
                 id=guard.id,
                 name=guard.name,
                 description=guard.description,
@@ -1147,6 +1147,9 @@ class Guard(IGuard, Generic[OT]):
                 history_max_length=history_max_length,
                 use_server=True,
             )
+            guard._fill_validator_map()
+            guard._fill_validators()
+            return guard
         return None
 
     def delete(self):
