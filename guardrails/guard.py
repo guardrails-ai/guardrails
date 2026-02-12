@@ -856,6 +856,8 @@ class Guard(IGuard, Generic[OT]):
                 Valid options include "output", "messages",
                 or a JSON path starting with "$.".
         """
+        if on == "output":
+            on = "$"
         return self._validator_map.get(on) or []
 
     @trace(name="/guard_call", origin="Guard.validate")
