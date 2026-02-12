@@ -118,7 +118,6 @@ class Validator:
                 "No .guardrailsrc file found."
                 " Please run `guardrails configure` and try again."
             )
-        self.hub_jwt_token = get_jwt_token(settings.rc)
 
         # If use_local is not set, we can fall back to the setting determined in CLI
         if self.use_local is None:
@@ -362,13 +361,14 @@ class Validator:
             inference endpoint to run.
 
         Raises:
-            HttpError: If the recieved reply was not ok.
+            HttpError: If the received reply was not ok.
 
         Returns:
             Any: Post request response from the ML based validation model.
         """
+        hub_jwt_token = get_jwt_token(settings.rc)
         headers = {
-            "Authorization": f"Bearer {self.hub_jwt_token}",
+            "Authorization": f"Bearer {hub_jwt_token}",
             "Content-Type": "application/json",
         }
         req = requests.post(validation_endpoint, data=request_body, headers=headers)
