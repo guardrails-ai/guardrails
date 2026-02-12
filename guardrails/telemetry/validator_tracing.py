@@ -18,7 +18,7 @@ except ImportError:
 
 from guardrails.settings import settings
 from guardrails.classes.validation.validation_result import ValidationResult
-from guardrails.telemetry.common import get_tracer, add_user_attributes, serialize
+from guardrails.telemetry.common import add_user_attributes, serialize
 from guardrails.telemetry.open_inference import trace_operation
 from guardrails.utils.casting_utils import to_string
 from guardrails.utils.safe_get import safe_get
@@ -100,9 +100,7 @@ def trace_validator(
         def trace_validator_wrapper(*args, **kwargs):
             if not settings.disable_tracing:
                 current_otel_context = context.get_current()
-                _tracer = get_tracer(tracer) or trace.get_tracer(
-                    "guardrails-ai", GUARDRAILS_VERSION
-                )
+                _tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
                 validator_span_name = f"{validator_name}.validate"
                 with _tracer.start_as_current_span(
                     name=validator_span_name,  # type: ignore
@@ -169,9 +167,7 @@ def trace_async_validator(
         async def trace_validator_wrapper(*args, **kwargs):
             if not settings.disable_tracing:
                 current_otel_context = context.get_current()
-                _tracer = get_tracer(tracer) or trace.get_tracer(
-                    "guardrails-ai", GUARDRAILS_VERSION
-                )
+                _tracer = trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
                 validator_span_name = f"{validator_name}.validate"
                 with _tracer.start_as_current_span(
                     name=validator_span_name,  # type: ignore

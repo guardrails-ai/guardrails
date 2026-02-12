@@ -3,6 +3,9 @@ name: CLI Compatibility Tests
 on:
   push:
     branches: [ main ]
+    paths:
+      - guardrails/**
+      - pyproject.toml
   workflow_dispatch:
 
 jobs:

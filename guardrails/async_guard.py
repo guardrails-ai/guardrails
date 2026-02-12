@@ -12,9 +12,12 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
+    overload,
 )
+from typing_extensions import deprecated
 
 from guardrails_api_client.models import (
     ValidatePayload,
@@ -27,19 +30,18 @@ from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
-from guardrails.stores.context import (
-    Tracer,
-    get_call_kwarg,
-    set_call_kwargs,
-    set_tracer,
-    set_tracer_context,
-)
+from guardrails.stores.context import get_call_kwarg, set_call_kwargs
 from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
-from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
+from guardrails.types.validator import (
+    UseManyValidatorSpec,
+    UseManyValidatorTuple,
+    UseValidatorSpec,
+)
 from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
@@ -62,22 +64,21 @@ class AsyncGuard(Guard, Generic[OT]):
     the LLM and the validated output stream.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def _for_rail_schema(
         cls,
         schema: ProcessedSchema,
         rail: str,
         *,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
         guard = super()._for_rail_schema(
             schema,
             rail,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
@@ -94,20 +95,18 @@ class AsyncGuard(Guard, Generic[OT]):
         output_class: ModelOrListOfModels,
         *,
         messages: Optional[List[Dict]] = None,
-        num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         guard = super().for_pydantic(
             output_class,
-            num_reasks=num_reasks,
             messages=messages,
             reask_messages=reask_messages,
-            tracer=tracer,
             name=name,
             description=description,
+            output_formatter=output_formatter,
         )
         if guard._output_type == OutputTypes.LIST:
             return cast(AsyncGuard[List], guard)
@@ -122,8 +121,6 @@ class AsyncGuard(Guard, Generic[OT]):
         string_description: Optional[str] = None,
         messages: Optional[List[Dict]] = None,
         reask_messages: Optional[List[Dict]] = None,
-        num_reasks: Optional[int] = None,
-        tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -132,8 +129,6 @@ class AsyncGuard(Guard, Generic[OT]):
             string_description=string_description,
             messages=messages,
             reask_messages=reask_messages,
-            num_reasks=num_reasks,
-            tracer=tracer,
             name=name,
             description=description,
         )
@@ -144,6 +139,20 @@ class AsyncGuard(Guard, Generic[OT]):
         guard = super().from_dict(obj)
         return cast(AsyncGuard, guard)
 
+    @overload
+    def use(self, validator: Validator, *, on: str = "output") -> "AsyncGuard": ...
+
+    @deprecated(
+        "Calling AsyncGuard.use with an uninstantiated Validator and its arguments "
+        "is deprecated and will be removed in future versions.  "
+        "Call AsyncGuard.use with a properly "
+        "instantiated Validator class instead."
+    )
+    @overload
+    def use(
+        self, validator: Type[Validator], *args, on: str = "output", **kwargs
+    ) -> "AsyncGuard": ...
+
     def use(
         self,
         validator: UseValidatorSpec,
@@ -151,9 +160,35 @@ class AsyncGuard(Guard, Generic[OT]):
         on: str = "output",
         **kwargs,
     ) -> "AsyncGuard":
-        guard = super().use(validator, *args, on=on, **kwargs)
+        guard = super().use(validator, *args, on=on, **kwargs)  # type: ignore
         return cast(AsyncGuard, guard)
 
+    @deprecated(
+        "AsyncGuard.use_many is deprecated and will be removed in future versions.  "
+        "When it is removed, "
+        "AsyncGuard.use will support multiple instantiated Validators."
+    )
+    @overload
+    def use_many(self, *validators: Validator, on: str = "output") -> "AsyncGuard": ...
+
+    @deprecated(
+        "Calling AsyncGuard.use_many with uninstantiated Validators and its arguments "
+        "is deprecated and will be removed in future versions.  "
+        "Call AsyncGuard.use_many with a properly "
+        "instantiated Validator class instead."
+    )
+    @overload
+    def use_many(
+        self,
+        *validators: UseManyValidatorTuple,
+        on: str = "output",
+    ) -> "AsyncGuard": ...
+
+    @deprecated(
+        "AsyncGuard.use_many is deprecated and will be removed in future versions.  "
+        "When it is removed, "
+        "AsyncGuard.use will support multiple instantiated Validators."
+    )
     def use_many(
         self,
         *validators: UseManyValidatorSpec,
@@ -212,8 +247,6 @@ class AsyncGuard(Guard, Generic[OT]):
                 full_schema_reask = self._base_model is not None
 
             set_call_kwargs(kwargs)
-            set_tracer(self._tracer)
-            set_tracer_context(self._tracer_context)
 
             self._set_num_reasks(num_reasks=num_reasks)
             if self._num_reasks is None:
@@ -434,7 +467,6 @@ class AsyncGuard(Guard, Generic[OT]):
             self.name,
             self.history,
             self._execute,
-            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -490,7 +522,6 @@ class AsyncGuard(Guard, Generic[OT]):
             self.name,
             self.history,
             self._execute,
-            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
@@ -553,3 +584,20 @@ class AsyncGuard(Guard, Generic[OT]):
         self, llm_output: str, *args, **kwargs
     ) -> Awaitable[ValidationOutcome[OT]]:
         return await self.parse(llm_output=llm_output, *args, **kwargs)
+
+    @classmethod
+    def load(
+        cls,
+        name: str,
+        *,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        history_max_length: Optional[int] = None,
+    ) -> Optional["AsyncGuard"]:
+        guard = super().load(
+            name,
+            api_key=api_key,
+            base_url=base_url,
+            history_max_length=history_max_length,
+        )
+        return cast(AsyncGuard, guard)

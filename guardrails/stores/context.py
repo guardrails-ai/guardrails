@@ -1,13 +1,8 @@
 from contextvars import ContextVar, copy_context
-from typing import Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Dict, Literal, Union
 
-from opentelemetry import context
-from opentelemetry.context import Context
-from opentelemetry.trace import Tracer
 
 GUARD_NAME_KEY: Literal["gr.reserved.guard.name"] = "gr.reserved.guard.name"
-TRACER_KEY: Literal["gr.reserved.tracer"] = "gr.reserved.tracer"
-TRACER_CONTEXT_KEY: Literal["gr.reserved.tracer.context"] = "gr.reserved.tracer.context"
 DOCUMENT_STORE_KEY: Literal["gr.reserved.document_store"] = "gr.reserved.document_store"
 CALL_KWARGS_KEY: Literal["gr.reserved.call_kwargs"] = "gr.reserved.call_kwargs"
 
@@ -18,30 +13,6 @@ def set_guard_name(guard_name: str) -> None:
 
 def get_guard_name() -> str:
     return get_context_var(GUARD_NAME_KEY) or ""
-
-
-def set_tracer(tracer: Optional[Tracer] = None) -> None:
-    set_context_var(TRACER_KEY, tracer)
-
-
-def get_tracer() -> Union[Tracer, None]:
-    cvar = get_context_var(TRACER_KEY)
-    if cvar is None:
-        return None
-    return cast(Tracer, cvar)
-
-
-def set_tracer_context(tracer_context: Optional[Context] = None) -> None:
-    tracer_context = (
-        tracer_context
-        if tracer_context
-        else (context.get_current() if context is not None else None)
-    )
-    set_context_var(TRACER_CONTEXT_KEY, tracer_context)
-
-
-def get_tracer_context() -> Union[Context, None]:
-    return get_context_var(TRACER_CONTEXT_KEY)
 
 
 def set_call_kwargs(kwargs: Dict[str, Any]) -> None:

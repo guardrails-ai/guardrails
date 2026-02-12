@@ -3,19 +3,9 @@ from typing import Any, Callable, Dict, Optional, Union, List
 from opentelemetry.baggage import get_baggage
 from opentelemetry import context
 from opentelemetry.context import Context
-from opentelemetry.trace import Tracer, Span
+from opentelemetry.trace import Span
 
 from guardrails.logger import logger
-from guardrails.stores.context import (
-    get_tracer as get_context_tracer,
-    get_tracer_context,
-)
-
-
-def get_tracer(tracer: Optional[Tracer] = None) -> Optional[Tracer]:
-    # TODO: Do we ever need to consider supporting non-otel tracers?
-    _tracer = tracer if tracer is not None else get_context_tracer()
-    return _tracer
 
 
 def get_current_context() -> Union[Context, None]:
@@ -24,8 +14,7 @@ def get_current_context() -> Union[Context, None]:
         if context is not None and hasattr(context, "get_current")
         else None
     )
-    tracer_context = get_tracer_context()
-    return otel_current_context or tracer_context
+    return otel_current_context
 
 
 def get_span(span: Optional[Span] = None) -> Optional[Span]:

@@ -63,6 +63,11 @@ class GuardrailsApiClient:
             logger.error(f"Error fetching guard {guard_name}: {e}")
             return None
 
+    def delete_guard(self, guard_name: str):
+        self._guard_api.delete_guard(
+            guard_name=guard_name, _request_timeout=self.timeout
+        )
+
     def validate(
         self,
         guard: Guard,

@@ -14,141 +14,25 @@ except ImportError:
 
 
 class TestShouldRunSync:
-    def test_process_count_is_one(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-        GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
-        os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
-        if os.environ.get("GUARDRAILS_RUN_SYNC"):
-            del os.environ["GUARDRAILS_RUN_SYNC"]
-
-        with pytest.warns(
-            DeprecationWarning,
-            match=(
-                "GUARDRAILS_PROCESS_COUNT is deprecated"
-                " and will be removed in a future release."
-                " To force synchronous validation,"
-                " please use GUARDRAILS_RUN_SYNC instead."
-            ),
-        ):
-            result = should_run_sync()
-            assert result is True
-
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
-        else:
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
-        if GUARDRAILS_RUN_SYNC_bak is not None:
-            os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
-
-    def test_process_count_is_2(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-        GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
-        os.environ["GUARDRAILS_PROCESS_COUNT"] = "2"
-        if os.environ.get("GUARDRAILS_RUN_SYNC"):
-            del os.environ["GUARDRAILS_RUN_SYNC"]
-
-        with pytest.warns(
-            DeprecationWarning,
-            match=(
-                "GUARDRAILS_PROCESS_COUNT is deprecated"
-                " and will be removed in a future release."
-                " To force synchronous validation,"
-                " please use GUARDRAILS_RUN_SYNC instead."
-            ),
-        ):
-            result = should_run_sync()
-            assert result is False
-
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
-        else:
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
-        if GUARDRAILS_RUN_SYNC_bak is not None:
-            os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
-
     def test_guardrails_run_sync_is_true(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
         GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
         os.environ["GUARDRAILS_RUN_SYNC"] = "true"
-        if os.environ.get("GUARDRAILS_PROCESS_COUNT"):
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
 
         result = should_run_sync()
         assert result is True
 
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
         if GUARDRAILS_RUN_SYNC_bak is not None:
             os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
         else:
             del os.environ["GUARDRAILS_RUN_SYNC"]
 
     def test_guardrails_run_sync_is_false(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
         GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
         os.environ["GUARDRAILS_RUN_SYNC"] = "false"
-        if os.environ.get("GUARDRAILS_PROCESS_COUNT"):
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
 
         result = should_run_sync()
         assert result is False
 
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
-        if GUARDRAILS_RUN_SYNC_bak is not None:
-            os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
-        else:
-            del os.environ["GUARDRAILS_RUN_SYNC"]
-
-    def test_process_count_is_1_and_guardrails_run_sync_is_false(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-        GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
-        os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
-        os.environ["GUARDRAILS_RUN_SYNC"] = "false"
-
-        with pytest.warns(
-            DeprecationWarning,
-            match=(
-                "GUARDRAILS_PROCESS_COUNT is deprecated"
-                " and will be removed in a future release."
-                " To force synchronous validation,"
-                " please use GUARDRAILS_RUN_SYNC instead."
-            ),
-        ):
-            result = should_run_sync()
-            assert result is True
-
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
-        else:
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
-        if GUARDRAILS_RUN_SYNC_bak is not None:
-            os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
-        else:
-            del os.environ["GUARDRAILS_RUN_SYNC"]
-
-    def test_process_count_is_2_and_guardrails_run_sync_is_true(self):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
-        GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
-        os.environ["GUARDRAILS_PROCESS_COUNT"] = "2"
-        os.environ["GUARDRAILS_RUN_SYNC"] = "true"
-
-        with pytest.warns(
-            DeprecationWarning,
-            match=(
-                "GUARDRAILS_PROCESS_COUNT is deprecated"
-                " and will be removed in a future release."
-                " To force synchronous validation,"
-                " please use GUARDRAILS_RUN_SYNC instead."
-            ),
-        ):
-            result = should_run_sync()
-            assert result is True
-
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
-        else:
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
         if GUARDRAILS_RUN_SYNC_bak is not None:
             os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
         else:
@@ -180,11 +64,8 @@ class TestGetLoop:
 
 class TestValidate:
     def test_forced_sync(self, mocker):
-        GUARDRAILS_PROCESS_COUNT_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
         GUARDRAILS_RUN_SYNC_bak = os.environ.get("GUARDRAILS_RUN_SYNC")
         os.environ["GUARDRAILS_RUN_SYNC"] = "true"
-        if os.environ.get("GUARDRAILS_PROCESS_COUNT"):
-            del os.environ["GUARDRAILS_PROCESS_COUNT"]
 
         from guardrails.validator_service import validate, SequentialValidatorService
 
@@ -208,8 +89,6 @@ class TestValidate:
         SequentialValidatorService.__init__.assert_called_once()
         SequentialValidatorService.validate.assert_called_once()
 
-        if GUARDRAILS_PROCESS_COUNT_bak is not None:
-            os.environ["GUARDRAILS_PROCESS_COUNT"] = GUARDRAILS_PROCESS_COUNT_bak
         if GUARDRAILS_RUN_SYNC_bak is not None:
             os.environ["GUARDRAILS_RUN_SYNC"] = GUARDRAILS_RUN_SYNC_bak
         else:

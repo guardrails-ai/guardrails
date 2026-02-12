@@ -42,7 +42,7 @@ jobs:
       - name: Check license
         run: |
           source .venv/bin/activate
-          .venv/bin/pip install greenlet setuptools
+          .venv/bin/pip install greenlet "setuptools<81"
           .venv/bin/liccheck
   Linting:
     runs-on: ubuntu-latest
