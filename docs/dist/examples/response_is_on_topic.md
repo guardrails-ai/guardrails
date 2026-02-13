@@ -124,7 +124,7 @@ Here, we have disabled the LLM from running at all. We rely totally on what the 
 
 ```python
 # Create the Guard with the OnTopic Validator
-guard = gd.Guard.from_string(
+guard = gd.Guard.for_string(
     validators=[
         RestrictToTopic(
             valid_topics=valid_topics,
