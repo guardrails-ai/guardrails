@@ -839,8 +839,13 @@ class Guard(IGuard, Generic[OT]):
         overwrite previously configured validators on the specified property.
 
         Args:
-            validators: The validators to use.
-            on: The property to validate. Valid options include "output", "messages",
+            *validator_spread:
+                One or more validators passed as positional arguments to use.
+            validators:
+                Keyword argument that allows explicitly setting a list of
+                validators to use.
+            on:
+                The property to validate. Valid options include "output", "messages",
              or a JSON path starting with "$.". Defaults to "output".
         """
         vals = [*list(validator_spread), *validators]
