@@ -50,6 +50,8 @@ Pushes an item onto the top of this stack.
 
 Proxy of List.append
 
+Limits Stack Length to _max_length entries
+
 #### search
 
 ```python

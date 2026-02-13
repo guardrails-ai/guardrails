@@ -21,44 +21,47 @@ class FailureValidator(Validator):
         )
 
 
+@register_validator("other", "string")
+class OtherValidator(Validator):
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        return FailResult(
+            error_message=("Failed cuz this is the other validator"),
+            fix_value="OTHER",
+        )
+
+
 # TODO: Add reask tests. Reask is fairly well covered through notebooks
 # but it's good to have it here too.
 def test_fix():
-    guard = Guard().use(FailureValidator, on_fail="fix")
+    guard = Guard().use(FailureValidator(on_fail="fix"))
     res = guard.parse("hi")
     assert res.validated_output == "FIXED"
     assert res.validation_passed  # Should this even be true though?
 
 
 def test_default_noop():
-    guard = Guard().use(FailureValidator, on_fail="noop")
+    guard = Guard().use(FailureValidator(on_fail="noop"))
     res = guard.parse("hi")
     assert res.validated_output == "hi"
     assert not res.validation_passed
 
 
-def test_multiple_validators():
-    # throws value error for multiple validators
-    with pytest.raises(ValueError):
-        Guard().use(FailureValidator, FailureValidator)
-
-
 def test_filter():
-    guard = Guard().use(FailureValidator, on_fail="filter")
+    guard = Guard().use(FailureValidator(on_fail="filter"))
     res = guard.parse("hi")
     assert res.validated_output is None
     assert not res.validation_passed
 
 
 def test_refrain():
-    guard = Guard().use(FailureValidator, on_fail="refrain")
+    guard = Guard().use(FailureValidator(on_fail="refrain"))
     res = guard.parse("hi")
     assert res.validated_output is None
     assert not res.validation_passed
 
 
 def test_exception():
-    guard = Guard().use(FailureValidator, on_fail="exception")
+    guard = Guard().use(FailureValidator(on_fail="exception"))
     try:
         guard.parse("hi")
     except Exception as e:

@@ -12,12 +12,9 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Type,
     Union,
     cast,
-    overload,
 )
-from typing_extensions import deprecated
 
 from guardrails_api_client.models import (
     ValidatePayload,
@@ -37,11 +34,6 @@ from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import get_call_kwarg, set_call_kwargs
 from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
-from guardrails.types.validator import (
-    UseManyValidatorSpec,
-    UseManyValidatorTuple,
-    UseValidatorSpec,
-)
 from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
@@ -139,62 +131,13 @@ class AsyncGuard(Guard, Generic[OT]):
         guard = super().from_dict(obj)
         return cast(AsyncGuard, guard)
 
-    @overload
-    def use(self, validator: Validator, *, on: str = "output") -> "AsyncGuard": ...
-
-    @deprecated(
-        "Calling AsyncGuard.use with an uninstantiated Validator and its arguments "
-        "is deprecated and will be removed in future versions.  "
-        "Call AsyncGuard.use with a properly "
-        "instantiated Validator class instead."
-    )
-    @overload
-    def use(
-        self, validator: Type[Validator], *args, on: str = "output", **kwargs
-    ) -> "AsyncGuard": ...
-
     def use(
         self,
-        validator: UseValidatorSpec,
-        *args,
-        on: str = "output",
-        **kwargs,
-    ) -> "AsyncGuard":
-        guard = super().use(validator, *args, on=on, **kwargs)  # type: ignore
-        return cast(AsyncGuard, guard)
-
-    @deprecated(
-        "AsyncGuard.use_many is deprecated and will be removed in future versions.  "
-        "When it is removed, "
-        "AsyncGuard.use will support multiple instantiated Validators."
-    )
-    @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "AsyncGuard": ...
-
-    @deprecated(
-        "Calling AsyncGuard.use_many with uninstantiated Validators and its arguments "
-        "is deprecated and will be removed in future versions.  "
-        "Call AsyncGuard.use_many with a properly "
-        "instantiated Validator class instead."
-    )
-    @overload
-    def use_many(
-        self,
-        *validators: UseManyValidatorTuple,
-        on: str = "output",
-    ) -> "AsyncGuard": ...
-
-    @deprecated(
-        "AsyncGuard.use_many is deprecated and will be removed in future versions.  "
-        "When it is removed, "
-        "AsyncGuard.use will support multiple instantiated Validators."
-    )
-    def use_many(
-        self,
-        *validators: UseManyValidatorSpec,
+        *validator_spread: Validator,
+        validators: List[Validator] = [],
         on: str = "output",
     ) -> "AsyncGuard":
-        guard = super().use_many(*validators, on=on)  # type: ignore
+        guard = super().use(*validator_spread, validators=validators, on=on)
         return cast(AsyncGuard, guard)
 
     async def _execute(
@@ -267,7 +210,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 kwargs=kwargs,
             )
 
-            if self._api_client is not None and model_is_supported_server_side(
+            if self._use_server and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
                 result = self._call_server(

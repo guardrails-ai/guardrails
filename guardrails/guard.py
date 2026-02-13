@@ -11,12 +11,9 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Type,
     Union,
     cast,
-    overload,
 )
-from typing_extensions import deprecated
 import warnings
 from langchain_core.runnables import Runnable
 
@@ -69,15 +66,11 @@ from guardrails.telemetry import (
     wrap_with_otel_context,
 )
 from guardrails.utils.validator_utils import (
-    get_validator,
     parse_validator_reference,
     verify_metadata_requirements,
 )
 from guardrails.validator_base import Validator
 from guardrails.types import (
-    UseManyValidatorTuple,
-    UseManyValidatorSpec,
-    UseValidatorSpec,
     ValidatorMap,
 )
 
@@ -98,7 +91,6 @@ class Guard(IGuard, Generic[OT]):
     initialized by one of the following patterns:
 
     - `Guard().use(...)`
-    - `Guard().use_many(...)`
     - `Guard.for_string(...)`
     - `Guard.for_pydantic(...)`
     - `Guard.for_rail(...)`
@@ -132,16 +124,12 @@ class Guard(IGuard, Generic[OT]):
         api_key: Optional[str] = None,
         history_max_length: Optional[int] = None,
         use_server: Optional[bool] = None,
-        preloaded: Optional[bool] = None,
     ):
         """Initialize the Guard with serialized validator references and an
         output schema.
 
         Output schema must be a valid JSON Schema.
         """
-
-        _try_to_load = name is not None and not preloaded
-
         # Shared Interface Properties
         id = id or random_id()
         name = name or f"gr-{id}"
@@ -152,10 +140,6 @@ class Guard(IGuard, Generic[OT]):
         history_max_length = history_max_length or 10
 
         # Init ModelSchema class
-        # schema_with_type = {**output_schema}
-        # output_schema_type = output_schema.get("type")
-        # if output_schema_type:
-        #     schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
         model_schema = ModelSchema.from_dict(output_schema)
 
         # TODO: Support a sink for history so that it is not solely held in memory
@@ -171,18 +155,8 @@ class Guard(IGuard, Generic[OT]):
             history=history,  # type: ignore - pyright doesn't understand pydantic overrides
         )
 
-        ### Public ###
-        ## Assigned in super ##
-        # self.id: Optional[str] = None
-        # self.name: Optional[str] = None
-        # self.description: Optional[str] = None
-        # self.validators: Optional[List[ValidatorReference]] = []
-        # self.output_schema: Optional[ModelSchema] = None
-        # self.history = history
-
         ### Overrides ###
         self.validators = validators
-        self._history_max_length = history_max_length
 
         ### Legacy ##
         self._num_reasks = None
@@ -196,59 +170,19 @@ class Guard(IGuard, Generic[OT]):
         self._exec_opts: GuardExecutionOptions = GuardExecutionOptions()
         self._hub_telemetry: HubTelemetry
         self._user_id: Optional[str] = None
-        self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
         self._output_formatter: Optional[BaseFormatter] = None
-        self._api_key: Optional[str] = None
-        self._base_url: Optional[str] = None
+        self._api_key: Optional[str] = api_key
+        self._base_url: Optional[str] = base_url
+        self._api_client: Optional[GuardrailsApiClient] = GuardrailsApiClient(
+            api_key=self._api_key, base_url=self._base_url
+        )
+        self._history_max_length = history_max_length
         self._use_server = (
             use_server if use_server is not None else settings.use_server or False
         )
 
-        # Gaurdrails As A Service Initialization
-        if self._use_server:
-            self._api_key = api_key
-            self._base_url = base_url
-            self._api_client = GuardrailsApiClient(
-                api_key=self._api_key, base_url=self._base_url
-            )
-            _loaded = False
-            if _try_to_load:
-                loaded_guard = self._api_client.fetch_guard(self.name)
-                if loaded_guard:
-                    self.id = loaded_guard.id
-                    self.description = loaded_guard.description
-                    self.validators = [  # type: ignore
-                        ValidatorReference.from_interface(v)
-                        for v in loaded_guard.validators or []
-                    ]
-
-                    loaded_output_schema = (
-                        ModelSchema.from_dict(  # trims out extra keys
-                            loaded_guard.output_schema.to_dict()
-                            if loaded_guard.output_schema
-                            else {"type": "string"}
-                        )
-                    )
-                    self.output_schema = loaded_output_schema
-                    _loaded = True
-                    warnings.warn(
-                        "Fetching a Guard from the server"
-                        " by specifying the `name` keyword "
-                        "argument on init is deprecated and "
-                        "will be removed in future version. "
-                        " Use `Guard.load(name: str)` instead.",
-                        DeprecationWarning,
-                    )
-                else:
-                    logger.warning(
-                        f"use_server is True and Guard '{self.name}' "
-                        "not found on the server. Creating a new empty Guard."
-                    )
-            if not _loaded:
-                self.save()
-        else:
-            self.configure()
+        self.configure()
 
     @field_validator("output_schema")
     @classmethod
@@ -317,9 +251,6 @@ class Guard(IGuard, Generic[OT]):
             self._user_id = settings.rc.id or ""
 
     def _fill_validator_map(self):
-        # dont init validators if were going to call the server
-        if self._use_server:
-            return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
@@ -863,7 +794,7 @@ class Guard(IGuard, Generic[OT]):
         except (AttributeError, TypeError):
             return []
 
-    def __add_validator(self, validator: Validator, on: str = "output"):
+    def __add_validators(self, validators: List[Validator], on: str = "output"):
         if on not in [
             "output",
             "messages",
@@ -879,102 +810,60 @@ class Guard(IGuard, Generic[OT]):
         if on == "output":
             on = "$"
 
-        validator_reference = ValidatorReference(
-            id=validator.rail_alias,
-            on=on,
-            on_fail=validator.on_fail_descriptor,  # type: ignore
-            kwargs=validator.get_args(),
-        )
-        self.validators.append(validator_reference)
-        self._validator_map[on] = self._validator_map.get(on, [])
-        self._validator_map[on].append(validator)
-        self._validators.append(validator)
+        validator_references = [
+            ValidatorReference(
+                id=validator.rail_alias,
+                on=on,
+                on_fail=validator.on_fail_descriptor,  # type: ignore
+                kwargs=validator.get_args(),
+            )
+            for validator in validators
+        ]
+        retained_validator_refs = [v for v in self.validators if v.on != on]
+        retained_validator_refs.extend(validator_references)
 
-    @overload
-    def use(self, validator: Validator, *, on: str = "output") -> "Guard": ...
+        self.validators = retained_validator_refs
 
-    @deprecated(
-        "Calling Guard.use with an uninstantiated Validator and its arguments "
-        "is deprecated and will be removed in future versions.  "
-        "Call Guard.use with a properly "
-        "instantiated Validator class instead."
-    )
-    @overload
-    def use(
-        self, validator: Type[Validator], *args, on: str = "output", **kwargs
-    ) -> "Guard": ...
+        self._validator_map[on] = validators
+
+        self._validators = [v for on_vs in self._validator_map.values() for v in on_vs]
 
     def use(
         self,
-        validator: UseValidatorSpec,
-        *args,
+        *validator_spread: Validator,
+        validators: List[Validator] = [],
         on: str = "output",
-        **kwargs,
     ) -> "Guard":
-        """Use a validator to validate either of the following:
-        - The output of an LLM request
-        - The message history
+        """Applies validators to the property specified in the `on` argument.
+        Calling `Guard.use` with the same `on` value multiple times will
+        overwrite previously configured validators on the specified property.
 
         Args:
-            validator: The validator to use. Either the class or an instance.
-            on: The part of the LLM request to validate. Defaults to "output".
+            *validator_spread:
+                One or more validators passed as positional arguments to use.
+            validators:
+                Keyword argument that allows explicitly setting a list of
+                validators to use.
+            on:
+                The property to validate. Valid options include "output", "messages",
+             or a JSON path starting with "$.". Defaults to "output".
         """
-        # check if args has any validators hiding in it
-        # throw error to user so they can update
-        if args:
-            for arg in args:
-                if (
-                    isinstance(arg, type)
-                    and issubclass(arg, Validator)
-                    or isinstance(arg, Validator)
-                ):
-                    raise ValueError(
-                        "Validator is an argument besides the first."
-                        "Please pass it as the first or use the 'use_many' method for"
-                        " multiple validators."
-                    )
-
-        hydrated_validator = get_validator(validator, *args, **kwargs)
-        self.__add_validator(hydrated_validator, on=on)
-        self.save()
+        vals = [*list(validator_spread), *validators]
+        self.__add_validators(vals, on=on)
         return self
 
-    @deprecated(
-        "Guard.use_many is deprecated and will be removed in future versions.  "
-        "When it is removed, Guard.use will support multiple instantiated Validators."
-    )
-    @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "Guard": ...
+    def get_validators(self, on: str) -> List[Validator]:
+        """The read-only counterpart to `Guard.use`. Retrieves the validators
+        applied to the specified property.
 
-    @deprecated(
-        "Calling Guard.use_many with uninstantiated Validators and its arguments "
-        "is deprecated and will be removed in future versions.  "
-        "Call Guard.use_many with a properly "
-        "instantiated Validator class instead."
-    )
-    @overload
-    def use_many(
-        self,
-        *validators: UseManyValidatorTuple,
-        on: str = "output",
-    ) -> "Guard": ...
-
-    @deprecated(
-        "Guard.use_many is deprecated and will be removed in future versions.  "
-        "When it is removed, Guard.use will support multiple instantiated Validators."
-    )
-    def use_many(
-        self,
-        *validators: UseManyValidatorSpec,
-        on: str = "output",
-    ) -> "Guard":
-        """Use multiple validators to validate results of an LLM request."""
-        # Loop through the validators
-        for v in validators:
-            hydrated_validator = get_validator(v)
-            self.__add_validator(hydrated_validator, on=on)
-        self.save()
-        return self
+        Args:
+            on: The property for which to return configured validators.
+                Valid options include "output", "messages",
+                or a JSON path starting with "$.".
+        """
+        if on == "output":
+            on = "$"
+        return self._validator_map.get(on) or []
 
     @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
@@ -988,16 +877,6 @@ class Guard(IGuard, Generic[OT]):
     # TODO: Test generated history and override to_dict if necessary
     # def to_dict(self) -> Dict[str, Any]:
     #     pass
-
-    @deprecated(
-        """Guard.upsert_guard is deprecated and will be removed in future versions.
-            Use Guard.save instead.""",
-    )
-    def upsert_guard(self):
-        if self._use_server and self._api_client:
-            self._api_client.upsert_guard(self)
-        else:
-            raise ValueError("Using the Guardrails server is not enabled!")
 
     def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
         if self._use_server and self._api_client:
@@ -1143,14 +1022,12 @@ class Guard(IGuard, Generic[OT]):
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def save(self, *, use_server: Optional[bool] = None):
+    def save(self):
         """Upserts a Guard to your guardrails-api server.
 
         Only valid for servers using a database to persist Guards. Not
         valid for servers using a config.py file.
         """
-        if not self._use_server and not use_server:
-            return
         if self.name is None:
             self.name = f"gr-{str(self.id)}"
             logger.warning("No name passed to guard!")
@@ -1165,11 +1042,11 @@ class Guard(IGuard, Generic[OT]):
             )
         try:
             self._api_client.upsert_guard(self)
+            self._use_server = True
         except Exception as e:
             logger.error(
-                f"Failed to save Guard with name {self.name}! "
-                "Make sure your Guard is properly configured "
-                "with an API Key and base url for your guardrails-api server."
+                f"Failed to save Guard with name {self.name}! Make sure your Guard is"
+                " properly configured with an API Key, and base url."
             )
             raise e
 
@@ -1238,41 +1115,10 @@ class Guard(IGuard, Generic[OT]):
             else []
         )
         guard.history = Stack(*history, max_length=guard._history_max_length)
+
+        guard._fill_validator_map()
+        guard._fill_validators()
         return guard
-
-    # attempts to get a guard from the server
-    # if a name is unspecified, the guard will be created on the client
-    # in the future, this may create a guard on the server
-    @deprecated(
-        """Guard.fetch_guard is deprecated and will be removed in future versions.
-            Use Guard.load instead.""",
-    )
-    @experimental
-    @staticmethod
-    def fetch_guard(
-        name: Optional[str] = None,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        *args,
-        **kwargs,
-    ):
-        if not name:
-            raise ValueError("Name must be specified to fetch a guard")
-
-        api_client = GuardrailsApiClient(api_key=api_key, base_url=base_url)
-        guard = api_client.fetch_guard(name)
-        if guard:
-            return Guard(
-                name=name,
-                base_url=base_url,
-                api_key=api_key,
-                use_server=True,
-                preloaded=True,
-                *args,
-                **kwargs,
-            )
-
-        raise ValueError(f"Guard with name {name} not found")
 
     @classmethod
     def load(
@@ -1297,7 +1143,7 @@ class Guard(IGuard, Generic[OT]):
                 else {"type": "string"}
             )
 
-            return Guard(
+            guard = Guard(
                 id=guard.id,
                 name=guard.name,
                 description=guard.description,
@@ -1307,12 +1153,14 @@ class Guard(IGuard, Generic[OT]):
                 api_key=api_key,
                 history_max_length=history_max_length,
                 use_server=True,
-                preloaded=True,
             )
+            guard._fill_validator_map()
+            guard._fill_validators()
+            return guard
         return None
 
     def delete(self):
-        """Deletes a Guard on your guardrails-api server.
+        """Deletes a Guard to your guardrails-api server.
 
         Only valid for servers using a database to persist Guards. Not
         valid for servers using a config.py file.

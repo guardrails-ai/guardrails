@@ -150,7 +150,7 @@ async def test_async_streaming_fix_behavior_two_validators(mocker):
         return_value=Response(POETRY_CHUNKS),
     )
 
-    guard = gd.AsyncGuard().use_many(
+    guard = gd.AsyncGuard().use(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
@@ -200,7 +200,7 @@ async def test_async_streaming_filter_behavior(mocker):
         return_value=Response(POETRY_CHUNKS),
     )
 
-    guard = gd.AsyncGuard().use_many(
+    guard = gd.AsyncGuard().use(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",

@@ -40,7 +40,7 @@ from sentence_transformers import SentenceTransformer
 
 
 # Setup Guard with multiple validators
-guard = Guard().use_many(
+guard = Guard().use(
     ProvenanceLLM(validation_method="sentence"),
     DetectPII()
 )
