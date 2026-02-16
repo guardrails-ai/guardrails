@@ -11,7 +11,7 @@
             - "for_string"
             - "configure"
             - "use"
-            - "use_many"
+            - "get_validators"
             - "__call__"
             - "parse"
             - "validate"

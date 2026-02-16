@@ -16,11 +16,11 @@ from tests.integration_tests.test_assets.validators import ReadingTime, RegexMat
 @pytest.fixture
 def guard_runnable():
     return GuardRunnable(
-        Guard()
-        .use(
-            RegexMatch("Ice cream", match_type="search", on_fail="refrain"), on="output"
+        Guard().use(
+            RegexMatch("Ice cream", match_type="search", on_fail="refrain"),
+            ReadingTime(0.05, on_fail="noop"),
+            on="output",
         )
-        .use(ReadingTime(0.05, on_fail="noop"))
     )
 
 
