@@ -49,7 +49,7 @@ pip install guardrails-ai
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
         ValidLength(min=1, max=32)
     )

@@ -101,7 +101,7 @@ pip install guardrails-ai
     from guardrails import Guard, OnFailAction
     from guardrails.hub import CompetitorCheck, ToxicLanguage
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
         ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION)
     )

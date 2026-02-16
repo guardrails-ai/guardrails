@@ -165,7 +165,7 @@ reask_validator_2 = Contains("e", on_fail='reask')
 fix_validator_1 = Contains("f", on_fail='fix')
 fix_validator_2 = Contains("g", on_fail='fix')
 
-guard = AsyncGuard().use(
+guard = AsyncGuard().use_many(
     exception_validator,
     filter_validator,
     refrain_validator,

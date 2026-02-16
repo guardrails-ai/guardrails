@@ -43,7 +43,7 @@ class TestTelemetry:
 
         default_otel_collector_tracer()
 
-        guard = Guard(name="integration-test-guard").use(LowerCase())
+        guard = Guard(name="integration-test-guard").use(LowerCase)
 
         guard.configure(allow_metrics_collection=False)
 
@@ -91,7 +91,7 @@ class TestTelemetry:
         from guardrails import Guard
         from tests.integration_tests.test_assets.validators import LowerCase
 
-        guard = Guard(name="integration-test-guard").use(LowerCase())
+        guard = Guard(name="integration-test-guard").use(LowerCase)
 
         guard.configure(allow_metrics_collection=True)
 
@@ -145,7 +145,7 @@ class TestTelemetry:
 
         default_otel_collector_tracer()
 
-        guard = Guard(name="integration-test-guard").use(LowerCase())
+        guard = Guard(name="integration-test-guard").use(LowerCase)
 
         guard.configure(allow_metrics_collection=True)
 

@@ -105,7 +105,7 @@ Now that the Guardrails package is instrumented, we can create our Guard.
 from guardrails import Guard
 from guardrails.hub import RestrictToTopic, ValidLength
 
-guard = Guard(name="content-guard").use(
+guard = Guard(name="content-guard").use_many(
     RestrictToTopic(
         valid_topics=["computer programming", "computer science", "algorithms"],
         disable_llm=True,

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from guardrails import AsyncGuard, Validator, register_validator
 from guardrails.classes.validation.validation_result import PassResult
+from guardrails.utils import args, kwargs, on_fail
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.types import OnFailAction
 from tests.integration_tests.test_assets.custom_llm import mock_async_llm
@@ -144,12 +145,13 @@ def guard_init_for_rail():
 
 
 def test_use():
-    guard: AsyncGuard = AsyncGuard().use(
-        EndsWith("a"),
-        OneLine(),
-        LowerCase(),
-        TwoWords(on_fail=OnFailAction.REASK),
-        ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
+    guard: AsyncGuard = (
+        AsyncGuard()
+        .use(EndsWith("a"))
+        .use(OneLine())
+        .use(LowerCase)
+        .use(TwoWords, on_fail=OnFailAction.REASK)
+        .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
     )
 
     # print(guard.__stringify__())
@@ -199,12 +201,16 @@ def test_use():
     # everything else is in the schema
     guard: AsyncGuard = (
         AsyncGuard()
-        .use(LowerCase(), OneLine(), on="prompt")
-        .use(UpperCase(), on="instructions")
-        .use(LowerCase(), on="messages")
+        .use(LowerCase, on="prompt")
+        .use(OneLine, on="prompt")
+        .use(UpperCase, on="instructions")
+        .use(LowerCase, on="messages")
         .use(
-            EndsWith(end="a"), TwoWords(on_fail=OnFailAction.REASK), on="output"
+            EndsWith, end="a", on="output"
         )  # default on="output", still explicitly set
+        .use(
+            TwoWords, on_fail=OnFailAction.REASK
+        )  # default on="output", implicitly set
     )
 
     # Check schemas for prompt, instructions and messages validators
@@ -238,7 +244,202 @@ def test_use():
         guard: AsyncGuard = (
             AsyncGuard()
             .use(EndsWith("a"), on="response")  # invalid on parameter
-            .use(OneLine(), on="prompt")  # valid on parameter
+            .use(OneLine, on="prompt")  # valid on parameter
+        )
+
+
+def test_use_many_instances():
+    guard: AsyncGuard = AsyncGuard().use_many(
+        EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK)
+    )
+
+    # print(guard.__stringify__())
+    assert len(guard._validators) == 4
+
+    assert isinstance(guard._validators[0], EndsWith)
+    assert guard._validators[0]._end == "a"
+    assert guard._validators[0]._kwargs["end"] == "a"
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[1], OneLine)
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[2], LowerCase)
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[3], TwoWords)
+    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
+
+    # No longer a constraint
+    # Raises error when trying to `use_many` a validator on a non-string
+    # with pytest.raises(RuntimeError):
+
+    class TestClass(BaseModel):
+        another_field: str
+
+    py_guard = AsyncGuard.for_pydantic(output_class=TestClass)
+    py_guard.use_many(
+        EndsWith("a"),
+        OneLine(),
+        LowerCase(),
+        TwoWords(on_fail=OnFailAction.REASK),
+    )
+    assert py_guard._validator_map.get("$") == [
+        EndsWith("a"),
+        OneLine(),
+        LowerCase(),
+        TwoWords(on_fail=OnFailAction.REASK),
+    ]
+
+    # Test with explicitly setting the "on" parameter = "output"
+    guard: AsyncGuard = AsyncGuard().use_many(
+        EndsWith("a"),
+        OneLine(),
+        LowerCase(),
+        TwoWords(on_fail=OnFailAction.REASK),
+        on="output",
+    )
+
+    assert len(guard._validators) == 4  # still 4 output validators, hence 4
+
+    assert isinstance(guard._validators[0], EndsWith)
+    assert guard._validators[0]._end == "a"
+    assert guard._validators[0]._kwargs["end"] == "a"
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[1], OneLine)
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[2], LowerCase)
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[3], TwoWords)
+    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
+
+    # Test with explicitly setting the "on" parameter = "prompt"
+    guard: AsyncGuard = AsyncGuard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="prompt"
+    )
+
+    prompt_validators = guard._validator_map.get("prompt")
+    assert len(prompt_validators) == 3
+    assert prompt_validators[0].__class__.__name__ == "OneLine"
+    assert prompt_validators[1].__class__.__name__ == "LowerCase"
+    assert prompt_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 3
+
+    # Test with explicitly setting the "on" parameter = "instructions"
+    guard: AsyncGuard = AsyncGuard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="instructions"
+    )
+
+    instructions_validators = guard._validator_map.get("instructions")
+    assert len(instructions_validators) == 3
+    assert instructions_validators[0].__class__.__name__ == "OneLine"
+    assert instructions_validators[1].__class__.__name__ == "LowerCase"
+    assert instructions_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 3
+
+    # Test with explicitly setting the "on" parameter = "messages"
+    guard: AsyncGuard = AsyncGuard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="messages"
+    )
+
+    messages_validators = guard._validator_map.get("messages")
+    assert len(messages_validators) == 3
+    assert messages_validators[0].__class__.__name__ == "OneLine"
+    assert messages_validators[1].__class__.__name__ == "LowerCase"
+    assert messages_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 3
+
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
+    with pytest.warns(UserWarning):
+        guard: AsyncGuard = AsyncGuard().use_many(
+            EndsWith("a", on_fail=OnFailAction.EXCEPTION), OneLine(), on="response"
+        )
+
+
+def test_use_many_tuple():
+    guard: AsyncGuard = AsyncGuard().use_many(
+        OneLine,
+        (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
+        (LowerCase, kwargs(on_fail=OnFailAction.FIX_REASK, some_other_kwarg="kwarg")),
+        (TwoWords, on_fail(OnFailAction.REASK)),
+        (ValidLength, args(0, 12), kwargs(on_fail=OnFailAction.REFRAIN)),
+    )
+
+    # print(guard.__stringify__())
+    assert len(guard._validators) == 5
+
+    assert isinstance(guard._validators[0], OneLine)
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[1], EndsWith)
+    assert guard._validators[1]._end == "a"
+    assert guard._validators[1]._kwargs["end"] == "a"
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc we set it
+
+    assert isinstance(guard._validators[2], LowerCase)
+    assert guard._validators[2]._kwargs["some_other_kwarg"] == "kwarg"
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.FIX_REASK
+    )  # bc this is the default
+
+    assert isinstance(guard._validators[3], TwoWords)
+    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
+
+    assert isinstance(guard._validators[4], ValidLength)
+    assert guard._validators[4]._min == 0
+    assert guard._validators[4]._kwargs["min"] == 0
+    assert guard._validators[4]._max == 12
+    assert guard._validators[4]._kwargs["max"] == 12
+    assert (
+        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
+    )  # bc we set it
+
+    # Test with explicitly setting the "on" parameter
+    guard: AsyncGuard = AsyncGuard().use_many(
+        (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
+        OneLine,
+        on="output",
+    )
+
+    assert len(guard._validators) == 2  # only 2 output validators, hence 2
+
+    assert isinstance(guard._validators[0], EndsWith)
+    assert guard._validators[0]._end == "a"
+    assert guard._validators[0]._kwargs["end"] == "a"
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc we set it
+
+    assert isinstance(guard._validators[1], OneLine)
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc this is the default
+
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
+    with pytest.warns(UserWarning):
+        guard: AsyncGuard = AsyncGuard().use_many(
+            (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
+            OneLine,
+            on="response",
         )
 
 
@@ -246,11 +447,14 @@ def test_use():
 class TestValidate:
     @pytest.mark.asyncio
     async def test_output_only_success(self):
-        guard: AsyncGuard = AsyncGuard().use(
-            OneLine(),
-            LowerCase(on_fail=OnFailAction.FIX),
-            TwoWords(),
-            ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
+        guard: AsyncGuard = (
+            AsyncGuard()
+            .use(OneLine)
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX), on="output"
+            )  # default on="output", still explicitly set
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
         llm_output: str = "Oh Canada"  # bc it meets our criteria
@@ -262,11 +466,14 @@ class TestValidate:
 
     @pytest.mark.asyncio
     async def test_output_only_failure(self):
-        guard: AsyncGuard = AsyncGuard().use(
-            OneLine(on_fail=OnFailAction.NOOP),
-            LowerCase(on_fail=OnFailAction.FIX),
-            TwoWords(on_fail=OnFailAction.NOOP),
-            ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
+        guard: AsyncGuard = (
+            AsyncGuard()
+            .use(OneLine, on_fail=OnFailAction.NOOP)
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX), on="output"
+            )  # default on="output", still explicitly set
+            .use(TwoWords, on_fail=OnFailAction.NOOP)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
         llm_output = "Star Spangled Banner"  # to stick with the theme
@@ -283,12 +490,12 @@ class TestValidate:
         # Should still only use the output validators to validate the output
         guard: AsyncGuard = (
             AsyncGuard()
-            .use(OneLine(), LowerCase(), UpperCase(), on="messages")
-            .use(
-                LowerCase(on_fail=OnFailAction.FIX),
-                TwoWords(),
-                ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
-            )
+            .use(OneLine, on="messages")
+            .use(LowerCase, on="messages")
+            .use(UpperCase, on="messages")
+            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
+            .use(TwoWords)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
         llm_output: str = "Oh Canada"  # bc it meets our criteria
@@ -302,18 +509,12 @@ class TestValidate:
     async def test_on_many_failure(self):
         guard: AsyncGuard = (
             AsyncGuard()
-            .use(
-                OneLine(on_fail=OnFailAction.NOOP),
-                LowerCase(on_fail=OnFailAction.NOOP),
-                UpperCase(on_fail=OnFailAction.NOOP),
-                on="messages",
-            )
-            .use(
-                LowerCase(on_fail=OnFailAction.FIX),
-                TwoWords(on_fail=OnFailAction.NOOP),
-                ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
-                on="output",
-            )
+            .use(OneLine, on="messages", on_fail=OnFailAction.NOOP)
+            .use(LowerCase, on="messages", on_fail=OnFailAction.NOOP)
+            .use(UpperCase, on="messages", on_fail=OnFailAction.NOOP)
+            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
+            .use(TwoWords, on_fail=OnFailAction.NOOP)
+            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
         )
 
         llm_output = "Star Spangled Banner"  # to stick with the theme
@@ -324,11 +525,11 @@ class TestValidate:
         assert response.validated_output is None
 
 
-def test_multi_use():
+def test_use_and_use_many():
     guard: AsyncGuard = (
         AsyncGuard()
-        .use(UpperCase(), on="messages")
-        .use(
+        .use(UpperCase, on="messages")
+        .use_many(
             TwoWords(on_fail=OnFailAction.REASK),
             ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
             on="output",
@@ -365,8 +566,8 @@ def test_multi_use():
     with pytest.warns(UserWarning):
         guard: AsyncGuard = (
             AsyncGuard()
-            .use(LowerCase(), on="messages")
-            .use(
+            .use(LowerCase, on="messages")
+            .use_many(
                 TwoWords(on_fail=OnFailAction.REASK),
                 ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
                 on="response",  # invalid "on" parameter

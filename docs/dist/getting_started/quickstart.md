@@ -79,7 +79,7 @@ In order to perform any validation on LLM output with Guardrails, you will need 
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
         ValidLength(min=1, max=12)
     )
