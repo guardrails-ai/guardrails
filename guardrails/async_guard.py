@@ -543,4 +543,5 @@ class AsyncGuard(Guard, Generic[OT]):
             base_url=base_url,
             history_max_length=history_max_length,
         )
-        return cast(AsyncGuard, guard)
+        if guard:
+            return cast(AsyncGuard, guard)
