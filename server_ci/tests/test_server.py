@@ -1,7 +1,7 @@
 import openai
 import os
 import pytest
-from guardrails import AsyncGuard, Guard, settings
+from guardrails import AsyncGuard, Guard
 
 # OpenAI compatible Guardrails API Guard
 openai.base_url = "http://127.0.0.1:8000/guards/test-guard/openai/v1/"
@@ -21,8 +21,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY") or "some key"
     ],
 )
 def test_guard_validation(mock_llm_output, validation_output, validation_passed, error):
-    settings.use_server = True
-    guard = Guard(name="test-guard", api_key="auth-stub")
+    guard = Guard.load(name="test-guard", api_key="auth-stub")
+    if not guard:
+        raise RuntimeError("Guard did not load properly!")
     if error:
         with pytest.raises(Exception):
             validation_outcome = guard.validate(mock_llm_output)
@@ -34,8 +35,10 @@ def test_guard_validation(mock_llm_output, validation_output, validation_passed,
 
 @pytest.mark.asyncio
 async def test_async_guard_validation():
-    settings.use_server = True
-    guard = AsyncGuard(name="test-guard", api_key="auth-stub")
+    guard = AsyncGuard.load(name="test-guard", api_key="auth-stub")
+
+    if not guard:
+        raise RuntimeError("Guard did not load properly!")
 
     validation_outcome = await guard(
         model="gpt-4o-mini",
@@ -49,8 +52,10 @@ async def test_async_guard_validation():
 
 @pytest.mark.asyncio
 async def test_async_streaming_guard_validation():
-    settings.use_server = True
-    guard = AsyncGuard(name="test-guard", api_key="auth-stub")
+    guard = AsyncGuard.load(name="test-guard", api_key="auth-stub")
+
+    if not guard:
+        raise RuntimeError("Guard did not load properly!")
 
     async_iterator = await guard(
         model="gpt-4o-mini",
@@ -73,8 +78,10 @@ async def test_sync_streaming_guard_validation():
     #       guardrails-ai==0.6.6
     #       guardrails-api==0.1.0a2
     os.environ["GUARD_HISTORY_ENABLED"] = "false"
-    settings.use_server = True
-    guard = Guard(name="test-guard", api_key="auth-stub")
+    guard = Guard.load(name="test-guard", api_key="auth-stub")
+
+    if not guard:
+        raise RuntimeError("Guard did not load properly!")
 
     iterator = guard(
         model="gpt-4o-mini",
@@ -104,8 +111,9 @@ async def test_sync_streaming_guard_validation():
 def test_server_guard_llm_integration(
     message_content, output, validation_passed, error
 ):
-    settings.use_server = True
-    guard = Guard(name="test-guard", api_key="auth-stub")
+    guard = Guard.load(name="test-guard", api_key="auth-stub")
+    if not guard:
+        raise RuntimeError("Guard did not load properly!")
     messages = [{"role": "user", "content": message_content}]
     if error:
         with pytest.raises(Exception):

@@ -245,7 +245,7 @@ class Guard(IGuard, Generic[OT]):
                         f"use_server is True and Guard '{self.name}' "
                         "not found on the server. Creating a new empty Guard."
                     )
-            if not _loaded:
+            if not _loaded and not preloaded:
                 self.save()
         else:
             self.configure()
@@ -1297,7 +1297,7 @@ class Guard(IGuard, Generic[OT]):
                 else {"type": "string"}
             )
 
-            return Guard(
+            return cls(
                 id=guard.id,
                 name=guard.name,
                 description=guard.description,

@@ -239,8 +239,10 @@ class Validator:
         """
         # Only use if both are set, otherwise fall back to local inference
         if self.use_local:
+            logger.debug(f" ==> {self.rail_alias} is using local inference.")
             return self._inference_local(model_input)
         if not self.use_local and self.validation_endpoint:
+            logger.debug(f" ==> {self.rail_alias} is using remote inference.")
             return self._inference_remote(model_input)
 
         raise RuntimeError(
