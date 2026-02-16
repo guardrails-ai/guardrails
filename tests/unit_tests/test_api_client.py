@@ -75,7 +75,7 @@ class TestGuardrailsApiClientInit:
             client = GuardrailsApiClient()
 
             assert client.base_url == "http://localhost:8000"
-            assert client.api_key == ""
+            assert client.api_key == "x-guardrails-api-key"
             assert client.timeout == 300
 
     @patch("guardrails.api_client.ValidateApi")

@@ -231,6 +231,6 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
                 for validator in validators
             ]
         )
-        config_lines.append(f"guard.use_many(\n{multi_use})")
+        config_lines.append(f"guard.use(\n{multi_use})")
 
     return "\n".join(config_lines)

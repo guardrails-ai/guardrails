@@ -35,7 +35,9 @@ class GuardrailsApiClient:
             else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:8000")
         )
         self.api_key = (
-            api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
+            api_key
+            if api_key is not None
+            else os.environ.get("GUARDRAILS_API_KEY", "x-guardrails-api-key")
         )
         self.timeout = 300
 

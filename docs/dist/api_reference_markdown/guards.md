@@ -12,7 +12,6 @@ This class is the main entry point for using Guardrails. It can be
 initialized by one of the following patterns:
 
 - `Guard().use(...)`
-- `Guard().use_many(...)`
 - `Guard.for_string(...)`
 - `Guard.for_pydantic(...)`
 - `Guard.for_rail(...)`
@@ -34,7 +33,9 @@ def __init__(*,
              validators: Optional[List[ValidatorReference]] = None,
              output_schema: Optional[Dict[str, Any]] = None,
              base_url: Optional[str] = None,
-             api_key: Optional[str] = None)
+             api_key: Optional[str] = None,
+             history_max_length: Optional[int] = None,
+             use_server: Optional[bool] = None)
 ```
 
 Initialize the Guard with serialized validator references and an
@@ -185,7 +186,6 @@ Create a Guard instance for a string response.
 #### \_\_call\_\_
 
 ```python
-@trace(name="/guard_call", origin="Guard.__call__")
 def __call__(
         llm_api: Optional[Callable] = None,
         *args,
@@ -221,7 +221,6 @@ Call the LLM and validate the output.
 #### parse
 
 ```python
-@trace(name="/guard_call", origin="Guard.parse")
 def parse(llm_output: str,
           *args,
           metadata: Optional[Dict] = None,
@@ -261,65 +260,36 @@ Get the error spans in the last output.
 #### use
 
 ```python
-@overload
-def use(validator: Validator, *, on: str = "output") -> "Guard"
+def use(*validators: Validator, on: str = "output") -> "Guard"
 ```
 
-#### use
-
-```python
-@overload
-def use(validator: Type[Validator],
-        *args,
-        on: str = "output",
-        **kwargs) -> "Guard"
-```
-
-#### use
-
-```python
-def use(validator: UseValidatorSpec,
-        *args,
-        on: str = "output",
-        **kwargs) -> "Guard"
-```
-
-Use a validator to validate either of the following:
-- The output of an LLM request
-- The message history
+Applies validators to the property specified in the `on` argument.
+Calling `Guard.use` with the same `on` value multiple times will
+overwrite previously configured validators on the specified property.
 
 **Arguments**:
 
-- `validator` - The validator to use. Either the class or an instance.
-- `on` - The part of the LLM request to validate. Defaults to "output".
+- `validators` - The validators to use.
+- `on` - The property to validate. Valid options include "output", "messages",
+  or a JSON path starting with "$.". Defaults to "output".
 
-#### use\_many
-
-```python
-@overload
-def use_many(*validators: Validator, on: str = "output") -> "Guard"
-```
-
-#### use\_many
+#### get\_validators
 
 ```python
-@overload
-def use_many(*validators: UseManyValidatorTuple,
-             on: str = "output") -> "Guard"
+def get_validators(on: str) -> List[Validator]
 ```
 
-#### use\_many
+The read-only counterpart to `Guard.use`.
+Retrieves the validators applied to the specified property.
 
-```python
-def use_many(*validators: UseManyValidatorSpec, on: str = "output") -> "Guard"
-```
+**Arguments**:
 
-Use multiple validators to validate results of an LLM request.
+- `on` - The property for which to return configured validators. Valid options include "output", "messages",
+  or a JSON path starting with "$.".
 
 #### validate
 
 ```python
-@trace(name="/guard_call", origin="Guard.validate")
 def validate(llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]
 ```
 
@@ -416,17 +386,7 @@ def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["AsyncGuard"]
 #### use
 
 ```python
-def use(validator: UseValidatorSpec,
-        *args,
-        on: str = "output",
-        **kwargs) -> "AsyncGuard"
-```
-
-#### use\_many
-
-```python
-def use_many(*validators: UseManyValidatorSpec,
-             on: str = "output") -> "AsyncGuard"
+def use(*validator: Validator, on: str = "output") -> "AsyncGuard"
 ```
 
 #### \_\_call\_\_
