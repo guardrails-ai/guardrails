@@ -1297,7 +1297,7 @@ class Guard(IGuard, Generic[OT]):
                 else {"type": "string"}
             )
 
-            return Guard(
+            return cls(
                 id=guard.id,
                 name=guard.name,
                 description=guard.description,
