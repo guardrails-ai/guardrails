@@ -1,5 +1,5 @@
 import pytest
-
+import json
 from guardrails.utils.parsing_utils import extract_json_from_ouput
 
 
@@ -75,6 +75,8 @@ Here is the data you requested
 
 not_even_json = "This isn't even json..."
 
+codeblock_inside_json = json.dumps({"data": 'hello ```json\n{"foo":"<...>"}\n```'})
+
 
 @pytest.mark.parametrize(
     "llm_ouput,expected_output,expected_error",
@@ -84,6 +86,11 @@ not_even_json = "This isn't even json..."
         (no_code_block, {"a": 1}, None),
         (text_with_no_code_block, {"a": 1, "b": {"c": [{"d": 2}, {"e": 3}]}}, None),
         (text_with_json_code_block, {"a": 1}, None),
+        (
+            codeblock_inside_json,
+            {"data": 'hello ```json\n{"foo":"<...>"}\n```'},
+            None,
+        ),
         (js_code_block, None, "Expecting value: line 1 column 1 (char 0)"),
         (
             invalid_json_code_block__quotes,

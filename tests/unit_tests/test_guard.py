@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 
 import openai  # noqa: F401
@@ -137,15 +138,17 @@ class EmptyModel(BaseModel):
 # i_guard_none = Guard(rail)
 # i_guard_two = Guard(rail, 2)
 r_guard_none = Guard.for_rail("tests/unit_tests/test_assets/empty.rail")
-r_guard_two = Guard.for_rail("tests/unit_tests/test_assets/empty.rail", num_reasks=2)
+r_guard_two = Guard.for_rail("tests/unit_tests/test_assets/empty.rail")
+r_guard_two.configure(num_reasks=2)
 rs_guard_none = Guard.for_rail_string(empty_rail_string)
-rs_guard_two = Guard.for_rail_string(empty_rail_string, num_reasks=2)
+rs_guard_two = Guard.for_rail_string(empty_rail_string)
+rs_guard_two.configure(num_reasks=2)
 py_guard_none = Guard.for_pydantic(output_class=EmptyModel)
-py_guard_two = Guard.for_pydantic(output_class=EmptyModel, num_reasks=2)
-s_guard_none = Guard.from_string(validators=[], string_description="empty railspec")
-s_guard_two = Guard.from_string(
-    validators=[], description="empty railspec", num_reasks=2
-)
+py_guard_two = Guard.for_pydantic(output_class=EmptyModel)
+py_guard_two.configure(num_reasks=2)
+s_guard_none = Guard.for_string(validators=[], string_description="empty railspec")
+s_guard_two = Guard.for_string(validators=[], description="empty railspec")
+s_guard_two.configure(num_reasks=2)
 
 
 class TestConfigure:
@@ -158,38 +161,6 @@ class TestConfigure:
         guard.configure(num_reasks=2)
 
         assert guard._num_reasks == 2
-
-    def test_tracer(self, mocker):
-        mocker.patch("guardrails.guard.Tracer")
-        mock_set_tracer = mocker.patch("guardrails.guard.set_tracer")
-        mock_set_tracer_context = mocker.patch("guardrails.guard.set_tracer_context")
-        mock_get_tracer_context = mocker.patch("guardrails.guard.get_tracer_context")
-
-        from guardrails.guard import Tracer, Guard
-
-        guard = Guard()
-        tracer = Tracer()
-
-        guard.configure()
-
-        assert guard._tracer is None
-
-        guard.configure(tracer=tracer)
-
-        assert guard._tracer == tracer
-
-        assert mock_set_tracer.call_count == 1
-        assert mock_set_tracer_context.call_count == 1
-        assert mock_get_tracer_context.call_count == 1
-
-
-def guard_init_for_rail():
-    guard = Guard.for_rail("tests/unit_tests/test_assets/simple.rail")
-    assert (
-        guard.instructions.format().source.strip()
-        == "You are a helpful bot, who answers only with valid JSON"
-    )
-    assert guard.prompt.format().source.strip() == "Extract a string from the text"
 
 
 def test_use():
@@ -616,3 +587,483 @@ def test_use_and_use_many():
 
 #     assert response.validation_passed is True
 #     assert response.validated_output == "oh canada"
+
+
+class TestGuardSerialization:
+    """Test Guard serialization and deserialization."""
+
+    def test_to_dict_basic(self):
+        """Test basic to_dict functionality."""
+        guard = Guard()
+        guard_dict = guard.to_dict()
+
+        assert isinstance(guard_dict, dict)
+        assert "id" in guard_dict
+        assert "name" in guard_dict
+        assert "validators" in guard_dict
+        assert "output_schema" in guard_dict
+
+    def test_to_dict_with_validators(self):
+        """Test to_dict with validators."""
+        guard = Guard().use(LowerCase()).use(OneLine())
+        guard_dict = guard.to_dict()
+
+        assert isinstance(guard_dict, dict)
+        assert len(guard_dict["validators"]) == 2
+
+    def test_from_dict_none(self):
+        """Test from_dict with None input."""
+        result = Guard.from_dict(None)
+        assert result is None
+
+    def test_from_dict_basic(self):
+        """Test basic from_dict functionality."""
+        original_guard = Guard()
+        guard_dict = original_guard.to_dict()
+
+        restored_guard = Guard.from_dict(guard_dict)
+
+        assert restored_guard is not None
+        assert restored_guard.id == original_guard.id
+        assert restored_guard.name == original_guard.name
+
+    def test_from_dict_with_validators(self):
+        """Test from_dict with validators."""
+        original_guard = Guard().use(LowerCase())
+        guard_dict = original_guard.to_dict()
+
+        restored_guard = Guard.from_dict(guard_dict)
+
+        assert restored_guard is not None
+        assert len(restored_guard.validators) == len(original_guard.validators)
+
+    def test_round_trip_serialization(self):
+        """Test that serialization round-trip preserves guard state."""
+        original_guard = (
+            Guard(name="test-guard", description="Test guard for serialization")
+            .use(LowerCase())
+            .use(OneLine())
+        )
+
+        # Serialize
+        guard_dict = original_guard.to_dict()
+
+        # Deserialize
+        restored_guard = Guard.from_dict(guard_dict)
+
+        # Compare
+        assert restored_guard is not None
+        assert restored_guard.name == original_guard.name
+        assert restored_guard.description == original_guard.description
+        assert len(restored_guard.validators) == len(original_guard.validators)
+
+
+class TestFetchGuard:
+    """Test Guard.fetch_guard functionality."""
+
+    def test_fetch_guard_without_name(self):
+        """Test that fetch_guard raises ValueError when name is not
+        specified."""
+        with pytest.raises(ValueError, match="Name must be specified to fetch a guard"):
+            Guard.fetch_guard()
+
+    def test_fetch_guard_with_name(self, mocker):
+        """Test fetch_guard with a valid name."""
+        # Create a real Guard to return from the mock
+        mock_fetched_guard = Guard()
+        mock_fetched_guard.name = "fetched-guard"
+
+        # Mock the API client
+        mock_api_client = mocker.Mock()
+        mock_api_client.fetch_guard.return_value = mock_fetched_guard
+
+        # Mock GuardrailsApiClient constructor
+        mocker.patch(
+            "guardrails.guard.GuardrailsApiClient", return_value=mock_api_client
+        )
+
+        # Mock settings to enable server mode
+        mock_settings = mocker.patch("guardrails.guard.settings")
+        mock_settings.use_server = True
+
+        result = Guard.fetch_guard(name="test-guard")
+
+        # Should return a Guard instance
+        assert isinstance(result, Guard)
+        assert result.name == "test-guard"
+
+        # Should have called the API client's fetch_guard
+        mock_api_client.fetch_guard.assert_called()
+
+    def test_fetch_guard_with_api_key_and_base_url(self, mocker):
+        """Test fetch_guard with custom api_key and base_url."""
+        # Create a real Guard to return from the mock
+        mock_fetched_guard = Guard()
+
+        mock_api_client = mocker.Mock()
+        mock_api_client.fetch_guard.return_value = mock_fetched_guard
+
+        mock_client_class = mocker.patch(
+            "guardrails.guard.GuardrailsApiClient", return_value=mock_api_client
+        )
+        mock_settings = mocker.patch("guardrails.guard.settings")
+        mock_settings.use_server = True
+
+        result = Guard.fetch_guard(
+            name="test-guard", api_key="test-api-key", base_url="https://test.api.com"
+        )
+
+        # Should create a Guard with the specified credentials
+        assert isinstance(result, Guard)
+        assert result._api_key == "test-api-key"
+        assert result._base_url == "https://test.api.com"
+
+        # Should have called GuardrailsApiClient with correct parameters
+        # Note: It gets called multiple times during Guard initialization
+        assert mock_client_class.call_count >= 1
+        mock_client_class.assert_any_call(
+            api_key="test-api-key", base_url="https://test.api.com"
+        )
+
+    def test_fetch_guard_not_found(self, mocker):
+        """Test fetch_guard when guard is not found on server."""
+        mock_api_client = mocker.Mock()
+        mock_api_client.fetch_guard.return_value = None
+
+        mocker.patch(
+            "guardrails.guard.GuardrailsApiClient", return_value=mock_api_client
+        )
+        mocker.patch("guardrails.guard.settings")
+
+        with pytest.raises(ValueError, match="Guard with name test-guard not found"):
+            Guard.fetch_guard(name="test-guard")
+
+
+class TestErrorSpansInOutput:
+    """Test error_spans_in_output functionality."""
+
+    def test_error_spans_no_history(self):
+        """Test error_spans_in_output when there is no history."""
+        guard = Guard()
+        error_spans = guard.error_spans_in_output()
+
+        assert isinstance(error_spans, list)
+        assert len(error_spans) == 0
+
+    def test_error_spans_with_empty_history(self):
+        """Test error_spans_in_output with empty history."""
+        guard = Guard()
+        # History is initialized but empty
+        error_spans = guard.error_spans_in_output()
+
+        assert isinstance(error_spans, list)
+        assert len(error_spans) == 0
+
+    def test_error_spans_with_validation_errors(self, mocker):
+        """Test error_spans_in_output with actual validation errors."""
+        from guardrails.classes.history import Iteration
+        from guardrails.classes.validation.validation_result import ErrorSpan
+
+        guard = Guard()
+
+        # Create a mock call with iterations
+        mock_call = mocker.Mock()
+        mock_iteration = mocker.Mock(spec=Iteration)
+
+        # Create mock error spans
+        error_span1 = ErrorSpan(start=0, end=5, reason="Test error 1")
+        error_span2 = ErrorSpan(start=10, end=15, reason="Test error 2")
+        mock_iteration.error_spans_in_output = [error_span1, error_span2]
+
+        # Set up the mock structure
+        mock_call.iterations = mocker.Mock()
+        mock_call.iterations.last = mock_iteration
+
+        # Add to guard history
+        guard.history.push(mock_call)
+
+        error_spans = guard.error_spans_in_output()
+
+        assert len(error_spans) == 2
+        assert error_spans[0] == error_span1
+        assert error_spans[1] == error_span2
+
+    def test_error_spans_handles_attribute_error(self, mocker):
+        """Test that error_spans_in_output handles AttributeError
+        gracefully."""
+        guard = Guard()
+
+        # Create a mock call that raises AttributeError
+        mock_call = mocker.Mock()
+        mock_call.iterations = []
+
+        guard.history.push(mock_call)
+
+        error_spans = guard.error_spans_in_output()
+
+        assert isinstance(error_spans, list)
+        assert len(error_spans) == 0
+
+
+class TestResponseFormatJsonSchema:
+    """Test response_format_json_schema functionality."""
+
+    def test_response_format_json_schema_with_pydantic(self):
+        """Test response_format_json_schema with Pydantic model."""
+
+        class TestModel(BaseModel):
+            field1: str
+            field2: int
+
+        guard = Guard.for_pydantic(output_class=TestModel)
+        result = guard.response_format_json_schema()
+
+        assert isinstance(result, dict)
+        assert "type" in result
+        result_json_schema = result["json_schema"]
+        assert "strict" in result_json_schema
+
+
+class TestUpsertGuard:
+    """Test upsert_guard functionality."""
+
+    @patch("guardrails.guard.GuardrailsApiClient")
+    def test_upsert_guard(self, mock_api_client):
+        """Test upsert_guard saves guard to server."""
+        guard = Guard(name="test-guard", use_server=True, preloaded=True)
+
+        guard.upsert_guard()
+
+        # Once from save on init, once from upsert
+        assert guard._api_client.upsert_guard.call_count == 2
+
+
+class TestConfigureExtended:
+    """Extended tests for configure method."""
+
+    def test_configure_with_allow_metrics_collection(self, mocker):
+        """Test configure with allow_metrics_collection parameter."""
+        guard = Guard()
+
+        # Mock the hub telemetry configuration
+        mock_configure = mocker.patch.object(guard, "_configure_hub_telemtry")
+
+        guard.configure(allow_metrics_collection=True)
+
+        mock_configure.assert_called_once()
+        mock_configure.assert_called_with(True)
+
+    def test_configure_with_both_parameters(self, mocker):
+        """Test configure with both num_reasks and allow_metrics_collection."""
+        guard = Guard()
+
+        mock_configure = mocker.patch.object(guard, "_configure_hub_telemtry")
+
+        guard.configure(num_reasks=3, allow_metrics_collection=False)
+
+        assert guard._num_reasks == 3
+        assert guard._allow_metrics_collection is False
+        mock_configure.assert_called_once()
+
+    def test_configure_multiple_times(self):
+        """Test that configure can be called multiple times."""
+        guard = Guard()
+
+        guard.configure(num_reasks=1)
+        assert guard._num_reasks == 1
+
+        guard.configure(num_reasks=5)
+        assert guard._num_reasks == 5
+
+    def test_configure_with_none_resets(self, mocker):
+        """Test that configure with None resets num_reasks."""
+        guard = Guard()
+
+        mock__set_num_reasks = mocker.patch.object(guard, "_set_num_reasks")
+
+        guard.configure(num_reasks=3)
+        mock__set_num_reasks.assert_called_once()
+        mock__set_num_reasks.assert_called_with(3)
+
+        mock__set_num_reasks.reset_mock()
+
+        guard.configure(num_reasks=None)
+        mock__set_num_reasks.assert_not_called()
+
+
+class TestHistoryManagement:
+    """Test Guard history management."""
+
+    def test_history_initialization(self):
+        """Test that history is properly initialized."""
+        guard = Guard()
+
+        assert hasattr(guard, "history")
+        assert guard.history is not None
+        assert len(guard.history) == 0
+
+    def test_history_max_length_default(self):
+        """Test that history has default max length."""
+        guard = Guard()
+
+        assert guard._history_max_length == 10
+
+    def test_history_max_length_custom(self):
+        """Test history with custom max length."""
+        guard = Guard(history_max_length=5)
+
+        assert guard._history_max_length == 5
+
+    def test_history_respects_max_length(self, mocker):
+        """Test that history respects max length."""
+        guard = Guard(history_max_length=2)
+
+        # Create mock calls
+        call1 = mocker.Mock()
+        call2 = mocker.Mock()
+        call3 = mocker.Mock()
+
+        # Add calls to history
+        guard.history.push(call1)
+        guard.history.push(call2)
+        guard.history.push(call3)
+
+        # History should only keep the last 2
+        assert len(guard.history) == 2
+
+
+class TestGuardProperties:
+    """Test Guard property access."""
+
+    def test_id_property(self):
+        """Test id property access."""
+        guard = Guard()
+
+        assert hasattr(guard, "id")
+        assert guard.id is not None
+        assert isinstance(guard.id, str)
+
+    def test_name_property(self):
+        """Test name property access."""
+        guard = Guard(name="test-guard")
+
+        assert guard.name == "test-guard"
+
+    def test_description_property(self):
+        """Test description property access."""
+        guard = Guard(description="Test description")
+
+        assert guard.description == "Test description"
+
+    def test_validators_property(self):
+        """Test validators property access."""
+        guard = Guard().use(LowerCase())
+
+        assert hasattr(guard, "validators")
+        assert isinstance(guard.validators, list)
+        assert len(guard.validators) == 1
+
+    def test_output_schema_property(self):
+        """Test output_schema property access."""
+        guard = Guard()
+
+        assert hasattr(guard, "output_schema")
+        assert guard.output_schema is not None
+
+
+class TestGuardInitialization:
+    """Test various Guard initialization scenarios."""
+
+    def test_init_with_all_parameters(self):
+        """Test Guard initialization with all parameters."""
+        validators = []
+        output_schema = {"type": "string", "description": "test"}
+
+        guard = Guard(
+            id="test-id",
+            name="test-guard",
+            description="Test guard",
+            validators=validators,
+            output_schema=output_schema,
+            history_max_length=15,
+        )
+
+        assert guard.id == "test-id"
+        assert guard.name == "test-guard"
+        assert guard.description == "Test guard"
+        assert guard.validators == validators
+        assert guard._history_max_length == 15
+
+    def test_init_with_minimal_parameters(self):
+        """Test Guard initialization with minimal parameters."""
+        guard = Guard()
+
+        # Check defaults
+        assert guard.id is not None
+        assert guard.name is not None
+        assert guard.name.startswith("gr-")
+        assert guard.validators == []
+        assert guard.output_schema is not None
+        assert guard._history_max_length == 10
+
+    def test_init_with_custom_id(self):
+        """Test that custom ID is preserved."""
+        custom_id = "my-custom-id"
+        guard = Guard(id=custom_id)
+
+        assert guard.id == custom_id
+        assert guard.name == f"gr-{custom_id}"
+
+    @patch("guardrails.guard.GuardrailsApiClient")
+    def test_init_with_api_credentials(self, mock_api_client):
+        """Test Guard initialization with API credentials."""
+        guard = Guard(
+            api_key="test-key", base_url="https://test.api.com", use_server=True
+        )
+
+        # These are stored as private attributes
+        assert guard._api_key == "test-key"
+        assert guard._base_url == "https://test.api.com"
+
+
+class TestJsonFunctionCallingTool:
+    """Test json_function_calling_tool functionality."""
+
+    def test_json_function_calling_tool_basic(self):
+        """Test basic json_function_calling_tool functionality."""
+        guard = Guard()
+
+        # Test with empty tools list
+        result = guard.json_function_calling_tool()
+        json_tool = result[0]
+
+        assert isinstance(result, list)
+        assert isinstance(json_tool, dict)
+        assert "type" in json_tool
+        assert json_tool["type"] == "function"
+
+    def test_json_function_calling_tool_with_pydantic(self):
+        """Test json_function_calling_tool with Pydantic model."""
+
+        class TestModel(BaseModel):
+            field1: str
+            field2: int
+
+        guard = Guard.for_pydantic(output_class=TestModel)
+        result = guard.json_function_calling_tool()
+        json_tool = result[0]
+
+        assert isinstance(result, list)
+        assert isinstance(json_tool, dict)
+        assert "type" in json_tool
+        assert "function" in json_tool
+
+    def test_json_function_calling_tool_with_custom_tools(self):
+        """Test json_function_calling_tool with custom tools."""
+        guard = Guard()
+
+        custom_tools = [{"type": "function", "function": {"name": "test_func"}}]
+
+        result = guard.json_function_calling_tool(tools=custom_tools)
+
+        assert isinstance(result, list)

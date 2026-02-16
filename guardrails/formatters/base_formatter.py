@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from guardrails.llm_providers import (
     ArbitraryCallable,
+    AsyncPromptCallableBase,
     PromptCallableBase,
 )
 
@@ -17,7 +18,15 @@ class BaseFormatter(ABC):
     @abstractmethod
     def wrap_callable(self, llm_callable: PromptCallableBase) -> ArbitraryCallable: ...
 
+    @abstractmethod
+    def wrap_async_callable(
+        self, llm_callable: PromptCallableBase
+    ) -> AsyncPromptCallableBase: ...
+
 
 class PassthroughFormatter(BaseFormatter):
-    def wrap_callable(self, llm_callable: PromptCallableBase):
+    def wrap_callable(self, llm_callable: PromptCallableBase):  # type: ignore
+        return llm_callable  # Noop
+
+    def wrap_async_callable(self, llm_callable: PromptCallableBase):  # type: ignore
         return llm_callable  # Noop

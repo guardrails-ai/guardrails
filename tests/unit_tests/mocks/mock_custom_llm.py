@@ -1,4 +1,5 @@
-from guardrails.utils.openai_utils import OpenAIServiceUnavailableError
+from unittest.mock import Mock
+from openai import APIError
 
 
 class MockOpenAILlm:
@@ -9,7 +10,7 @@ class MockOpenAILlm:
     def fail_retryable(self, messages, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise OpenAIServiceUnavailableError("ServiceUnavailableError")
+            raise APIError("ServiceUnavailableError", Mock(), body=None)
         return self.response
 
     def fail_non_retryable(self, messages, *args, **kwargs) -> str:
@@ -27,7 +28,7 @@ class MockAsyncOpenAILlm:
     async def fail_retryable(self, messages, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise OpenAIServiceUnavailableError("ServiceUnavailableError")
+            raise APIError("ServiceUnavailableError", Mock(), body=None)
         return self.response
 
     async def fail_non_retryable(self, messages, *args, **kwargs) -> str:

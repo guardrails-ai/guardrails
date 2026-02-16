@@ -39,7 +39,7 @@ def start(
 ):
     logger.debug("Checking for prerequisites...")
     if not api_is_installed():
-        package_name = 'guardrails-api>="^0.0.0a0"'
+        package_name = "guardrails-api>=0.0.0a0"
         pip_process("install", package_name)
 
     from guardrails_api.cli.start import start as start_api  # type: ignore

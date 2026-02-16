@@ -12,21 +12,15 @@ iteration = Iteration(
 
 
 class TestShouldRunSync:
-    def test_process_count_of_1(self, mocker):
-        mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["1", "false"]
-        )
-        assert vs.should_run_sync() is True
-
     def test_run_sync_set_to_true(self, mocker):
         mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["10", "True"]
+            "guardrails.validator_service.os.environ.get", side_effect=["True"]
         )
         assert vs.should_run_sync() is True
 
     def test_should_run_sync_default(self, mocker):
         mocker.patch(
-            "guardrails.validator_service.os.environ.get", side_effect=["10", "false"]
+            "guardrails.validator_service.os.environ.get", side_effect=["false"]
         )
         assert vs.should_run_sync() is False
 

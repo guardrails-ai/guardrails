@@ -2,8 +2,11 @@ name: Server CI
 
 on:
     push:
-        branches:
-            - main
+      branches:
+        - main
+      paths:
+      - guardrails/**
+      - pyproject.toml
     workflow_dispatch:
 
 jobs:

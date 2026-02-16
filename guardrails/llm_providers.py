@@ -509,7 +509,17 @@ def get_llm_ask(
     **kwargs,
 ) -> Optional[PromptCallableBase]:
     if "temperature" not in kwargs:
-        kwargs.update({"temperature": 0})
+        model = kwargs.get("model", "")
+        if not (
+            isinstance(model, str)
+            and (model.startswith("gpt-5") or model.startswith("openai/gpt-5"))
+        ):
+            warnings.warn(
+                "The default value of 0 for temperature is deprecated "
+                "and will be removed in guardrails-ai v0.8.x and higher.",
+                DeprecationWarning,
+            )
+            kwargs.update({"temperature": 0})
 
     try:
         from litellm import completion
