@@ -35,6 +35,7 @@ jobs:
                 file: server_ci/Dockerfile
                 platforms: linux/amd64
                 push: false
+                tags: guardrails:server-ci
                 load: true
                 build-args: |
                   GUARDRAILS_TOKEN=${{ secrets.GUARDRAILS_API_KEY }}
