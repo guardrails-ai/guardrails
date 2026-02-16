@@ -5,8 +5,8 @@ on:
       branches:
         - main
       paths:
-      - guardrails/**
-      - pyproject.toml
+        - guardrails/**
+        - pyproject.toml
     workflow_dispatch:
 
 jobs:
@@ -57,7 +57,7 @@ jobs:
     
             - name: Run Pytest
               run: |
-                pip install pytest pytest-asyncio openai guardrails-ai
+                pip install pytest pytest-asyncio openai "./guardrails[api]"
                 pytest server_ci/tests
                 docker stop guardrails-container
                 docker rm guardrails-container
