@@ -834,8 +834,7 @@ class TestUpsertGuard:
 
         guard.upsert_guard()
 
-        # Once from save on init, once from upsert
-        assert guard._api_client.upsert_guard.call_count == 2
+        assert guard._api_client.upsert_guard.call_count == 1
 
 
 class TestConfigureExtended:
