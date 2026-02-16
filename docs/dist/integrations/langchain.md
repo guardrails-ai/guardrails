@@ -50,7 +50,7 @@ Here's a basic example of how to integrate Guardrails with a LangChain LCEL chai
     from guardrails.hub import CompetitorCheck, ToxicLanguage
 
     competitors_list = ["delta", "american airlines", "united"]
-    guard = Guard().use(
+    guard = Guard().use_many(
         CompetitorCheck(competitors=competitors_list, on_fail="fix"),
         ToxicLanguage(on_fail="filter"),
     )

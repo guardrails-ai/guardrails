@@ -1276,7 +1276,7 @@ class TestSerizlizationAndDeserialization:
     def test_guard_i_guard(self):
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
-        ).use(
+        ).use_many(
             RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
             ValidLength(1, 100, on_fail="noop"),
             ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
@@ -1321,7 +1321,7 @@ class TestSerizlizationAndDeserialization:
     def test_ser_deser(self):
         guard = Guard(
             name="name-case", description="Checks that a string is in Name Case format."
-        ).use(
+        ).use_many(
             RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$", on_fail="noop"),
             ValidLength(1, 100, on_fail="noop"),
             ValidChoices(["Some Name", "Some Other Name"], on_fail="noop"),
@@ -1490,6 +1490,18 @@ class TestValidatorInitializedOnce:
 
         assert init_spy.call_count == 1
 
+    def test_guard_use_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
     def test_guard_use_same_instance_on_two_guards(self, mocker):
         init_spy = mocker.spy(LowerCase, "__init__")
 
@@ -1497,6 +1509,49 @@ class TestValidatorInitializedOnce:
 
         guard_1 = Guard().use(lower_case)
         guard_2 = Guard().use(lower_case)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase())
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_same_instance_on_two_guards(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        guard_1 = Guard().use_many(lower_case)
+        guard_2 = Guard().use_many(lower_case)
 
         assert init_spy.call_count == 1
 
