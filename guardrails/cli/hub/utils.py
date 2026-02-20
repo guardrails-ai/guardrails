@@ -101,6 +101,80 @@ def pip_process_with_custom_exception(
         raise PipProcessError(action, package, stderr=str(e), stdout="", returncode=1)
 
 
+def installer_process(
+    action: str,
+    package: str = "",
+    flags: List[str] = [],
+    format: Union[Literal["string"], Literal["json"]] = string_format,
+    quiet: bool = False,
+    no_color: bool = False,
+    installer: str = "pip",
+) -> Union[str, dict]:
+    """Run a package install action using the specified installer (uv or pip).
+
+    Args:
+        action: The pip action to run (e.g., "install").
+        package: The package name to act on.
+        flags: Additional flags to pass to the installer.
+        format: Output format ("string" or "json").
+        quiet: Whether to suppress output.
+        no_color: Whether to disable color output.
+        installer: Package installer to use ("uv" or "pip").
+    """
+    try:
+        if installer == "uv":
+            command = ["uv", "pip", action]
+        else:
+            command = [sys.executable, "-m", "pip", action]
+
+        if not quiet:
+            installer_label = "uv pip" if installer == "uv" else "pip"
+            logger.debug(
+                f"running {installer_label} {action} {' '.join(flags)} {package}"
+            )
+
+        command.extend(flags)
+        if package:
+            command.append(package)
+
+        env = dict(os.environ)
+        if no_color:
+            env["NO_COLOR"] = "true"
+
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        if format == json_format:
+            try:
+                remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
+                parsed_as_string = re.sub(remove_color_codes, "", result.stdout.strip())
+                return json.loads(parsed_as_string)
+            except Exception:
+                logger.debug(
+                    f"JSON parse exception in decoding output from {action}"
+                    f" {package}. Falling back to accumulating the byte stream",
+                )
+            accumulator = {}
+            parsed = BytesHeaderParser().parsebytes(result.stdout.encode())
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
+
+        return result.stdout
+
+    except subprocess.CalledProcessError as exc:
+        raise PipProcessError(
+            action, package, exc.stderr or "", exc.stdout or "", exc.returncode
+        )
+    except Exception as e:
+        raise PipProcessError(action, package, stderr=str(e), stdout="", returncode=1)
+
+
 def pip_process(
     action: str,
     package: str = "",

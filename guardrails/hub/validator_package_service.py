@@ -1,9 +1,13 @@
 import importlib
+import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import sysconfig
 
 from typing import List, Literal, Optional
 from types import ModuleType
@@ -12,7 +16,10 @@ from packaging.utils import canonicalize_name  # PEP 503
 from guardrails.logger import logger as guardrails_logger
 
 
-from guardrails.cli.hub.utils import PipProcessError, pip_process_with_custom_exception
+from guardrails.cli.hub.utils import (
+    PipProcessError,
+    installer_process,
+)
 from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.settings import settings
@@ -20,6 +27,8 @@ from guardrails.settings import settings
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
+_GUARDRAILS_INSTALLER_ENV = "GUARDRAILS_INSTALLER"
 
 
 class ValidatorModuleType(ModuleType):
@@ -48,6 +57,27 @@ class InvalidHubInstallURL(Exception):
 
 class ValidatorPackageService:
     @staticmethod
+    def detect_installer() -> str:
+        """Detect preferred package installer.
+
+        Precedence:
+        1. GUARDRAILS_INSTALLER env var (explicit override)
+        2. uv (if available via shutil.which)
+        3. pip (fallback)
+        """
+        env_installer = os.environ.get(_GUARDRAILS_INSTALLER_ENV, "").strip().lower()
+        if env_installer in ("uv", "pip"):
+            return env_installer
+        if shutil.which("uv") is not None:
+            return "uv"
+        return "pip"
+
+    @staticmethod
+    def get_registry_path() -> Path:
+        """Return the project-level registry path."""
+        return Path(os.getcwd()) / ".guardrails" / "hub_registry.json"
+
+    @staticmethod
     def get_manifest_and_site_packages(module_name: str) -> tuple[Manifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
@@ -55,10 +85,7 @@ class ValidatorPackageService:
 
     @staticmethod
     def get_site_packages_location():
-        pip_package_location = Path(ValidatorPackageService.get_module_path("pip"))
-        # Get the location of site-packages
-        site_packages_path = str(pip_package_location.parent)
-        return site_packages_path
+        return sysconfig.get_paths()["purelib"]
 
     @staticmethod
     def reload_module(module_path) -> ModuleType:
@@ -102,6 +129,43 @@ class ValidatorPackageService:
 
         # Reload or import the module
         return ValidatorPackageService.reload_module(import_line)
+
+    @staticmethod
+    def register_validator(manifest: Manifest):
+        """Register a validator in the project-level JSON registry."""
+        registry_file = ValidatorPackageService.get_registry_path()
+        registry_file.parent.mkdir(parents=True, exist_ok=True)
+
+        registry = {"version": 1, "validators": {}}
+        if registry_file.exists():
+            try:
+                registry = json.loads(registry_file.read_text())
+            except (json.JSONDecodeError, OSError):
+                guardrails_logger.warning(
+                    "Failed to read hub registry at %s, creating new one",
+                    registry_file,
+                )
+
+        validator_id = manifest.id
+        if "/" not in validator_id:
+            guardrails_logger.debug(
+                "Skipping registry for validator %s: id missing namespace",
+                validator_id,
+            )
+            return
+        import_path = ValidatorPackageService.get_import_path_from_validator_id(
+            validator_id
+        )
+        package_name = ValidatorPackageService.get_normalized_package_name(validator_id)
+
+        registry["validators"][validator_id] = {
+            "import_path": import_path,
+            "exports": manifest.exports or [],
+            "installed_at": datetime.now(timezone.utc).isoformat(),
+            "package_name": package_name,
+        }
+
+        registry_file.write_text(json.dumps(registry, indent=2))
 
     @staticmethod
     def add_to_hub_inits(manifest: Manifest, site_packages: str):
@@ -253,32 +317,41 @@ class ValidatorPackageService:
         validator_version = validator_version if validator_version else ""
 
         guardrails_token = settings.rc.token
+        installer = ValidatorPackageService.detect_installer()
 
-        pip_flags = [
+        install_flags = [
             f"--index-url=https://__token__:{guardrails_token}@pypi.guardrailsai.com/simple",
             "--extra-index-url=https://pypi.org/simple",
         ]
 
         if upgrade:
-            pip_flags.append("--upgrade")
+            install_flags.append("--upgrade")
 
         if quiet:
-            pip_flags.append("-q")
+            install_flags.append("-q")
 
         # Install from guardrails hub pypi server with public pypi index as fallback
 
         try:
             full_package_name = f"{pep_503_package_name}[validators]{validator_version}"
-            download_output = pip_process_with_custom_exception(
-                "install", full_package_name, pip_flags, quiet=quiet
+            download_output = installer_process(
+                "install",
+                full_package_name,
+                install_flags,
+                quiet=quiet,
+                installer=installer,
             )
             if not quiet:
                 logger.info(download_output)
         except PipProcessError:
             try:
                 full_package_name = f"{pep_503_package_name}{validator_version}"
-                download_output = pip_process_with_custom_exception(
-                    "install", full_package_name, pip_flags, quiet=quiet
+                download_output = installer_process(
+                    "install",
+                    full_package_name,
+                    install_flags,
+                    quiet=quiet,
+                    installer=installer,
                 )
                 if not quiet:
                     logger.info(download_output)

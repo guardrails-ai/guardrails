@@ -136,6 +136,7 @@ def install(
             "downloaded for local inference.",
         )
     ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
+    ValidatorPackageService.register_validator(module_manifest)
 
     # 5. Get Validator Class for the installed module
     installed_module = ValidatorPackageService.get_validator_from_manifest(
