@@ -168,6 +168,28 @@ class ValidatorPackageService:
         registry_file.write_text(json.dumps(registry, indent=2))
 
     @staticmethod
+    def unregister_validator(validator_id: str):
+        """Remove a validator from the project-level JSON registry."""
+        registry_file = ValidatorPackageService.get_registry_path()
+        if not registry_file.exists():
+            return
+
+        try:
+            registry = json.loads(registry_file.read_text())
+        except (json.JSONDecodeError, OSError):
+            guardrails_logger.debug(
+                "Registry at %s is unreadable; skipping unregister",
+                registry_file,
+            )
+            return
+
+        validators = registry.get("validators", {})
+        if validator_id in validators:
+            del validators[validator_id]
+            registry["validators"] = validators
+            registry_file.write_text(json.dumps(registry, indent=2))
+
+    @staticmethod
     def add_to_hub_inits(manifest: Manifest, site_packages: str):
         validator_id = manifest.id
         exports: List[str] = manifest.exports or []

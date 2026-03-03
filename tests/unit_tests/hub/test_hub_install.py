@@ -64,8 +64,8 @@ class TestInstall:
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
-        mock_add_to_hub_init = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         get_manifest_and_site_packages_mock.return_value = (
@@ -99,7 +99,6 @@ class TestInstall:
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest.id, validator_version=None, quiet=ANY, upgrade=ANY, logger=ANY
         )
-        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
     def test_install_local_models__true(self, mocker, use_remote_inferencing):
         mocker.patch(
@@ -127,8 +126,8 @@ class TestInstall:
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
-        mock_add_to_hub_init = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         get_manifest_and_site_packages_mock.return_value = (
@@ -161,7 +160,6 @@ class TestInstall:
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest.id, validator_version=None, quiet=ANY, upgrade=ANY, logger=ANY
         )
-        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
     def test_install_local_models__none(self, mocker, use_remote_inferencing):
         mocker.patch(
@@ -186,8 +184,8 @@ class TestInstall:
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
-        mock_add_to_hub_init = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         get_manifest_and_site_packages_mock.return_value = (
@@ -220,7 +218,6 @@ class TestInstall:
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest.id, validator_version=None, quiet=ANY, upgrade=ANY, logger=ANY
         )
-        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
     def test_happy_path(self, mocker, use_remote_inferencing):
         mocker.patch(
@@ -245,8 +242,8 @@ class TestInstall:
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
-        mock_add_to_hub_init = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         get_manifest_and_site_packages_mock.return_value = (
@@ -275,7 +272,6 @@ class TestInstall:
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest.id, validator_version=None, quiet=ANY, upgrade=ANY, logger=ANY
         )
-        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
 
     def test_install_local_models_confirmation(self, mocker, use_remote_inferencing):
         mocker.patch(
@@ -290,7 +286,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
         mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         mock_get_manifest_and_site_packages = mocker.patch(
@@ -341,7 +337,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
         mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         mock_get_manifest_and_site_packages = mocker.patch(
@@ -398,7 +394,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
         )
         mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.register_validator"
         )
 
         manifest = Manifest.from_dict(

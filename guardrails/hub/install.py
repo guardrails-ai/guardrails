@@ -135,7 +135,6 @@ def install(
             msg="Skipping post install, models will not be "
             "downloaded for local inference.",
         )
-    ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
     ValidatorPackageService.register_validator(module_manifest)
 
     # 5. Get Validator Class for the installed module
