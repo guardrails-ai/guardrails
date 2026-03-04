@@ -97,6 +97,7 @@ class ValidatorPackageService:
                 importlib.reload(sys.modules["guardrails.hub"])
             if module_path not in sys.modules:
                 # Import the module if it has not been imported yet
+                importlib.invalidate_caches()
                 reloaded_module = importlib.import_module(module_path)
                 sys.modules[module_path] = reloaded_module
             else:
