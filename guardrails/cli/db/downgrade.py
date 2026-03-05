@@ -6,7 +6,7 @@ from guardrails.cli.logger import logger
 
 
 @db_command.command(name="downgrade")
-def downgrade(
+def downgrade_db(
     revision: Annotated[str, typer.Argument()] = "-1",
     env: str = typer.Option(
         default=".env",

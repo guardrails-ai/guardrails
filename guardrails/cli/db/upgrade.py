@@ -6,7 +6,7 @@ from guardrails.cli.logger import logger
 
 
 @db_command.command(name="upgrade")
-def upgrade(
+def upgrade_db(
     revision: Annotated[str, typer.Argument()] = "head",
     env: str = typer.Option(
         default=".env",
