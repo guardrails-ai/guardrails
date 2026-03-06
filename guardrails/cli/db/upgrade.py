@@ -17,6 +17,13 @@ def upgrade_db(
         help="Override existing environment variables with values from the env file.",
     ),
 ):
+    """Upgrades the database schema for the guardrails-api to the specified
+    revision.
+
+    Upgrades are applied automatically on server startup so you should
+    normally never need to use this command.  However it is offered as
+    an extra lever for custom use cases.
+    """
     try:
         guardrails_api_version = version("guardrails_api")
         major, minor, *_ = guardrails_api_version.split(".")
