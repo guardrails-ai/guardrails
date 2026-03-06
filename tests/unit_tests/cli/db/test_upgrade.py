@@ -56,16 +56,14 @@ class TestUpgrade:
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
@@ -73,23 +71,21 @@ class TestUpgrade:
         result = runner.invoke(db_command, ["upgrade"])
 
         assert result.exit_code == 0
-        mock_api_downgrade.assert_called_once_with("head", ".env", False)
+        mock_api_upgrade.assert_called_once_with("head", ".env", False)
 
     def test_delegates_to_guardrails_api_with_custom_revision(self, mocker):
         mocker.patch(
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
@@ -97,23 +93,21 @@ class TestUpgrade:
         result = runner.invoke(db_command, ["upgrade", "abc123"])
 
         assert result.exit_code == 0
-        mock_api_downgrade.assert_called_once_with("abc123", ".env", False)
+        mock_api_upgrade.assert_called_once_with("abc123", ".env", False)
 
     def test_delegates_to_guardrails_api_with_custom_env_file(self, mocker):
         mocker.patch(
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
@@ -121,23 +115,21 @@ class TestUpgrade:
         result = runner.invoke(db_command, ["upgrade", "--env", "/custom/.env"])
 
         assert result.exit_code == 0
-        mock_api_downgrade.assert_called_once_with("head", "/custom/.env", False)
+        mock_api_upgrade.assert_called_once_with("head", "/custom/.env", False)
 
     def test_delegates_to_guardrails_api_with_env_override(self, mocker):
         mocker.patch(
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
@@ -145,23 +137,21 @@ class TestUpgrade:
         result = runner.invoke(db_command, ["upgrade", "--env-override"])
 
         assert result.exit_code == 0
-        mock_api_downgrade.assert_called_once_with("head", ".env", True)
+        mock_api_upgrade.assert_called_once_with("head", ".env", True)
 
     def test_delegates_to_guardrails_api_with_all_options(self, mocker):
         mocker.patch(
             "guardrails.cli.db.upgrade.version",
             return_value="1.0.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
@@ -172,7 +162,7 @@ class TestUpgrade:
         )
 
         assert result.exit_code == 0
-        mock_api_downgrade.assert_called_once_with("v2", "prod.env", True)
+        mock_api_upgrade.assert_called_once_with("v2", "prod.env", True)
 
     def test_does_not_log_error_when_major_version_is_non_zero(self, mocker):
         """Major version != '0' should pass the version check and delegate."""
@@ -180,16 +170,14 @@ class TestUpgrade:
             "guardrails.cli.db.upgrade.version",
             return_value="1.0.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
         mock_logger_error = mocker.patch("guardrails.cli.db.upgrade.logger.error")
@@ -198,30 +186,28 @@ class TestUpgrade:
         runner.invoke(db_command, ["upgrade"])
 
         mock_logger_error.assert_not_called()
-        mock_api_downgrade.assert_called_once()
+        mock_api_upgrade.assert_called_once()
 
     def test_default_revision_is_head(self, mocker):
         mocker.patch(
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
 
         runner = CliRunner()
         runner.invoke(db_command, ["upgrade"])
 
-        args, _ = mock_api_downgrade.call_args
+        args, _ = mock_api_upgrade.call_args
         assert args[0] == "head"
 
     def test_version_exactly_030_is_supported(self, mocker):
@@ -229,16 +215,14 @@ class TestUpgrade:
             "guardrails.cli.db.upgrade.version",
             return_value="0.3.0",
         )
-        mock_api_downgrade = MagicMock()
+        mock_api_upgrade = MagicMock()
         mocker.patch.dict(
             "sys.modules",
             {
                 "guardrails_api": MagicMock(),
                 "guardrails_api.cli": MagicMock(),
                 "guardrails_api.cli.db": MagicMock(),
-                "guardrails_api.cli.db.downgrade": MagicMock(
-                    downgrade=mock_api_downgrade
-                ),
+                "guardrails_api.cli.db.upgrade": MagicMock(upgrade=mock_api_upgrade),
             },
         )
         mock_logger_error = mocker.patch("guardrails.cli.db.upgrade.logger.error")
@@ -247,4 +231,4 @@ class TestUpgrade:
         runner.invoke(db_command, ["upgrade"])
 
         mock_logger_error.assert_not_called()
-        mock_api_downgrade.assert_called_once()
+        mock_api_upgrade.assert_called_once()
