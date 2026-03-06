@@ -43,3 +43,4 @@ docusaurus/static/docs
 pyvenv.cfg
 mlruns
 mlartifacts
+/.guardrails
