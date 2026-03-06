@@ -33,8 +33,8 @@ def upgrade_db(
                 f"  You have guardrails-api=={guardrails_api_version}."
             )
         else:
-            from guardrails_api.cli.db.downgrade import downgrade  # type: ignore
+            from guardrails_api.cli.db.upgrade import upgrade  # type: ignore
 
-            downgrade(revision, env, env_override)
+            upgrade(revision, env, env_override)
     except PackageNotFoundError:
         logger.error("[ERROR]: 'db upgrade' requires guardrails-api to be installed.")
