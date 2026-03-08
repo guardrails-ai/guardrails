@@ -7,7 +7,7 @@ def safe_get_with_brackets(
 ) -> Any:
     try:
         value = container[key]
-        if not value:
+        if value is None:
             return default
         return value
     except Exception as e:
