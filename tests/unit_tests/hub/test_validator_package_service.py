@@ -749,6 +749,101 @@ class TestRegisterValidator:
         ]
 
 
+class TestUnregisterValidator:
+    def test_removes_validator_from_registry(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/detect-pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                },
+                "guardrails/regex-match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                },
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch.object(
+            ValidatorPackageService,
+            "get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        registry = json.loads(registry_file.read_text())
+        assert "guardrails/detect-pii" not in registry["validators"]
+        assert "guardrails/regex-match" in registry["validators"]
+        assert len(registry["validators"]) == 1
+
+    def test_noop_when_registry_missing(self, tmp_path, mocker):
+        registry_file = tmp_path / ".guardrails" / "hub_registry.json"
+        mocker.patch.object(
+            ValidatorPackageService,
+            "get_registry_path",
+            return_value=registry_file,
+        )
+
+        # Should not raise
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+    def test_noop_when_validator_not_in_registry(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/regex-match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch.object(
+            ValidatorPackageService,
+            "get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        registry = json.loads(registry_file.read_text())
+        assert len(registry["validators"]) == 1
+        assert "guardrails/regex-match" in registry["validators"]
+
+    def test_noop_on_corrupt_registry(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        registry_file.write_text("not valid json{{{")
+
+        mocker.patch.object(
+            ValidatorPackageService,
+            "get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        # File should remain unchanged
+        assert registry_file.read_text() == "not valid json{{{"
+
+
 class TestInstallHubModuleWithInstaller:
     @pytest.mark.parametrize(
         ("detected_installer",),

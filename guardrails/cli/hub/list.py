@@ -1,5 +1,4 @@
-import os
-import re
+import json
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.hub_telemetry.hub_tracing import trace
@@ -12,20 +11,24 @@ def list():
     """List all installed validators."""
     from guardrails.hub.validator_package_service import ValidatorPackageService
 
-    site_packages = ValidatorPackageService.get_site_packages_location()
-    hub_init_file = os.path.join(site_packages, "guardrails", "hub", "__init__.py")
+    registry_path = ValidatorPackageService.get_registry_path()
 
-    installed_validators = []
-
-    if os.path.isfile(hub_init_file):
-        with open(hub_init_file, "r") as file:
-            content = file.read()
-            matches = re.findall(r"from .* import (\w+)", content)
-            installed_validators.extend(matches)
-
-    if installed_validators:
-        console.print("Installed Validators:")
-        for validator in installed_validators:
-            console.print(f"- {validator}")
-    else:
+    if not registry_path.exists():
         console.print("No validators installed.")
+        return
+
+    try:
+        registry = json.loads(registry_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        console.print("No validators installed.")
+        return
+
+    validators = registry.get("validators", {})
+    if not validators:
+        console.print("No validators installed.")
+        return
+
+    console.print("Installed Validators:")
+    for validator_id, entry in sorted(validators.items()):
+        exports = ", ".join(entry.get("exports", []))
+        console.print(f"- {validator_id} ({exports})")
