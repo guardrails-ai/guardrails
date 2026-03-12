@@ -67,5 +67,5 @@ write_to_file(
             skip_empty_modules=False,
         ),
     ),
-    filename="docs/src/api_reference_markdown/validator.md",
+    filename="docs/api_reference/validator.md",
 )

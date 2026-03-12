@@ -21,7 +21,7 @@ Follow these steps before committing your changes:
 1. Ensure tests pass: `make test`
 2. Format your code: `make autoformat`
 3. Run static analysis: `make type`
-4. Update documentation if needed. Docs are located in the `docs` directory. You can serve docs using `mkdocs serve`.
+4. Update documentation: `make docs-gen`
 
 ### Optional: Pre-Commit Hooks
 
@@ -36,19 +36,3 @@ For convenience, consider [installing the pre-commit hooks](https://pre-commit.c
 5. Celebrate when your pull request is merged! Your changes will be available in the next Guardrails release.
 
 Thank you for your contribution and happy coding!
-
-## Documentation
-
-Docs are served via docusaurus. To serve docs locally, run the following
-
-```bash
-# install dependencies
-pip install -e ".[dev]"
-
-# install npm dependencies
-npm i
-
-# serve the docs
-npm run start
-```
-then navigate to `localhost:3000` in your browser.

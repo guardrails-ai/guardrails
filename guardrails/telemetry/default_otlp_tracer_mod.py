@@ -64,6 +64,6 @@ def default_otlp_tracer(resource_name: str = "guardrails") -> Tracer:
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
-    do that is in our (docs)[https://docs.guardrails.com/telemetry]
+    do that is in our (docs)[https://guardrailsai.com/guardrails/docs/concepts/telemetry]
     """
     return DefaultOtlpTracer(resource_name).tracer
