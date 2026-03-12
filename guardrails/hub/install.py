@@ -161,7 +161,7 @@ def install(
         "[bold]Import validator:[/bold]\n"
         "from guardrails.hub import ${export}\n\n"
         "[bold]Get more info:[/bold]\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
+        "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,
@@ -172,7 +172,7 @@ def install(
         "Import validator:\n"
         "from guardrails.hub import ${export}\n\n"
         "Get more info:\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
+        "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,

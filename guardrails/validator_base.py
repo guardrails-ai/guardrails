@@ -379,7 +379,7 @@ class Validator:
                 raise Exception(
                     "401: Remote Inference Unauthorized. Please run "
                     "`guardrails configure`. You can find a new"
-                    " token at https://hub.guardrailsai.com/keys"
+                    " token at https://guardrailsai.com/hub/keys"
                 )
             else:
                 logging.error(req.status_code)

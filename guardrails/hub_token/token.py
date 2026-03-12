@@ -5,7 +5,7 @@ from typing import Optional
 
 from guardrails.classes.rc import RC
 
-FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
+FIND_NEW_TOKEN = "You can find a new token at https://guardrailsai.com/hub/keys"
 
 TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
 to update your token.

@@ -44,3 +44,8 @@ pyvenv.cfg
 mlruns
 mlartifacts
 /.guardrails
+.claude
+.idea
+.pytest_cache
+.ruff_cache
+.vscode
