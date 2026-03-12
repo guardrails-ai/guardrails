@@ -179,14 +179,12 @@ class AsyncRunner(Runner):
 
             # Parse: parse the output.
             parsed_output, parsing_error = self.parse(output, output_schema)
-            if parsing_error:
-                # Parsing errors are captured and not raised
-                #   because they are recoverable
-                #   i.e. result in a reask
+            if parsing_error or isinstance(parsed_output, ReAsk):
                 iteration.outputs.exception = parsing_error  # type: ignore  # pyright and pydantic don't agree
                 iteration.outputs.error = str(parsing_error)
-
-            iteration.outputs.parsed_output = parsed_output  # type: ignore  # pyright and pydantic don't agree
+                iteration.outputs.reasks.append(parsed_output)  # type: ignore  # pyright and pydantic don't agree
+            else:
+                iteration.outputs.parsed_output = parsed_output  # type: ignore  # pyright and pydantic don't agree
 
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):
                 reasks, _ = self.introspect(parsed_output)
@@ -266,7 +264,7 @@ class AsyncRunner(Runner):
         if self.output_type != OutputTypes.STRING:
             stream = None
 
-        validated_output, _metadata = await validator_service.async_validate(
+        validated_output, metadata = await validator_service.async_validate(
             value=parsed_output,
             metadata=self.metadata,
             validator_map=self.validation_map,
@@ -276,6 +274,7 @@ class AsyncRunner(Runner):
             stream=stream,
             **kwargs,
         )
+        self.metadata.update(metadata)
         validated_output = validator_service.post_process_validation(
             validated_output, attempt_number, iteration, self.output_type
         )
@@ -328,7 +327,8 @@ class AsyncRunner(Runner):
         # Format any variables in the message history with the prompt params.
         for msg in messages:
             msg_copy = copy.deepcopy(msg)
-            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            if attempt_number == 0:
+                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
             formatted_messages.append(msg_copy)
 
         if "messages" in self.validation_map:
