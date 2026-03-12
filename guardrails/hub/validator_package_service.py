@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import json
 import os
 from datetime import datetime, timezone
@@ -23,6 +24,7 @@ from guardrails.cli.hub.utils import (
 from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.settings import settings
+from guardrails.types.validator_registry import ValidatorRegistry
 
 
 json_format: Literal["json"] = "json"
@@ -132,6 +134,24 @@ class ValidatorPackageService:
         return ValidatorPackageService.reload_module(import_line)
 
     @staticmethod
+    def rewrite_stub_file(registry: ValidatorRegistry):
+        stub_file = (
+            Path(ValidatorPackageService.get_site_packages_location())
+            / "guardrails"
+            / "hub"
+            / "__init__.pyi"
+        )
+
+        import_statements = []
+        for v in registry.validators.values():
+            if v.exports and importlib.util.find_spec(v.import_path):
+                import_statements.extend(
+                    [f"from {v.import_path} import {e} as {e}" for e in v.exports]
+                )
+
+        stub_file.write_text("\n".join(import_statements))
+
+    @staticmethod
     def register_validator(manifest: Manifest):
         """Register a validator in the project-level JSON registry."""
         registry_file = ValidatorPackageService.get_registry_path()
@@ -168,6 +188,10 @@ class ValidatorPackageService:
 
         registry_file.write_text(json.dumps(registry, indent=2))
 
+        ValidatorPackageService.rewrite_stub_file(
+            ValidatorRegistry.model_validate(registry)
+        )
+
     @staticmethod
     def unregister_validator(validator_id: str):
         """Remove a validator from the project-level JSON registry."""
@@ -189,6 +213,9 @@ class ValidatorPackageService:
             del validators[validator_id]
             registry["validators"] = validators
             registry_file.write_text(json.dumps(registry, indent=2))
+            ValidatorPackageService.rewrite_stub_file(
+                ValidatorRegistry.model_validate(registry)
+            )
 
     @staticmethod
     def add_to_hub_inits(manifest: Manifest, site_packages: str):
