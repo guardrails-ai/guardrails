@@ -48,7 +48,6 @@ Output schema must be a valid JSON Schema.
 ```python
 def configure(*,
               num_reasks: Optional[int] = None,
-              tracer: Optional[Tracer] = None,
               allow_metrics_collection: Optional[bool] = None)
 ```
 
@@ -58,8 +57,6 @@ Configure the Guard.
 
 - `num_reasks` _int, optional_ - The max times to re-ask the LLM
   if validation fails. Defaults to None.
-- `tracer` _Tracer, optional_ - An OpenTelemetry tracer to use for
-  sending traces to your OpenTelemetry sink. Defaults to None.
 - `allow_metrics_collection` _bool, optional_ - Whether to allow
   Guardrails to collect anonymous metrics.
   Defaults to None, and falls back to waht is
@@ -72,8 +69,6 @@ Configure the Guard.
 def for_rail(cls,
              rail_file: str,
              *,
-             num_reasks: Optional[int] = None,
-             tracer: Optional[Tracer] = None,
              name: Optional[str] = None,
              description: Optional[str] = None)
 ```
@@ -84,8 +79,6 @@ prompt, etc.
 **Arguments**:
 
 - `rail_file` - The path to the `.rail` file.
-- `num_reasks` _int, optional_ - The max times to re-ask the LLM if validation fails. Deprecated
-- `tracer` _Tracer, optional_ - An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
 - `name` _str, optional_ - A unique name for this Guard. Defaults to `gr-` + the object id.
 - `description` _str, optional_ - A description for this Guard. Defaults to None.
   
@@ -101,8 +94,6 @@ prompt, etc.
 def for_rail_string(cls,
                     rail_string: str,
                     *,
-                    num_reasks: Optional[int] = None,
-                    tracer: Optional[Tracer] = None,
                     name: Optional[str] = None,
                     description: Optional[str] = None)
 ```
@@ -113,8 +104,6 @@ prompt, etc..
 **Arguments**:
 
 - `rail_string` - The `.rail` string.
-- `num_reasks` _int, optional_ - The max times to re-ask the LLM if validation fails. Deprecated
-- `tracer` _Tracer, optional_ - An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
 - `name` _str, optional_ - A unique name for this Guard. Defaults to `gr-` + the object id.
 - `description` _str, optional_ - A description for this Guard. Defaults to None.
   
@@ -130,10 +119,8 @@ prompt, etc..
 def for_pydantic(cls,
                  output_class: ModelOrListOfModels,
                  *,
-                 num_reasks: Optional[int] = None,
                  reask_messages: Optional[List[Dict]] = None,
                  messages: Optional[List[Dict]] = None,
-                 tracer: Optional[Tracer] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  output_formatter: Optional[Union[str, BaseFormatter]] = None)
@@ -148,8 +135,6 @@ schema.
   the desired structure of the output.
 - `messages` _List[Dict], optional_ - A list of messages to give to the llm. Defaults to None.
 - `reask_messages` _List[Dict], optional_ - A list of messages to use during reasks. Defaults to None.
-- `num_reasks` _int, optional_ - The max times to re-ask the LLM if validation fails. Deprecated
-- `tracer` _Tracer, optional_ - An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
 - `name` _str, optional_ - A unique name for this Guard. Defaults to `gr-` + the object id.
 - `description` _str, optional_ - A description for this Guard. Defaults to None.
 - `output_formatter` _str | Formatter, optional_ - 'none' (default), 'jsonformer', or a Guardrails Formatter.
@@ -164,8 +149,6 @@ def for_string(cls,
                string_description: Optional[str] = None,
                reask_messages: Optional[List[Dict]] = None,
                messages: Optional[List[Dict]] = None,
-               num_reasks: Optional[int] = None,
-               tracer: Optional[Tracer] = None,
                name: Optional[str] = None,
                description: Optional[str] = None)
 ```
@@ -178,14 +161,13 @@ Create a Guard instance for a string response.
 - `string_description` _str, optional_ - A description for the string to be generated. Defaults to None.
 - `messages` _List[Dict], optional_ - A list of messages to pass to llm. Defaults to None.
 - `reask_messages` _List[Dict], optional_ - A list of messages to use during reasks. Defaults to None.
-- `num_reasks` _int, optional_ - The max times to re-ask the LLM if validation fails. Deprecated
-- `tracer` _Tracer, optional_ - An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
 - `name` _str, optional_ - A unique name for this Guard. Defaults to `gr-` + the object id.
 - `description` _str, optional_ - A description for this Guard. Defaults to None.
 
 #### \_\_call\_\_
 
 ```python
+@trace(name="/guard_call", origin="Guard.__call__")
 def __call__(
         llm_api: Optional[Callable] = None,
         *args,
@@ -221,6 +203,7 @@ Call the LLM and validate the output.
 #### parse
 
 ```python
+@trace(name="/guard_call", origin="Guard.parse")
 def parse(llm_output: str,
           *args,
           metadata: Optional[Dict] = None,
@@ -260,7 +243,9 @@ Get the error spans in the last output.
 #### use
 
 ```python
-def use(*validators: Validator, on: str = "output") -> "Guard"
+def use(*validator_spread: Validator,
+        validators: List[Validator] = [],
+        on: str = "output") -> "Guard"
 ```
 
 Applies validators to the property specified in the `on` argument.
@@ -269,8 +254,13 @@ overwrite previously configured validators on the specified property.
 
 **Arguments**:
 
-- `validators` - The validators to use.
-- `on` - The property to validate. Valid options include "output", "messages",
+  *validator_spread:
+  One or more validators passed as positional arguments to use.
+  validators:
+  Keyword argument that allows explicitly setting a list of
+  validators to use.
+  on:
+  The property to validate. Valid options include "output", "messages",
   or a JSON path starting with "$.". Defaults to "output".
 
 #### get\_validators
@@ -279,8 +269,8 @@ overwrite previously configured validators on the specified property.
 def get_validators(on: str) -> List[Validator]
 ```
 
-The read-only counterpart to `Guard.use`.
-Retrieves the validators applied to the specified property.
+The read-only counterpart to `Guard.use`. Retrieves the validators
+applied to the specified property.
 
 **Arguments**:
 
@@ -291,6 +281,7 @@ Retrieves the validators applied to the specified property.
 #### validate
 
 ```python
+@trace(name="/guard_call", origin="Guard.validate")
 def validate(llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]
 ```
 
@@ -346,6 +337,12 @@ method functions as a wrapper around LLM APIs. It takes in an Async LLM
 API, and optional prompt parameters, and returns the raw output stream from
 the LLM and the validated output stream.
 
+#### \_\_init\_\_
+
+```python
+def __init__(*args, **kwargs)
+```
+
 #### for\_pydantic
 
 ```python
@@ -354,11 +351,10 @@ def for_pydantic(cls,
                  output_class: ModelOrListOfModels,
                  *,
                  messages: Optional[List[Dict]] = None,
-                 num_reasks: Optional[int] = None,
                  reask_messages: Optional[List[Dict]] = None,
-                 tracer: Optional[Tracer] = None,
                  name: Optional[str] = None,
-                 description: Optional[str] = None)
+                 description: Optional[str] = None,
+                 output_formatter: Optional[Union[str, BaseFormatter]] = None)
 ```
 
 #### for\_string
@@ -371,8 +367,6 @@ def for_string(cls,
                string_description: Optional[str] = None,
                messages: Optional[List[Dict]] = None,
                reask_messages: Optional[List[Dict]] = None,
-               num_reasks: Optional[int] = None,
-               tracer: Optional[Tracer] = None,
                name: Optional[str] = None,
                description: Optional[str] = None)
 ```
@@ -387,7 +381,9 @@ def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["AsyncGuard"]
 #### use
 
 ```python
-def use(*validator: Validator, on: str = "output") -> "AsyncGuard"
+def use(*validator_spread: Validator,
+        validators: List[Validator] = [],
+        on: str = "output") -> "AsyncGuard"
 ```
 
 #### \_\_call\_\_
