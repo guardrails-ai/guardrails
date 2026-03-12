@@ -5,28 +5,11 @@ on first attribute access and cached for subsequent imports.
 """
 
 import importlib
-import json
-import logging
-import os
-from pathlib import Path
 
-# Use stdlib logger to avoid circular imports with guardrails.logger
-_logger = logging.getLogger(__name__)
+from guardrails.hub.registry import get_registry
+
 
 _export_map_cache = None
-
-
-def _load_registry() -> dict:
-    """Load the hub registry from .guardrails/hub_registry.json."""
-    registry_path = Path(os.getcwd()) / ".guardrails" / "hub_registry.json"
-    if not registry_path.exists():
-        return {}
-    try:
-        data = json.loads(registry_path.read_text())
-        return data.get("validators", {})
-    except (json.JSONDecodeError, OSError):
-        _logger.warning("Failed to read hub registry at %s", registry_path)
-        return {}
 
 
 def _build_export_map() -> dict:
@@ -35,11 +18,13 @@ def _build_export_map() -> dict:
     Returns a dict mapping export names (e.g. "DetectPII") to their
     module import paths (e.g. "guardrails_grhub_detect_pii").
     """
-    validators = _load_registry()
+    registry = get_registry()
+    if not registry:
+        return {}
     export_map = {}
-    for entry in validators.values():
-        import_path = entry.get("import_path", "")
-        for export_name in entry.get("exports", []):
+    for entry in registry.validators.values():
+        import_path = entry.import_path
+        for export_name in entry.exports:
             export_map[export_name] = import_path
     return export_map
 

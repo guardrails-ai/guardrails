@@ -12,6 +12,7 @@ import sysconfig
 
 from typing import List, Literal, Optional
 from types import ModuleType
+from guardrails.hub.registry import get_registry_path
 from packaging.utils import canonicalize_name  # PEP 503
 
 from guardrails.logger import logger as guardrails_logger
@@ -73,11 +74,6 @@ class ValidatorPackageService:
         if shutil.which("uv") is not None:
             return "uv"
         return "pip"
-
-    @staticmethod
-    def get_registry_path() -> Path:
-        """Return the project-level registry path."""
-        return Path(os.getcwd()) / ".guardrails" / "hub_registry.json"
 
     @staticmethod
     def get_manifest_and_site_packages(module_name: str) -> tuple[Manifest, str]:
@@ -154,7 +150,7 @@ class ValidatorPackageService:
     @staticmethod
     def register_validator(manifest: Manifest):
         """Register a validator in the project-level JSON registry."""
-        registry_file = ValidatorPackageService.get_registry_path()
+        registry_file = get_registry_path()
         registry_file.parent.mkdir(parents=True, exist_ok=True)
 
         registry = {"version": 1, "validators": {}}
@@ -195,7 +191,7 @@ class ValidatorPackageService:
     @staticmethod
     def unregister_validator(validator_id: str):
         """Remove a validator from the project-level JSON registry."""
-        registry_file = ValidatorPackageService.get_registry_path()
+        registry_file = get_registry_path()
         if not registry_file.exists():
             return
 

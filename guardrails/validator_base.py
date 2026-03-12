@@ -7,6 +7,7 @@ import asyncio
 from contextvars import Context, ContextVar
 from functools import partial
 import inspect
+import importlib
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from warnings import warn
 
 import requests
+from guardrails.hub.registry import get_registry
 from langchain_core.runnables import Runnable
 
 from guardrails.settings import settings
@@ -567,14 +569,15 @@ def register_validator(
     return decorator
 
 
-def try_to_import_hub():
+def try_to_import_from_hub(validator_key: str):
     try:
-        # This should import everything and trigger registration
-        # So it should only have to happen once
-        # in lieu of completely unregistered validators
-        import guardrails.hub  # noqa
-    except ImportError:
-        logger.error("Could not import hub. Validators may not work properly.")
+        hub_registry = get_registry()
+        if not hub_registry:
+            return
+        import_path = hub_registry.validators[validator_key].import_path
+        importlib.import_module(import_path)
+    except (ImportError, KeyError):
+        logger.error("Could not import from hub. Validators may not work properly.")
 
 
 # TODO: Move this to validator_utils.py
@@ -586,7 +589,7 @@ def get_validator_class(name: Optional[str]) -> Optional[Type[Validator]]:
 
     registration = validators_registry.get(validator_key)
     if not registration:
-        try_to_import_hub()
+        try_to_import_from_hub(validator_key)
         registration = validators_registry.get(validator_key)
 
     if not registration:
