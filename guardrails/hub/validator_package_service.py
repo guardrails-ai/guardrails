@@ -140,7 +140,7 @@ class ValidatorPackageService:
 
         import_statements = []
         for v in registry.validators.values():
-            if v.exports and importlib.util.find_spec(v.import_path):
+            if v.exports and v.import_path and importlib.util.find_spec(v.import_path):
                 import_statements.extend(
                     [f"from {v.import_path} import {e} as {e}" for e in v.exports]
                 )
