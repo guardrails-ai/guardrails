@@ -49,3 +49,4 @@ mlartifacts
 .pytest_cache
 .ruff_cache
 .vscode
+docs/examples/.guardrails/hub_registry.json
