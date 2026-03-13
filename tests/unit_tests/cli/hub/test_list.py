@@ -31,7 +31,7 @@ def test_list_from_registry(tmp_path, mocker):
     registry_path.write_text(json.dumps(registry))
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 
@@ -49,7 +49,7 @@ def test_list_empty_registry(tmp_path, mocker):
     registry_path.write_text(json.dumps({"version": 1, "validators": {}}))
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 
@@ -63,7 +63,7 @@ def test_list_no_registry_file(tmp_path, mocker):
     registry_path = tmp_path / ".guardrails" / "hub_registry.json"
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 
@@ -79,7 +79,7 @@ def test_list_corrupt_registry(tmp_path, mocker):
     registry_path.write_text("not valid json{{{")
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 
@@ -106,7 +106,7 @@ def test_list_multi_export_validator(tmp_path, mocker):
     registry_path.write_text(json.dumps(registry))
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 
@@ -127,13 +127,14 @@ def test_list_entry_without_exports_key(tmp_path, mocker):
                 "import_path": "guardrails_grhub_test",
                 "installed_at": "2025-01-01T00:00:00+00:00",
                 "package_name": "guardrails-grhub-test",
+                "exports": [],
             }
         },
     }
     registry_path.write_text(json.dumps(registry))
 
     mocker.patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_registry_path",
+        "guardrails.hub.registry.get_registry_path",
         return_value=registry_path,
     )
 

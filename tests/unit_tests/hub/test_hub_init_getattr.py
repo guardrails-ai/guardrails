@@ -48,7 +48,7 @@ def test_getattr_resolves_registered_validator(tmp_path, registry_file):
     mock_module.TestValidator = "resolved_class"
 
     with (
-        patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)),
+        patch("guardrails.hub.registry.get_registry_path", return_value=registry_file),
         patch(
             "guardrails.hub.importlib.import_module",
             return_value=mock_module,
@@ -77,7 +77,7 @@ def test_getattr_caches_in_globals(tmp_path, registry_file):
     mock_module.TestValidator = "resolved_class"
 
     with (
-        patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)),
+        patch("guardrails.hub.registry.get_registry_path", return_value=registry_file),
         patch(
             "guardrails.hub.importlib.import_module",
             return_value=mock_module,
@@ -97,7 +97,7 @@ def test_getattr_caches_in_globals(tmp_path, registry_file):
 def test_getattr_raises_attribute_error_for_unknown(tmp_path, registry_file):
     _write_registry(registry_file, {})
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         with pytest.raises(
             AttributeError,
             match="has no attribute 'NonExistent'",
@@ -119,7 +119,7 @@ def test_getattr_raises_import_error_for_missing_module(tmp_path, registry_file)
     )
 
     with (
-        patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)),
+        patch("guardrails.hub.registry.get_registry_path", return_value=registry_file),
         patch(
             "guardrails.hub.importlib.import_module",
             side_effect=ModuleNotFoundError(
@@ -148,7 +148,7 @@ def test_getattr_raises_import_error_for_missing_attribute(tmp_path, registry_fi
     mock_module = MagicMock(spec=[])
 
     with (
-        patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)),
+        patch("guardrails.hub.registry.get_registry_path", return_value=registry_file),
         patch(
             "guardrails.hub.importlib.import_module",
             return_value=mock_module,
@@ -171,25 +171,24 @@ def test_dir_includes_registered_exports(tmp_path, registry_file):
         },
     )
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         result = hub_module.__dir__()
 
     assert "TestValidator" in result
     assert "TestHelper" in result
 
 
-def test_dir_with_no_registry(tmp_path):
+def test_dir_with_no_registry(tmp_path, registry_file):
     """__dir__ should not crash when no registry file exists."""
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         result = hub_module.__dir__()
 
     assert isinstance(result, list)
-    assert "_load_registry" in result
     assert "_build_export_map" in result
 
 
-def test_empty_registry(tmp_path):
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+def test_empty_registry(tmp_path, registry_file):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         with pytest.raises(
             AttributeError,
             match="has no attribute 'SomeName'",
@@ -197,11 +196,11 @@ def test_empty_registry(tmp_path):
             hub_module.__getattr__("SomeName")
 
 
-def test_corrupt_registry_falls_back_gracefully(tmp_path, registry_dir):
+def test_corrupt_registry_falls_back_gracefully(tmp_path, registry_dir, registry_file):
     """Corrupt JSON should fall back to AttributeError, not crash."""
     (registry_dir / "hub_registry.json").write_text("{not valid json")
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         with pytest.raises(
             AttributeError,
             match="has no attribute 'DetectPII'",
@@ -229,7 +228,7 @@ def test_export_name_collision_last_wins(tmp_path, registry_file):
         },
     )
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         export_map = hub_module._build_export_map()
         assert export_map["SharedName"] == "org_b_grhub_validator"
 
@@ -248,7 +247,7 @@ def test_build_export_map_skips_empty_exports(tmp_path, registry_file):
         },
     )
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         export_map = hub_module._build_export_map()
         assert len(export_map) == 0
 
@@ -257,7 +256,7 @@ def test_build_export_map_handles_missing_keys(tmp_path, registry_file):
     """Entry with missing import_path or exports should not crash."""
     _write_registry(registry_file, {"guardrails/broken": {}})
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         export_map = hub_module._build_export_map()
         assert len(export_map) == 0
 
@@ -276,7 +275,7 @@ def test_get_export_map_caches_result(tmp_path, registry_file):
         },
     )
 
-    with patch("guardrails.hub.os.getcwd", return_value=str(tmp_path)):
+    with patch("guardrails.hub.registry.get_registry_path", return_value=registry_file):
         result1 = hub_module._get_export_map()
         result2 = hub_module._get_export_map()
         assert result1 is result2

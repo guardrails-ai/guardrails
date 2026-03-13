@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import cast
 import pytest
 import sys
@@ -611,22 +610,11 @@ class TestDetectInstaller:
             assert ValidatorPackageService.detect_installer() == expected
 
 
-class TestGetRegistryPath:
-    def test_returns_project_level_path(self, mocker):
-        mocker.patch(
-            "guardrails.hub.validator_package_service.os.getcwd",
-            return_value="/my/project",
-        )
-        result = ValidatorPackageService.get_registry_path()
-        assert result == Path("/my/project/.guardrails/hub_registry.json")
-
-
 class TestRegisterValidator:
     def test_creates_new_registry(self, tmp_path, mocker):
         mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=tmp_path / ".guardrails" / "hub_registry.json",
         )
         manifest = Manifest.from_dict(
@@ -677,9 +665,8 @@ class TestRegisterValidator:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
         manifest = Manifest.from_dict(
@@ -724,9 +711,8 @@ class TestRegisterValidator:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
         manifest = Manifest.from_dict(
@@ -781,9 +767,8 @@ class TestUnregisterValidator:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
 
@@ -796,9 +781,8 @@ class TestUnregisterValidator:
 
     def test_noop_when_registry_missing(self, tmp_path, mocker):
         registry_file = tmp_path / ".guardrails" / "hub_registry.json"
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
 
@@ -822,9 +806,8 @@ class TestUnregisterValidator:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
 
@@ -840,9 +823,8 @@ class TestUnregisterValidator:
         registry_file = registry_dir / "hub_registry.json"
         registry_file.write_text("not valid json{{{")
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
 
@@ -1138,9 +1120,8 @@ class TestRewriteStubFile:
 
 class TestRegisterValidatorCallsRewriteStub:
     def test_calls_rewrite_stub_file(self, tmp_path, mocker):
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=tmp_path / ".guardrails" / "hub_registry.json",
         )
         mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
@@ -1170,9 +1151,8 @@ class TestRegisterValidatorCallsRewriteStub:
         assert "guardrails/detect_pii" in registry_arg.validators
 
     def test_skips_registry_and_stub_when_id_missing_namespace(self, tmp_path, mocker):
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=tmp_path / ".guardrails" / "hub_registry.json",
         )
         mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
@@ -1217,9 +1197,8 @@ class TestUnregisterValidatorCallsRewriteStub:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
         mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
@@ -1250,9 +1229,8 @@ class TestUnregisterValidatorCallsRewriteStub:
         }
         registry_file.write_text(json.dumps(existing))
 
-        mocker.patch.object(
-            ValidatorPackageService,
-            "get_registry_path",
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
             return_value=registry_file,
         )
         mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")

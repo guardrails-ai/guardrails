@@ -1,11 +1,13 @@
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class ValidatorRegistryEntry(BaseModel):
-    import_path: str
-    exports: list[str]
-    installed_at: str
-    package_name: str
+    import_path: Optional[str] = Field(default=None)
+    exports: Optional[list[str]] = Field(default_factory=list)
+    installed_at: Optional[str] = Field(default=None)
+    package_name: Optional[str] = Field(default=None)
 
 
 class ValidatorRegistry(BaseModel):
