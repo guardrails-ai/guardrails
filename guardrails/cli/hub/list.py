@@ -10,10 +10,6 @@ def list():
     """List all installed validators."""
     registry = get_registry()
 
-    if not registry:
-        console.print("No validators installed.")
-        return
-
     validators = registry.validators
     if not validators:
         console.print("No validators installed.")

@@ -11,5 +11,5 @@ class ValidatorRegistryEntry(BaseModel):
 
 
 class ValidatorRegistry(BaseModel):
-    version: int
-    validators: dict[str, ValidatorRegistryEntry]
+    version: int = Field(default=1)
+    validators: dict[str, ValidatorRegistryEntry] = Field(default_factory=dict)

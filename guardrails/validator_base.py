@@ -572,11 +572,9 @@ def register_validator(
 def try_to_import_from_hub(validator_key: str):
     try:
         hub_registry = get_registry()
-        if not hub_registry:
-            return
-        import_path = hub_registry.validators[validator_key].import_path
-        if import_path:
-            importlib.import_module(import_path)
+        validator_entry = hub_registry.validators.get(validator_key)
+        if validator_entry and validator_entry.import_path:
+            importlib.import_module(validator_entry.import_path)
     except (ImportError, KeyError):
         logger.error("Could not import from hub. Validators may not work properly.")
 

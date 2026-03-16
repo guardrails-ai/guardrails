@@ -19,8 +19,6 @@ def _build_export_map() -> dict:
     module import paths (e.g. "guardrails_grhub_detect_pii").
     """
     registry = get_registry()
-    if not registry:
-        return {}
     export_map = {}
     for entry in registry.validators.values():
         import_path = entry.import_path

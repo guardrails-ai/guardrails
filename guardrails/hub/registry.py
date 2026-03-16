@@ -11,7 +11,7 @@ def get_registry_path() -> Path:
     return Path(os.getcwd()) / ".guardrails" / "hub_registry.json"
 
 
-def get_registry() -> ValidatorRegistry | None:
+def get_registry() -> ValidatorRegistry:
     registry_file = get_registry_path()
     try:
         registry_str = registry_file.read_text()
@@ -20,4 +20,4 @@ def get_registry() -> ValidatorRegistry | None:
         return registry
     except (json.JSONDecodeError, OSError):
         logger.warning("Failed to read hub registry at %s", registry_file)
-        return None
+        return ValidatorRegistry()
