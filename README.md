@@ -218,7 +218,7 @@ Yes, Guardrails can be used with proprietary and open-source LLMs. Check out thi
 
 #### Can I create my own validators?
 
-Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://guardrailsai.com/guardrails/docs/hub/how_to_guides/custom_validator).
+Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://guardrailsai.com/guardrails/docs/how-to-guides/custom_validators).
 
 #### Does Guardrails support other languages?
 
