@@ -16,12 +16,6 @@ jobs:
         with:
           python-version: 3.13.x
 
-      - name: Poetry cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
-
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
