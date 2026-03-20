@@ -212,7 +212,7 @@ def test_format_instructions():
 
     output_schema = prompt_content_for_schema(
         guard._output_type,
-        guard.output_schema.to_dict(),
+        guard.output_schema.model_dump(exclude_none=True, by_alias=True),
         validator_map=guard._validator_map,
         json_path="$",
     )

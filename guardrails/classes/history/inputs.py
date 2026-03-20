@@ -1,8 +1,9 @@
+from __future__ import annotations
+from typing_extensions import deprecated
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Field
+from pydantic import Field, field_serializer, field_validator
 
-from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.llm.prompt_callable import PromptCallableBase
 from guardrails.prompt.prompt import Prompt
@@ -10,26 +11,9 @@ from guardrails.prompt.messages import Messages
 from guardrails.prompt.instructions import Instructions
 
 
-class Inputs(IInputs, ArbitraryModel):
-    """Inputs represent the input data that is passed into the validation loop.
-
-    Attributes:
-        llm_api (Optional[PromptCallableBase]): The constructed class
-            for calling the LLM.
-        llm_output (Optional[str]): The string output from an
-            external LLM call provided by the user via Guard.parse.
-        messages (Optional[List[Dict]]): The message history
-            provided by the user for chat model calls.
-        prompt_params (Optional[Dict]): The parameters provided
-            by the user that will be formatted into the final LLM prompt.
-        num_reasks (Optional[int]): The total number of reasks allowed;
-            user provided or defaulted.
-        metadata (Optional[Dict[str, Any]]): The metadata provided
-            by the user to be used during validation.
-        full_schema_reask (Optional[bool]): Whether reasks we
-            performed across the entire schema or at the field level.
-        stream (Optional[bool]): Whether or not streaming was used.
-    """
+class Inputs(ArbitraryModel):
+    """Inputs represent the input data that is passed into the validation
+    loop."""
 
     llm_api: Optional[PromptCallableBase] = Field(
         description="The constructed class for calling the LLM.", default=None
@@ -68,11 +52,31 @@ class Inputs(IInputs, ArbitraryModel):
         default=False,
     )
 
-    def to_interface(self) -> IInputs:
-        serialized_messages = None
-        if self.messages:
+    @field_serializer("llm_api")
+    def serialize_llm_api(self, llm_api: PromptCallableBase | None) -> str | None:
+        if llm_api:
+            return str(llm_api)
+        return None
+
+    @field_validator("llm_api", mode="before")
+    @classmethod
+    def deserialize_llm_api(cls, llm_api: Any) -> PromptCallableBase | None:
+        if isinstance(llm_api, PromptCallableBase):
+            return llm_api
+        # Note: We can potentially identify the correct
+        #  PrompCallable Class and reconstruct it,
+        # but the previous implementation always just returned None.
+        return None
+
+    @field_serializer("messages")
+    def serialize_messages(
+        self, messages: list[dict[str, str | Prompt | Instructions]] | Messages | None
+    ) -> list[dict[str, Any]] | None:
+        # Legacy serialization logic from previous to_interface implementation
+        # TODO: Just make Prompt, Instructions, and Messages pydantic models
+        if messages:
             serialized_messages = []
-            for msg in self.messages:
+            for msg in messages:
                 ser_msg = {**msg}
                 content = ser_msg.get("content")
                 if content:
@@ -80,48 +84,23 @@ class Inputs(IInputs, ArbitraryModel):
                         content.source if isinstance(content, Prompt) else content
                     )
                 serialized_messages.append(ser_msg)
+            return serialized_messages
+        return None
 
-        return IInputs(
-            llm_api=str(self.llm_api) if self.llm_api else None,  # type: ignore - pyright doesn't understand aliases
-            llm_output=self.llm_output,  # type: ignore - pyright doesn't understand aliases
-            messages=serialized_messages,  # type: ignore - pyright doesn't understand aliases
-            prompt_params=self.prompt_params,  # type: ignore - pyright doesn't understand aliases
-            num_reasks=self.num_reasks,  # type: ignore - pyright doesn't understand aliases
-            metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,  # type: ignore - pyright doesn't understand aliases
-            stream=self.stream,
-        )
+    @deprecated("Use Inputs.model_dump() instead.")
+    def to_interface(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.to_interface().to_dict()
+    @deprecated("Use Inputs.model_dump() instead.")
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
     @classmethod
-    def from_interface(cls, i_inputs: IInputs) -> "Inputs":
-        deserialized_messages = None
-        if hasattr(i_inputs, "messages") and i_inputs.messages:  # type: ignore
-            deserialized_messages = []
-            for msg in i_inputs.messages:  # type: ignore
-                ser_msg = {**msg}
-                content = ser_msg.get("content")
-                if content:
-                    ser_msg["content"] = Prompt(content)
-                deserialized_messages.append(ser_msg)
-
-        num_reasks = (
-            int(i_inputs.num_reasks) if i_inputs.num_reasks is not None else None
-        )
-        return cls(
-            llm_api=None,
-            llm_output=i_inputs.llm_output,
-            messages=deserialized_messages,
-            prompt_params=i_inputs.prompt_params,
-            num_reasks=num_reasks,
-            metadata=i_inputs.metadata,
-            full_schema_reask=(i_inputs.full_schema_reask is True),
-            stream=(i_inputs.stream is True),
-        )
+    @deprecated("Use Inputs.model_validate() instead.")
+    def from_interface(cls, i_inputs: Any) -> "Inputs":
+        return cls.model_validate(i_inputs)
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "Inputs":
-        i_inputs = IInputs.from_dict(obj) or IInputs()
-        return cls.from_interface(i_inputs)
+    @deprecated("Use Inputs.model_validate() instead.")
+    def from_dict(cls, obj: Any) -> "Inputs":
+        return cls.model_validate(obj)

@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 from guardrails.classes.history.iteration import Iteration
-from guardrails.classes.validation.validation_result import FailResult, PassResult
+from guardrails_ai.types import FailResult, PassResult
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.types.on_fail import OnFailAction
 from guardrails.validator_base import Validator, register_validator

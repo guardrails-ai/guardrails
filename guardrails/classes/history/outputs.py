@@ -1,46 +1,20 @@
+from __future__ import annotations
 from typing import Any, Dict, List, Optional, Union
+from typing_extensions import deprecated
 
-from pydantic import Field
+from pydantic import Field, field_serializer, field_validator, ValidationError
 
-from guardrails_api_client import (
-    Outputs as IOutputs,
-    OutputsParsedOutput,
-    OutputsValidationResponse,
-)
+from guardrails_ai.types import FailResult, ValidationResult, ErrorSpan, Outcome
+
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.actions.reask import ReAsk
-from guardrails.classes.validation.validation_result import (
-    ErrorSpan,
-    FailResult,
-    ValidationResult,
-)
+from guardrails.actions.reask import to_reask, ReAsk
 
 
-class Outputs(IOutputs, ArbitraryModel):
-    """Outputs represent the data that is output from the validation loop.
-
-    Attributes:
-        llm_response_info (Optional[LLMResponse]): Information from the LLM response
-        raw_output (Optional[str]): The exact output from the LLM.
-        parsed_output (Optional[Union[str, List, Dict]]): The output parsed from the LLM
-            response as it was passed into validation.
-        validation_response (Optional[Union[str, ReAsk, List, Dict]]): The response
-            from the validation process.
-        guarded_output (Optional[Union[str, List, Dict]]): Any valid values after
-            undergoing validation.
-            Some values may be "fixed" values that were corrected during validation.
-            This property may be a partial structure if field level reasks occur.
-        reasks (List[ReAsk]): Information from the validation process used to construct
-            a ReAsk to the LLM on validation failure. Default [].
-        validator_logs (List[ValidatorLogs]): The results of each individual
-            validation. Default [].
-        error (Optional[str]): The error message from any exception that raised
-            and interrupted the process.
-        exception (Optional[Exception]): The exception that interrupted the process.
-    """
+class Outputs(ArbitraryModel):
+    """Outputs represent the data that is output from the validation loop."""
 
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
@@ -81,6 +55,42 @@ class Outputs(IOutputs, ArbitraryModel):
         description="The exception that interrupted the process.", default=None
     )
 
+    @field_validator("validation_response", mode="before")
+    @classmethod
+    def deserialize_validation_response(
+        cls, validation_response: Any | None
+    ) -> str | ReAsk | List | Dict | None:
+        if isinstance(validation_response, ReAsk):
+            return validation_response
+        if validation_response and isinstance(validation_response, dict):
+            try:
+                return to_reask(validation_response)
+            except ValidationError:
+                return validation_response
+        return validation_response
+
+    @field_validator("reasks", mode="before")
+    @classmethod
+    def deserialize_reasks(cls, reasks: Any) -> List[ReAsk]:
+        if reasks and isinstance(reasks, list):
+            return [to_reask(r) if not isinstance(r, ReAsk) else r for r in reasks]
+        return []
+
+    @field_serializer("exception")
+    def serialize_exception(self, exception: Exception | None) -> str | None:
+        if exception:
+            return str(exception)
+        return None
+
+    @field_validator("exception", mode="before")
+    @classmethod
+    def deserialize_exception(cls, exception: Any) -> Exception | None:
+        if isinstance(exception, Exception):
+            return exception
+        if exception and isinstance(exception, str):
+            return Exception(exception)
+        return None
+
     def _all_empty(self) -> bool:
         return (
             self.llm_response_info is None
@@ -101,7 +111,7 @@ class Outputs(IOutputs, ArbitraryModel):
                 for log in self.validator_logs
                 if log.validation_result is not None
                 and isinstance(log.validation_result, ValidationResult)
-                and log.validation_result.outcome == "fail"
+                and log.validation_result.outcome == Outcome.FAIL
             ]
         )
 
@@ -146,11 +156,15 @@ class Outputs(IOutputs, ArbitraryModel):
         """
         all_fail_results: List[FailResult] = []
         for reask in self.reasks:
-            all_fail_results.extend(reask.fail_results)
+            all_fail_results.extend(reask.fail_results or [])
+
+        print("all_fail_results: ", all_fail_results)
 
         all_reasks_have_fixes = all(
             list(fail.fix_value is not None for fail in all_fail_results)
         )
+
+        print("all_reasks_have_fixes: ", all_reasks_have_fixes)
 
         if self._all_empty() is True:
             return not_run_status
@@ -164,80 +178,20 @@ class Outputs(IOutputs, ArbitraryModel):
             return fail_status
         return pass_status
 
-    def to_interface(self) -> IOutputs:
-        return IOutputs(
-            llm_response_info=(  # type: ignore - pydantic alias
-                self.llm_response_info.to_interface()
-                if self.llm_response_info
-                else None
-            ),
-            raw_output=self.raw_output,  # type: ignore - pydantic alias
-            parsed_output=(  # type: ignore - pydantic alias
-                OutputsParsedOutput(self.parsed_output) if self.parsed_output else None
-            ),
-            validation_response=(  # type: ignore - pydantic alias
-                OutputsValidationResponse(self.validation_response)
-                if self.validation_response
-                else None
-            ),
-            guarded_output=(  # type: ignore - pydantic alias
-                OutputsParsedOutput(self.guarded_output)
-                if self.guarded_output
-                else None
-            ),
-            reasks=self.reasks,  # type: ignore - pydantic alias
-            validator_logs=[  # type: ignore - pydantic alias
-                v.to_interface()
-                for v in self.validator_logs
-                if isinstance(v, ValidatorLogs)
-            ],
-            error=self.error,
-        )
+    @deprecated("Use Outputs.model_dump() instead.")
+    def to_interface(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
+    @deprecated("Use Outputs.model_dump() instead.")
     def to_dict(self) -> Dict[str, Any]:
-        return self.to_interface().to_dict()
+        return self.model_dump(exclude_none=True, by_alias=True)
 
     @classmethod
-    def from_interface(cls, i_outputs: IOutputs) -> "Outputs":
-        reasks = []
-        if i_outputs.reasks:
-            reasks = [ReAsk.from_interface(r) for r in i_outputs.reasks]
-
-        validator_logs = []
-        if i_outputs.validator_logs:
-            validator_logs = [
-                ValidatorLogs.from_interface(v) for v in i_outputs.validator_logs
-            ]
-
-        return cls(
-            llm_response_info=(  # type: ignore
-                LLMResponse.from_interface(i_outputs.llm_response_info)
-                if i_outputs.llm_response_info
-                else None
-            ),
-            raw_output=i_outputs.raw_output,  # type: ignore
-            parsed_output=(  # type: ignore
-                i_outputs.parsed_output.actual_instance
-                if i_outputs.parsed_output
-                else None
-            ),
-            validation_response=(  # type: ignore
-                i_outputs.validation_response.actual_instance
-                if i_outputs.validation_response
-                else None
-            ),
-            guarded_output=(  # type: ignore
-                i_outputs.guarded_output.actual_instance
-                if i_outputs.guarded_output
-                else None
-            ),
-            reasks=reasks,  # type: ignore
-            validator_logs=validator_logs,  # type: ignore
-            error=i_outputs.error,
-        )
+    @deprecated("Use Outputs.model_validate() instead.")
+    def from_interface(cls, i_outputs: Any) -> "Outputs":
+        return cls.model_validate(i_outputs)
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "Outputs":
-        i_outputs = IOutputs.from_dict(obj) or IOutputs()
-
-        return cls.from_interface(i_outputs)
+    @deprecated("Use Outputs.model_validate() instead.")
+    def from_dict(cls, obj: Any) -> "Outputs":
+        return cls.model_validate(obj)

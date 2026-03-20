@@ -1,5 +1,5 @@
 from enum import Enum
-from guardrails_api_client import SimpleTypes
+from guardrails.types.simple import SimpleTypes
 
 
 class PrimitiveTypes(str, Enum):

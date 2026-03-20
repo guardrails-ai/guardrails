@@ -9,7 +9,7 @@ from guardrails.errors import ValidationError
 from guardrails.actions.reask import FieldReAsk
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.filter import Filter
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
     ValidationResult,
@@ -551,8 +551,8 @@ async def test_async_messages_validation_fix(mocker):
     [
         (
             OnFailAction.REASK,
-            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
-            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome=<Outcome.FAIL: 'fail'>, metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome=<Outcome.FAIL: 'fail'>, metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,
@@ -633,8 +633,8 @@ def test_input_validation_fail(
     [
         (
             OnFailAction.REASK,
-            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
-            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', error_spans=None, metadata=None, validated_chunk=None)] additional_properties={} path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome=<Outcome.FAIL: 'fail'>, metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome=<Outcome.FAIL: 'fail'>, metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,

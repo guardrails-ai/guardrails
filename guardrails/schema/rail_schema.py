@@ -2,18 +2,18 @@ import jsonref
 from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from guardrails_api_client.models.validation_type import ValidationType
 from lxml import etree as ET
 from lxml.etree import _Element, Element, SubElement, XMLParser
 from xml.etree.ElementTree import canonicalize
-from guardrails_api_client import ModelSchema, SimpleTypes
+from guardrails_ai.types import Validator as ValidatorReference
+from guardrails_ai.types.json_schema_2020_12 import JSONSchema
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
-from guardrails.classes.validation.validator_reference import ValidatorReference
 from guardrails.logger import logger
 from guardrails.types import RailTypes
 from guardrails.types.validator import ValidatorMap
+from guardrails.types.simple import SimpleTypes
 from guardrails.utils.regex_utils import split_on
 from guardrails.utils.validator_utils import get_validator
 from guardrails.utils.xml_utils import xml_to_string
@@ -104,9 +104,9 @@ def extract_format(
 
 def parse_element(
     element: _Element, processed_schema: ProcessedSchema, json_path: str = "$"
-) -> ModelSchema:
+) -> JSONSchema:
     """Takes an XML element Extracts validators to add to the 'validators' list
-    and validator_map Returns a ModelSchema."""
+    and validator_map Returns a JSONSchema."""
     schema_type = element.tag
     if element.tag in STRING_TAGS:
         schema_type = RailTypes.STRING
@@ -122,37 +122,31 @@ def parse_element(
 
     if schema_type == RailTypes.STRING:
         format = xml_to_string(element.attrib.get("format"))
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
-            description=description,
-            format=format,
+        return JSONSchema(
+            type=SimpleTypes.STRING, description=description, format=format
         )
     elif schema_type == RailTypes.INTEGER:
         format = xml_to_string(element.attrib.get("format"))
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.INTEGER),
+        return JSONSchema(
+            type=SimpleTypes.INTEGER,
             description=description,
             format=format,
         )
     elif schema_type == RailTypes.FLOAT:
         format = xml_to_string(element.attrib.get("format", RailTypes.FLOAT))
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.NUMBER),
-            description=description,
-            format=format,
+        return JSONSchema(
+            type=SimpleTypes.NUMBER, description=description, format=format
         )
     elif schema_type == RailTypes.BOOL:
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.BOOLEAN), description=description
-        )
+        return JSONSchema(type=SimpleTypes.BOOLEAN, description=description)
     elif schema_type == RailTypes.DATE:
         format = extract_format(
             element=element,
             internal_type=RailTypes.DATE,
             internal_format_attr="date-format",
         )
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
         )
@@ -162,8 +156,8 @@ def parse_element(
             internal_type=RailTypes.TIME,
             internal_format_attr="time-format",
         )
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
         )
@@ -173,8 +167,8 @@ def parse_element(
             internal_type=RailTypes.DATETIME,
             internal_format_attr="datetime-format",
         )
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
         )
@@ -184,8 +178,8 @@ def parse_element(
             internal_type=RailTypes.PERCENTAGE,
             internal_format_attr="",
         )
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
         )
@@ -193,8 +187,8 @@ def parse_element(
         format = xml_to_string(element.attrib.get("format"))
         csv = xml_to_string(element.attrib.get("values", "")) or ""
         values = [v.strip() for v in csv.split(",")] if csv else None
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
             enum=values,
@@ -208,16 +202,14 @@ def parse_element(
                 "<list /> RAIL elements must have precisely 1 child element!"
             )
         elif num_of_children == 0:
-            items = {}
+            items = JSONSchema()
         else:
             first_child = children[0]
             child_schema = parse_element(
                 first_child, processed_schema, f"{json_path}.*"
             )
-            items = child_schema.to_dict()
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.ARRAY), items=items, description=description
-        )
+            items = child_schema
+        return JSONSchema(type=SimpleTypes.ARRAY, items=items, description=description)
     elif schema_type == RailTypes.OBJECT:
         properties = {}
         required: List[str] = []
@@ -233,10 +225,10 @@ def parse_element(
             if child_required:
                 required.append(name)
             child_schema = parse_element(child, processed_schema, f"{json_path}.{name}")
-            properties[name] = child_schema.to_dict()
+            properties[name] = child_schema
 
-        object_schema = ModelSchema(
-            type=ValidationType(SimpleTypes.OBJECT),
+        object_schema = JSONSchema(
+            type=SimpleTypes.OBJECT,
             properties=properties,
             description=description,
             required=required,
@@ -245,13 +237,13 @@ def parse_element(
             object_schema.additional_properties = True
         return object_schema
     elif schema_type == RailTypes.CHOICE:
-        """Since our ModelSchema class reflects the pure JSON Schema structure
+        """Since our JSONSchema class reflects the pure JSON Schema structure
         this implementation of choice-case strays from the Discriminated Unions
         specification as defined by OpenAPI that Pydantic uses.
 
         We should verify that LLM's understand this syntax properly. If
         they do not, we can manually add the 'discriminator' property to
-        the schema after calling 'ModelSchema.to_dict()'.
+        the schema after calling 'JSONSchema.model_dump()'.
 
         JSON Schema Conditional Subschemas
         https://json-schema.org/understanding-json-schema/reference/conditionals#applying-subschemas-conditionally
@@ -263,9 +255,7 @@ def parse_element(
         discriminator = element.get("discriminator")
         if not discriminator:
             raise ValueError("<choice /> elements must specify a discriminator!")
-        discriminator_model = ModelSchema(
-            type=ValidationType(SimpleTypes.STRING), enum=[]
-        )
+        discriminator_model = JSONSchema(type=SimpleTypes.STRING, enum=[])
         for choice_case in element:
             case_name = choice_case.get("name")
             if not case_name:
@@ -273,7 +263,7 @@ def parse_element(
 
             discriminator_model.enum.append(case_name)  # type: ignore
 
-            case_if_then_model = ModelSchema()
+            case_if_then_model = JSONSchema()
             case_if_then_properties = {}
 
             case_properties = {}
@@ -293,23 +283,19 @@ def parse_element(
                 case_child_schema = parse_element(
                     case_child, processed_schema, f"{json_path}.{case_child_name}"
                 )
-                case_properties[case_child_name] = case_child_schema.to_dict()
+                case_properties[case_child_name] = case_child_schema
 
-            case_if_then_properties[discriminator] = ModelSchema(
-                const=case_name
-            ).to_dict()
-            case_if_then_model.var_if = ModelSchema(
-                properties=case_if_then_properties
-            ).to_dict()
-            case_if_then_model.then = ModelSchema(
+            case_if_then_properties[discriminator] = JSONSchema(const=case_name)
+            case_if_then_model.if_ = JSONSchema(properties=case_if_then_properties)
+            case_if_then_model.then = JSONSchema(
                 properties=case_properties, required=required
-            ).to_dict()
+            )
             allOf.append(case_if_then_model)
 
         properties = {}
-        properties[discriminator] = discriminator_model.to_dict()
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.OBJECT),
+        properties[discriminator] = discriminator_model
+        return JSONSchema(
+            type=SimpleTypes.OBJECT,
             properties=properties,
             required=[discriminator],
             allOf=allOf,
@@ -318,8 +304,8 @@ def parse_element(
     else:
         # TODO: What if the user specifies a custom tag _and_ a format?
         format = xml_to_string(element.attrib.get("format", schema_type))
-        return ModelSchema(
-            type=ValidationType(SimpleTypes.STRING),
+        return JSONSchema(
+            type=SimpleTypes.STRING,
             description=description,
             format=format,
         )
@@ -368,7 +354,9 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
 
     output_schema = parse_element(marshalled_output_element, processed_schema)
 
-    processed_schema.json_schema = output_schema.to_dict()
+    processed_schema.json_schema = output_schema.model_dump(
+        exclude_none=True, by_alias=True
+    )
 
     output_schema_type = output_schema.type
     if not output_schema_type:
@@ -376,11 +364,11 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
             "The type attribute of the <output /> tag must be one of:"
             ' "string", "object", or "list"'
         )
-    if output_schema_type.actual_instance == SimpleTypes.STRING:
+    if output_schema_type == SimpleTypes.STRING:
         processed_schema.output_type = OutputTypes.STRING
-    elif output_schema_type.actual_instance == SimpleTypes.ARRAY:
+    elif output_schema_type == SimpleTypes.ARRAY:
         processed_schema.output_type = OutputTypes.LIST
-    elif output_schema_type.actual_instance == SimpleTypes.OBJECT:
+    elif output_schema_type == SimpleTypes.OBJECT:
         processed_schema.output_type = OutputTypes.DICT
     else:
         raise ValueError(
@@ -830,7 +818,7 @@ def build_element(
     attributes: Optional[Dict[str, Any]] = None,
 ) -> _Element:
     """Takes an XML element Extracts validators to add to the 'validators' list
-    and validator_map Returns a ModelSchema."""
+    and validator_map Returns a JSONSchema."""
     attributes = attributes or {}
     schema_type = json_schema.get("type", "object")
 

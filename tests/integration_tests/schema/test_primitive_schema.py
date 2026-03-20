@@ -1,6 +1,6 @@
 import json
 
-from guardrails.classes.validation.validator_reference import ValidatorReference
+from guardrails_ai.types import Validator as ValidatorReference
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.classes.output_type import OutputTypes

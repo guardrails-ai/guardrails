@@ -1,4 +1,3 @@
-from typing import Optional
 import typer
 from importlib.metadata import version
 
@@ -22,15 +21,15 @@ def api_is_installed() -> bool:
 
 @guardrails.command()
 def start(
-    env: Optional[str] = typer.Option(
+    env: str = typer.Option(
         default="",
         help="An env file to load environment variables from.",
     ),
-    config: Optional[str] = typer.Option(
+    config: str = typer.Option(
         default="",
         help="A config file to load Guards from.",
     ),
-    port: Optional[int] = typer.Option(
+    port: int = typer.Option(
         default=8000,
         help="The port to run the server on.",
     ),

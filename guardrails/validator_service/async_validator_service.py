@@ -4,7 +4,7 @@ from typing import Any, Awaitable, Coroutine, Dict, List, Optional, Tuple, Union
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.classes.history import Iteration
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
     ValidationResult,
@@ -185,7 +185,7 @@ class AsyncValidatorService(ValidatorServiceBase):
             first_reask = reasks[0]
             fail_results = []
             for reask in reasks:
-                fail_results.extend(reask.fail_results)
+                fail_results.extend(reask.fail_results or [])
             first_reask.fail_results = fail_results
             return first_reask, metadata
 

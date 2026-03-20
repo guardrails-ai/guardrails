@@ -14,7 +14,6 @@ from typing import (
 )
 
 from guardrails.prompt import Prompt, Instructions
-from guardrails_api_client.models import LLMResource
 
 from guardrails.errors import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -219,7 +218,7 @@ class LiteLLMCallable(PromptCallableBase):
             return LLMResponse(
                 output="",
                 # FIXME: Why is this different from the async streaming implementation?
-                stream_output=llm_response,
+                streamOutput=llm_response,
             )
 
         trace_operation(output_mime_type="application/json", output_value=response)
@@ -491,7 +490,7 @@ class ArbitraryCallable(PromptCallableBase):
             return LLMResponse(
                 output="",
                 # FIXME: Why is this different from the async streaming implementation?
-                stream_output=llm_response,
+                streamOutput=llm_response,
             )
 
         trace_operation(output_mime_type="application/json", output_value=llm_response)
@@ -645,7 +644,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         ```
         """
         try:
-            from litellm import acompletion  # type: ignore
+            from litellm import acompletion, CustomStreamWrapper  # type: ignore
         except ImportError as e:
             raise PromptCallableException(
                 "The `litellm` package is not installed. "
@@ -690,14 +689,13 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         )
 
         if kwargs.get("stream", False):
+            completion_stream = cast(CustomStreamWrapper, response)
             # If stream is defined and set to True,
             # the callable returns a generator object
             # response = cast(AsyncIterator[str], response)
             return LLMResponse(
                 output="",
-                # FIXME: Why is this different from the synchronous streaming implementation?  ## noqa: E501
-                # This shouldn't be necessary: https://docs.litellm.ai/docs/completion/stream#async-streaming
-                async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
+                asyncStreamOutput=completion_stream,
             )
 
         trace_operation(output_mime_type="application/json", output_value=response)
@@ -856,7 +854,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
                 output="",
                 # FIXME: Why is this different from the synchronous streaming implementation?  ## noqa: E501
                 # This shouldn't be necessary: https://docs.litellm.ai/docs/completion/stream#async-streaming
-                async_stream_output=output.completion_stream,
+                asyncStreamOutput=output.completion_stream,
             )
 
         trace_operation(output_mime_type="application/json", output_value=output)
@@ -902,18 +900,3 @@ def model_is_supported_server_side(
     if asyncio.iscoroutinefunction(llm_api):
         model = get_async_llm_ask(llm_api, *args, **kwargs)
     return isinstance(model, LiteLLMCallable) or isinstance(model, AsyncLiteLLMCallable)
-
-
-# CONTINUOUS FIXME: Update with newly supported LLMs
-def get_llm_api_enum(
-    llm_api: Callable[..., Awaitable[Any]], *args, **kwargs
-) -> Optional[LLMResource]:
-    # TODO: Distinguish between v1 and v2
-    model = get_llm_ask(llm_api, *args, **kwargs)
-    if isinstance(model, LiteLLMCallable):
-        return LLMResource.LITELLM_DOT_COMPLETION
-    elif isinstance(model, AsyncLiteLLMCallable):
-        return LLMResource.LITELLM_DOT_ACOMPLETION
-
-    else:
-        return None

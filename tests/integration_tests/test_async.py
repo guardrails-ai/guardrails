@@ -164,6 +164,8 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
         num_reasks=1,
     )
 
+    print("final_output: ", final_output)
+
     # Assertions are made on the guard state object.
     assert final_output.validation_passed is False
     assert final_output.validated_output is not None

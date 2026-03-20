@@ -63,7 +63,7 @@ def add_guard_attributes(
         output_value=resp.validated_output,
     )
     guard_span.set_attribute("type", "guardrails/guard")
-    guard_span.set_attribute("validation_passed", resp.validation_passed)
+    guard_span.set_attribute("validation_passed", resp.validation_passed or False)
 
     execution_id = history.last.id if history.last else None
     if execution_id is not None:

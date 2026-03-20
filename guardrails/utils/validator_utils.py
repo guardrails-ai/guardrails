@@ -5,7 +5,7 @@ from ast import literal_eval
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 import warnings
 
-from guardrails_api_client import ValidatorReference
+from guardrails_ai.types import Validator as ValidatorReference
 
 from guardrails.types.validator import PydanticValidatorSpec
 from guardrails.utils.regex_utils import split_on, ESCAPED_OR_QUOTED

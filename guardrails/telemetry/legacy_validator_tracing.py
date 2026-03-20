@@ -1,6 +1,6 @@
 from operator import attrgetter
 from typing import Any, List
-from guardrails_api_client.models import Reask
+from guardrails_ai.types import ReAsk
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.call_tracing.trace_handler import TraceHandler
@@ -12,7 +12,7 @@ from guardrails.utils.casting_utils import to_string
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
     try:
-        if isinstance(after_value, (Filter, Refrain, Reask)):
+        if isinstance(after_value, (Filter, Refrain, ReAsk)):
             name = after_value.__class__.__name__.lower()
         elif after_value != before_value:
             name = "fix"

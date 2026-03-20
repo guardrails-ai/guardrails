@@ -6,15 +6,15 @@ from typing import Dict, List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
-from guardrails_api_client import Guard as IGuard
+from guardrails_ai.types import Guard as IGuard
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.validation.validation_result import FailResult
-from guardrails.classes.validation.validator_reference import ValidatorReference
+from guardrails_ai.types import FailResult
+from guardrails_ai.types import Validator as ValidatorReference
 from guardrails.guard import Guard
 from guardrails.actions.reask import FieldReAsk
 from tests.integration_tests.test_assets.validators import (
@@ -1290,17 +1290,18 @@ class TestSerizlizationAndDeserialization:
             description=guard.description,
             validators=guard.validators,
             output_schema=guard.output_schema,
-            history=guard.history,
         )
 
         cls_guard = Guard(
             id=i_guard.id,
             name=i_guard.name,
             description=i_guard.description,
-            output_schema=i_guard.output_schema.to_dict(),
+            output_schema=i_guard.output_schema.model_dump(
+                exclude_none=True, by_alias=True
+            ),
             validators=i_guard.validators,
         )
-        cls_guard.history = Stack(*i_guard.history)
+        cls_guard.history = Stack(*guard.history)
 
         assert cls_guard == guard
 

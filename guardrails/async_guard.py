@@ -16,8 +16,7 @@ from typing import (
     cast,
 )
 
-from guardrails_api_client.models import (
-    ValidatePayload,
+from guardrails_ai.types import (
     ValidationOutcome as IValidationOutcome,
 )
 
@@ -200,12 +199,12 @@ class AsyncGuard(Guard, Generic[OT]):
 
             messages = messages or self._exec_opts.messages
             call_inputs = CallInputs(
-                llm_api=llm_api,
+                llmApi=llm_api,
                 messages=messages,
-                prompt_params=prompt_params,
-                num_reasks=self._num_reasks,
+                promptParams=prompt_params,
+                numReasks=self._num_reasks,
                 metadata=metadata,
-                full_schema_reask=full_schema_reask,
+                fullSchemaReask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
             )
@@ -312,7 +311,9 @@ class AsyncGuard(Guard, Generic[OT]):
         if kwargs.get("stream", False):
             runner = AsyncStreamRunner(
                 output_type=self._output_type,
-                output_schema=self.output_schema.to_dict(),
+                output_schema=self.output_schema.model_dump(
+                    exclude_none=True, by_alias=True
+                ),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
                 messages=messages,
@@ -336,7 +337,9 @@ class AsyncGuard(Guard, Generic[OT]):
         else:
             runner = AsyncRunner(
                 output_type=self._output_type,
-                output_schema=self.output_schema.to_dict(),
+                output_schema=self.output_schema.model_dump(
+                    exclude_none=True, by_alias=True
+                ),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
                 messages=messages,
@@ -485,30 +488,30 @@ class AsyncGuard(Guard, Generic[OT]):
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
+                **payload,
             )
             for fragment in response:
                 validation_output = fragment
                 if validation_output is None:
                     yield ValidationOutcome[OT](
                         call_id="0",  # type: ignore
-                        raw_llm_output=None,
-                        validated_output=None,
-                        validation_passed=False,
+                        rawLlmOutput=None,
+                        validatedOutput=None,
+                        validationPassed=False,
                         error="The response from the server was empty!",
                     )
                 else:
                     validated_output = (
-                        cast(OT, validation_output.validated_output.actual_instance)
+                        cast(OT, validation_output.validated_output)
                         if validation_output.validated_output
                         else None
                     )
                     yield ValidationOutcome[OT](
                         call_id=validation_output.call_id,  # type: ignore
                         raw_llm_output=validation_output.raw_llm_output,  # type: ignore
-                        validated_output=validated_output,
-                        validation_passed=(validation_output.validation_passed is True),
+                        validatedOutput=validated_output,
+                        validationPassed=(validation_output.validation_passed is True),
                     )
             # TODO re-enable this once we have a way to get history
             # from a multi-node server

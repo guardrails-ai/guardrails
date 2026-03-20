@@ -5,7 +5,7 @@ import guardrails as gd
 from guardrails import register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.validator_base import OnFailAction
-from guardrails.classes.validation.validation_result import FailResult, ValidationResult
+from guardrails_ai.types import FailResult, ValidationResult
 from tests.integration_tests.test_assets.custom_llm import mock_async_llm, mock_llm
 
 from .test_assets import pydantic, string

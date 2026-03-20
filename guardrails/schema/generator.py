@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 from pydash import upper_first, snake_case, camel_case, start_case, uniq_with, is_equal
 from faker import Faker
 from random import randint, randrange, uniform
-from guardrails_api_client import SimpleTypes
+from guardrails.types.simple import SimpleTypes
 from guardrails.utils.safe_get import safe_get
 
 fake = Faker()

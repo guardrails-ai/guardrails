@@ -1,12 +1,12 @@
 import json
-from guardrails_api_client import SimpleTypes
+from guardrails.types.simple import SimpleTypes
 import jsonref
 import regex
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from guardrails.actions.reask import NonParseableReAsk
 from guardrails.classes.output_type import OutputTypes
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails_ai.types import FailResult
 from guardrails.schema.parser import get_all_paths
 from guardrails.utils.safe_get import safe_get
 
@@ -199,11 +199,11 @@ def parse_json_llm_output(
 
     if error:
         reask = NonParseableReAsk(
-            incorrect_value=output,
-            fail_results=[
+            incorrectValue=output,
+            failResults=[
                 FailResult(
-                    fix_value=None,
-                    error_message="Output is not parseable as JSON",
+                    fixValue=None,
+                    errorMessage="Output is not parseable as JSON",
                 )
             ],
         )

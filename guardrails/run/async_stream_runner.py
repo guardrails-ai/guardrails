@@ -23,7 +23,7 @@ from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
 from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 from guardrails.types import OnFailAction
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     PassResult,
     FailResult,
 )
@@ -88,7 +88,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         )
         outputs = Outputs()
         iteration = Iteration(
-            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+            callId=call_log.id, index=index, inputs=inputs, outputs=outputs
         )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
@@ -108,7 +108,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         llm_response = await self.async_call(messages, api, output)
         iteration.outputs.llm_response_info = llm_response
         stream_output = llm_response.async_stream_output
-        if not stream_output:
+        if stream_output is None:
             raise ValueError(
                 "No async stream was returned from the API. Please check that "
                 "the API is returning an async generator."
@@ -235,10 +235,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                             )
 
                         vo = ValidationOutcome(
-                            call_id=call_log.id,  # type: ignore
-                            raw_llm_output=fragment,
-                            validated_output=current,
-                            validation_passed=True,
+                            callId=call_log.id,
+                            rawLlmOutput=fragment,
+                            validatedOutput=current,
+                            validationPassed=True,
                         )
                         fragment = ""
                         validation_progress = {}
@@ -268,10 +268,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
 
                 current = validator_service.multi_merge(fragment, merge_chunks)
                 yield ValidationOutcome(
-                    call_id=call_log.id,  # type: ignore
-                    raw_llm_output=fragment,
-                    validated_output=current,
-                    validation_passed=validation_passed,
+                    callId=call_log.id,
+                    rawLlmOutput=fragment,
+                    validatedOutput=current,
+                    validationPassed=validation_passed,
                 )
         else:
             next_exists = True
@@ -313,10 +313,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     else:
                         validation_response = cast(dict, validated_fragment)
                     yield ValidationOutcome(
-                        call_id=call_log.id,  # type: ignore
-                        raw_llm_output=fragment,
-                        validated_output=validated_fragment,
-                        validation_passed=validated_fragment is not None,
+                        callId=call_log.id,
+                        rawLlmOutput=fragment,
+                        validatedOutput=validated_fragment,
+                        validationPassed=validated_fragment is not None,
                     )
                     fragment = ""
                 except StopIteration:

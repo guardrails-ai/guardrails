@@ -15,9 +15,9 @@ try:
 except ImportError:
     SpanAttributes = None
 
+from guardrails_ai.types import ValidationResult
 
 from guardrails.settings import settings
-from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.telemetry.common import add_user_attributes, serialize
 from guardrails.telemetry.open_inference import trace_operation
 from guardrails.utils.casting_utils import to_string
@@ -74,7 +74,7 @@ def add_validator_attributes(
     )
 
     if result is not None:
-        output = result.to_dict()
+        output = result.model_dump()
         trace_operation(
             output_value=output,
             output_mime_type="application/json",

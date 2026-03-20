@@ -12,7 +12,7 @@ from typing import (
 )
 
 from guardrails import Guard, AsyncGuard, settings
-from guardrails.classes.validation.validation_result import ValidationResult
+from guardrails_ai.types import ValidationResult
 from guardrails.run import Runner, StreamRunner, AsyncRunner, AsyncStreamRunner
 from guardrails.validator_base import Validator
 from guardrails.version import GUARDRAILS_VERSION

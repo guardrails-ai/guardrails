@@ -9,7 +9,7 @@ import guardrails as gd
 from guardrails import Validator, register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.types import OnFailAction
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
     ValidationResult,
