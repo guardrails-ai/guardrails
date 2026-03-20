@@ -1,7 +1,7 @@
 import pytest
 
 from guardrails.classes.history.outputs import Outputs
-from guardrails.constants import error_status, fail_status, not_run_status
+from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
@@ -151,8 +151,8 @@ def test_failed_validations():
 @pytest.mark.parametrize(
     "outputs,expected_status",
     [
-        # (Outputs(), not_run_status),
-        # (Outputs(error="Validations Failed!"), error_status),
+        (Outputs(), not_run_status),
+        (Outputs(error="Validations Failed!"), error_status),
         (
             Outputs(
                 validator_logs=[
@@ -174,7 +174,7 @@ def test_failed_validations():
             ),
             fail_status,
         ),
-        # (Outputs(validator_logs=[], guarded_output="Hello there!"), pass_status),
+        (Outputs(validator_logs=[], guarded_output="Hello there!"), pass_status),
     ],
 )
 def test_status(outputs: Outputs, expected_status: str):
