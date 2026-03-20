@@ -1,29 +1,21 @@
 import json
 import os
-import sys
-from typing import Any, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, Optional
 
-import requests
-from guardrails_api_client.configuration import Configuration
-from guardrails_api_client.api_client import ApiClient
-from guardrails_api_client.api.guard_api import GuardApi
-from guardrails_api_client.api.validate_api import ValidateApi
-from guardrails_api_client.models import (
+from httpx import AsyncClient, Client, HTTPStatusError
+from guardrails_ai.types import (
     Guard,
-    ValidatePayload,
     ValidationOutcome as IValidationOutcome,
 )
 
-from guardrails_api_client.exceptions import BadRequestException
 from guardrails.errors import ValidationError
 
 from guardrails.logger import logger
 
 
 class GuardrailsApiClient:
-    _api_client: ApiClient
-    _guard_api: GuardApi
-    _validate_api: ValidateApi
+    ahttp_client: AsyncClient
+    http_client: Client
     timeout: float
     base_url: str
     api_key: str
@@ -37,44 +29,92 @@ class GuardrailsApiClient:
         self.api_key = (
             api_key
             if api_key is not None
-            else os.environ.get("GUARDRAILS_API_KEY", "x-guardrails-api-key")
+            else os.environ.get("GUARDRAILS_API_KEY", "x-guardrailsai-api-key")
         )
         self.timeout = 300
 
-        _api_key = (
-            self.api_key
-            if sys.version_info.minor < 10
-            else {"ApiKeyAuth": self.api_key}
+        headers = {"x-guardrailsai-api-key": self.api_key}
+
+        self.ahttp_client = AsyncClient(
+            base_url=self.base_url, headers=headers, timeout=self.timeout
+        )
+        self.http_client = Client(
+            base_url=self.base_url, headers=headers, timeout=self.timeout
         )
 
-        self._api_client = ApiClient(
-            configuration=Configuration(api_key=_api_key, host=self.base_url)  # type: ignore
+    async def aupsert_guard(self, guard: Guard) -> Guard:
+        response = await self.ahttp_client.put(
+            f"/guards/{guard.id}",
+            json=guard.model_dump(),
         )
-        self._guard_api = GuardApi(self._api_client)
-        self._validate_api = ValidateApi(self._api_client)
+        response.raise_for_status()
+        res_body = response.json()
+        return Guard.model_validate(res_body)
 
-    def upsert_guard(self, guard: Guard):
-        self._guard_api.update_guard(
-            guard_name=guard.name, body=guard, _request_timeout=self.timeout
+    def upsert_guard(self, guard: Guard) -> Guard:
+        response = self.http_client.put(
+            f"/guards/{guard.id}",
+            json=guard.model_dump(),
         )
+        response.raise_for_status()
+        res_body = response.json()
+        return Guard.model_validate(res_body)
 
-    def fetch_guard(self, guard_name: str) -> Optional[Guard]:
+    async def afetch_guard(self, guard_name: str) -> Optional[Guard]:
         try:
-            return self._guard_api.get_guard(guard_name=guard_name)
+            response = await self.ahttp_client.get(
+                f"/guards?name={guard_name}",
+            )
+            response.raise_for_status()
+            res_body = response.json()
+            first = res_body[0]
+            if not first:
+                raise ValueError(f"No guard found for name {guard_name}")
+            return Guard.model_validate(first)
         except Exception as e:
             logger.error(f"Error fetching guard {guard_name}: {e}")
             return None
 
-    def delete_guard(self, guard_name: str):
-        self._guard_api.delete_guard(
-            guard_name=guard_name, _request_timeout=self.timeout
-        )
+    def fetch_guard(self, guard_name: str) -> Optional[Guard]:
+        try:
+            response = self.http_client.get(
+                f"/guards?name={guard_name}",
+            )
+            response.raise_for_status()
+            res_body = response.json()
+            first = res_body[0]
+            if not first:
+                raise ValueError(f"No guard found for name {guard_name}")
+            return Guard.model_validate(first)
+        except Exception as e:
+            logger.error(f"Error fetching guard {guard_name}: {e}")
+            return None
 
-    def validate(
+    async def adelete_guard(self, guard_name: str) -> Optional[Guard]:
+        guard = await self.afetch_guard(guard_name)
+        if guard and guard.id:
+            response = await self.ahttp_client.delete(f"/guards/{guard.id}")
+            response.raise_for_status()
+            res_body = response.json()
+            return Guard.model_validate(res_body)
+
+    def delete_guard(self, guard_name: str) -> Optional[Guard]:
+        guard = self.fetch_guard(guard_name)
+        if guard and guard.id:
+            response = self.http_client.delete(f"/guards/{guard.id}")
+            response.raise_for_status()
+            res_body = response.json()
+            return Guard.model_validate(res_body)
+
+    async def avalidate(
         self,
         guard: Guard,
-        payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
+        *,
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[dict[str, Any]] = None,
+        **kwargs,
     ):
         try:
             _openai_api_key = (
@@ -82,19 +122,117 @@ class GuardrailsApiClient:
                 if openai_api_key is not None
                 else os.environ.get("OPENAI_API_KEY")
             )
-            return self._validate_api.validate(
-                guard_name=guard.name,
-                validate_payload=payload,
-                x_openai_api_key=_openai_api_key,
+            headers = {}
+            if _openai_api_key:
+                headers = {"x-openai-api-key": _openai_api_key}
+
+            response = await self.ahttp_client.post(
+                f"/guards/{guard.id}/validate",
+                json={
+                    "llm_output": llm_output,
+                    "num_reasks": num_reasks,
+                    "prompt_params": prompt_params,
+                    **kwargs,
+                },
+                headers=headers,
             )
-        except BadRequestException as e:
-            raise ValidationError(f"{e.body}")
+            response.raise_for_status()
+            res_body = response.json()
+            return IValidationOutcome.model_validate(res_body)
+        except HTTPStatusError as e:
+            if e.response.status_code == 400:
+                raise ValidationError(str(e)) from e
+
+    def validate(
+        self,
+        guard: Guard,
+        openai_api_key: Optional[str] = None,
+        *,
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ):
+        try:
+            _openai_api_key = (
+                openai_api_key
+                if openai_api_key is not None
+                else os.environ.get("OPENAI_API_KEY")
+            )
+            headers = {}
+            if _openai_api_key:
+                headers = {"x-openai-api-key": _openai_api_key}
+
+            response = self.http_client.post(
+                f"/guards/{guard.id}/validate",
+                json={
+                    "llm_output": llm_output,
+                    "num_reasks": num_reasks,
+                    "prompt_params": prompt_params,
+                    **kwargs,
+                },
+                headers=headers,
+            )
+            response.raise_for_status()
+            res_body = response.json()
+            return IValidationOutcome.model_validate(res_body)
+        except HTTPStatusError as e:
+            if e.response.status_code == 400:
+                raise ValidationError(str(e)) from e
+
+    async def astream_validate(
+        self,
+        guard: Guard,
+        openai_api_key: Optional[str] = None,
+        *,
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ) -> AsyncIterator[Any]:
+        _openai_api_key = (
+            openai_api_key
+            if openai_api_key is not None
+            else os.environ.get("OPENAI_API_KEY")
+        )
+
+        headers = {"Content-Type": "application/json"}
+        if _openai_api_key:
+            headers["x-openai-api-key"] = _openai_api_key
+
+        async with self.ahttp_client.stream(
+            "POST",
+            f"/guards/{guard.id}/validate",
+            json={
+                "llm_output": llm_output,
+                "num_reasks": num_reasks,
+                "prompt_params": prompt_params,
+                "stream": True,
+                **kwargs,
+            },
+        ) as response:
+            if not response.is_success:
+                response.raise_for_status()
+                return
+
+            async for raw_chunk in response.aiter_text():
+                str_chunk = raw_chunk.strip()
+                if str_chunk:
+                    str_chunk_data = "".join(str_chunk.split("\n")).split("data:")[1]
+                    chunk = json.loads(str_chunk_data)
+                    if chunk.get("error"):
+                        raise Exception(chunk.get("error").get("message"))
+                    yield IValidationOutcome.model_validate(chunk)
 
     def stream_validate(
         self,
         guard: Guard,
-        payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
+        *,
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[dict[str, Any]] = None,
+        **kwargs,
     ) -> Iterator[Any]:
         _openai_api_key = (
             openai_api_key
@@ -102,26 +240,36 @@ class GuardrailsApiClient:
             else os.environ.get("OPENAI_API_KEY")
         )
 
-        url = f"{self.base_url}/guards/{guard.name}/validate"
-        headers = {
-            "Content-Type": "application/json",
-            "x-openai-api-key": _openai_api_key,
-        }
+        headers = {"Content-Type": "application/json"}
+        if _openai_api_key:
+            headers["x-openai-api-key"] = _openai_api_key
 
-        s = requests.Session()
+        with self.http_client.stream(
+            "POST",
+            f"/guards/{guard.id}/validate",
+            json={
+                "llm_output": llm_output,
+                "num_reasks": num_reasks,
+                "prompt_params": prompt_params,
+                "stream": True,
+                **kwargs,
+            },
+        ) as response:
+            if not response.is_success:
+                response.raise_for_status()
+                return
 
-        with s.post(url, json=payload.to_dict(), headers=headers, stream=True) as resp:
-            for line in resp.iter_lines():
-                if not resp.ok:
-                    raise ValueError(
-                        f"status_code: {resp.status_code}"
-                        " reason: {resp.reason} text: {resp.text}"
-                    )
-                if line:
-                    json_output = json.loads(line)
-                    if json_output.get("error"):
-                        raise Exception(json_output.get("error").get("message"))
-                    yield IValidationOutcome.from_dict(json_output)
+            for raw_chunk in response.iter_text():
+                str_chunk = raw_chunk.strip()
+                if str_chunk:
+                    str_chunk_data = "".join(str_chunk.split("\n")).split("data:")[1]
+                    chunk = json.loads(str_chunk_data)
+                    if chunk.get("error"):
+                        raise Exception(chunk.get("error").get("message"))
+                    yield IValidationOutcome.model_validate(chunk)
 
-    def get_history(self, guard_name: str, call_id: str):
-        return self._guard_api.get_guard_history(guard_name, call_id)
+    def get_history(self, guard_id: str, call_id: str) -> Any:
+        response = self.http_client.get(f"/guards/{guard_id}/history/{call_id}")
+        response.raise_for_status()
+        res_body = response.json()
+        return res_body
