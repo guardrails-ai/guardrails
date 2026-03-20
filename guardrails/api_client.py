@@ -43,19 +43,43 @@ class GuardrailsApiClient:
         )
 
     async def aupsert_guard(self, guard: Guard) -> Guard:
-        response = await self.ahttp_client.put(
-            f"/guards/{guard.id}",
-            json=guard.model_dump(),
-        )
+        existing_guard: Guard | None = None
+        try:
+            existing_guard = await self.afetch_guard(guard.name)
+        except Exception:
+            pass
+
+        if existing_guard:
+            response = await self.ahttp_client.put(
+                f"/guards/{existing_guard.id}",
+                json=guard.model_dump(),
+            )
+        else:
+            response = await self.ahttp_client.post(
+                "/guards",
+                json=guard.model_dump(),
+            )
         response.raise_for_status()
         res_body = response.json()
         return Guard.model_validate(res_body)
 
     def upsert_guard(self, guard: Guard) -> Guard:
-        response = self.http_client.put(
-            f"/guards/{guard.id}",
-            json=guard.model_dump(),
-        )
+        existing_guard: Guard | None = None
+        try:
+            existing_guard = self.fetch_guard(guard.name)
+        except Exception:
+            pass
+
+        if existing_guard:
+            response = self.http_client.put(
+                f"/guards/{existing_guard.id}",
+                json=guard.model_dump(),
+            )
+        else:
+            response = self.http_client.post(
+                "/guards",
+                json=guard.model_dump(),
+            )
         response.raise_for_status()
         res_body = response.json()
         return Guard.model_validate(res_body)
@@ -67,7 +91,7 @@ class GuardrailsApiClient:
             )
             response.raise_for_status()
             res_body = response.json()
-            first = res_body[0]
+            first = res_body[0] if res_body and len(res_body) > 0 else None
             if not first:
                 raise ValueError(f"No guard found for name {guard_name}")
             return Guard.model_validate(first)
@@ -82,7 +106,7 @@ class GuardrailsApiClient:
             )
             response.raise_for_status()
             res_body = response.json()
-            first = res_body[0]
+            first = res_body[0] if res_body and len(res_body) > 0 else None
             if not first:
                 raise ValueError(f"No guard found for name {guard_name}")
             return Guard.model_validate(first)

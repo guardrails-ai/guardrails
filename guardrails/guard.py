@@ -1,6 +1,7 @@
 import contextvars
 import json
 import os
+import uuid
 from builtins import id as object_id
 from typing import (
     Any,
@@ -25,7 +26,7 @@ from guardrails_ai.types import (
     Validator as ValidatorReference,
 )
 from opentelemetry import context as otel_context
-from pydantic import field_validator
+from pydantic import ValidationError, field_validator
 from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
@@ -57,7 +58,6 @@ from guardrails.types.on_fail import OnFailAction
 from guardrails.types.simple import SimpleTypes
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.telemetry import (
@@ -128,7 +128,7 @@ class Guard(IGuard, Generic[OT]):
         Output schema must be a valid JSON Schema.
         """
         # Shared Interface Properties
-        id = id or random_id()
+        id = id or str(uuid.uuid4())
         name = name or f"gr-{id}"
 
         # Defaults
@@ -901,20 +901,34 @@ class Guard(IGuard, Generic[OT]):
                     self.name, validation_output.call_id
                 )
                 call_log = safe_get(
-                    [c for c in guard_history if c.id == validation_output.call_id], 0
+                    [
+                        c
+                        for c in guard_history
+                        if c.get("id") == validation_output.call_id
+                    ],
+                    0,
                 )
-                # Only append the history from this call
-                self.history.append(Call.model_validate(call_log))
+                if call_log:
+                    try:
+                        call = Call.model_validate(call_log)
+                        # Only append the history from this call
+                        self.history.append(call)
+                    except ValidationError:
+                        pass
 
-            validation_summaries = []
-            call_log: Call = safe_get(
-                [c for c in self.history if c.id == validation_output.call_id], 0
-            )
-            if call_log and call_log.iterations.last:
-                validator_logs = call_log.iterations.last.validator_logs
-                validation_summaries = ValidationSummary.from_validator_logs_only_fails(
-                    validator_logs
+            validation_summaries = validation_output.validation_summaries or []
+            validation_summaries = [
+                ValidationSummary(**v.model_dump()) for v in validation_summaries
+            ]
+            if not validation_summaries:
+                call_log: Call = safe_get(
+                    [c for c in self.history if c.id == validation_output.call_id], 0
                 )
+                if call_log and call_log.iterations.last:
+                    validator_logs = call_log.iterations.last.validator_logs
+                    validation_summaries = (
+                        ValidationSummary.from_validator_logs_only_fails(validator_logs)
+                    )
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
@@ -1003,11 +1017,11 @@ class Guard(IGuard, Generic[OT]):
             if metadata:
                 payload["metadata"] = extract_serializeable_metadata(metadata)
             if llm_output is not None:
-                payload["llmOutput"] = llm_output
+                payload["llm_output"] = llm_output
             if num_reasks is not None:
-                payload["numReasks"] = num_reasks or self._exec_opts.num_reasks
+                payload["num_reasks"] = num_reasks or self._exec_opts.num_reasks
             if prompt_params is not None:
-                payload["promptParams"] = prompt_params
+                payload["prompt_params"] = prompt_params
 
             if not payload.get("messages"):
                 payload["messages"] = self._exec_opts.messages

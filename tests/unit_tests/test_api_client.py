@@ -205,48 +205,96 @@ class TestGuardrailsApiClientInit:
 
 
 class TestUpsertGuard:
-    def test_upsert_guard_success(self):
+    def test_upsert_guard_updates_existing_guard(self):
         mc = make_client()
         guard = make_guard()
         guard_data = guard.model_dump.return_value
+        existing_guard = make_guard(guard_id="existing-id-456")
         returned_guard = make_guard()
 
+        mc.client.fetch_guard = Mock(return_value=existing_guard)
         mc.http.put.return_value = mock_sync_response(guard_data)
 
         with patch.object(Guard, "model_validate", return_value=returned_guard):
             result = mc.client.upsert_guard(guard)
 
-        mc.http.put.assert_called_once_with("/guards/guard-id-123", json=guard_data)
+        mc.client.fetch_guard.assert_called_once_with(guard.name)
+        mc.http.put.assert_called_once_with("/guards/existing-id-456", json=guard_data)
         mc.http.put.return_value.raise_for_status.assert_called_once()
+        mc.http.post.assert_not_called()
+        assert result == returned_guard
+
+    def test_upsert_guard_creates_new_guard_when_not_found(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        returned_guard = make_guard()
+
+        mc.client.fetch_guard = Mock(return_value=None)
+        mc.http.post.return_value = mock_sync_response(guard_data)
+
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = mc.client.upsert_guard(guard)
+
+        mc.client.fetch_guard.assert_called_once_with(guard.name)
+        mc.http.post.assert_called_once_with("/guards", json=guard_data)
+        mc.http.put.assert_not_called()
         assert result == returned_guard
 
     def test_upsert_guard_raises_on_http_error(self):
         mc = make_client()
         guard = make_guard()
         guard.model_dump.return_value = {}
+        existing_guard = make_guard(guard_id="existing-id-456")
+
+        mc.client.fetch_guard = Mock(return_value=existing_guard)
         mc.http.put.return_value = mock_sync_response(raise_error=make_http_error(500))
 
         with pytest.raises(HTTPStatusError):
             mc.client.upsert_guard(guard)
 
-    def test_aupsert_guard_success(self):
+    def test_aupsert_guard_updates_existing_guard(self):
         mc = make_client()
         guard = make_guard()
         guard_data = guard.model_dump.return_value
+        existing_guard = make_guard(guard_id="existing-id-456")
         returned_guard = make_guard()
 
+        mc.client.afetch_guard = AsyncMock(return_value=existing_guard)
         mc.ahttp.put = AsyncMock(return_value=mock_async_response(guard_data))
 
         with patch.object(Guard, "model_validate", return_value=returned_guard):
             result = asyncio.run(mc.client.aupsert_guard(guard))
 
-        mc.ahttp.put.assert_called_once_with("/guards/guard-id-123", json=guard_data)
+        mc.client.afetch_guard.assert_called_once_with(guard.name)
+        mc.ahttp.put.assert_called_once_with("/guards/existing-id-456", json=guard_data)
+        mc.ahttp.post.assert_not_called()
+        assert result == returned_guard
+
+    def test_aupsert_guard_creates_new_guard_when_not_found(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        returned_guard = make_guard()
+
+        mc.client.afetch_guard = AsyncMock(return_value=None)
+        mc.ahttp.post = AsyncMock(return_value=mock_async_response(guard_data))
+
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = asyncio.run(mc.client.aupsert_guard(guard))
+
+        mc.client.afetch_guard.assert_called_once_with(guard.name)
+        mc.ahttp.post.assert_called_once_with("/guards", json=guard_data)
+        mc.ahttp.put.assert_not_called()
         assert result == returned_guard
 
     def test_aupsert_guard_raises_on_http_error(self):
         mc = make_client()
         guard = make_guard()
         guard.model_dump.return_value = {}
+        existing_guard = make_guard(guard_id="existing-id-456")
+
+        mc.client.afetch_guard = AsyncMock(return_value=existing_guard)
         mc.ahttp.put = AsyncMock(
             return_value=mock_async_response(raise_error=make_http_error(500))
         )
