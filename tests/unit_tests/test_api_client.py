@@ -74,7 +74,7 @@ def make_guard(guard_id="guard-id-123", name="test-guard") -> Mock:
 
 
 def make_sse_chunk(data: dict) -> str:
-    return f"data: {json.dumps(data)}\n"
+    return f"{json.dumps(data)}\n"
 
 
 def make_stream_ctx(chunks, is_success=True, raise_on_fail=None):
