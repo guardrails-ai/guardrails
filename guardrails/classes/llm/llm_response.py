@@ -96,13 +96,15 @@ class LLMResponse(ArbitraryModel):
     ) -> list[str] | None:
         # Legacy serialization logic from previous to_interface implementation
         # We probably need a wrapper class for these.
-        if async_stream_output:  # and not hasattr(async_stream_output, "__aiter__"):
-            awaited_stream_output, _async_stream_output = async_to_sync(
-                serialize_aiter(async_stream_output)
-            )
+        if async_stream_output and not hasattr(async_stream_output, "__aiter__"):
+            _async_stream_output = []
+            awaited_stream_output = []
+            for so in self.async_stream_output:  # type: ignore - we just established it isn't None
+                _async_stream_output.append(so)
+                awaited_stream_output.append(str(async_to_sync(so)))
 
-            self.async_stream_output = _async_stream_output
-            return awaited_stream_output
+            self.async_stream_output = aiter(_async_stream_output)  # type: ignore  # noqa: F821
+
         return None
 
     @field_validator("async_stream_output", mode="before")
