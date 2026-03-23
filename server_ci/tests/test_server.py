@@ -55,7 +55,7 @@ async def test_async_streaming_guard_validation():
     async for validation_chunk in async_iterator:  # type: ignore
         full_output += validation_chunk.validated_output
 
-    assert full_output == "Citrus fruit,Citrus fruit,"
+    assert full_output == "Citrus fruit,"
 
 
 @pytest.mark.asyncio
@@ -81,7 +81,7 @@ async def test_sync_streaming_guard_validation():
     for validation_chunk in iterator:
         full_output += validation_chunk.validated_output  # type: ignore
 
-    assert full_output == "Citrus fruit,Citrus fruit,"
+    assert full_output == "Citrus fruit,"
 
 
 def test_server_guard_llm_integration():
