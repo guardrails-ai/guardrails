@@ -242,7 +242,7 @@ class GuardrailsApiClient:
             async for raw_chunk in response.aiter_text():
                 str_chunk = raw_chunk.strip()
                 if str_chunk:
-                    str_chunk_data = "".join(str_chunk.split("\n")).split("data:")[1]
+                    str_chunk_data = "".join(str_chunk.split("\n"))
                     chunk = json.loads(str_chunk_data)
                     if chunk.get("error"):
                         raise Exception(chunk.get("error").get("message"))
@@ -286,7 +286,7 @@ class GuardrailsApiClient:
             for raw_chunk in response.iter_text():
                 str_chunk = raw_chunk.strip()
                 if str_chunk:
-                    str_chunk_data = "".join(str_chunk.split("\n")).split("data:")[1]
+                    str_chunk_data = "".join(str_chunk.split("\n"))
                     chunk = json.loads(str_chunk_data)
                     if chunk.get("error"):
                         raise Exception(chunk.get("error").get("message"))

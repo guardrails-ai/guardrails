@@ -1057,7 +1057,8 @@ class Guard(IGuard, Generic[OT]):
                 api_key=self._api_key, base_url=self._base_url
             )
         try:
-            self._api_client.upsert_guard(self)
+            saved_guard = self._api_client.upsert_guard(self)
+            self.id = saved_guard.id
             self._use_server = True
         except Exception as e:
             logger.error(
