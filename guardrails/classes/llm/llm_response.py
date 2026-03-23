@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from itertools import tee
 from typing import Any, Dict, Iterator, Optional, AsyncIterator, Iterable, Tuple
 from typing_extensions import deprecated
@@ -6,6 +7,14 @@ from typing_extensions import deprecated
 from pydantic import Field, field_serializer, field_validator
 
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.generic.async_iterable import SerializeableAsyncIterable
+
+
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message="coroutine 'serialize_aiter' was never awaited",
+)
 
 
 # TODO: Move this somewhere that makes sense
@@ -14,21 +23,14 @@ def async_to_sync(awaitable):
     return loop.run_until_complete(awaitable)
 
 
-async def iterable_to_async_iter(sync_iterable: Iterable) -> AsyncIterator:
-    for i in sync_iterable:
-        yield i
-
-
 async def serialize_aiter(
     async_iter: AsyncIterator,
 ) -> Tuple[Optional[list[str]], AsyncIterator]:
-    _iterable = []
     iter_output: list[str] = []
     async for so in async_iter:
-        _iterable.append(so)
         iter_output.append(str(so))
 
-    return iter_output, iterable_to_async_iter(_iterable)
+    return iter_output, SerializeableAsyncIterable[str](content=iter_output)
 
 
 # TODO: We might be able to delete this
