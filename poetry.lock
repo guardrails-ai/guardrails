@@ -2295,34 +2295,35 @@ dev = ["coverage (>=7.6.12)", "pre-commit (>=4.1.0)", "pyright[nodejs] (>=1.1.39
 
 [[package]]
 name = "guardrails-api"
-version = "0.3.2"
+version = "0.4.0a0"
 description = "Guardrails API"
 optional = true
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 markers = "extra == \"api\""
 files = [
-    {file = "guardrails_api-0.3.2-py3-none-any.whl", hash = "sha256:3e2b4b4983f607c385a66d79de6a82e1590934772d521f30bd512e7e93fc7e0b"},
-    {file = "guardrails_api-0.3.2.tar.gz", hash = "sha256:c0cbe75fb93f53731f2603253e77437df424c56192e4130f7b7b1406f276f4c3"},
+    {file = "guardrails_api-0.4.0a0-py3-none-any.whl", hash = "sha256:af2ce15e939c0716dfe30411ed60db2f70f99022434150f37c04c86b6cced9ee"},
+    {file = "guardrails_api-0.4.0a0.tar.gz", hash = "sha256:b6de550def17c69948fc621d7d70ea34050af844806a933a873f8ca3c0ab81a8"},
 ]
 
 [package.dependencies]
 aiocache = ">=0.11.1"
 alembic = ">=1.18.4"
 fastapi = ">=0.114.1"
-guardrails-ai = ">=0.8.2"
-jsonschema = ">=4.22.0,<5"
+guardrails-ai = ">=0.10.0a0"
+guardrails-ai-types = ">=0.4.0a5"
 litellm = ">=1.39.3,<2"
+openai = ">=1"
 psycopg2-binary = ">=2.9.9,<3"
 python-dotenv = ">=1.2.1"
-referencing = ">=0.35.1,<1"
 requests = ">=2.32.3"
 SQLAlchemy = ">=2.0.34"
 typer = ">=0.9.4,<1"
+typing-extensions = {version = ">=4.8.0,<5.0.0", markers = "python_version < \"3.11\""}
 uvicorn = ">=0.30.6"
 
 [package.extras]
-dev = ["PyYaml", "coverage", "gunicorn (>=22.0.0,<23)", "jsonref", "opentelemetry-distro", "pre-commit", "ruff"]
+dev = ["PyYaml", "coverage", "gunicorn (>=22.0.0,<23)", "jsonref", "opentelemetry-distro", "pre-commit", "pyright[nodejs] (>=1.1.396)", "ruff"]
 
 [[package]]
 name = "guardrails-hub-types"
@@ -8874,4 +8875,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "0a53af6c9b3cdd82c6a66cd634669d64a874ddf23ee7c2452bc0523f1a3d035d"
+content-hash = "2995a7e5dbe827ca69a5068cd09cd7e28da5b768b0fbc9c2fc48053eb3a25a8b"
