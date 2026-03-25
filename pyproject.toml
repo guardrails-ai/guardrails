@@ -1,6 +1,10 @@
 [project]
 name = "guardrails-ai"
+<<<<<<< new-types
 version = "0.10.0"
+=======
+version = "0.9.3"
+>>>>>>> main
 description = "Adding guardrails to large language models."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
@@ -26,7 +30,11 @@ dependencies = [
     "typing-extensions>=4.8.0,<5.0.0",
     "python-dateutil>=2.8.2,<3.0.0",
     "tiktoken>=0.5.1,<1.0.0",
+<<<<<<< new-types
     "litellm>=1.37.14,<=1.82.6",    
+=======
+    "litellm>=1.37.14,<=1.82.6",
+>>>>>>> main
     "pydash>=7.0.6,<9.0.0",
     "langchain-core>=1.0.0,<2.0",
     "requests>=2.31.0,<3.0.0",    
