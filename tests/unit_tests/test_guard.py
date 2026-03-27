@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from guardrails import Guard, Validator, register_validator
 from guardrails.classes.validation.validation_result import PassResult
 from guardrails.utils.validator_utils import verify_metadata_requirements
-from guardrails.utils import args, kwargs, on_fail
 from guardrails.types import OnFailAction
 from tests.integration_tests.test_assets.validators import (
     EndsWith,
@@ -164,13 +163,12 @@ class TestConfigure:
 
 
 def test_use():
-    guard: Guard = (
-        Guard()
-        .use(EndsWith("a"))
-        .use(OneLine())
-        .use(LowerCase)
-        .use(TwoWords, on_fail=OnFailAction.REASK)
-        .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+    guard: Guard = Guard().use(
+        EndsWith("a"),
+        OneLine(),
+        LowerCase(),
+        TwoWords(on_fail=OnFailAction.REASK),
+        ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
     )
 
     # print(guard.__stringify__())
@@ -220,14 +218,10 @@ def test_use():
     # everything else is in the schema
     guard: Guard = (
         Guard()
-        .use(LowerCase, on="messages")
-        .use(OneLine, on="messages")
+        .use(LowerCase(), OneLine(), on="messages")
         .use(
-            EndsWith, end="a", on="output"
+            EndsWith(end="a"), TwoWords(on_fail=OnFailAction.REASK), on="output"
         )  # default on="output", still explicitly set
-        .use(
-            TwoWords, on_fail=OnFailAction.REASK
-        )  # default on="output", implicitly set
     )
 
     # Check schemas for messages validators
@@ -253,217 +247,18 @@ def test_use():
         guard: Guard = (
             Guard()
             .use(EndsWith("a"), on="response")  # invalid on parameter
-            .use(OneLine, on="prompt")  # valid on parameter
-        )
-
-
-def test_use_many_instances():
-    guard: Guard = Guard().use_many(
-        EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK)
-    )
-
-    # print(guard.__stringify__())
-    assert len(guard._validators) == 4
-
-    assert isinstance(guard._validators[0], EndsWith)
-    assert guard._validators[0]._end == "a"
-    assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[1], OneLine)
-    assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[2], LowerCase)
-    assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[3], TwoWords)
-    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
-
-    # No longer a constraint
-    # # Raises error when trying to `use_many` a validator on a non-string
-    # with pytest.raises(RuntimeError):
-
-    class TestClass(BaseModel):
-        another_field: str
-
-    py_guard = Guard.for_pydantic(output_class=TestClass)
-    py_guard.use_many(
-        EndsWith("a"),
-        OneLine(),
-        LowerCase(),
-        TwoWords(on_fail=OnFailAction.REASK),
-    )
-
-    assert py_guard._validator_map.get("$") == [
-        EndsWith("a"),
-        OneLine(),
-        LowerCase(),
-        TwoWords(on_fail=OnFailAction.REASK),
-    ]
-
-    # Test with explicitly setting the "on" parameter = "output"
-    guard: Guard = Guard().use_many(
-        EndsWith("a"),
-        OneLine(),
-        LowerCase(),
-        TwoWords(on_fail=OnFailAction.REASK),
-        on="output",
-    )
-
-    assert len(guard._validators) == 4  # still 4 output validators, hence 4
-
-    assert isinstance(guard._validators[0], EndsWith)
-    assert guard._validators[0]._end == "a"
-    assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[1], OneLine)
-    assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[2], LowerCase)
-    assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[3], TwoWords)
-    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
-
-    # Test with explicitly setting the "on" parameter = "prompt"
-    guard: Guard = Guard().use_many(
-        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="prompt"
-    )
-
-    prompt_validators = guard._validator_map.get("prompt", [])
-    assert len(prompt_validators) == 3
-    assert prompt_validators[0].__class__.__name__ == "OneLine"
-    assert prompt_validators[1].__class__.__name__ == "LowerCase"
-    assert prompt_validators[2].__class__.__name__ == "TwoWords"
-    assert len(guard._validators) == 3
-
-    # Test with explicitly setting the "on" parameter = "instructions"
-    guard: Guard = Guard().use_many(
-        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="instructions"
-    )
-
-    instructions_validators = guard._validator_map.get("instructions", [])
-    assert len(instructions_validators) == 3
-    assert instructions_validators[0].__class__.__name__ == "OneLine"
-    assert instructions_validators[1].__class__.__name__ == "LowerCase"
-    assert instructions_validators[2].__class__.__name__ == "TwoWords"
-    assert len(guard._validators) == 3
-
-    # Test with explicitly setting the "on" parameter = "msg_history"
-    guard: Guard = Guard().use_many(
-        OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="msg_history"
-    )
-
-    msg_history_validators = guard._validator_map.get("msg_history", [])
-    assert len(msg_history_validators) == 3
-    assert msg_history_validators[0].__class__.__name__ == "OneLine"
-    assert msg_history_validators[1].__class__.__name__ == "LowerCase"
-    assert msg_history_validators[2].__class__.__name__ == "TwoWords"
-    assert len(guard._validators) == 3
-
-    # Test with an unrecognized "on" parameter, should warn with a UserWarning
-    with pytest.warns(UserWarning):
-        guard: Guard = Guard().use_many(
-            EndsWith("a", on_fail=OnFailAction.EXCEPTION), OneLine(), on="response"
-        )
-
-
-def test_use_many_tuple():
-    guard: Guard = Guard().use_many(
-        OneLine,
-        (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
-        (LowerCase, kwargs(on_fail=OnFailAction.FIX_REASK, some_other_kwarg="kwarg")),
-        (TwoWords, on_fail(OnFailAction.REASK)),
-        (ValidLength, args(0, 12), kwargs(on_fail=OnFailAction.REFRAIN)),
-    )
-
-    # print(guard.__stringify__())
-    assert len(guard._validators) == 5
-
-    assert isinstance(guard._validators[0], OneLine)
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[1], EndsWith)
-    assert guard._validators[1]._end == "a"
-    assert guard._validators[1]._kwargs["end"] == "a"
-    assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc we set it
-
-    assert isinstance(guard._validators[2], LowerCase)
-    assert guard._validators[2]._kwargs["some_other_kwarg"] == "kwarg"
-    assert (
-        guard._validators[2].on_fail_descriptor == OnFailAction.FIX_REASK
-    )  # bc this is the default
-
-    assert isinstance(guard._validators[3], TwoWords)
-    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
-
-    assert isinstance(guard._validators[4], ValidLength)
-    assert guard._validators[4]._min == 0
-    assert guard._validators[4]._kwargs["min"] == 0
-    assert guard._validators[4]._max == 12
-    assert guard._validators[4]._kwargs["max"] == 12
-    assert (
-        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
-    )  # bc we set it
-
-    # Test with explicitly setting the "on" parameter
-    guard: Guard = Guard().use_many(
-        (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
-        OneLine,
-        on="output",
-    )
-
-    assert len(guard._validators) == 2  # only 2 output validators, hence 2
-
-    assert isinstance(guard._validators[0], EndsWith)
-    assert guard._validators[0]._end == "a"
-    assert guard._validators[0]._kwargs["end"] == "a"
-    assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc we set it
-
-    assert isinstance(guard._validators[1], OneLine)
-    assert (
-        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
-    )  # bc this is the default
-
-    # Test with an unrecognized "on" parameter, should warn with a UserWarning
-    with pytest.warns(UserWarning):
-        guard: Guard = Guard().use_many(
-            (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
-            OneLine,
-            on="response",
+            .use(OneLine(), on="prompt")  # valid on parameter
         )
 
 
 # TODO: Move to integration tests; these are not unit tests...
 class TestValidate:
     def test_output_only_success(self):
-        guard: Guard = (
-            Guard()
-            .use(OneLine)
-            .use(
-                LowerCase(on_fail=OnFailAction.FIX), on="output"
-            )  # default on="output", still explicitly set
-            .use(TwoWords)
-            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        guard: Guard = Guard().use(
+            OneLine(),
+            LowerCase(on_fail=OnFailAction.FIX),
+            TwoWords(),
+            ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
         )
 
         llm_output: str = "Oh Canada"  # bc it meets our criteria
@@ -474,14 +269,11 @@ class TestValidate:
         assert response.validated_output == llm_output.lower()
 
     def test_output_only_failure(self):
-        guard: Guard = (
-            Guard()
-            .use(OneLine, on_fail=OnFailAction.NOOP)
-            .use(
-                LowerCase(on_fail=OnFailAction.FIX), on="output"
-            )  # default on="output", still explicitly set
-            .use(TwoWords, on_fail=OnFailAction.NOOP)
-            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+        guard: Guard = Guard().use(
+            OneLine(on_fail=OnFailAction.NOOP),
+            LowerCase(on_fail=OnFailAction.FIX),
+            TwoWords(on_fail=OnFailAction.NOOP),
+            ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
         )
 
         llm_output = "Star Spangled Banner"  # to stick with the theme
@@ -497,12 +289,14 @@ class TestValidate:
         # Should still only use the output validators to validate the output
         guard: Guard = (
             Guard()
-            .use(OneLine, on="prompt")
-            .use(LowerCase, on="instructions")
-            .use(UpperCase, on="msg_history")
-            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
-            .use(TwoWords)
-            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+            .use(OneLine(), on="prompt")
+            .use(LowerCase(), on="instructions")
+            .use(UpperCase(), on="msg_history")
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX),
+                TwoWords(),
+                ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
+            )
         )
 
         llm_output: str = "Oh Canada"  # bc it meets our criteria
@@ -515,10 +309,12 @@ class TestValidate:
     def test_on_many_failure(self):
         guard: Guard = (
             Guard()
-            .use(OneLine, on="messages")
-            .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
-            .use(TwoWords, on_fail=OnFailAction.NOOP)
-            .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
+            .use(OneLine(), on="messages")
+            .use(
+                LowerCase(on_fail=OnFailAction.FIX),
+                TwoWords(on_fail=OnFailAction.NOOP),
+                ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
+            )
         )
 
         llm_output = "Star Spangled Banner"  # to stick with the theme
@@ -529,11 +325,11 @@ class TestValidate:
         assert response.validated_output is None
 
 
-def test_use_and_use_many():
+def test_multi_use():
     guard: Guard = (
         Guard()
-        .use_many(OneLine(), LowerCase(), on="messages")
-        .use_many(
+        .use(OneLine(), LowerCase(), on="messages")
+        .use(
             TwoWords(on_fail=OnFailAction.REASK),
             ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
             on="output",
@@ -565,8 +361,8 @@ def test_use_and_use_many():
     with pytest.warns(UserWarning):
         guard: Guard = (
             Guard()
-            .use_many(OneLine(), LowerCase(), on="messages")
-            .use_many(
+            .use(OneLine(), LowerCase(), on="messages")
+            .use(
                 TwoWords(on_fail=OnFailAction.REASK),
                 ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
                 on="response",  # invalid "on" parameter
@@ -605,7 +401,7 @@ class TestGuardSerialization:
 
     def test_to_dict_with_validators(self):
         """Test to_dict with validators."""
-        guard = Guard().use(LowerCase()).use(OneLine())
+        guard = Guard().use(LowerCase(), OneLine())
         guard_dict = guard.to_dict()
 
         assert isinstance(guard_dict, dict)
@@ -658,20 +454,14 @@ class TestGuardSerialization:
         assert len(restored_guard.validators) == len(original_guard.validators)
 
 
-class TestFetchGuard:
-    """Test Guard.fetch_guard functionality."""
+class TestLoadGuard:
+    """Test Guard.load functionality."""
 
-    def test_fetch_guard_without_name(self):
-        """Test that fetch_guard raises ValueError when name is not
-        specified."""
-        with pytest.raises(ValueError, match="Name must be specified to fetch a guard"):
-            Guard.fetch_guard()
-
-    def test_fetch_guard_with_name(self, mocker):
+    def test_load_guard_with_name(self, mocker):
         """Test fetch_guard with a valid name."""
         # Create a real Guard to return from the mock
         mock_fetched_guard = Guard()
-        mock_fetched_guard.name = "fetched-guard"
+        mock_fetched_guard.name = "test-guard"
 
         # Mock the API client
         mock_api_client = mocker.Mock()
@@ -686,7 +476,7 @@ class TestFetchGuard:
         mock_settings = mocker.patch("guardrails.guard.settings")
         mock_settings.use_server = True
 
-        result = Guard.fetch_guard(name="test-guard")
+        result = Guard.load(name="test-guard")
 
         # Should return a Guard instance
         assert isinstance(result, Guard)
@@ -695,7 +485,7 @@ class TestFetchGuard:
         # Should have called the API client's fetch_guard
         mock_api_client.fetch_guard.assert_called()
 
-    def test_fetch_guard_with_api_key_and_base_url(self, mocker):
+    def test_load_guard_with_api_key_and_base_url(self, mocker):
         """Test fetch_guard with custom api_key and base_url."""
         # Create a real Guard to return from the mock
         mock_fetched_guard = Guard()
@@ -709,7 +499,7 @@ class TestFetchGuard:
         mock_settings = mocker.patch("guardrails.guard.settings")
         mock_settings.use_server = True
 
-        result = Guard.fetch_guard(
+        result = Guard.load(
             name="test-guard", api_key="test-api-key", base_url="https://test.api.com"
         )
 
@@ -725,7 +515,7 @@ class TestFetchGuard:
             api_key="test-api-key", base_url="https://test.api.com"
         )
 
-    def test_fetch_guard_not_found(self, mocker):
+    def test_load_guard_not_found(self, mocker):
         """Test fetch_guard when guard is not found on server."""
         mock_api_client = mocker.Mock()
         mock_api_client.fetch_guard.return_value = None
@@ -735,8 +525,9 @@ class TestFetchGuard:
         )
         mocker.patch("guardrails.guard.settings")
 
-        with pytest.raises(ValueError, match="Guard with name test-guard not found"):
-            Guard.fetch_guard(name="test-guard")
+        guard = Guard.load(name="test-guard")
+
+        assert guard is None
 
 
 class TestErrorSpansInOutput:
@@ -824,18 +615,17 @@ class TestResponseFormatJsonSchema:
         assert "strict" in result_json_schema
 
 
-class TestUpsertGuard:
-    """Test upsert_guard functionality."""
+class TestSaveGuard:
+    """Test save functionality."""
 
     @patch("guardrails.guard.GuardrailsApiClient")
-    def test_upsert_guard(self, mock_api_client):
-        """Test upsert_guard saves guard to server."""
-        guard = Guard(name="test-guard", use_server=True, preloaded=True)
+    def test_save_guard(self, mock_api_client):
+        """Test save upserts guard to server."""
+        guard = Guard(name="test-guard", use_server=True)
 
-        guard.upsert_guard()
+        guard.save()
 
-        # Once from save on init, once from upsert
-        assert guard._api_client.upsert_guard.call_count == 2
+        assert guard._api_client.upsert_guard.call_count == 1
 
 
 class TestConfigureExtended:

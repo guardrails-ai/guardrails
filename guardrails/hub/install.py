@@ -135,7 +135,7 @@ def install(
             msg="Skipping post install, models will not be "
             "downloaded for local inference.",
         )
-    ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
+    ValidatorPackageService.register_validator(module_manifest)
 
     # 5. Get Validator Class for the installed module
     installed_module = ValidatorPackageService.get_validator_from_manifest(
@@ -160,7 +160,7 @@ def install(
         "[bold]Import validator:[/bold]\n"
         "from guardrails.hub import ${export}\n\n"
         "[bold]Get more info:[/bold]\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
+        "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,
@@ -171,7 +171,7 @@ def install(
         "Import validator:\n"
         "from guardrails.hub import ${export}\n\n"
         "Get more info:\n"
-        "https://hub.guardrailsai.com/validator/${id}\n"
+        "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,

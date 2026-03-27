@@ -439,7 +439,7 @@ def test_noop_behavior_two_validators(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         MockDetectPII(
             on_fail=OnFailAction.NOOP,
             pii_entities="pii",
@@ -487,7 +487,7 @@ def test_fix_behavior_one_validator(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         LowerCase(on_fail=OnFailAction.FIX),
     )
     prompt = """Write me a 4 line poem about John in San Francisco. 
@@ -529,7 +529,7 @@ def test_fix_behavior_two_validators(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
@@ -576,7 +576,7 @@ def test_fix_behavior_three_validators(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",
@@ -635,7 +635,7 @@ In his HEART, he's always THERE."""
 #         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
 #     )
 
-#     guard = gd.Guard().use_many(
+#     guard = gd.Guard().use(
 #         MockDetectPII(
 #             on_fail=OnFailAction.FIX,
 #             pii_entities="pii",
@@ -689,7 +689,7 @@ def test_refrain_behavior(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         MockDetectPII(
             on_fail=OnFailAction.REFRAIN,
             pii_entities="pii",
@@ -731,7 +731,7 @@ def test_filter_behavior(mocker):
         return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard().use_many(
+    guard = gd.Guard().use(
         MockDetectPII(
             on_fail=OnFailAction.FIX,
             pii_entities="pii",

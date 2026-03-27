@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Guardrails Documentation
-    url: https://www.guardrailsai.com/docs
+    url: https://www.guardrailsai.com/guardrails/docs
     about: Check our documentation for answers to common questions and usage guides.
   - name: Guardrails Hub
-    url: https://hub.guardrailsai.com/
+    url: https://guardrailsai.com/hub
     about: Explore pre-built validators and guards for specific types of risks.
   - name: GitHub Discussions
     url: https://github.com/guardrails-ai/guardrails/discussions

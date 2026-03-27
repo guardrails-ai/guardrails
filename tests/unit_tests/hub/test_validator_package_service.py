@@ -1,4 +1,5 @@
-from pathlib import Path
+import json
+import os
 from typing import cast
 import pytest
 import sys
@@ -10,6 +11,11 @@ from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
     InvalidHubInstallURL,
+    _GUARDRAILS_INSTALLER_ENV,
+)
+from guardrails.types.validator_registry import (
+    ValidatorRegistry,
+    ValidatorRegistryEntry,
 )
 from tests.unit_tests.mocks.mock_file import MockFile
 
@@ -394,11 +400,9 @@ class TestValidatorPackageService:
         mock_get_validator_manifest.assert_called_once_with("test-module")
         mock_get_site_packages_location.assert_called_once()
 
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_module_path"
-    )
-    def test_get_site_packages_location(self, mock_get_module_path):
-        mock_get_module_path.return_value = Path("/fake/site-packages/pip")
+    @patch("guardrails.hub.validator_package_service.sysconfig.get_paths")
+    def test_get_site_packages_location(self, mock_get_paths):
+        mock_get_paths.return_value = {"purelib": "/fake/site-packages"}
         site_packages_path = ValidatorPackageService.get_site_packages_location()
         assert site_packages_path == "/fake/site-packages"
 
@@ -426,15 +430,18 @@ class TestValidatorPackageService:
             ValidatorPackageService.get_validator_id("invalid-uri")
 
     def test_install_hub_module_when_exception(self, mocker):
-        mock_pip_process = mocker.patch(
-            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        mock_installer = mocker.patch(
+            "guardrails.hub.validator_package_service.installer_process"
         )
         mock_settings = mocker.patch(
             "guardrails.hub.validator_package_service.settings"
         )
         mock_settings.rc.token = "mock-token"
+        mocker.patch.object(
+            ValidatorPackageService, "detect_installer", return_value="pip"
+        )
 
-        mock_pip_process.side_effect = [Exception()]
+        mock_installer.side_effect = [Exception()]
 
         manifest = Manifest.from_dict(
             {
@@ -456,18 +463,21 @@ class TestValidatorPackageService:
         with pytest.raises(Exception):
             ValidatorPackageService.install_hub_module(manifest.id)
 
-        assert mock_pip_process.call_count == 1
+        assert mock_installer.call_count == 1
 
     def test_install_hub_module_when_no_validators_extras(self, mocker):
-        mock_pip_process = mocker.patch(
-            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        mock_installer = mocker.patch(
+            "guardrails.hub.validator_package_service.installer_process"
         )
         mock_settings = mocker.patch(
             "guardrails.hub.validator_package_service.settings"
         )
         mock_settings.rc.token = "mock-token"
+        mocker.patch.object(
+            ValidatorPackageService, "detect_installer", return_value="pip"
+        )
 
-        mock_pip_process.side_effect = [
+        mock_installer.side_effect = [
             PipProcessError("install", "guardrails-ai-grhub-id"),
             "Sucessfully installed guardrails-ai-grhub-id",
         ]
@@ -490,8 +500,8 @@ class TestValidatorPackageService:
         manifest = cast(Manifest, manifest)
         ValidatorPackageService.install_hub_module(manifest.id)
 
-        assert mock_pip_process.call_count == 2
-        pip_calls = [
+        assert mock_installer.call_count == 2
+        installer_calls = [
             call(
                 "install",
                 "guardrails-ai-grhub-id[validators]",
@@ -500,6 +510,7 @@ class TestValidatorPackageService:
                     "--extra-index-url=https://pypi.org/simple",
                 ],
                 quiet=False,
+                installer="pip",
             ),
             call(
                 "install",
@@ -509,40 +520,24 @@ class TestValidatorPackageService:
                     "--extra-index-url=https://pypi.org/simple",
                 ],
                 quiet=False,
+                installer="pip",
             ),
         ]
-        mock_pip_process.assert_has_calls(pip_calls)
+        mock_installer.assert_has_calls(installer_calls)
 
     def test_install_hub_module(self, mocker):
-        mock_pip_process = mocker.patch(
-            "guardrails.hub.validator_package_service.pip_process_with_custom_exception"
+        mock_installer = mocker.patch(
+            "guardrails.hub.validator_package_service.installer_process"
         )
         mock_settings = mocker.patch(
             "guardrails.hub.validator_package_service.settings"
         )
         mock_settings.rc.token = "mock-token"
+        mocker.patch.object(
+            ValidatorPackageService, "detect_installer", return_value="pip"
+        )
 
-        inspect_report = {
-            "installed": [
-                {
-                    "metadata": {
-                        "requires_dist": [
-                            "rstr",
-                            "openai <2",
-                            "pydash (>=7.0.6,<8.0.0)",
-                            'faiss-cpu (>=1.7.4,<2.0.0) ; extra == "vectordb"',
-                        ]
-                    }
-                }
-            ]
-        }
-        mock_pip_process.side_effect = [
-            "Sucessfully installed test-validator",
-            inspect_report,
-            "Sucessfully installed rstr",
-            "Sucessfully installed openai<2",
-            "Sucessfully installed pydash>=7.0.6,<8.0.0",
-        ]
+        mock_installer.return_value = "Sucessfully installed test-validator"
 
         manifest = Manifest.from_dict(
             {
@@ -562,8 +557,8 @@ class TestValidatorPackageService:
         manifest = cast(Manifest, manifest)
         ValidatorPackageService.install_hub_module(manifest.id)
 
-        assert mock_pip_process.call_count == 1
-        pip_calls = [
+        assert mock_installer.call_count == 1
+        installer_calls = [
             call(
                 "install",
                 "guardrails-ai-grhub-id[validators]",
@@ -572,6 +567,674 @@ class TestValidatorPackageService:
                     "--extra-index-url=https://pypi.org/simple",
                 ],
                 quiet=False,
+                installer="pip",
             ),
         ]
-        mock_pip_process.assert_has_calls(pip_calls)
+        mock_installer.assert_has_calls(installer_calls)
+
+
+class TestGetSitePackagesLocation:
+    def test_returns_sysconfig_purelib(self):
+        result = ValidatorPackageService.get_site_packages_location()
+        import sysconfig
+
+        assert result == sysconfig.get_paths()["purelib"]
+
+
+class TestDetectInstaller:
+    @pytest.mark.parametrize(
+        ("env_value", "uv_available", "expected"),
+        [
+            ("uv", True, "uv"),
+            ("pip", True, "pip"),
+            ("uv", False, "uv"),
+            ("", True, "uv"),
+            ("", False, "pip"),
+        ],
+        ids=[
+            "env_uv_with_uv_available",
+            "env_pip_overrides_uv",
+            "env_uv_without_uv_binary",
+            "auto_detect_uv",
+            "fallback_to_pip",
+        ],
+    )
+    def test_detect_installer(self, env_value, uv_available, expected):
+        with (
+            patch.dict(os.environ, {_GUARDRAILS_INSTALLER_ENV: env_value}),
+            patch(
+                "guardrails.hub.validator_package_service.shutil.which",
+                return_value="/usr/bin/uv" if uv_available else None,
+            ),
+        ):
+            assert ValidatorPackageService.detect_installer() == expected
+
+
+class TestRegisterValidator:
+    def test_creates_new_registry(self, tmp_path, mocker):
+        mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=tmp_path / ".guardrails" / "hub_registry.json",
+        )
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails/detect_pii",
+                "name": "detect_pii",
+                "author": {"name": "test", "email": "t@t.com"},
+                "maintainers": [],
+                "repository": {"url": "https://github.com/test/test"},
+                "namespace": "guardrails",
+                "packageName": "detect-pii",
+                "moduleName": "detect_pii",
+                "description": "Detect PII",
+                "exports": ["DetectPII"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        ValidatorPackageService.register_validator(manifest)
+
+        registry_file = tmp_path / ".guardrails" / "hub_registry.json"
+        assert registry_file.exists()
+        registry = json.loads(registry_file.read_text())
+        assert registry["version"] == 1
+        assert "guardrails/detect_pii" in registry["validators"]
+        entry = registry["validators"]["guardrails/detect_pii"]
+        assert entry["import_path"] == "guardrails_grhub_detect_pii"
+        assert entry["exports"] == ["DetectPII"]
+        assert entry["package_name"] == "guardrails-grhub-detect-pii"
+        assert "installed_at" in entry
+
+    def test_appends_to_existing_registry(self, tmp_path, mocker):
+        mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/regex_match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails/detect_pii",
+                "name": "detect_pii",
+                "author": {"name": "test", "email": "t@t.com"},
+                "maintainers": [],
+                "repository": {"url": "https://github.com/test/test"},
+                "namespace": "guardrails",
+                "packageName": "detect-pii",
+                "moduleName": "detect_pii",
+                "description": "Detect PII",
+                "exports": ["DetectPII"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        ValidatorPackageService.register_validator(manifest)
+
+        registry = json.loads(registry_file.read_text())
+        assert len(registry["validators"]) == 2
+        assert "guardrails/regex_match" in registry["validators"]
+        assert "guardrails/detect_pii" in registry["validators"]
+
+    def test_overwrites_existing_entry(self, tmp_path, mocker):
+        mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails/detect_pii",
+                "name": "detect_pii",
+                "author": {"name": "test", "email": "t@t.com"},
+                "maintainers": [],
+                "repository": {"url": "https://github.com/test/test"},
+                "namespace": "guardrails",
+                "packageName": "detect-pii",
+                "moduleName": "detect_pii",
+                "description": "Detect PII",
+                "exports": ["DetectPII", "DetectPIIv2"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        ValidatorPackageService.register_validator(manifest)
+
+        registry = json.loads(registry_file.read_text())
+        assert len(registry["validators"]) == 1
+        assert registry["validators"]["guardrails/detect_pii"]["exports"] == [
+            "DetectPII",
+            "DetectPIIv2",
+        ]
+
+
+class TestUnregisterValidator:
+    def test_removes_validator_from_registry(self, tmp_path, mocker):
+        mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/detect-pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                },
+                "guardrails/regex-match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                },
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        registry = json.loads(registry_file.read_text())
+        assert "guardrails/detect-pii" not in registry["validators"]
+        assert "guardrails/regex-match" in registry["validators"]
+        assert len(registry["validators"]) == 1
+
+    def test_noop_when_registry_missing(self, tmp_path, mocker):
+        registry_file = tmp_path / ".guardrails" / "hub_registry.json"
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+
+        # Should not raise
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+    def test_noop_when_validator_not_in_registry(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/regex-match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        registry = json.loads(registry_file.read_text())
+        assert len(registry["validators"]) == 1
+        assert "guardrails/regex-match" in registry["validators"]
+
+    def test_noop_on_corrupt_registry(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        registry_file.write_text("not valid json{{{")
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        # File should remain unchanged
+        assert registry_file.read_text() == "not valid json{{{"
+
+
+class TestInstallHubModuleWithInstaller:
+    @pytest.mark.parametrize(
+        ("detected_installer",),
+        [("uv",), ("pip",)],
+        ids=["uv_installer", "pip_installer"],
+    )
+    def test_uses_detected_installer(self, mocker, detected_installer):
+        mock_installer = mocker.patch(
+            "guardrails.hub.validator_package_service.installer_process",
+            return_value="Success",
+        )
+        mock_settings = mocker.patch(
+            "guardrails.hub.validator_package_service.settings"
+        )
+        mock_settings.rc.token = "mock-token"
+        mocker.patch.object(
+            ValidatorPackageService,
+            "detect_installer",
+            return_value=detected_installer,
+        )
+
+        ValidatorPackageService.install_hub_module("guardrails/detect_pii")
+
+        mock_installer.assert_called_once_with(
+            "install",
+            "guardrails-grhub-detect-pii[validators]",
+            [
+                "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
+                "--extra-index-url=https://pypi.org/simple",
+            ],
+            quiet=False,
+            installer=detected_installer,
+        )
+
+
+class TestValidatorRegistryModels:
+    def test_entry_model_validation(self):
+        entry = ValidatorRegistryEntry(
+            import_path="guardrails_grhub_detect_pii",
+            exports=["DetectPII"],
+            installed_at="2025-01-01T00:00:00+00:00",
+            package_name="guardrails-grhub-detect-pii",
+        )
+        assert entry.import_path == "guardrails_grhub_detect_pii"
+        assert entry.exports == ["DetectPII"]
+        assert entry.package_name == "guardrails-grhub-detect-pii"
+
+    def test_registry_model_validation(self):
+        registry = ValidatorRegistry(
+            version=1,
+            validators={
+                "guardrails/detect_pii": ValidatorRegistryEntry(
+                    import_path="guardrails_grhub_detect_pii",
+                    exports=["DetectPII"],
+                    installed_at="2025-01-01T00:00:00+00:00",
+                    package_name="guardrails-grhub-detect-pii",
+                )
+            },
+        )
+        assert registry.version == 1
+        assert "guardrails/detect_pii" in registry.validators
+
+    def test_registry_model_validate_from_dict(self):
+        data = {
+            "version": 1,
+            "validators": {
+                "guardrails/regex_match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                }
+            },
+        }
+        registry = ValidatorRegistry.model_validate(data)
+        assert registry.version == 1
+        entry = registry.validators["guardrails/regex_match"]
+        assert entry.exports == ["RegexMatch"]
+
+    def test_entry_empty_exports(self):
+        entry = ValidatorRegistryEntry(
+            import_path="guardrails_grhub_foo",
+            exports=[],
+            installed_at="2025-01-01T00:00:00+00:00",
+            package_name="guardrails-grhub-foo",
+        )
+        assert entry.exports == []
+
+    def test_registry_empty_validators(self):
+        registry = ValidatorRegistry(version=1, validators={})
+        assert registry.validators == {}
+
+
+class TestRewriteStubFile:
+    def _make_registry(self, validators: dict) -> ValidatorRegistry:
+        return ValidatorRegistry.model_validate(
+            {"version": 1, "validators": validators}
+        )
+
+    def test_writes_import_for_available_validator(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.importlib.util.find_spec",
+            return_value=MagicMock(),
+        )
+
+        registry = self._make_registry(
+            {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            }
+        )
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        assert stub_file.exists()
+        content = stub_file.read_text()
+        assert "from guardrails_grhub_detect_pii import DetectPII" in content
+
+    def test_skips_unavailable_module(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.importlib.util.find_spec",
+            return_value=None,
+        )
+
+        registry = self._make_registry(
+            {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            }
+        )
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        assert stub_file.read_text() == ""
+
+    def test_skips_validator_with_no_exports(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.importlib.util.find_spec",
+            return_value=MagicMock(),
+        )
+
+        registry = self._make_registry(
+            {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": [],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            }
+        )
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        assert stub_file.read_text() == ""
+
+    def test_writes_multiple_validators(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.importlib.util.find_spec",
+            return_value=MagicMock(),
+        )
+
+        registry = self._make_registry(
+            {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                },
+                "guardrails/regex_match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                },
+            }
+        )
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        content = stub_file.read_text()
+        assert "from guardrails_grhub_detect_pii import DetectPII" in content
+        assert "from guardrails_grhub_regex_match import RegexMatch" in content
+
+    def test_writes_multiple_exports_on_one_line(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.importlib.util.find_spec",
+            return_value=MagicMock(),
+        )
+
+        registry = self._make_registry(
+            {
+                "guardrails/detect_pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII", "DetectPIIv2"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            }
+        )
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        content = stub_file.read_text()
+        assert (
+            "from guardrails_grhub_detect_pii import DetectPII as DetectPII" in content
+        )
+        assert (
+            "from guardrails_grhub_detect_pii import DetectPIIv2 as DetectPIIv2"
+            in content
+        )
+
+    def test_empty_registry_writes_empty_stub(self, mocker, tmp_path):
+        stub_dir = tmp_path / "guardrails" / "hub"
+        stub_dir.mkdir(parents=True)
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service"
+            ".ValidatorPackageService.get_site_packages_location",
+            return_value=str(tmp_path),
+        )
+
+        registry = self._make_registry({})
+
+        ValidatorPackageService.rewrite_stub_file(registry)
+
+        stub_file = stub_dir / "__init__.pyi"
+        assert stub_file.read_text() == ""
+
+
+class TestRegisterValidatorCallsRewriteStub:
+    def test_calls_rewrite_stub_file(self, tmp_path, mocker):
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=tmp_path / ".guardrails" / "hub_registry.json",
+        )
+        mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "guardrails/detect_pii",
+                "name": "detect_pii",
+                "author": {"name": "test", "email": "t@t.com"},
+                "maintainers": [],
+                "repository": {"url": "https://github.com/test/test"},
+                "namespace": "guardrails",
+                "packageName": "detect-pii",
+                "moduleName": "detect_pii",
+                "description": "Detect PII",
+                "exports": ["DetectPII"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        ValidatorPackageService.register_validator(manifest)
+
+        mock_rewrite.assert_called_once()
+        registry_arg = mock_rewrite.call_args[0][0]
+        assert isinstance(registry_arg, ValidatorRegistry)
+        assert "guardrails/detect_pii" in registry_arg.validators
+
+    def test_skips_registry_and_stub_when_id_missing_namespace(self, tmp_path, mocker):
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=tmp_path / ".guardrails" / "hub_registry.json",
+        )
+        mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+
+        manifest = Manifest.from_dict(
+            {
+                "id": "no-namespace",
+                "name": "no_namespace",
+                "author": {"name": "test", "email": "t@t.com"},
+                "maintainers": [],
+                "repository": {"url": "https://github.com/test/test"},
+                "namespace": "guardrails",
+                "packageName": "no-namespace",
+                "moduleName": "no_namespace",
+                "description": "No namespace",
+                "exports": ["NoNamespace"],
+                "tags": {},
+            }
+        )
+        manifest = cast(Manifest, manifest)
+
+        ValidatorPackageService.register_validator(manifest)
+
+        mock_rewrite.assert_not_called()
+
+
+class TestUnregisterValidatorCallsRewriteStub:
+    def test_calls_rewrite_stub_when_validator_removed(self, tmp_path, mocker):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/detect-pii": {
+                    "import_path": "guardrails_grhub_detect_pii",
+                    "exports": ["DetectPII"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-detect-pii",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+        mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        mock_rewrite.assert_called_once()
+        registry_arg = mock_rewrite.call_args[0][0]
+        assert isinstance(registry_arg, ValidatorRegistry)
+        assert "guardrails/detect-pii" not in registry_arg.validators
+
+    def test_does_not_call_rewrite_stub_when_validator_not_present(
+        self, tmp_path, mocker
+    ):
+        registry_dir = tmp_path / ".guardrails"
+        registry_dir.mkdir()
+        registry_file = registry_dir / "hub_registry.json"
+        existing = {
+            "version": 1,
+            "validators": {
+                "guardrails/regex-match": {
+                    "import_path": "guardrails_grhub_regex_match",
+                    "exports": ["RegexMatch"],
+                    "installed_at": "2025-01-01T00:00:00+00:00",
+                    "package_name": "guardrails-grhub-regex-match",
+                }
+            },
+        }
+        registry_file.write_text(json.dumps(existing))
+
+        mocker.patch(
+            "guardrails.hub.validator_package_service.get_registry_path",
+            return_value=registry_file,
+        )
+        mock_rewrite = mocker.patch.object(ValidatorPackageService, "rewrite_stub_file")
+
+        ValidatorPackageService.unregister_validator("guardrails/detect-pii")
+
+        mock_rewrite.assert_not_called()

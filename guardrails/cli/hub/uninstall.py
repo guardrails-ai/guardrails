@@ -79,7 +79,6 @@ def uninstall(
     # Prep
     with console.status("Fetching manifest", spinner="bouncingBar"):
         module_manifest = get_validator_manifest(module_name)
-        site_packages = ValidatorPackageService.get_site_packages_location()
 
     # Uninstall
     with console.status("Removing module", spinner="bouncingBar"):
@@ -87,7 +86,7 @@ def uninstall(
 
     # Cleanup
     with console.status("Cleaning up", spinner="bouncingBar"):
-        remove_from_hub_inits(module_manifest, site_packages)
+        ValidatorPackageService.unregister_validator(module_name)
 
     console.print("✅ Successfully uninstalled!")  # type: ignore
     logger.log(level=LEVELS.get("SPAM"), msg="✅ Successfully uninstalled!")  # type: ignore

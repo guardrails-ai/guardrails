@@ -1,11 +1,10 @@
 #!/bin/bash
 
-tag=${1:-fastapi}
 
 docker buildx build \
     --platform linux/amd64 \
-    -f "./server_ci/Dockerfile.$tag" \
-    -t "guardrails:$tag" \
+    -f "./server_ci/Dockerfile" \
+    -t "guardrails:server-ci" \
     --build-arg GUARDRAILS_TOKEN="$GUARDRAILS_TOKEN" \
     --progress plain \
     --load . \

@@ -98,7 +98,7 @@ def configure(
             console.print(f"[{last4}]", style="italic")
 
         console.print(
-            ":backhand_index_pointing_right: You can find your API Key at https://hub.guardrailsai.com/keys"
+            ":backhand_index_pointing_right: You can find your API Key at https://guardrailsai.com/hub/keys"
         )
 
         token = typer.prompt("\nAPI Key", existing_token, show_default=False)
@@ -124,12 +124,12 @@ def configure(
             Login successful.
 
             Get started by installing our RegexMatch validator:
-            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+            https://guardrailsai.com/hub/validator/guardrails_ai/regex_match
 
             You can install it by running:
             guardrails hub install hub://guardrails/regex_match
 
-            Find more validators at https://hub.guardrailsai.com
+            Find more validators at https://guardrailsai.com/hub
             """
             logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
         except AuthenticationError as e:

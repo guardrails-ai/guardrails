@@ -16,6 +16,13 @@ from guardrails.utils.safe_get import safe_get
         ("123", 1, None, "2"),
         ("123", 4, None, None),
         ("123", 4, 42, 42),
+        # Falsy values must be returned, not replaced by default
+        ([0, "a", "b"], 0, None, 0),
+        ([False, "a"], 0, None, False),
+        (["", "a"], 0, None, ""),
+        # Out-of-bounds and non-subscriptable containers use default
+        ([], 0, "fallback", "fallback"),
+        (None, 0, "fallback", "fallback"),
     ],
 )
 def test_safe_get(container, key, default, expected_value):

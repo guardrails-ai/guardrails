@@ -1,7 +1,7 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/dist/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/dist/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/assets/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/assets/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
 
 <hr>
 
@@ -13,7 +13,7 @@
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/guardrails_ai)](https://x.com/guardrails_ai)
 [![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)](https://discord.gg/U9RKkZSBgx)
-[![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)](https://www.guardrailsai.com/docs)
+[![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)](https://guardrailsai.com/guardrails/docs)
 [![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)](https://www.guardrailsai.com/blog)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Guardrails%20Guru-006BFF)](https://gurubase.io/g/guardrails)
 
@@ -25,21 +25,21 @@
 ## What is Guardrails?
 
 Guardrails is a Python framework that helps build reliable AI applications by performing two key functions:
-1. Guardrails runs Input/Output Guards in your application that detect, quantify and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://hub.guardrailsai.com/).
+1. Guardrails runs Input/Output Guards in your application that detect, quantify and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://guardrailsai.com/hub/).
 2. Guardrails help you generate structured data from LLMs.
 
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/dist/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/assets/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
 </div>
 
 
 ### Guardrails Hub
 
-Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
+Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://guardrailsai.com/hub/) to see the full list of validators and their documentation.
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/dist/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/assets/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
 </div>
 
 
@@ -101,7 +101,7 @@ pip install guardrails-ai
     from guardrails import Guard, OnFailAction
     from guardrails.hub import CompetitorCheck, ToxicLanguage
 
-    guard = Guard().use_many(
+    guard = Guard().use(
         CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
         ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION)
     )
@@ -214,11 +214,11 @@ You can reach out to us on [Discord](https://discord.gg/gw4cR9QvYE) or [Twitter]
 
 #### Can I use Guardrails with any LLM?
 
-Yes, Guardrails can be used with proprietary and open-source LLMs. Check out this guide on [how to use Guardrails with any LLM](https://www.guardrailsai.com/docs/how_to_guides/llm_api_wrappers).
+Yes, Guardrails can be used with proprietary and open-source LLMs. Check out this guide on [how to use Guardrails with any LLM](https://guardrailsai.com/guardrails/docs/how-to-guides/using_llms).
 
 #### Can I create my own validators?
 
-Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://www.guardrailsai.com/docs/hub/how_to_guides/custom_validator).
+Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://guardrailsai.com/guardrails/docs/how-to-guides/custom_validators).
 
 #### Does Guardrails support other languages?
 

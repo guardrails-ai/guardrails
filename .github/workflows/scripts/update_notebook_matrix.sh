@@ -1,13 +1,17 @@
 #!/bin/bash
+ignore=(chatbot.ipynb translation_with_quality_check.ipynb guardrails_server.ipynb)
 # Array to store notebook names
 notebook_names="["
 
 # Compile list of file names
-for file in $(ls docs/src/examples/*.ipynb); do
+for file in $(ls docs/examples/*.ipynb); do
   # Add the full filename with extension
   filename=$(basename "$file")
+  if ! [[ ${ignore[*]} =~ "$filename" ]]
+    then
+      notebook_names+="\"$filename\","
+  fi
 
-  notebook_names+="\"$filename\","
 done
 notebook_names="${notebook_names%,}]"
 
