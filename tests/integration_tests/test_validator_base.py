@@ -7,6 +7,7 @@ from guardrails.guard import Guard
 from guardrails.validator_base import (
     FailResult,
     ValidationResult,
+    PassResult,
     Validator,
     register_validator,
 )
@@ -102,3 +103,38 @@ def test_validator_instance_attr_equality(mocker, instance_attr):
     )
 
     assert guard._validators[0].an_instance_attr == instance_attr
+    
+    
+def test_on_fail_refrain_only_triggers_on_fail_result():
+    """
+    Ensures that on_fail='refrain' only triggers when the validator
+    explicitly returns FailResult.
+    """
+
+    @register_validator(name="pass-despite-issue", data_type="string")
+    def pass_despite_issue(value, metadata):
+        return PassResult()
+
+    guard = Guard().use(pass_despite_issue(on_fail="refrain"))
+    result = guard.parse("harmful input")
+
+    assert result.validation_passed is True
+    assert result.validated_output == "harmful input"
+    assert result.error is None
+
+
+def test_on_fail_refrain_blocks_output_on_fail_result():
+    """
+    Ensures that on_fail='refrain' correctly suppresses output
+    when the validator returns FailResult.
+    """
+
+    @register_validator(name="always-fails-test", data_type="string")
+    def always_fails(value, metadata):
+        return FailResult(error_message="blocked")
+
+    guard = Guard().use(always_fails(on_fail="refrain"))
+    result = guard.parse("harmful input")
+
+    assert result.validation_passed is False
+    assert result.validated_output is None
