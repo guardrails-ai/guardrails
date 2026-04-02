@@ -57,9 +57,7 @@ def test_guard_as_runnable(guard_runnable: GuardRunnable, output: str, throws: b
     topic = "ice cream"
     if throws:
         with pytest.raises(ValidationError) as exc_info:
-            res = chain.invoke({"topic": topic})
-            print("res: ", res)
-            print(guard_runnable.guard.history.last)
+            chain.invoke({"topic": topic})
 
         assert str(exc_info.value) == (
             "The response from the LLM failed validation!"

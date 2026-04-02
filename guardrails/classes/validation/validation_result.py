@@ -16,7 +16,6 @@ def to_validation_result(obj: Any) -> PassResult | FailResult | ValidationResult
         if outcome == "pass":
             return PassResult.model_validate(obj)
         elif outcome == "fail":
-            print(obj)
             return FailResult.model_validate(obj)
     return ValidationResult.model_validate(obj)
 

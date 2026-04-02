@@ -158,13 +158,9 @@ class Outputs(ArbitraryModel):
         for reask in self.reasks:
             all_fail_results.extend(reask.fail_results or [])
 
-        print("all_fail_results: ", all_fail_results)
-
         all_reasks_have_fixes = all(
             list(fail.fix_value is not None for fail in all_fail_results)
         )
-
-        print("all_reasks_have_fixes: ", all_reasks_have_fixes)
 
         if self._all_empty() is True:
             return not_run_status

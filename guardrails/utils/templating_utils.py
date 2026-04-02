@@ -5,7 +5,6 @@ from typing import List
 
 def get_template_variables(template: str) -> List[str]:
     if hasattr(Template, "get_identifiers"):
-        # print("Using Template.get_identifiers")
         return Template(template).get_identifiers()  # type: ignore
     else:
         d = collections.defaultdict(str)
