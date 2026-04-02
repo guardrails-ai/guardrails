@@ -2277,14 +2277,14 @@ protobuf = ["grpcio-tools (>=1.75.1)"]
 
 [[package]]
 name = "guardrails-ai-types"
-version = "0.4.0a5"
+version = "0.4.0"
 description = "Offical Guardrails AI Types"
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-    {file = "guardrails_ai_types-0.4.0a5-py3-none-any.whl", hash = "sha256:9de2a9c6728be95e0828e53f30763ce9cea94b98494bc1606ba63deaea495fa2"},
-    {file = "guardrails_ai_types-0.4.0a5.tar.gz", hash = "sha256:bbf42ab91b6e18f1494c4e8578b96b095245a14d7b7e71bbda6b2f7bb4a0e078"},
+    {file = "guardrails_ai_types-0.4.0-py3-none-any.whl", hash = "sha256:f9d218a01e23823d986837a91c38713fbd969d56a4eb2994fc732332e5a0fe3b"},
+    {file = "guardrails_ai_types-0.4.0.tar.gz", hash = "sha256:82bb9802c29c8a5cd85130abec3104cdf3f35c9b5d5d4b98bfaa9329b8080711"},
 ]
 
 [package.dependencies]
@@ -8875,4 +8875,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "7b92bdeb1b8ae5ae28f0d2be136ffa9b8d736d680276bec8724ef886ecf1f13b"
+content-hash = "aca90e99cd412f00f5c59f78dafc228af69f523decd2fef4032efa61c0a9ee84"
