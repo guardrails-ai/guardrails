@@ -2295,15 +2295,15 @@ dev = ["coverage (>=7.6.12)", "pre-commit (>=4.1.0)", "pyright[nodejs] (>=1.1.39
 
 [[package]]
 name = "guardrails-api"
-version = "0.4.0a0"
+version = "0.4.0"
 description = "Guardrails API"
 optional = true
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 markers = "extra == \"api\""
 files = [
-    {file = "guardrails_api-0.4.0a0-py3-none-any.whl", hash = "sha256:af2ce15e939c0716dfe30411ed60db2f70f99022434150f37c04c86b6cced9ee"},
-    {file = "guardrails_api-0.4.0a0.tar.gz", hash = "sha256:b6de550def17c69948fc621d7d70ea34050af844806a933a873f8ca3c0ab81a8"},
+    {file = "guardrails_api-0.4.0-py3-none-any.whl", hash = "sha256:893ebb71a388172a17dfcb7f8603c47ba864f837d5350f66537600fed23fbe5d"},
+    {file = "guardrails_api-0.4.0.tar.gz", hash = "sha256:ed9379cd12a8acd193a68e7a55a16b76be4218efc5cf287edaff4c5fab3e00a2"},
 ]
 
 [package.dependencies]
@@ -2311,8 +2311,8 @@ aiocache = ">=0.11.1"
 alembic = ">=1.18.4"
 fastapi = ">=0.114.1"
 guardrails-ai = ">=0.10.0a0"
-guardrails-ai-types = ">=0.4.0a5"
-litellm = ">=1.39.3,<2"
+guardrails-ai-types = ">=0.4.0"
+litellm = ">=1.39.3,<1.82.6"
 openai = ">=1"
 psycopg2-binary = ">=2.9.9,<3"
 python-dotenv = ">=1.2.1"
@@ -8875,4 +8875,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "aca90e99cd412f00f5c59f78dafc228af69f523decd2fef4032efa61c0a9ee84"
+content-hash = "97a0a0b106f80518570ecb271bcc8fa47736850fef32b44de772a3f8492e10be"
