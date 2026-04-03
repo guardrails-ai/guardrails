@@ -226,7 +226,7 @@ class Runner:
         )
         outputs = Outputs()
         iteration = Iteration(
-            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+            callId=call_log.id, index=index, inputs=inputs, outputs=outputs
         )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
@@ -298,7 +298,7 @@ class Runner:
                 llm_output=content,
             )
             iteration = Iteration(
-                call_id=call_log.id, index=attempt_number, inputs=inputs
+                callId=call_log.id, index=attempt_number, inputs=inputs
             )
             call_log.iterations.insert(0, iteration)
             value, _metadata = validator_service.validate(
@@ -351,7 +351,7 @@ class Runner:
         inputs = Inputs(
             llm_output=prompt.source,
         )
-        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
+        iteration = Iteration(callId=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=prompt.source,

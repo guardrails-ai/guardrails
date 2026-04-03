@@ -70,19 +70,19 @@ class ValidLength(Validator):
                 corrected_value = value.extend([last_val] * (self._min - len(value)))
 
             return FailResult(
-                error_message=f"Value has length less than {self._min}. "
+                errorMessage=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
                 f"that is shorter than {self._max} characters.",
-                fix_value=corrected_value,
+                fixValue=corrected_value,
             )
 
         if self._max is not None and len(value) > self._max:
             logger.debug(f"Value {value} is greater than {self._max}.")
             return FailResult(
-                error_message=f"Value has length greater than {self._max}. "
+                errorMessage=f"Value has length greater than {self._max}. "
                 f"Please return a shorter output, "
                 f"that is shorter than {self._max} characters.",
-                fix_value=value[: self._max],
+                fixValue=value[: self._max],
             )
 
         return PassResult()

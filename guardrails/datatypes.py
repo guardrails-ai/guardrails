@@ -1,6 +1,6 @@
 from typing import List
 
-from guardrails_api_client import SimpleTypes
+from guardrails.types.simple import SimpleTypes
 from guardrails.types.rail import RailTypes
 
 

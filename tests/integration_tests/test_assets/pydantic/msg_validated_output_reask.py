@@ -1,5 +1,5 @@
 from guardrails.actions.reask import SkeletonReAsk
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails_ai.types import FailResult
 
 MSG_VALIDATED_OUTPUT_REASK = SkeletonReAsk(
     incorrect_value={"name": "Inception", "director": "Christopher Nolan"},

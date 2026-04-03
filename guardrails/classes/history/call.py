@@ -1,11 +1,14 @@
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Union, Iterable
 from builtins import id as object_id
-from pydantic import Field
+from pydantic import Field, field_serializer, field_validator, computed_field
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
+from typing_extensions import deprecated
 
-from guardrails_api_client import Call as ICall
+from guardrails_ai.types import Outcome, ValidationResult
+
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.reask import merge_reask_output
@@ -13,7 +16,6 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
-from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.messages import Messages
 from guardrails.prompt import Prompt, Instructions
@@ -28,7 +30,7 @@ from guardrails.schema.parser import get_value_from_path
 
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
-class Call(ICall, ArbitraryModel):
+class Call(ArbitraryModel):
     """A Call represents a single execution of a Guard. One Call is created
     each time the user invokes the `Guard.__call__`, `Guard.parse`, or
     `Guard.validate` method.
@@ -43,33 +45,70 @@ class Call(ICall, ArbitraryModel):
             the Guard execution.
     """
 
+    _id: str | None = None
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
-        "step/reask that occurred during this call."
+        "step/reask that occurred during this call.",
+        default_factory=Stack,
     )
     inputs: CallInputs = Field(
-        description="The inputs as passed in to Guard.__call__ or Guard.parse"
+        description="The inputs as passed in to Guard.__call__ or Guard.parse",
+        default_factory=CallInputs,
     )
     exception: Optional[Exception] = Field(
         description="The exception that interrupted the run.",
         default=None,
     )
 
-    # Prevent Pydantic from changing our types
-    # Without this, Pydantic casts iterations to a list
-    def __init__(
-        self,
-        iterations: Optional[Stack[Iteration]] = None,
-        inputs: Optional[CallInputs] = None,
-        exception: Optional[Exception] = None,
-    ):
-        call_id = str(object_id(self))
-        iterations = iterations or Stack()
-        inputs = inputs or CallInputs()
-        super().__init__(id=call_id, iterations=iterations, inputs=inputs)  # type: ignore - pyright doesn't understand pydantic overrides
-        self.iterations = iterations
-        self.inputs = inputs
-        self.exception = exception
+    @computed_field
+    @property
+    def id(self) -> str:
+        """The unique identifier for this Call.
+
+        Can be used as an identifier for a specific execution of a
+        Guard.
+        """
+        if not self._id:
+            self._id = str(object_id(self))
+        return self._id
+
+    @field_serializer("iterations")
+    def serialize_iterations(
+        self, iterations: Stack[Iteration] | None
+    ) -> list[dict[str, Any]] | None:
+        if iterations is not None:
+            return [i.model_dump(exclude_none=True, by_alias=True) for i in iterations]
+        return []
+
+    @field_validator("iterations", mode="before")
+    @classmethod
+    def deserialize_iterations(cls, iterations: Any) -> Stack[Iteration] | None:
+        if iterations is not None and isinstance(iterations, Iterable):
+            _iterations = []
+            for i in iterations:
+                if isinstance(i, Iteration):
+                    _iterations.append(i)
+                else:
+                    iteration = Iteration.model_validate(i)
+                    iteration._id = i.get("id") or iteration._id
+                    _iterations.append(iteration)
+            return Stack(*_iterations)
+        return Stack()
+
+    @field_serializer("exception")
+    def serialize_exception(self, exception: Exception | None) -> str | None:
+        if exception:
+            return str(exception)
+        return None
+
+    @field_validator("exception", mode="before")
+    @classmethod
+    def deserialize_exception(cls, exception: Any) -> Exception | None:
+        if isinstance(exception, Exception):
+            return exception
+        if exception and isinstance(exception, str):
+            return Exception(exception)
+        return None
 
     @property
     def prompt_params(self) -> Optional[Dict]:
@@ -333,7 +372,7 @@ class Call(ICall, ArbitraryModel):
                 for log in self.validator_logs
                 if log.validation_result is not None
                 and isinstance(log.validation_result, ValidationResult)
-                and log.validation_result.outcome == "fail"
+                and log.validation_result.outcome == Outcome.FAIL
             ]
         )
 
@@ -400,35 +439,21 @@ class Call(ICall, ArbitraryModel):
     def __str__(self) -> str:
         return pretty_repr(self)
 
-    def to_interface(self) -> ICall:
-        return ICall(
-            id=self.id,
-            iterations=[i.to_interface() for i in self.iterations],
-            inputs=self.inputs.to_interface(),
-            exception=self.error,
-        )
+    @deprecated("Use Call.model_dump() instead.")
+    def to_interface(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.to_interface().to_dict()
+    @deprecated("Use Call.model_dump() instead.")
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
     @classmethod
-    def from_interface(cls, i_call: ICall) -> "Call":
-        iterations = Stack(
-            *[Iteration.from_interface(i) for i in (i_call.iterations or [])]
-        )
-        inputs = (
-            CallInputs.from_interface(i_call.inputs) if i_call.inputs else CallInputs()
-        )
-        exception = Exception(i_call.exception) if i_call.exception else None
-        call_inst = cls(iterations=iterations, inputs=inputs, exception=exception)
-        call_inst.id = i_call.id
-        return call_inst
+    @deprecated("Use Call.model_validate() instead.")
+    def from_interface(cls, i_call: Any) -> "Call":
+        return cls.model_validate(i_call)
 
     # TODO: Necessary to GET /guards/{guard_name}/history/{call_id}
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "Call":
-        i_call = ICall.from_dict(obj)
-
-        if i_call:
-            return cls.from_interface(i_call)
-        return Call()
+    @deprecated("Use Call.model_validate() instead.")
+    def from_dict(cls, obj: Any) -> "Call":
+        return cls.model_validate(obj)

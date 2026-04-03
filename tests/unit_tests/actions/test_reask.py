@@ -11,7 +11,7 @@ from guardrails.actions.reask import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.classes.output_type import OutputTypes
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails_ai.types import FailResult
 from guardrails.schema.rail_schema import rail_string_to_schema
 
 

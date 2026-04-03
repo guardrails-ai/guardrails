@@ -1,12 +1,10 @@
 from typing import List, Optional
 
-from guardrails_api_client.models.model_schema import ModelSchema
-from guardrails_api_client.models.simple_types import SimpleTypes
-from guardrails_api_client.models.validation_type import ValidationType
+from guardrails_ai.types import Validator as ValidatorReference, JSONSchema
 
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
-from guardrails.classes.validation.validator_reference import ValidatorReference
+from guardrails.types.simple import SimpleTypes
 from guardrails.validator_base import Validator
 
 
@@ -31,8 +29,8 @@ def primitive_to_schema(
         for v in validators
     ]
     processed_schema.validator_map = {"$": validators}
-    processed_schema.json_schema = ModelSchema(
-        type=ValidationType(type), description=description
-    ).to_dict()
+    processed_schema.json_schema = JSONSchema(
+        type=type, description=description
+    ).model_dump(exclude_none=True, by_alias=True)
 
     return processed_schema

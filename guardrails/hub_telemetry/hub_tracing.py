@@ -9,7 +9,7 @@ from typing import (
 from opentelemetry.trace import Span
 from opentelemetry.trace.propagation import set_span_in_context
 
-from guardrails.classes.validation.validation_result import ValidationResult
+from guardrails_ai.types import ValidationResult
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE
 from guardrails.types.primitives import PrimitiveTypes
 from guardrails.utils.safe_get import safe_get
@@ -30,9 +30,7 @@ def get_guard_call_attributes(
         )
         attrs["output_type"] = (
             "unstructured"
-            if PrimitiveTypes.is_primitive(
-                guard_self.output_schema.type.actual_instance
-            )
+            if PrimitiveTypes.is_primitive(guard_self.output_schema.type)
             else "structured"
         )
         return attrs

@@ -7,9 +7,7 @@ from guardrails.actions.filter import apply_filters
 from guardrails.actions.refrain import apply_refrain
 from guardrails.classes.history import Iteration
 from guardrails.classes.output_type import OutputTypes
-from guardrails.classes.validation.validation_result import (
-    StreamValidationResult,
-)
+from guardrails.classes.validation.validation_result import StreamValidationResult
 from guardrails.types import ValidatorMap
 from guardrails.telemetry.legacy_validator_tracing import trace_validation_result
 

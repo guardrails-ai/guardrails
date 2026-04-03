@@ -2,7 +2,7 @@ import asyncio
 import pytest
 from time import sleep
 from guardrails.validator_base import Validator, register_validator
-from guardrails.classes.validation.validation_result import PassResult
+from guardrails_ai.types import PassResult
 
 
 @register_validator(name="test/validator1", data_type="string")

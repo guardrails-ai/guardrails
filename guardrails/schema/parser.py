@@ -1,7 +1,7 @@
-from guardrails_api_client.models.simple_types import SimpleTypes
 import jsonref
 from typing import Any, Dict, List, Optional, Set, Union, cast
 
+from guardrails.types.simple import SimpleTypes
 from guardrails.utils.safe_get import safe_get
 
 

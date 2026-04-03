@@ -2,9 +2,9 @@
 from typing import Iterator, List
 
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails_ai.types import FailResult
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails_api_client import ValidationSummary as IValidationSummary
+from guardrails_ai.types import ValidationSummary as IValidationSummary
 
 
 class ValidationSummary(IValidationSummary, ArbitraryModel):

@@ -65,8 +65,8 @@ class RegexMatch(Validator):
 
         if not getattr(p, self._match_type)(value):
             return FailResult(
-                error_message=f"Result must match {self._regex}",
-                fix_value=self._fix_str,
+                errorMessage=f"Result must match {self._regex}",
+                fixValue=self._fix_str,
             )
         return PassResult()
 

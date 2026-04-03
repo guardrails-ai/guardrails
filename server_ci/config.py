@@ -12,3 +12,4 @@ except json.JSONDecodeError:
 
 # instantiate guards
 guard0 = Guard.from_dict(guards[0])
+guard0.id = guard0.name  # type: ignore

@@ -84,7 +84,7 @@ class OpenAIClientV1:
             openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output="", stream_output=openai_response)
+            return LLMResponse(output="", streamOutput=openai_response)
 
         # If stream is not defined or is set to False,
         # return default behavior
@@ -159,7 +159,7 @@ class OpenAIClientV1:
             openai_response = cast(Iterator[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output="", stream_output=openai_response)
+            return LLMResponse(output="", streamOutput=openai_response)
 
         # If stream is not defined or is set to False,
         # extract string from response

@@ -21,9 +21,7 @@ from guardrails.hub.registry import get_registry
 from langchain_core.runnables import Runnable
 
 from guardrails.settings import settings
-from guardrails.classes import ErrorSpan  # noqa
-from guardrails.classes import PassResult  # noqa
-from guardrails.classes import FailResult, ValidationResult
+from guardrails_ai.types import ErrorSpan, PassResult, FailResult, ValidationResult  # noqa
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger

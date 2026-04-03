@@ -1,7 +1,7 @@
 # TODO: Move this file to guardrails.types
 from enum import Enum
 from typing import Any, Dict, List, Optional, TypeVar, Union
-from guardrails_api_client import SimpleTypes
+from guardrails.types.simple import SimpleTypes
 
 OT = TypeVar("OT", str, List, Dict)
 

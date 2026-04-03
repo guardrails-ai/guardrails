@@ -4,7 +4,7 @@ from jsonschema import Draft202012Validator, ValidationError
 from referencing import Registry, jsonschema as jsonschema_ref
 
 from guardrails.actions.reask import SkeletonReAsk
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails_ai.types import FailResult
 
 
 class SchemaValidationError(Exception):
@@ -103,11 +103,11 @@ def schema_validation(llm_output: Any, output_schema: Dict[str, Any], **kwargs):
 
     if schema_error:
         return SkeletonReAsk(
-            incorrect_value=llm_output,
-            fail_results=[
+            incorrectValue=llm_output,
+            failResults=[
                 FailResult(
-                    fix_value=None,
-                    error_message=schema_error,
+                    fixValue=None,
+                    errorMessage=schema_error,
                 )
             ],
         )

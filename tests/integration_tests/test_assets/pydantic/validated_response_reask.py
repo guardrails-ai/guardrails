@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from guardrails import Validator, register_validator
 from guardrails.actions.reask import FieldReAsk
 from guardrails.types import OnFailAction
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
     ValidationResult,

@@ -1,4 +1,5 @@
 import json
+from pydantic import BaseModel
 from typing import Any, Callable, Dict, Optional, Union, List
 from opentelemetry.baggage import get_baggage
 from opentelemetry import context
@@ -37,6 +38,8 @@ def serialize(val: Any) -> Optional[str]:
             return None
         if hasattr(val, "to_dict"):
             return json.dumps(val.to_dict())
+        elif isinstance(val, BaseModel):
+            return val.model_dump_json(exclude_none=True, by_alias=True)
         elif hasattr(val, "__dict__"):
             return json.dumps(val.__dict__)
         elif isinstance(val, dict) or isinstance(val, list):

@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Optional, Union
 
 import pytest
 
-from guardrails.classes.validation.validation_result import PassResult
+from guardrails_ai.types import PassResult
 from guardrails.guard import Guard
 from guardrails.validator_base import (
     FailResult,

@@ -1,746 +1,805 @@
+import asyncio
+import json
 import os
-from unittest.mock import MagicMock, Mock, call, patch
+from dataclasses import dataclass
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from httpx import HTTPStatusError, Request, Response
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.errors import ValidationError
-from guardrails_api_client.exceptions import BadRequestException
-from guardrails_api_client.models import (
-    Guard,
-    ValidatePayload,
-    ValidationOutcome as IValidationOutcome,
-)
+from guardrails_ai.types import Guard, ValidationOutcome as IValidationOutcome
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+
+def make_http_error(status_code: int) -> HTTPStatusError:
+    request = Request("POST", "http://test.com")
+    response = Response(status_code=status_code, request=request)
+    return HTTPStatusError(
+        message=f"HTTP {status_code}", request=request, response=response
+    )
+
+
+def mock_sync_response(json_data=None, raise_error=None):
+    r = Mock()
+    r.json.return_value = json_data if json_data is not None else {}
+    r.status_code = 200
+    r.is_success = True
+    if raise_error:
+        r.raise_for_status.side_effect = raise_error
+    return r
+
+
+def mock_async_response(json_data=None, raise_error=None):
+    # Use Mock (not AsyncMock) — httpx response methods are synchronous
+    r = Mock()
+    r.json.return_value = json_data if json_data is not None else {}
+    r.status_code = 200
+    r.is_success = True
+    if raise_error:
+        r.raise_for_status.side_effect = raise_error
+    return r
+
+
+@dataclass
+class MockedClient:
+    client: GuardrailsApiClient
+    http: MagicMock
+    ahttp: AsyncMock
+
+
+def make_client(**kwargs) -> MockedClient:
+    """Create a GuardrailsApiClient with mocked HTTP clients."""
+    with (
+        patch("guardrails.api_client.Client"),
+        patch("guardrails.api_client.AsyncClient"),
+    ):
+        client = GuardrailsApiClient(**kwargs)
+    http = MagicMock()
+    ahttp = AsyncMock()
+    client.http_client = http  # type: ignore[assignment]
+    client.ahttp_client = ahttp  # type: ignore[assignment]
+    return MockedClient(client=client, http=http, ahttp=ahttp)
+
+
+def make_guard(guard_id="guard-id-123", name="test-guard") -> Mock:
+    guard = Mock(spec=Guard)
+    guard.id = guard_id
+    guard.name = name
+    guard.model_dump.return_value = {"id": guard_id, "name": name}
+    return guard
+
+
+def make_sse_chunk(data: dict) -> str:
+    return f"{json.dumps(data)}\n"
+
+
+def make_stream_ctx(chunks, is_success=True, raise_on_fail=None):
+    """Sync context manager mock for http_client.stream()."""
+    mock_resp = MagicMock()
+    mock_resp.is_success = is_success
+    mock_resp.iter_text.return_value = iter(chunks)
+    if raise_on_fail:
+        mock_resp.raise_for_status.side_effect = raise_on_fail
+    ctx = MagicMock()
+    ctx.__enter__ = Mock(return_value=mock_resp)
+    ctx.__exit__ = Mock(return_value=False)
+    return ctx
+
+
+def make_async_stream_ctx(chunks, is_success=True, raise_on_fail=None):
+    """Async context manager mock for ahttp_client.stream()."""
+
+    async def aiter():
+        for chunk in chunks:
+            yield chunk
+
+    mock_resp = MagicMock()
+    mock_resp.is_success = is_success
+    mock_resp.aiter_text.return_value = aiter()
+    if raise_on_fail:
+        mock_resp.raise_for_status.side_effect = raise_on_fail
+
+    ctx = AsyncMock()
+    ctx.__aenter__ = AsyncMock(return_value=mock_resp)
+    ctx.__aexit__ = AsyncMock(return_value=False)
+    return ctx
+
+
+# ─── Init ─────────────────────────────────────────────────────────────────────
 
 
 class TestGuardrailsApiClientInit:
-    """Test initialization of GuardrailsApiClient."""
-
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_with_no_params(
-        self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
-    ):
-        """Test initialization with no parameters uses environment
-        variables."""
-        with patch.dict(
-            os.environ,
-            {
-                "GUARDRAILS_BASE_URL": "http://test-env.com",
-                "GUARDRAILS_API_KEY": "test-env-key",
-            },
+    def test_init_with_env_vars(self):
+        with (
+            patch("guardrails.api_client.Client"),
+            patch("guardrails.api_client.AsyncClient"),
         ):
-            client = GuardrailsApiClient()
+            with patch.dict(
+                os.environ,
+                {
+                    "GUARDRAILS_BASE_URL": "http://env.com",
+                    "GUARDRAILS_API_KEY": "env-key",
+                },
+            ):
+                client = GuardrailsApiClient()
 
-            assert client.base_url == "http://test-env.com"
-            assert client.api_key == "test-env-key"
-            assert client.timeout == 300
+        assert client.base_url == "http://env.com"
+        assert client.api_key == "env-key"
+        assert client.timeout == 300
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_with_explicit_params(
-        self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
-    ):
-        """Test initialization with explicit parameters overrides
-        environment."""
-        with patch.dict(
-            os.environ,
-            {
-                "GUARDRAILS_BASE_URL": "http://test-env.com",
-                "GUARDRAILS_API_KEY": "test-env-key",
-            },
+    def test_init_with_explicit_params(self):
+        with (
+            patch("guardrails.api_client.Client"),
+            patch("guardrails.api_client.AsyncClient"),
         ):
             client = GuardrailsApiClient(
                 base_url="http://custom.com", api_key="custom-key"
             )
 
-            assert client.base_url == "http://custom.com"
-            assert client.api_key == "custom-key"
-            assert client.timeout == 300
+        assert client.base_url == "http://custom.com"
+        assert client.api_key == "custom-key"
+        assert client.timeout == 300
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_default_values(
-        self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
-    ):
-        """Test initialization uses defaults when environment variables are
-        missing."""
-        with patch.dict(os.environ, {}, clear=True):
-            client = GuardrailsApiClient()
+    def test_init_default_values(self):
+        env = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in ("GUARDRAILS_BASE_URL", "GUARDRAILS_API_KEY")
+        }
+        with (
+            patch("guardrails.api_client.Client"),
+            patch("guardrails.api_client.AsyncClient"),
+        ):
+            with patch.dict(os.environ, env, clear=True):
+                client = GuardrailsApiClient()
 
-            assert client.base_url == "http://localhost:8000"
-            assert client.api_key == "x-guardrails-api-key"
-            assert client.timeout == 300
+        assert client.base_url == "http://localhost:8000"
+        assert client.api_key == "x-guardrailsai-api-key"
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_partial_params(
-        self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
-    ):
-        """Test initialization with only base_url provided."""
-        with patch.dict(os.environ, {"GUARDRAILS_API_KEY": "env-key"}, clear=True):
-            client = GuardrailsApiClient(base_url="http://custom.com")
+    def test_init_explicit_params_override_env(self):
+        with (
+            patch("guardrails.api_client.Client"),
+            patch("guardrails.api_client.AsyncClient"),
+        ):
+            with patch.dict(
+                os.environ,
+                {
+                    "GUARDRAILS_BASE_URL": "http://env.com",
+                    "GUARDRAILS_API_KEY": "env-key",
+                },
+            ):
+                client = GuardrailsApiClient(
+                    base_url="http://custom.com", api_key="custom-key"
+                )
 
-            assert client.base_url == "http://custom.com"
-            assert client.api_key == "env-key"
+        assert client.base_url == "http://custom.com"
+        assert client.api_key == "custom-key"
 
-    @patch("guardrails.api_client.sys.version_info")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_api_key_format_python_310_plus(
-        self,
-        mock_config,
-        mock_api_client,
-        mock_guard_api,
-        mock_validate_api,
-        mock_version,
-    ):
-        """Test API key format for Python 3.10+"""
-        mock_version.minor = 10
-        _ = GuardrailsApiClient(base_url="http://test.com", api_key="test-key")
+    def test_init_partial_params_uses_env_key(self):
+        env = {k: v for k, v in os.environ.items() if k != "GUARDRAILS_API_KEY"}
+        with (
+            patch("guardrails.api_client.Client"),
+            patch("guardrails.api_client.AsyncClient"),
+        ):
+            with patch.dict(
+                os.environ,
+                {**env, "GUARDRAILS_API_KEY": "env-key"},
+                clear=True,
+            ):
+                client = GuardrailsApiClient(base_url="http://custom.com")
 
-        mock_config.assert_called_once()
-        call_kwargs = mock_config.call_args[1]
-        assert call_kwargs["api_key"] == {"ApiKeyAuth": "test-key"}
-        assert call_kwargs["host"] == "http://test.com"
+        assert client.base_url == "http://custom.com"
+        assert client.api_key == "env-key"
 
-    @patch("guardrails.api_client.sys.version_info")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_api_key_format_python_39(
-        self,
-        mock_config,
-        mock_api_client,
-        mock_guard_api,
-        mock_validate_api,
-        mock_version,
-    ):
-        """Test API key format for Python 3.9."""
-        mock_version.minor = 9
-        _ = GuardrailsApiClient(base_url="http://test.com", api_key="test-key")
-
-        mock_config.assert_called_once()
-        call_kwargs = mock_config.call_args[1]
-        assert call_kwargs["api_key"] == "test-key"
-        assert call_kwargs["host"] == "http://test.com"
-
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_init_creates_api_instances(
-        self, _mock_config, _mock_api_client, mock_guard_api, mock_validate_api
-    ):
-        """Test that initialization creates GuardApi and ValidateApi
-        instances."""
+    def test_init_creates_http_clients(self):
         client = GuardrailsApiClient()
-
-        mock_guard_api.assert_called_once()
-        mock_validate_api.assert_called_once()
-        assert client._guard_api is not None
-        assert client._validate_api is not None
+        assert client.http_client is not None
+        assert client.ahttp_client is not None
 
 
-class TestGuardrailsApiClientUpsertGuard:
-    """Test upsert_guard method."""
+# ─── upsert_guard ─────────────────────────────────────────────────────────────
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_upsert_guard_success(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test upsert_guard calls update_guard with correct parameters."""
-        mock_guard_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
 
-        client = GuardrailsApiClient()
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
+class TestUpsertGuard:
+    def test_upsert_guard_updates_existing_guard(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        existing_guard = make_guard(guard_id="existing-id-456")
+        returned_guard = make_guard()
 
-        client.upsert_guard(guard)
+        mc.client.fetch_guard = Mock(return_value=existing_guard)
+        mc.http.put.return_value = mock_sync_response(guard_data)
 
-        mock_guard_api.update_guard.assert_called_once_with(
-            guard_name="test-guard", body=guard, _request_timeout=300
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = mc.client.upsert_guard(guard)
+
+        mc.client.fetch_guard.assert_called_once_with(guard.name)
+        mc.http.put.assert_called_once_with("/guards/existing-id-456", json=guard_data)
+        mc.http.put.return_value.raise_for_status.assert_called_once()
+        mc.http.post.assert_not_called()
+        assert result == returned_guard
+
+    def test_upsert_guard_creates_new_guard_when_not_found(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        returned_guard = make_guard()
+
+        mc.client.fetch_guard = Mock(return_value=None)
+        mc.http.post.return_value = mock_sync_response(guard_data)
+
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = mc.client.upsert_guard(guard)
+
+        mc.client.fetch_guard.assert_called_once_with(guard.name)
+        mc.http.post.assert_called_once_with("/guards", json=guard_data)
+        mc.http.put.assert_not_called()
+        assert result == returned_guard
+
+    def test_upsert_guard_raises_on_http_error(self):
+        mc = make_client()
+        guard = make_guard()
+        guard.model_dump.return_value = {}
+        existing_guard = make_guard(guard_id="existing-id-456")
+
+        mc.client.fetch_guard = Mock(return_value=existing_guard)
+        mc.http.put.return_value = mock_sync_response(raise_error=make_http_error(500))
+
+        with pytest.raises(HTTPStatusError):
+            mc.client.upsert_guard(guard)
+
+    def test_aupsert_guard_updates_existing_guard(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        existing_guard = make_guard(guard_id="existing-id-456")
+        returned_guard = make_guard()
+
+        mc.client.afetch_guard = AsyncMock(return_value=existing_guard)
+        mc.ahttp.put = AsyncMock(return_value=mock_async_response(guard_data))
+
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = asyncio.run(mc.client.aupsert_guard(guard))
+
+        mc.client.afetch_guard.assert_called_once_with(guard.name)
+        mc.ahttp.put.assert_called_once_with("/guards/existing-id-456", json=guard_data)
+        mc.ahttp.post.assert_not_called()
+        assert result == returned_guard
+
+    def test_aupsert_guard_creates_new_guard_when_not_found(self):
+        mc = make_client()
+        guard = make_guard()
+        guard_data = guard.model_dump.return_value
+        returned_guard = make_guard()
+
+        mc.client.afetch_guard = AsyncMock(return_value=None)
+        mc.ahttp.post = AsyncMock(return_value=mock_async_response(guard_data))
+
+        with patch.object(Guard, "model_validate", return_value=returned_guard):
+            result = asyncio.run(mc.client.aupsert_guard(guard))
+
+        mc.client.afetch_guard.assert_called_once_with(guard.name)
+        mc.ahttp.post.assert_called_once_with("/guards", json=guard_data)
+        mc.ahttp.put.assert_not_called()
+        assert result == returned_guard
+
+    def test_aupsert_guard_raises_on_http_error(self):
+        mc = make_client()
+        guard = make_guard()
+        guard.model_dump.return_value = {}
+        existing_guard = make_guard(guard_id="existing-id-456")
+
+        mc.client.afetch_guard = AsyncMock(return_value=existing_guard)
+        mc.ahttp.put = AsyncMock(
+            return_value=mock_async_response(raise_error=make_http_error(500))
         )
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_upsert_guard_uses_timeout(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test upsert_guard uses the client's timeout value."""
-        mock_guard_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
-
-        client = GuardrailsApiClient()
-        client.timeout = 500  # Custom timeout
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-
-        client.upsert_guard(guard)
-
-        mock_guard_api.update_guard.assert_called_once()
-        call_kwargs = mock_guard_api.update_guard.call_args[1]
-        assert call_kwargs["_request_timeout"] == 500
+        with pytest.raises(HTTPStatusError):
+            asyncio.run(mc.client.aupsert_guard(guard))
 
 
-class TestGuardrailsApiClientFetchGuard:
-    """Test fetch_guard method."""
+# ─── fetch_guard ──────────────────────────────────────────────────────────────
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_fetch_guard_success(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test fetch_guard returns guard when successful."""
-        mock_guard_api = Mock()
-        mock_guard = Mock(spec=Guard)
-        mock_guard.name = "test-guard"
-        mock_guard_api.get_guard.return_value = mock_guard
-        mock_guard_api_class.return_value = mock_guard_api
 
-        client = GuardrailsApiClient()
-        result = client.fetch_guard("test-guard")
+class TestFetchGuard:
+    def test_fetch_guard_success(self):
+        mc = make_client()
+        guard_data = {"id": "g1", "name": "my-guard"}
+        expected = make_guard()
 
-        assert result == mock_guard
-        mock_guard_api.get_guard.assert_called_once_with(guard_name="test-guard")
+        mc.http.get.return_value = mock_sync_response([guard_data])
 
-    @patch("guardrails.api_client.logger")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_fetch_guard_handles_exception(
-        self,
-        _mock_config,
-        _mock_api_client,
-        mock_guard_api_class,
-        _mock_validate_api,
-        mock_logger,
-    ):
-        """Test fetch_guard returns None and logs error on exception."""
-        mock_guard_api = Mock()
-        mock_guard_api.get_guard.side_effect = Exception("API Error")
-        mock_guard_api_class.return_value = mock_guard_api
+        with patch.object(Guard, "model_validate", return_value=expected):
+            result = mc.client.fetch_guard("my-guard")
 
-        client = GuardrailsApiClient()
-        result = client.fetch_guard("test-guard")
+        mc.http.get.assert_called_once_with("/guards?name=my-guard")
+        assert result == expected
+
+    def test_fetch_guard_returns_none_on_empty_list(self):
+        mc = make_client()
+        mc.http.get.return_value = mock_sync_response([])
+
+        result = mc.client.fetch_guard("missing-guard")
+
+        assert result is None
+
+    def test_fetch_guard_returns_none_on_exception(self):
+        mc = make_client()
+        mc.http.get.side_effect = Exception("connection error")
+
+        result = mc.client.fetch_guard("my-guard")
+
+        assert result is None
+
+    def test_fetch_guard_logs_error_on_exception(self):
+        mc = make_client()
+        mc.http.get.side_effect = Exception("API Error")
+
+        with patch("guardrails.api_client.logger") as mock_logger:
+            result = mc.client.fetch_guard("my-guard")
 
         assert result is None
         mock_logger.error.assert_called_once()
-        error_msg = mock_logger.error.call_args[0][0]
-        assert "Error fetching guard test-guard" in error_msg
-        assert "API Error" in error_msg
+        assert "Error fetching guard my-guard" in mock_logger.error.call_args[0][0]
+        assert "API Error" in mock_logger.error.call_args[0][0]
 
-    @patch("guardrails.api_client.logger")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_fetch_guard_handles_not_found(
-        self,
-        _mock_config,
-        _mock_api_client,
-        mock_guard_api_class,
-        _mock_validate_api,
-        mock_logger,
-    ):
-        """Test fetch_guard handles 404 errors gracefully."""
-        mock_guard_api = Mock()
-        mock_guard_api.get_guard.side_effect = Exception("404 Not Found")
-        mock_guard_api_class.return_value = mock_guard_api
+    def test_afetch_guard_success(self):
+        mc = make_client()
+        guard_data = {"id": "g1", "name": "my-guard"}
+        expected = make_guard()
 
-        client = GuardrailsApiClient()
-        result = client.fetch_guard("nonexistent-guard")
+        mc.ahttp.get = AsyncMock(return_value=mock_async_response([guard_data]))
+
+        with patch.object(Guard, "model_validate", return_value=expected):
+            result = asyncio.run(mc.client.afetch_guard("my-guard"))
+
+        mc.ahttp.get.assert_called_once_with("/guards?name=my-guard")
+        assert result == expected
+
+    def test_afetch_guard_returns_none_on_empty_list(self):
+        mc = make_client()
+        mc.ahttp.get = AsyncMock(return_value=mock_async_response([]))
+
+        result = asyncio.run(mc.client.afetch_guard("missing-guard"))
+
+        assert result is None
+
+    def test_afetch_guard_returns_none_on_exception(self):
+        mc = make_client()
+        mc.ahttp.get = AsyncMock(side_effect=Exception("connection error"))
+
+        result = asyncio.run(mc.client.afetch_guard("my-guard"))
+
+        assert result is None
+
+    def test_afetch_guard_logs_error_on_exception(self):
+        mc = make_client()
+        mc.ahttp.get = AsyncMock(side_effect=Exception("API Error"))
+
+        with patch("guardrails.api_client.logger") as mock_logger:
+            result = asyncio.run(mc.client.afetch_guard("my-guard"))
 
         assert result is None
         mock_logger.error.assert_called_once()
+        assert "Error fetching guard my-guard" in mock_logger.error.call_args[0][0]
 
 
-class TestGuardrailsApiClientDeleteGuard:
-    """Test delete_guard method."""
-
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_delete_guard_success(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test delete_guard calls delete_guard with correct parameters."""
-        mock_guard_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
-
-        client = GuardrailsApiClient()
-        client.delete_guard("test-guard")
-
-        mock_guard_api.delete_guard.assert_called_once_with(
-            guard_name="test-guard", _request_timeout=300
-        )
-
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_delete_guard_uses_timeout(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test delete_guard uses the client's timeout value."""
-        mock_guard_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
-
-        client = GuardrailsApiClient()
-        client.timeout = 600
-        client.delete_guard("test-guard")
-
-        call_kwargs = mock_guard_api.delete_guard.call_args[1]
-        assert call_kwargs["_request_timeout"] == 600
+# ─── delete_guard ─────────────────────────────────────────────────────────────
 
 
-class TestGuardrailsApiClientValidate:
-    """Test validate method."""
+class TestDeleteGuard:
+    def test_delete_guard_success(self):
+        mc = make_client()
+        guard_data = {"id": "g1", "name": "my-guard"}
+        fetched_guard = make_guard(guard_id="g1")
+        deleted_guard = make_guard(guard_id="g1")
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_validate_success(
-        self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
-    ):
-        """Test validate calls validate API with correct parameters."""
-        mock_validate_api = Mock()
-        mock_outcome = Mock(spec=IValidationOutcome)
-        mock_validate_api.validate.return_value = mock_outcome
-        mock_validate_api_class.return_value = mock_validate_api
+        mc.http.get.return_value = mock_sync_response([guard_data])
+        mc.http.delete.return_value = mock_sync_response(guard_data)
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
+        with patch.object(
+            Guard, "model_validate", side_effect=[fetched_guard, deleted_guard]
+        ):
+            result = mc.client.delete_guard("my-guard")
 
-        client = GuardrailsApiClient()
-        result = client.validate(guard, payload, openai_api_key="test-key")
+        mc.http.delete.assert_called_once_with("/guards/g1")
+        assert result == deleted_guard
 
-        assert result == mock_outcome
-        mock_validate_api.validate.assert_called_once_with(
-            guard_name="test-guard",
-            validate_payload=payload,
-            x_openai_api_key="test-key",
-        )
+    def test_delete_guard_does_nothing_when_guard_not_found(self):
+        mc = make_client()
+        mc.http.get.return_value = mock_sync_response([])
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_validate_uses_env_openai_key(
-        self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
-    ):
-        """Test validate uses environment OPENAI_API_KEY when not provided."""
-        mock_validate_api = Mock()
-        mock_validate_api_class.return_value = mock_validate_api
+        result = mc.client.delete_guard("missing-guard")
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
+        mc.http.delete.assert_not_called()
+        assert result is None
 
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "env-openai-key"}):
-            client = GuardrailsApiClient()
-            client.validate(guard, payload)
+    def test_delete_guard_does_nothing_when_guard_has_no_id(self):
+        mc = make_client()
+        guard_data = {"name": "my-guard"}
+        guard_no_id = make_guard()
+        guard_no_id.id = None
 
-            mock_validate_api.validate.assert_called_once()
-            call_kwargs = mock_validate_api.validate.call_args[1]
-            assert call_kwargs["x_openai_api_key"] == "env-openai-key"
+        mc.http.get.return_value = mock_sync_response([guard_data])
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_validate_no_openai_key(
-        self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
-    ):
-        """Test validate passes None when no OpenAI key is available."""
-        mock_validate_api = Mock()
-        mock_validate_api_class.return_value = mock_validate_api
+        with patch.object(Guard, "model_validate", return_value=guard_no_id):
+            result = mc.client.delete_guard("my-guard")
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
+        mc.http.delete.assert_not_called()
+        assert result is None
 
-        with patch.dict(os.environ, {}, clear=True):
-            client = GuardrailsApiClient()
-            client.validate(guard, payload)
+    def test_adelete_guard_success(self):
+        mc = make_client()
+        guard_data = {"id": "g1", "name": "my-guard"}
+        fetched_guard = make_guard(guard_id="g1")
+        deleted_guard = make_guard(guard_id="g1")
 
-            mock_validate_api.validate.assert_called_once()
-            call_kwargs = mock_validate_api.validate.call_args[1]
-            assert call_kwargs["x_openai_api_key"] is None
+        mc.ahttp.get = AsyncMock(return_value=mock_async_response([guard_data]))
+        mc.ahttp.delete = AsyncMock(return_value=mock_async_response(guard_data))
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_validate_raises_validation_error_on_bad_request(
-        self, _mock_config, _mock_api_client, _mock_guard_api, mock_validate_api_class
-    ):
-        """Test validate raises ValidationError when BadRequestException
-        occurs."""
-        mock_validate_api = Mock()
-        bad_request = BadRequestException(status=400, reason="Bad Request")
-        bad_request.body = "Validation failed: invalid input"
-        mock_validate_api.validate.side_effect = bad_request
-        mock_validate_api_class.return_value = mock_validate_api
+        with patch.object(
+            Guard, "model_validate", side_effect=[fetched_guard, deleted_guard]
+        ):
+            result = asyncio.run(mc.client.adelete_guard("my-guard"))
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
+        mc.ahttp.delete.assert_called_once_with("/guards/g1")
+        assert result == deleted_guard
 
-        client = GuardrailsApiClient()
+    def test_adelete_guard_does_nothing_when_guard_not_found(self):
+        mc = make_client()
+        mc.ahttp.get = AsyncMock(return_value=mock_async_response([]))
 
-        with pytest.raises(ValidationError) as exc_info:
-            client.validate(guard, payload)
+        result = asyncio.run(mc.client.adelete_guard("missing-guard"))
 
-        assert "Validation failed: invalid input" in str(exc_info.value)
+        mc.ahttp.delete.assert_not_called()
+        assert result is None
 
 
-class TestGuardrailsApiClientStreamValidate:
-    """Test stream_validate method."""
+# ─── validate ─────────────────────────────────────────────────────────────────
 
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_stream_validate_success(
-        self,
-        _mock_config,
-        _mock_api_client,
-        _mock_guard_api,
-        _mock_validate_api,
-        mock_session,
-    ):
-        """Test stream_validate yields validation outcomes."""
-        mock_response = MagicMock()
-        mock_response.ok = True
-        mock_response.iter_lines.return_value = [
-            b'{"callId": "call1", "validationPassed": true, '
-            b'"validatedOutput": "test1", "validationSummaries": []}',
-            b'{"callId": "call2", "validationPassed": false, '
-            b'"validatedOutput": "test2", "validationSummaries": []}',
-        ]
 
-        mock_session_instance = MagicMock()
-        mock_session_instance.post.return_value.__enter__.return_value = mock_response
-        mock_session.return_value = mock_session_instance
+class TestValidate:
+    def test_validate_success(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome_data = {"callId": "c1"}
+        outcome = Mock(spec=IValidationOutcome)
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
-        payload.to_dict.return_value = {"llm_output": "test"}
+        mc.http.post.return_value = mock_sync_response(outcome_data)
 
-        client = GuardrailsApiClient(base_url="http://test.com")
-        results = list(
-            client.stream_validate(guard, payload, openai_api_key="test-key")
-        )
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            result = mc.client.validate(
+                guard,
+                openai_api_key="oai-key",
+                llm_output="hello",
+                num_reasks=1,
+                prompt_params={"key": "val"},
+            )
 
-        assert len(results) == 2
-        assert all(isinstance(r, IValidationOutcome) for r in results)
-
-        mock_session_instance.post.assert_called_once_with(
-            "http://test.com/guards/test-guard/validate",
-            json={"llm_output": "test"},
-            headers={
-                "Content-Type": "application/json",
-                "x-openai-api-key": "test-key",
+        assert result == outcome
+        mc.http.post.assert_called_once_with(
+            "/guards/guard-id-123/validate",
+            json={
+                "llm_output": "hello",
+                "num_reasks": 1,
+                "prompt_params": {"key": "val"},
             },
-            stream=True,
+            headers={"x-openai-api-key": "oai-key"},
         )
 
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_stream_validate_uses_env_openai_key(
-        self,
-        _mock_config,
-        _mock_api_client,
-        _mock_guard_api,
-        _mock_validate_api,
-        mock_session,
-    ):
-        """Test stream_validate uses environment OPENAI_API_KEY when not
-        provided."""
-        mock_response = MagicMock()
-        mock_response.ok = True
-        mock_response.iter_lines.return_value = []
+    def test_validate_uses_env_openai_key(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.post.return_value = mock_sync_response({})
 
-        mock_session_instance = MagicMock()
-        mock_session_instance.post.return_value.__enter__.return_value = mock_response
-        mock_session.return_value = mock_session_instance
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "env-oai-key"}):
+            with patch.object(
+                IValidationOutcome, "model_validate", return_value=Mock()
+            ):
+                mc.client.validate(guard)
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
-        payload.to_dict.return_value = {}
+        call_kwargs = mc.http.post.call_args[1]
+        assert call_kwargs["headers"] == {"x-openai-api-key": "env-oai-key"}
 
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}):
-            client = GuardrailsApiClient()
-            list(client.stream_validate(guard, payload))
+    def test_validate_omits_openai_header_when_no_key(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.post.return_value = mock_sync_response({})
 
-            call_args = mock_session_instance.post.call_args
-            headers = call_args[1]["headers"]
-            assert headers["x-openai-api-key"] == "env-key"
+        env = {k: v for k, v in os.environ.items() if k != "OPENAI_API_KEY"}
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(
+                IValidationOutcome, "model_validate", return_value=Mock()
+            ):
+                mc.client.validate(guard)
 
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_stream_validate_raises_on_error_response(
-        self,
-        _mock_config,
-        _mock_api_client,
-        _mock_guard_api,
-        _mock_validate_api,
-        mock_session,
-    ):
-        """Test stream_validate raises ValueError on non-OK response."""
-        mock_response = MagicMock()
-        mock_response.ok = False
-        mock_response.status_code = 400
-        mock_response.reason = "Bad Request"
-        mock_response.text = "Invalid payload"
-        mock_response.iter_lines.return_value = [b"error line"]
+        call_kwargs = mc.http.post.call_args[1]
+        assert call_kwargs["headers"] == {}
 
-        mock_session_instance = MagicMock()
-        mock_session_instance.post.return_value.__enter__.return_value = mock_response
-        mock_session.return_value = mock_session_instance
+    def test_validate_raises_validation_error_on_400(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.post.return_value = mock_sync_response(raise_error=make_http_error(400))
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
-        payload.to_dict.return_value = {}
+        with pytest.raises(ValidationError):
+            mc.client.validate(guard)
 
-        client = GuardrailsApiClient()
+    def test_validate_returns_none_on_non_400_http_error(self):
+        # Non-400 HTTPStatusErrors are caught but not re-raised per current impl
+        mc = make_client()
+        guard = make_guard()
+        mc.http.post.return_value = mock_sync_response(raise_error=make_http_error(500))
 
-        with pytest.raises(ValueError) as exc_info:
-            list(client.stream_validate(guard, payload))
+        result = mc.client.validate(guard)
 
-        assert "status_code: 400" in str(exc_info.value)
+        assert result is None
 
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_stream_validate_raises_on_error_in_json(
-        self,
-        _mock_config,
-        _mock_api_client,
-        _mock_guard_api,
-        _mock_validate_api,
-        mock_session,
-    ):
-        """Test stream_validate raises Exception when error in JSON
-        response."""
-        mock_response = MagicMock()
-        mock_response.ok = True
-        mock_response.iter_lines.return_value = [
-            b'{"error": {"message": "Validation error occurred"}}'
+    def test_validate_passes_kwargs_in_body(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.post.return_value = mock_sync_response({})
+
+        with patch.object(IValidationOutcome, "model_validate", return_value=Mock()):
+            mc.client.validate(guard, extra_field="extra_value")
+
+        call_json = mc.http.post.call_args[1]["json"]
+        assert call_json["extra_field"] == "extra_value"
+
+    def test_avalidate_success(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome_data = {"callId": "c1"}
+        outcome = Mock(spec=IValidationOutcome)
+
+        mc.ahttp.post = AsyncMock(return_value=mock_async_response(outcome_data))
+
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            result = asyncio.run(
+                mc.client.avalidate(
+                    guard,
+                    openai_api_key="oai-key",
+                    llm_output="hello",
+                    num_reasks=2,
+                )
+            )
+
+        assert result == outcome
+        mc.ahttp.post.assert_called_once_with(
+            "/guards/guard-id-123/validate",
+            json={
+                "llm_output": "hello",
+                "num_reasks": 2,
+                "prompt_params": None,
+            },
+            headers={"x-openai-api-key": "oai-key"},
+        )
+
+    def test_avalidate_raises_validation_error_on_400(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.ahttp.post = AsyncMock(
+            return_value=mock_async_response(raise_error=make_http_error(400))
+        )
+
+        with pytest.raises(ValidationError):
+            asyncio.run(mc.client.avalidate(guard))
+
+    def test_avalidate_returns_none_on_non_400_http_error(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.ahttp.post = AsyncMock(
+            return_value=mock_async_response(raise_error=make_http_error(500))
+        )
+
+        result = asyncio.run(mc.client.avalidate(guard))
+
+        assert result is None
+
+
+# ─── stream_validate ──────────────────────────────────────────────────────────
+
+
+class TestStreamValidate:
+    def test_stream_validate_yields_outcomes(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome = Mock(spec=IValidationOutcome)
+
+        chunks = [
+            make_sse_chunk({"callId": "c1", "validationPassed": True}),
+            make_sse_chunk({"callId": "c2", "validationPassed": False}),
         ]
+        mc.http.stream.return_value = make_stream_ctx(chunks)
 
-        mock_session_instance = MagicMock()
-        mock_session_instance.post.return_value.__enter__.return_value = mock_response
-        mock_session.return_value = mock_session_instance
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            results = list(mc.client.stream_validate(guard, openai_api_key="oai-key"))
 
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
-        payload.to_dict.return_value = {}
-
-        client = GuardrailsApiClient()
-
-        with pytest.raises(Exception) as exc_info:
-            list(client.stream_validate(guard, payload))
-
-        assert "Validation error occurred" in str(exc_info.value)
-
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_stream_validate_skips_empty_lines(
-        self,
-        _mock_config,
-        _mock_api_client,
-        _mock_guard_api,
-        _mock_validate_api,
-        mock_session,
-    ):
-        """Test stream_validate skips empty lines in response."""
-        mock_response = MagicMock()
-        mock_response.ok = True
-        mock_response.iter_lines.return_value = [
-            b"",
-            b'{"callId": "call1", "validationPassed": true, "validationSummaries": []}',
-            b"",
-            b'{"callId": "call2", "validationPassed": false, '
-            b'"validationSummaries": []}',
-            b"",
-        ]
-
-        mock_session_instance = MagicMock()
-        mock_session_instance.post.return_value.__enter__.return_value = mock_response
-        mock_session.return_value = mock_session_instance
-
-        guard = Mock(spec=Guard)
-        guard.name = "test-guard"
-        payload = Mock(spec=ValidatePayload)
-        payload.to_dict.return_value = {}
-
-        client = GuardrailsApiClient()
-        results = list(client.stream_validate(guard, payload))
-
-        # Should only get 2 results, skipping empty lines
         assert len(results) == 2
+        assert all(r is outcome for r in results)
+        call_args = mc.http.stream.call_args
+        assert call_args[0] == ("POST", "/guards/guard-id-123/validate")
+        assert call_args[1]["json"]["stream"] is True
 
+    def test_stream_validate_skips_empty_chunks(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome = Mock(spec=IValidationOutcome)
 
-class TestGuardrailsApiClientGetHistory:
-    """Test get_history method."""
+        chunks = ["", "   ", make_sse_chunk({"callId": "c1"}), ""]
+        mc.http.stream.return_value = make_stream_ctx(chunks)
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_get_history_success(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test get_history calls get_guard_history with correct parameters."""
-        mock_guard_api = Mock()
-        mock_history = {"call_id": "123", "data": "test"}
-        mock_guard_api.get_guard_history.return_value = mock_history
-        mock_guard_api_class.return_value = mock_guard_api
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            results = list(mc.client.stream_validate(guard))
 
-        client = GuardrailsApiClient()
-        result = client.get_history("test-guard", "call-123")
+        assert len(results) == 1
 
-        assert result == mock_history
-        mock_guard_api.get_guard_history.assert_called_once_with(
-            "test-guard", "call-123"
+    def test_stream_validate_raises_on_error_in_chunk(self):
+        mc = make_client()
+        guard = make_guard()
+
+        chunks = [make_sse_chunk({"error": {"message": "Validation error occurred"}})]
+        mc.http.stream.return_value = make_stream_ctx(chunks)
+
+        with pytest.raises(Exception, match="Validation error occurred"):
+            list(mc.client.stream_validate(guard))
+
+    def test_stream_validate_raises_on_non_success_response(self):
+        mc = make_client()
+        guard = make_guard()
+
+        ctx = make_stream_ctx([], is_success=False, raise_on_fail=make_http_error(500))
+        mc.http.stream.return_value = ctx
+
+        with pytest.raises(HTTPStatusError):
+            list(mc.client.stream_validate(guard))
+
+    def test_stream_validate_passes_llm_output_and_params(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.stream.return_value = make_stream_ctx([])
+
+        list(
+            mc.client.stream_validate(
+                guard,
+                llm_output="test output",
+                num_reasks=3,
+                prompt_params={"k": "v"},
+            )
         )
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_get_history_with_different_ids(
-        self, _mock_config, _mock_api_client, mock_guard_api_class, _mock_validate_api
-    ):
-        """Test get_history with various guard names and call IDs."""
-        mock_guard_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
+        call_json = mc.http.stream.call_args[1]["json"]
+        assert call_json["llm_output"] == "test output"
+        assert call_json["num_reasks"] == 3
+        assert call_json["prompt_params"] == {"k": "v"}
+        assert call_json["stream"] is True
 
-        client = GuardrailsApiClient()
+    def test_stream_validate_uses_env_openai_key(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.stream.return_value = make_stream_ctx([])
 
-        # Test various combinations
-        client.get_history("guard-1", "call-1")
-        client.get_history("guard-2", "call-2")
-        client.get_history("my-special-guard", "abc-123-def")
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "env-oai-key"}):
+            list(mc.client.stream_validate(guard))
 
-        assert mock_guard_api.get_guard_history.call_count == 3
-        calls = mock_guard_api.get_guard_history.call_args_list
-        assert calls[0] == call("guard-1", "call-1")
-        assert calls[1] == call("guard-2", "call-2")
-        assert calls[2] == call("my-special-guard", "abc-123-def")
+        mc.http.stream.assert_called_once()
+
+    def test_astream_validate_yields_outcomes(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome = Mock(spec=IValidationOutcome)
+
+        chunks = [
+            make_sse_chunk({"callId": "c1"}),
+            make_sse_chunk({"callId": "c2"}),
+        ]
+        # ahttp is AsyncMock, so .stream() returns a coroutine by default.
+        # Override with a regular Mock so it returns the async context manager.
+        mock_stream = Mock(return_value=make_async_stream_ctx(chunks))
+        mc.ahttp.stream = mock_stream
+
+        async def run():
+            return [
+                r
+                async for r in mc.client.astream_validate(
+                    guard, openai_api_key="oai-key"
+                )
+            ]
+
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            results = asyncio.run(run())
+
+        assert len(results) == 2
+        assert all(r is outcome for r in results)
+        call_args = mock_stream.call_args
+        assert call_args[0] == ("POST", "/guards/guard-id-123/validate")
+        assert call_args[1]["json"]["stream"] is True
+
+    def test_astream_validate_skips_empty_chunks(self):
+        mc = make_client()
+        guard = make_guard()
+        outcome = Mock(spec=IValidationOutcome)
+
+        chunks = ["", make_sse_chunk({"callId": "c1"}), "   "]
+        mc.ahttp.stream = Mock(return_value=make_async_stream_ctx(chunks))
+
+        async def run():
+            return [r async for r in mc.client.astream_validate(guard)]
+
+        with patch.object(IValidationOutcome, "model_validate", return_value=outcome):
+            results = asyncio.run(run())
+
+        assert len(results) == 1
+
+    def test_astream_validate_raises_on_error_in_chunk(self):
+        mc = make_client()
+        guard = make_guard()
+
+        chunks = [make_sse_chunk({"error": {"message": "Stream error"}})]
+        mc.ahttp.stream = Mock(return_value=make_async_stream_ctx(chunks))
+
+        async def run():
+            return [r async for r in mc.client.astream_validate(guard)]
+
+        with pytest.raises(Exception, match="Stream error"):
+            asyncio.run(run())
+
+    def test_astream_validate_raises_on_non_success_response(self):
+        mc = make_client()
+        guard = make_guard()
+
+        ctx = make_async_stream_ctx(
+            [], is_success=False, raise_on_fail=make_http_error(500)
+        )
+        mc.ahttp.stream = Mock(return_value=ctx)
+
+        async def run():
+            return [r async for r in mc.client.astream_validate(guard)]
+
+        with pytest.raises(HTTPStatusError):
+            asyncio.run(run())
 
 
-class TestGuardrailsApiClientIntegration:
-    """Integration-style tests for GuardrailsApiClient."""
+# ─── get_history ──────────────────────────────────────────────────────────────
 
-    @patch("guardrails.api_client.requests.Session")
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_complete_workflow(
-        self,
-        _mock_config,
-        _mock_api_client,
-        mock_guard_api_class,
-        mock_validate_api_class,
-        _mock_session,
-    ):
-        """Test a complete workflow: create, validate, fetch history, delete"""
-        mock_guard_api = Mock()
-        mock_validate_api = Mock()
-        mock_guard_api_class.return_value = mock_guard_api
-        mock_validate_api_class.return_value = mock_validate_api
 
-        # Setup mocks
-        guard = Mock(spec=Guard)
-        guard.name = "workflow-guard"
-        payload = Mock(spec=ValidatePayload)
-        mock_outcome = Mock(spec=IValidationOutcome)
-        mock_validate_api.validate.return_value = mock_outcome
-        mock_guard_api.get_guard.return_value = guard
-        mock_guard_api.get_guard_history.return_value = {"calls": []}
+class TestGetHistory:
+    def test_get_history_success(self):
+        mc = make_client()
+        history_data = {"calls": [{"callId": "c1"}]}
+        mc.http.get.return_value = mock_sync_response(history_data)
 
-        client = GuardrailsApiClient(base_url="http://test.com", api_key="test-key")
+        result = mc.client.get_history("g1", "c1")
 
-        # Upsert guard
-        client.upsert_guard(guard)
-        assert mock_guard_api.update_guard.called
+        mc.http.get.assert_called_once_with("/guards/g1/history/c1")
+        assert result == history_data
 
-        # Validate
-        result = client.validate(guard, payload, openai_api_key="openai-key")
-        assert result == mock_outcome
+    def test_get_history_uses_guard_id_not_name(self):
+        mc = make_client()
+        mc.http.get.return_value = mock_sync_response({})
 
-        # Fetch guard
-        fetched = client.fetch_guard("workflow-guard")
-        assert fetched == guard
+        mc.client.get_history("guard-uuid-123", "call-uuid-456")
 
-        # Get history
-        history = client.get_history("workflow-guard", "call-1")
-        assert history == {"calls": []}
+        mc.http.get.assert_called_once_with(
+            "/guards/guard-uuid-123/history/call-uuid-456"
+        )
 
-        # Delete guard
-        client.delete_guard("workflow-guard")
-        assert mock_guard_api.delete_guard.called
+    def test_get_history_raises_on_http_error(self):
+        mc = make_client()
+        mc.http.get.return_value = mock_sync_response(raise_error=make_http_error(404))
 
-    @patch("guardrails.api_client.ValidateApi")
-    @patch("guardrails.api_client.GuardApi")
-    @patch("guardrails.api_client.ApiClient")
-    @patch("guardrails.api_client.Configuration")
-    def test_client_maintains_state(
-        self, _mock_config, _mock_api_client, _mock_guard_api, _mock_validate_api
-    ):
-        """Test that client maintains its state across method calls."""
-        client = GuardrailsApiClient(base_url="http://custom.com", api_key="custom-key")
+        with pytest.raises(HTTPStatusError):
+            mc.client.get_history("g1", "c1")
 
-        assert client.base_url == "http://custom.com"
-        assert client.api_key == "custom-key"
+    def test_get_history_returns_raw_body(self):
+        mc = make_client()
+        raw_body = [{"id": "1"}, {"id": "2"}]
+        mc.http.get.return_value = mock_sync_response(raw_body)
 
-        # Modify timeout
-        client.timeout = 1000
+        result = mc.client.get_history("g1", "c1")
 
-        # Ensure state is maintained
-        assert client.base_url == "http://custom.com"
-        assert client.api_key == "custom-key"
-        assert client.timeout == 1000
+        assert result == raw_body

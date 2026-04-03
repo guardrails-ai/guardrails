@@ -1,12 +1,13 @@
+from __future__ import annotations
+from typing_extensions import deprecated
 from typing import Any, Dict, List, Optional, Sequence, Union
 from builtins import id as object_id
-from pydantic import Field
+from pydantic import Field, computed_field
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
 
-from guardrails_api_client import Iteration as IIteration
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
@@ -15,24 +16,24 @@ from guardrails.logger import get_scope_handler
 from guardrails.prompt import Prompt, Instructions
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
-from guardrails.classes.validation.validation_result import ErrorSpan
+from guardrails_ai.types import ErrorSpan
 
 
-class Iteration(IIteration, ArbitraryModel):
+class Iteration(ArbitraryModel):
     """An Iteration represents a single iteration of the validation loop
-    including a single call to the LLM if applicable.
+    including a single call to the LLM if applicable."""
 
-    Attributes:
-        id (str): The unique identifier for the iteration.
-        call_id (str): The unique identifier for the Call
-            that this iteration is a part of.
-        index (int): The index of this iteration within the Call.
-        inputs (Inputs): The inputs for the validation loop.
-        outputs (Outputs): The outputs from the validation loop.
-    """
-
-    # I think these should be containered since their names slightly overlap with
-    #  outputs, but could be convinced otherwise
+    _id: str | None = None
+    index: int = Field(
+        description="The zero-based index of this iteration within the current Call.",
+        default=0,
+    )
+    call_id: str = Field(
+        description="The unique identifier for the Call that this"
+        " iteration is a part of.",
+        alias="callId",
+        default="0",
+    )
     inputs: Inputs = Field(
         description="The inputs for the iteration/step.", default_factory=Inputs
     )
@@ -41,25 +42,17 @@ class Iteration(IIteration, ArbitraryModel):
         description="The outputs from the iteration/step.", default_factory=Outputs
     )
 
-    def __init__(
-        self,
-        call_id: str,
-        index: int,
-        inputs: Optional[Inputs] = None,
-        outputs: Optional[Outputs] = None,
-    ):
-        iteration_id = str(object_id(self))
-        inputs = inputs or Inputs()
-        outputs = outputs or Outputs()
-        super().__init__(
-            id=iteration_id,
-            call_id=call_id,  # type: ignore
-            index=index,
-            inputs=inputs,
-            outputs=outputs,
-        )
-        self.inputs = inputs
-        self.outputs = outputs
+    @computed_field
+    @property
+    def id(self) -> str:
+        """The unique identifier for this Call.
+
+        Can be used as an identifier for a specific execution of a
+        Guard.
+        """
+        if not self._id:
+            self._id = str(object_id(self))
+        return self._id
 
     @property
     def logs(self) -> Stack[str]:
@@ -222,44 +215,20 @@ class Iteration(IIteration, ArbitraryModel):
     def __str__(self) -> str:
         return pretty_repr(self)
 
-    def to_interface(self) -> IIteration:
-        return IIteration(
-            id=self.id,
-            call_id=self.call_id,  # type: ignore
-            index=self.index,
-            inputs=self.inputs.to_interface(),
-            outputs=self.outputs.to_interface(),
-        )
+    @deprecated("Use Iteration.model_dump() instead.")
+    def to_interface(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
-    def to_dict(self) -> Dict:
-        return self.to_interface().to_dict()
+    @deprecated("Use Iteration.model_dump() instead.")
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
     @classmethod
-    def from_interface(cls, i_iteration: IIteration) -> "Iteration":
-        inputs = (
-            Inputs.from_interface(i_iteration.inputs) if i_iteration.inputs else None
-        )
-        outputs = (
-            Outputs.from_interface(i_iteration.outputs) if i_iteration.outputs else None
-        )
-        iteration = cls(
-            call_id=i_iteration.call_id,
-            index=i_iteration.index,
-            inputs=inputs,
-            outputs=outputs,
-        )
-        iteration.id = i_iteration.id
-        return iteration
+    @deprecated("Use Iteration.model_validate() instead.")
+    def from_interface(cls, i_iteration: Any) -> "Iteration":
+        return cls.model_validate(i_iteration)
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
-        id = obj.get("id", "0")
-        call_id = obj.get("callId", obj.get("call_id", "0"))
-        index = obj.get("index", 0)
-        i_iteration = IIteration.from_dict(obj) or IIteration(
-            id=id,
-            call_id=call_id,  # type: ignore
-            index=index,  # type: ignore
-        )
-
-        return cls.from_interface(i_iteration)
+    @deprecated("Use Iteration.model_validate() instead.")
+    def from_dict(cls, obj: Any) -> "Iteration":
+        return cls.model_validate(obj)

@@ -122,25 +122,22 @@ class MockOpenAIV1ChunkResponse:
         self.model = model
 
 
-class Response:
-    def __init__(self, chunks):
-        self.chunks = chunks
+def Response(chunks):
+    async def gen():
+        for chunk in chunks:
+            yield MockOpenAIV1ChunkResponse(
+                choices=[
+                    Choice(
+                        delta=Delta(content=chunk),
+                        text=chunk,
+                        finish_reason=None,
+                    )
+                ],
+                model="OpenAI model name",
+            )
+        await asyncio.sleep(0)  # Yield control to the event loop
 
-        async def gen():
-            for chunk in self.chunks:
-                yield MockOpenAIV1ChunkResponse(
-                    choices=[
-                        Choice(
-                            delta=Delta(content=chunk),
-                            text=chunk,
-                            finish_reason=None,
-                        )
-                    ],
-                    model="OpenAI model name",
-                )
-            await asyncio.sleep(0)  # Yield control to the event loop
-
-        self.completion_stream = gen()
+    return gen()
 
 
 @pytest.mark.asyncio

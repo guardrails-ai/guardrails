@@ -4,12 +4,12 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.classes.history import Iteration
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
-    StreamValidationResult,
     ValidationResult,
 )
+from guardrails.classes.validation.validation_result import StreamValidationResult
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.validation.validator_logs import ValidatorLogs

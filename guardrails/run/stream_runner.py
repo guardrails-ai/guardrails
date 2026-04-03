@@ -87,7 +87,7 @@ class StreamRunner(Runner):
         )
         outputs = Outputs()
         iteration = Iteration(
-            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+            callId=call_log.id, index=index, inputs=inputs, outputs=outputs
         )
         call_log.iterations.push(iteration)
 
@@ -178,9 +178,9 @@ class StreamRunner(Runner):
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
-                    raw_llm_output=original_text,
-                    validated_output=chunk,
-                    validation_passed=passed,
+                    rawLlmOutput=original_text,
+                    validatedOutput=chunk,
+                    validationPassed=passed,
                 )
 
         # handle non string schema
@@ -226,10 +226,10 @@ class StreamRunner(Runner):
                     validation_response = cast(dict, validated_fragment)
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
-                    call_id=call_log.id,  # type: ignore
-                    raw_llm_output=fragment,
-                    validated_output=validated_fragment,
-                    validation_passed=validated_fragment is not None,
+                    callId=call_log.id,
+                    rawLlmOutput=fragment,
+                    validatedOutput=validated_fragment,
+                    validationPassed=validated_fragment is not None,
                 )
 
         # # Finally, add to logs

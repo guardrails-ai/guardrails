@@ -1,9 +1,20 @@
 import asyncio
+import warnings
 from itertools import tee
-from typing import Any, Dict, Iterator, Optional, AsyncIterator
+from typing import Any, Dict, Iterator, Optional, AsyncIterator, Iterable, Tuple
+from typing_extensions import deprecated
 
-from guardrails_api_client import LLMResponse as ILLMResponse
-from pydantic.config import ConfigDict
+from pydantic import Field, field_serializer, field_validator
+
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.generic.async_iterable import SerializeableAsyncIterable
+
+
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message="coroutine 'serialize_aiter' was never awaited",
+)
 
 
 # TODO: Move this somewhere that makes sense
@@ -12,93 +23,120 @@ def async_to_sync(awaitable):
     return loop.run_until_complete(awaitable)
 
 
-# TODO: We might be able to delete this
-class LLMResponse(ILLMResponse):
-    """Standard information collection from LLM responses to feed the
-    validation loop.
+async def serialize_aiter(
+    async_iter: AsyncIterator,
+) -> Tuple[Optional[list[str]], AsyncIterator]:
+    iter_output: list[str] = []
+    async for so in async_iter:
+        iter_output.append(str(so))
 
-    Attributes:
-        output (str): The output from the LLM.
-        stream_output (Optional[Iterator]): A stream of output from the LLM.
-            Default None.
-        async_stream_output (Optional[AsyncIterator]): An async stream of output
-            from the LLM.  Default None.
-        prompt_token_count (Optional[int]): The number of tokens in the prompt.
-            Default None.
-        response_token_count (Optional[int]): The number of tokens in the response.
-            Default None.
-    """
+    return iter_output, SerializeableAsyncIterable[str](content=iter_output)
+
+
+# TODO: We might be able to delete this
+class LLMResponse(ArbitraryModel):
+    """Standard information collection from LLM responses to feed the
+    validation loop."""
 
     # Pydantic Config
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = {
+        "validate_by_alias": True,
+        "validate_by_name": True,
+        "arbitrary_types_allowed": True,
+    }
 
-    prompt_token_count: Optional[int] = None
-    response_token_count: Optional[int] = None
-    output: str
-    stream_output: Optional[Iterator] = None
-    async_stream_output: Optional[AsyncIterator] = None
+    prompt_token_count: Optional[int] = Field(
+        default=None,
+        alias="promptTokenCount",
+        description="The number of tokens in the prompt.",
+    )
+    response_token_count: Optional[int] = Field(
+        default=None,
+        alias="responseTokenCount",
+        description="The number of tokens in the response.",
+    )
+    output: str = Field(default="", description="The output from the LLM.")
+    stream_output: Optional[Iterator] = Field(
+        default=None,
+        alias="streamOutput",
+        description="A stream of output from the LLM.",
+    )
+    async_stream_output: Optional[AsyncIterator] = Field(
+        default=None,
+        alias="asyncStreamOutput",
+        description="An async stream of output from the LLM.",
+    )
 
-    def to_interface(self) -> ILLMResponse:
-        stream_output = None
-        if self.stream_output:
-            # Keep an eye on this, I don't trust it to not explode memory
-            copy_1, copy_2 = tee(self.stream_output)
+    @field_serializer("stream_output")
+    def serialize_stream_output(
+        self, stream_output: Iterator | None
+    ) -> list[str] | None:
+        if stream_output:
+            copy_1, copy_2 = tee(stream_output)
             self.stream_output = copy_1
-            stream_output = [str(so) for so in copy_2]
+            ser_stream_output = [str(so) for so in copy_2]
+            return ser_stream_output
+        return None
 
-        async_stream_output = None
-        # dont do this again if already aiter-able were updating
-        # ourselves here so in memory
-        # this can cause issues
-        if self.async_stream_output and not hasattr(
-            self.async_stream_output, "__aiter__"
-        ):
-            # tee doesn't work with async iterators
-            # This may be destructive
-            async_stream_output = []
+    @field_validator("stream_output", mode="before")
+    @classmethod
+    def deserialize_stream_output(cls, stream_output: Any | None) -> Iterator | None:
+        if isinstance(stream_output, Iterator):
+            return stream_output
+        if stream_output:
+            try:
+                return iter(stream_output)
+            except TypeError:
+                return None
+        return None
+
+    @field_serializer("async_stream_output")
+    def serialize_async_stream_output(
+        self, async_stream_output: AsyncIterator | None
+    ) -> list[str] | None:
+        # Legacy serialization logic from previous to_interface implementation
+        # We probably need a wrapper class for these.
+        if async_stream_output and not hasattr(async_stream_output, "__aiter__"):
+            _async_stream_output = []
             awaited_stream_output = []
             for so in self.async_stream_output:  # type: ignore - we just established it isn't None
-                async_stream_output.append(so)
+                _async_stream_output.append(so)
                 awaited_stream_output.append(str(async_to_sync(so)))
 
-            self.async_stream_output = aiter(async_stream_output)  # type: ignore  # noqa: F821
+            self.async_stream_output = aiter(_async_stream_output)  # type: ignore  # noqa: F821
 
-        return ILLMResponse(
-            prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases
-            response_token_count=self.response_token_count,  # type: ignore - pyright doesn't understand aliases
-            output=self.output,
-            stream_output=stream_output,  # type: ignore - pyright doesn't understand aliases
-            async_stream_output=async_stream_output,  # type: ignore - pyright doesn't understand aliases
-        )
+        return None
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.to_interface().to_dict()
-
+    @field_validator("async_stream_output", mode="before")
     @classmethod
-    def from_interface(cls, i_llm_response: ILLMResponse) -> "LLMResponse":
-        stream_output = None
-        if i_llm_response.stream_output:
-            stream_output = iter([so for so in i_llm_response.stream_output])
-
-        async_stream_output = None
-        if i_llm_response.async_stream_output:
+    def deserialize_async_stream_output(
+        cls, async_stream_output: Any | None
+    ) -> AsyncIterator | None:
+        if isinstance(async_stream_output, AsyncIterator):
+            return async_stream_output
+        if async_stream_output and isinstance(async_stream_output, Iterable):
 
             async def async_iter():
-                for aso in i_llm_response.async_stream_output:  # type: ignore - just verified it isn't None...
+                for aso in async_stream_output:
                     yield aso
 
-            async_stream_output = async_iter()
+            return async_iter()
+        return None
 
-        return cls(
-            prompt_token_count=i_llm_response.prompt_token_count,
-            response_token_count=i_llm_response.response_token_count,
-            output=i_llm_response.output,
-            stream_output=stream_output,
-            async_stream_output=async_stream_output,
-        )
+    @deprecated("Use LLMResponse.model_dump() instead.")
+    def to_interface(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
+
+    @deprecated("Use LLMResponse.model_dump() instead.")
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "LLMResponse":
-        i_llm_response = super().from_dict(obj) or ILLMResponse(output="")
+    @deprecated("Use LLMResponse.model_validate() instead.")
+    def from_interface(cls, i_llm_response: Any) -> "LLMResponse":
+        return cls.model_validate(i_llm_response)
 
-        return cls.from_interface(i_llm_response)
+    @classmethod
+    @deprecated("Use LLMResponse.model_validate() instead.")
+    def from_dict(cls, obj: Any) -> "LLMResponse":
+        return cls.model_validate(obj)

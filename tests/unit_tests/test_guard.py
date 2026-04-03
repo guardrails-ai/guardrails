@@ -5,7 +5,7 @@ import openai  # noqa: F401
 from pydantic import BaseModel
 
 from guardrails import Guard, Validator, register_validator
-from guardrails.classes.validation.validation_result import PassResult
+from guardrails_ai.types import PassResult
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.types import OnFailAction
 from tests.integration_tests.test_assets.validators import (
@@ -553,7 +553,7 @@ class TestErrorSpansInOutput:
     def test_error_spans_with_validation_errors(self, mocker):
         """Test error_spans_in_output with actual validation errors."""
         from guardrails.classes.history import Iteration
-        from guardrails.classes.validation.validation_result import ErrorSpan
+        from guardrails_ai.types import ErrorSpan
 
         guard = Guard()
 

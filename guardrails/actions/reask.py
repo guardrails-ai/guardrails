@@ -2,10 +2,9 @@ from copy import deepcopy
 import json
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from guardrails_api_client import Reask as IReask
+from guardrails_ai.types import ReAsk
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
-from guardrails.classes.validation.validation_result import FailResult
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.messages import Messages
@@ -17,56 +16,6 @@ from guardrails.utils.prompt_utils import prompt_content_for_schema, prompt_uses
 
 
 ### Classes/Types ###
-class ReAsk(IReask):
-    """Base class for ReAsk objects.
-
-    Attributes:
-        incorrect_value (Any): The value that failed validation.
-        fail_results (List[FailResult]): The results of the failed validations.
-    """
-
-    incorrect_value: Any
-    fail_results: List[FailResult]
-
-    @classmethod
-    def from_interface(cls, reask: IReask) -> "ReAsk":
-        fail_results = []
-        if reask.fail_results:
-            fail_results: List[FailResult] = [
-                FailResult.from_interface(fail_result)
-                for fail_result in reask.fail_results
-            ]
-
-        if reask.additional_properties.get("path"):
-            return FieldReAsk(
-                incorrect_value=reask.incorrect_value,
-                fail_results=fail_results,
-                path=reask.additional_properties["path"],
-            )
-
-        if len(fail_results) == 1:
-            error_message = fail_results[0].error_message
-            if error_message == "Output is not parseable as JSON":
-                return NonParseableReAsk(
-                    incorrect_value=reask.incorrect_value,
-                    fail_results=fail_results,
-                )
-            elif "JSON does not match schema" in error_message:
-                return SkeletonReAsk(
-                    incorrect_value=reask.incorrect_value,
-                    fail_results=fail_results,
-                )
-
-        return cls(incorrect_value=reask.incorrect_value, fail_results=fail_results)
-
-    @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> Optional["ReAsk"]:
-        i_reask = super().from_dict(obj)
-        if not i_reask:
-            return None
-        return cls.from_interface(i_reask)
-
-
 class FieldReAsk(ReAsk):
     """An implementation of ReAsk that is used to reask for a specific field.
     Inherits from ReAsk.
@@ -99,6 +48,21 @@ class NonParseableReAsk(ReAsk):
     """
 
     pass
+
+
+def to_reask(obj: Any) -> FieldReAsk | SkeletonReAsk | NonParseableReAsk | ReAsk:
+    reask = ReAsk.model_validate(obj)
+    if hasattr(reask, "path"):
+        return FieldReAsk.model_validate(reask.model_dump())
+
+    if reask.fail_results and len(reask.fail_results) == 1:
+        error_message = reask.fail_results[0].error_message
+        if error_message == "Output is not parseable as JSON":
+            return NonParseableReAsk.model_validate(reask.model_dump())
+        elif "JSON does not match schema" in error_message:
+            return SkeletonReAsk.model_validate(reask.model_dump())
+
+    return reask
 
 
 ### Internal Helper Methods ###
@@ -269,7 +233,7 @@ def get_reask_setup_for_string(
         [
             f"- {fail_result.error_message}"
             for reask in reasks
-            for fail_result in reask.fail_results
+            for fail_result in reask.fail_results or []
         ]
     )
 
@@ -390,7 +354,9 @@ def get_reask_setup_for_json(
         skeleton_reask: SkeletonReAsk = next(
             r for r in reasks if isinstance(r, SkeletonReAsk)
         )
-        error_messages = skeleton_reask.fail_results[0].error_message
+        fail_results = skeleton_reask.fail_results or []
+        first_fail_result = fail_results[0]
+        error_messages = first_fail_result.error_message if first_fail_result else ""
     else:
         if use_full_schema:
             # Give the LLM the full JSON that failed validation
@@ -418,7 +384,7 @@ def get_reask_setup_for_json(
 
         error_messages = {
             ".".join(str(p) for p in r.path): "; ".join(  # type: ignore
-                f.error_message for f in r.fail_results
+                f.error_message for f in r.fail_results or []
             )
             for r in reasks
             if isinstance(r, FieldReAsk)
@@ -603,7 +569,10 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         for dict_key, dict_value in value.items():
             copy[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(copy, FieldReAsk):
-        fix_value = copy.fail_results[0].fix_value
+        fail_results = copy.fail_results or []
+        first_fail_result = fail_results[0]
+
+        fix_value = first_fail_result.fix_value if first_fail_result else None
         # TODO handle multiple fail results
         # Leave the ReAsk in place if there is no fix value
         # This allows us to determine the proper status for the call

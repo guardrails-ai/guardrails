@@ -39,7 +39,7 @@ class ValidChoices(Validator):
 
         if value not in self._choices:
             return FailResult(
-                error_message=f"Value {value} is not in choices {self._choices}.",
+                errorMessage=f"Value {value} is not in choices {self._choices}.",
             )
 
         return PassResult()

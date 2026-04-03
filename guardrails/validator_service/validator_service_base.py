@@ -6,7 +6,7 @@ from typing import Any, Awaitable, Dict, Optional, Union
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.classes.history import Iteration
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     ValidationResult,
 )
@@ -88,8 +88,8 @@ class ValidatorServiceBase:
 
             if isinstance(rechecked_value, FailResult):
                 return FieldReAsk(
-                    incorrect_value=fixed_value,
-                    fail_results=[result],
+                    incorrectValue=fixed_value,
+                    failResults=[result],
                 )
 
             return fixed_value
@@ -99,8 +99,8 @@ class ValidatorServiceBase:
             return validator.on_fail_method(value, result)
         if on_fail_descriptor == OnFailAction.REASK:
             return FieldReAsk(
-                incorrect_value=value,
-                fail_results=[result],
+                incorrectValue=value,
+                failResults=[result],
             )
         if on_fail_descriptor == OnFailAction.EXCEPTION:
             raise ValidationError(
@@ -128,13 +128,13 @@ class ValidatorServiceBase:
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
-            validator_name=validator_class_name,
-            value_before_validation=value,
-            registered_name=validator.rail_alias,
-            property_path=absolute_property_path,
+            validatorName=validator_class_name,
+            valueBeforeValidation=value,
+            registeredName=validator.rail_alias,
+            propertyPath=absolute_property_path,
             # If we ever re-use validator instances across multiple properties,
             #   this will have to change.
-            instance_id=id(validator),
+            instanceId=id(validator),
         )
         iteration.outputs.validator_logs.append(validator_logs)
 

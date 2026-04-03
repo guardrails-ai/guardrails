@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Union
 
 from guardrails import Validator, register_validator
-from guardrails.classes.validation.validation_result import (
+from guardrails_ai.types import (
     FailResult,
     PassResult,
     ValidationResult,
