@@ -1,0 +1,39 @@
+[project]
+name = "legal-privilege-detection"
+version = "0.1.0"
+description = "A Guardrails AI validator that detects attorney-client privilege, work product doctrine, and settlement/mediation communications in LLM outputs."
+authors = [
+    { name = "Gary Atwal", email = "garyatwal2017@gmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">= 3.9"
+dependencies = [
+    "guardrails-ai>=0.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["validator*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-rP"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
