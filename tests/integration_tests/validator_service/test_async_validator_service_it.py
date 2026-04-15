@@ -109,7 +109,8 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},
@@ -180,7 +181,8 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},
@@ -251,7 +253,8 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},
