@@ -1,4 +1,4 @@
-from asyncio import get_event_loop
+import asyncio
 from asyncio.unix_events import _UnixSelectorEventLoop
 import os
 import pytest
@@ -41,7 +41,8 @@ class TestShouldRunSync:
 
 class TestGetLoop:
     def test_raises_if_loop_is_running(self):
-        loop = get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
         async def callback():
             # NOTE: This means only AsyncGuard will parallelize validators
@@ -49,7 +50,10 @@ class TestGetLoop:
             with pytest.raises(RuntimeError, match="An event loop is already running."):
                 get_loop()
 
-        loop.run_until_complete(callback())
+        try:
+            loop.run_until_complete(callback())
+        finally:
+            loop.close()
 
     @pytest.mark.skipif(uvloop is None, reason="uvloop is not installed")
     def test_uvloop_is_used_when_installed(self):
@@ -128,7 +132,8 @@ class TestValidate:
             index=0,
         )
 
-        loop = get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
         async def callback():
             with pytest.warns(
@@ -147,7 +152,10 @@ class TestValidate:
                 assert value == "value"
                 assert metadata == {}
 
-        loop.run_until_complete(callback())
+        try:
+            loop.run_until_complete(callback())
+        finally:
+            loop.close()
 
         SequentialValidatorService.__init__.assert_called_once()
         SequentialValidatorService.validate.assert_called_once()
