@@ -7,7 +7,7 @@ class TestRedactFunction(unittest.TestCase):
         self.assertEqual(redact("supersecretpassword"), "***************word")
 
     def test_redact_short_string(self):
-        self.assertEqual(redact("test"), "test")
+        self.assertEqual(redact("test"), "****")
 
     def test_open_ai_example_key(self):
         self.assertEqual(
@@ -16,19 +16,19 @@ class TestRedactFunction(unittest.TestCase):
         )
 
     def test_redact_very_short_string(self):
-        self.assertEqual(redact("abc"), "abc")
+        self.assertEqual(redact("abc"), "***")
 
     def test_redact_empty_string(self):
         self.assertEqual(redact(""), "")
 
     def test_redact_exact_length(self):
-        self.assertEqual(redact("1234"), "1234")
+        self.assertEqual(redact("1234"), "****")
 
     def test_redact_special_characters(self):
         self.assertEqual(redact("ab!@#12"), "***@#12")
 
     def test_redact_single_character(self):
-        self.assertEqual(redact("a"), "a")
+        self.assertEqual(redact("a"), "*")
 
     def test_redact_spaces(self):
         self.assertEqual(redact("      test"), "******test")
