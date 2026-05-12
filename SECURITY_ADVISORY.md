@@ -79,8 +79,6 @@ The attacker also unsuccessfully attempted to:
 
 ## References
 
-## References
-
 - Tracking issue: [#1473](https://github.com/guardrails-ai/guardrails/issues/1473)
 - GHSA: *pending assignment*
 - CVE: *pending assignment*
