@@ -80,6 +80,6 @@ The attacker also unsuccessfully attempted to:
 ## References
 
 - Tracking issue: [#1473](https://github.com/guardrails-ai/guardrails/issues/1473)
-- GHSA: *pending assignment*
-- CVE: *pending assignment*
+- GHSA: [GHSA-xmpw-2vmm-p4p6](https://github.com/guardrails-ai/guardrails/security/advisories/GHSA-xmpw-2vmm-p4p6)
+- CVE: CVE-2026-45758
 - Related supply chain campaign: [CVE-2026-45321](https://github.com/TanStack/router/security/advisories/GHSA-g7cv-rxg3-hmpx) (TanStack)
