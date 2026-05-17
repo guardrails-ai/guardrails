@@ -40,6 +40,17 @@ def test_empty_initialization():
     assert call.tree is not None
 
 
+def test_raw_outputs_uses_iteration_raw_output_fallback():
+    call = Call(
+        iterations=Stack(
+            Iteration(outputs=Outputs(raw_output="Hello there!")),
+            Iteration(outputs=Outputs(llm_response_info=LLMResponse(output="Hi!"))),
+        )
+    )
+
+    assert call.raw_outputs == Stack("Hello there!", "Hi!")
+
+
 def test_non_empty_initialization():
     # Call input
     def custom_llm(messages, *args, **kwargs):
