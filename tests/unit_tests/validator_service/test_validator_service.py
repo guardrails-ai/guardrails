@@ -39,11 +39,17 @@ class TestGetLoop:
             "guardrails.validator_service.asyncio.get_running_loop",
             side_effect=RuntimeError,
         )
-        mocker.patch(
-            "guardrails.validator_service.asyncio.get_event_loop",
-            return_value="event loop",
+        mock_new_loop = mocker.patch(
+            "guardrails.validator_service.asyncio.new_event_loop",
+            return_value="new event loop",
         )
-        assert vs.get_loop() == "event loop"
+        mock_set_loop = mocker.patch(
+            "guardrails.validator_service.asyncio.set_event_loop",
+        )
+        result = vs.get_loop()
+        assert result == "new event loop"
+        mock_new_loop.assert_called_once()
+        mock_set_loop.assert_called_once_with("new event loop")
 
     def test_get_loop_with_uvloop(self, mocker):
         mocker.patch("guardrails.validator_service.uvloop")
@@ -54,18 +60,24 @@ class TestGetLoop:
             "guardrails.validator_service.asyncio.get_running_loop",
             side_effect=RuntimeError,
         )
-        mocker.patch(
-            "guardrails.validator_service.asyncio.get_event_loop",
-            return_value="event loop",
+        mock_new_loop = mocker.patch(
+            "guardrails.validator_service.asyncio.new_event_loop",
+            return_value="new event loop",
+        )
+        mock_set_loop = mocker.patch(
+            "guardrails.validator_service.asyncio.set_event_loop",
         )
         mock_set_event_loop_policy = mocker.patch("asyncio.set_event_loop_policy")
 
-        assert vs.get_loop() == "event loop"
+        result = vs.get_loop()
+        assert result == "new event loop"
 
         mock_event_loop_policy.assert_called_once()
         mock_set_event_loop_policy.assert_called_once_with(
             mock_event_loop_policy.return_value
         )
+        mock_new_loop.assert_called_once()
+        mock_set_loop.assert_called_once_with("new event loop")
 
 
 class TestValidate:
