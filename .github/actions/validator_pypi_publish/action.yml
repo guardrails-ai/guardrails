@@ -46,6 +46,9 @@ runs:
 
     - name: Create .pypirc
       shell: bash
+      env:
+        PYPI_REPOSITORY_URL: ${{ inputs.pypi_repository_url }}
+        GUARDRAILS_TOKEN: ${{ inputs.guardrails_token }}
       run: |
         touch ~/.pypirc
         echo "[distutils]" >> ~/.pypirc
@@ -53,9 +56,9 @@ runs:
         echo "    private-repository" >> ~/.pypirc
         echo "" >> ~/.pypirc
         echo "[private-repository]" >> ~/.pypirc
-        echo "repository = ${{ inputs.pypi_repository_url }}" >> ~/.pypirc
+        echo "repository = $PYPI_REPOSITORY_URL" >> ~/.pypirc
         echo "username = __token__" >> ~/.pypirc
-        echo "password = ${{ inputs.guardrails_token }}" >> ~/.pypirc
+        echo "password = $GUARDRAILS_TOKEN" >> ~/.pypirc
 
     - name: Move CI Scripts to Validator
       shell: bash
