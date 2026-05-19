@@ -37,12 +37,14 @@ jobs:
                 push: false
                 tags: guardrails:server-ci
                 load: true
-                build-args: |
+                secrets: |
                   GUARDRAILS_TOKEN=${{ secrets.GUARDRAILS_API_KEY }}
 
             - name: Start Docker container
+              env:
+                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
               run: |
-                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} guardrails:server-ci
+                  docker run -d --name guardrails-container -p 8000:8000 -e OPENAI_API_KEY=$OPENAI_API_KEY guardrails:server-ci
         
             - name: Wait for Docker container to be ready
               run: |
