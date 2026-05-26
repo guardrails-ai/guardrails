@@ -62,13 +62,16 @@ The attacker also unsuccessfully attempted to:
 - Taken the Ray cluster and validator hub offline
 - Audited system and access logs (no evidence of user data exfiltration found)
 - Confirmed via telemetry that we have observed no requests to Guardrails AI infrastructure originating from the malicious 0.10.1 package
+- Restoring the Ray cluster and validator hub on rotated credentials
+- Forcing rotation of all Snowglobe and Guardrails Hub API keys at 2:00 PM PT, May 13, 2026
+- Reviewing our GitHub Actions configurations, secret scoping, and PAT policies organization-wide
+- Restricting creation of classic Github PATs (i.e. classic tokens cannot access the org)
+- Fine grained Github PATs require approval and an expiration
+- *ALL* commits to any branch on any repository within the org must have a verified signature
 
 ## What we are doing next
 
 - Working with PyPI to lift the quarantine and publish a clean release (tracking in [#1473](https://github.com/guardrails-ai/guardrails/issues/1473))
-- Restoring the Ray cluster and validator hub on rotated credentials
-- Forcing rotation of all Snowglobe and Guardrails Hub API keys at 2:00 PM PT, May 13, 2026
-- Reviewing our GitHub Actions configurations, secret scoping, and PAT policies organization-wide
 - Publishing a more detailed postmortem in the coming days
 
 ## Contact
