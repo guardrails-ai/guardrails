@@ -47,7 +47,9 @@ def get_loop() -> asyncio.AbstractEventLoop:
     if uvloop is not None:
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-    return asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop
 
 
 def validate(
