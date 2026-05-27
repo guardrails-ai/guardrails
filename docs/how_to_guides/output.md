@@ -317,6 +317,53 @@ The `on-fail-{quality-criteria}` attribute allows specifying the corrective acti
 | `exception`  | Raise an exception when validation fails.                                                                                                                                                      |
 | `fix_reask` | First, fix the generated output deterministically, and then rerun validation with the deterministically fixed output. If validation fails, then perform reasking.             |
 
+---
+
+##  Important: When does `refrain` actually trigger?
+
+`on-fail` actions (including `refrain`) are only triggered when a validator explicitly returns a `FailResult`.
+
+### Execution flow
+
+- `PassResult` → ❌ No corrective action is triggered  
+- `FailResult` → ✅ Corrective action (e.g. `refrain`) is applied  
+
+This means that even if a validator internally detects an issue, the `refrain` action will **not** be applied unless the validator returns a `FailResult`.
+
+---
+
+##  Understanding `refrain` vs `noop`
+
+These two actions are often confused but behave differently:
+
+| Action | Output returned | Validation status | Use case |
+|--------|----------------|------------------|----------|
+| `noop` | Original value | `False` | Logging/observability |
+| `refrain` | `None` | `False` | Block unsafe output |
+
+- **`refrain`** ensures no output is returned when validation fails  
+- **`noop`** allows the original value to pass through even on failure  
+
+---
+
+## Note on LLM-based validators
+
+For validators that rely on LLM calls (e.g. content moderation or prompt analysis):
+
+- In some edge cases (such as ambiguous or unparseable LLM responses), a validator may return a `PassResult`
+- When this happens, `on-fail="refrain"` will **not** be triggered
+- This can result in:
+  - `validation_passed=True`
+  - Original input being returned
+  - An `error` field being populated from a separate execution path
+
+This behavior is expected and depends on the validator’s return value, not the `refrain` action itself.
+
+### Recommendation
+
+For safety-critical use cases:
+- Prefer deterministic validators  
+- Or use stricter actions such as `on_fail="exception"`  
 
 ## 🚒 Adding compiled `output` element to prompt
 
