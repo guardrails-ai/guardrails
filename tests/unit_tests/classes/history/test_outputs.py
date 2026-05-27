@@ -86,6 +86,7 @@ non_fixable_fail_result = FailResult(
     [
         (Outputs(), True),
         (Outputs(llm_response_info=LLMResponse(output="Hello there!")), False),
+        (Outputs(raw_output="Hello there!"), False),
         (Outputs(parsed_output="Hello there!"), False),
         (Outputs(parsed_output="Hello there!"), False),
         (Outputs(guarded_output="Hello there"), False),
@@ -116,6 +117,7 @@ non_fixable_fail_result = FailResult(
             False,
         ),
         (Outputs(error="Validation Failed!"), False),
+        (Outputs(exception=RuntimeError("Validation Failed!")), False),
     ],
 )
 def test__all_empty(outputs: Outputs, expected_result: bool):
@@ -153,6 +155,7 @@ def test_failed_validations():
     [
         (Outputs(), not_run_status),
         (Outputs(error="Validations Failed!"), error_status),
+        (Outputs(exception=RuntimeError("Validations Failed!")), error_status),
         (
             Outputs(
                 validator_logs=[
@@ -175,6 +178,7 @@ def test_failed_validations():
             fail_status,
         ),
         (Outputs(validator_logs=[], guarded_output="Hello there!"), pass_status),
+        (Outputs(raw_output="Hello there!"), pass_status),
     ],
 )
 def test_status(outputs: Outputs, expected_status: str):

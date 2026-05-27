@@ -94,12 +94,14 @@ class Outputs(ArbitraryModel):
     def _all_empty(self) -> bool:
         return (
             self.llm_response_info is None
+            and self.raw_output is None
             and self.parsed_output is None
             and self.validation_response is None
             and self.guarded_output is None
             and len(self.reasks) == 0
             and len(self.validator_logs) == 0
             and self.error is None
+            and self.exception is None
         )
 
     @property
@@ -164,7 +166,7 @@ class Outputs(ArbitraryModel):
 
         if self._all_empty() is True:
             return not_run_status
-        elif self.error:
+        elif self.error or self.exception:
             return error_status
         elif not all_reasks_have_fixes:
             return fail_status
