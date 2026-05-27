@@ -60,7 +60,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000)
+        mock_start_api.assert_called_once_with(env="", config="", port=8000)
 
     def test_calls_start_api_with_env_override_for_new_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -69,7 +69,9 @@ class TestStart:
         result = runner.invoke(guardrails, ["start"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, False)
+        mock_start_api.assert_called_once_with(
+            env="", config="", port=8000, env_override=False
+        )
 
     def test_passes_env_override_true_to_new_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -78,7 +80,9 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env-override"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, True)
+        mock_start_api.assert_called_once_with(
+            env="", config="", port=8000, env_override=True
+        )
 
     def test_warns_and_ignores_env_override_for_old_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.2.9")
@@ -95,7 +99,7 @@ class TestStart:
         )
         assert "0.2.9" in warning_msg
         # env_override is NOT passed to the old API
-        mock_start_api.assert_called_once_with("", "", 8000)
+        mock_start_api.assert_called_once_with(env="", config="", port=8000)
 
     def test_no_warning_when_env_override_false_with_old_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.2.9")
@@ -106,7 +110,7 @@ class TestStart:
 
         assert result.exit_code == 0
         mock_logger_warning.assert_not_called()
-        mock_start_api.assert_called_once_with("", "", 8000)
+        mock_start_api.assert_called_once_with(env="", config="", port=8000)
 
     def test_passes_custom_env_file(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -115,7 +119,9 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env", "custom.env"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("custom.env", "", 8000, False)
+        mock_start_api.assert_called_once_with(
+            env="custom.env", config="", port=8000, env_override=False
+        )
 
     def test_passes_custom_config(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -126,7 +132,9 @@ class TestStart:
         )
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "guardrails.config.py", 8000, False)
+        mock_start_api.assert_called_once_with(
+            env="", config="guardrails.config.py", port=8000, env_override=False
+        )
 
     def test_passes_custom_port(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -135,7 +143,9 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--port", "9000"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 9000, False)
+        mock_start_api.assert_called_once_with(
+            env="", config="", port=9000, env_override=False
+        )
 
     def test_watch_mode_enables_setting(self, mocker):
         from guardrails.settings import settings
@@ -169,7 +179,9 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env-override"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, True)
+        mock_start_api.assert_called_once_with(
+            env="", config="", port=8000, env_override=True
+        )
 
     def test_calls_trace_if_enabled(self, mocker):
         self._make_start_api_mock(mocker, "0.3.0")
