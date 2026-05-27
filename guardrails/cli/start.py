@@ -40,6 +40,10 @@ def start(
         default=False,
         help="Override existing environment variables with values from the env file.",
     ),
+    middleware: str = typer.Option(
+        default="",
+        help="A middleware file to apply.",
+    ),
 ):
     logger.debug("Checking for prerequisites...")
     if not api_is_installed():
@@ -70,4 +74,4 @@ def start(
 
         start_api(env, config, port)
     else:
-        start_api(env, config, port, env_override)  # type: ignore
+        start_api(env, config, port, env_override, middleware)  # type: ignore
