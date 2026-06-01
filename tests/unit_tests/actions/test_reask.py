@@ -117,6 +117,14 @@ def test_sub_reasks_with_fixed_values(input_dict, expected_dict):
     assert sub_reasks_with_fixed_values(input_dict) == expected_dict
 
 
+def test_sub_reasks_with_fixed_values_none_fail_results():
+    """FieldReAsk with fail_results=None must not raise IndexError."""
+    reask = FieldReAsk(incorrect_value="bad_value")  # fail_results defaults to None
+    result = sub_reasks_with_fixed_values(reask)
+    # No fix_value available, so the FieldReAsk should be returned as-is
+    assert result == reask
+
+
 def test_gather_reasks():
     """Test that reasks are gathered."""
     input_dict = {
