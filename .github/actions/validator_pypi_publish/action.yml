@@ -2,19 +2,19 @@ name: Publish to Guardrails Hub
 description: Re-Usable action to publish a Validator to Guardrails PyPi
 inputs:
   validator_id:
-    description: 'Validator ID ex. guardrails/detect_pii'
+    description: "Validator ID ex. guardrails/detect_pii"
     required: true
   guardrails_token:
-    description: 'Guardrails Token'
+    description: "Guardrails Token"
     required: true
   pypi_repository_url:
-    description: 'PyPi Repository URL'
+    description: "PyPi Repository URL"
     required: false
-    default: 'https://pypi.guardrailsai.com'
+    default: "https://pypi.guardrailsai.com"
   package_directory:
     description: 'Package Directory "validator" or "some_parent_folder/package"'
     required: false
-    default: 'validator'
+    default: "validator"
 
 runs:
   using: "composite"
@@ -36,7 +36,7 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: "3.10"
 
     - name: Install Twine & Build
       shell: bash
@@ -46,36 +46,47 @@ runs:
 
     - name: Create .pypirc
       shell: bash
+      env:
+        PYPI_REPOSITORY_URL: ${{ inputs.pypi_repository_url }}
+        GUARDRAILS_TOKEN: ${{ inputs.guardrails_token }}
       run: |
-        touch ~/.pypirc
-        echo "[distutils]" >> ~/.pypirc
-        echo "index-servers =" >> ~/.pypirc
-        echo "    private-repository" >> ~/.pypirc
-        echo "" >> ~/.pypirc
-        echo "[private-repository]" >> ~/.pypirc
-        echo "repository = ${{ inputs.pypi_repository_url }}" >> ~/.pypirc
-        echo "username = __token__" >> ~/.pypirc
-        echo "password = ${{ inputs.guardrails_token }}" >> ~/.pypirc
+        {
+          echo "[distutils]"
+          echo "index-servers ="
+          echo "    private-repository"
+          echo ""
+          echo "[private-repository]"
+          echo "repository = $PYPI_REPOSITORY_URL"
+          echo "username = __token__"
+          echo "password = $GUARDRAILS_TOKEN"
+        } > ~/.pypirc
 
     - name: Move CI Scripts to Validator
       shell: bash
+      env:
+        PACKAGE_DIRECTORY: ${{ inputs.package_directory }}
       run: |
-        mv shared-ci-scripts/.github/actions/validator_pypi_publish/*.py ./${{ inputs.package_directory }}
+        mv shared-ci-scripts/.github/actions/validator_pypi_publish/*.py ./$PACKAGE_DIRECTORY
 
-    - name: Rename Package 
+    - name: Rename Package
       shell: bash
+      env:
+        PACKAGE_DIRECTORY: ${{ inputs.package_directory }}
+        VALIDATOR_ID: ${{ inputs.validator_id }}
       run: |
-        cd ${{ inputs.package_directory }}
-        CONCATANATED_NAME=$(python concat_name.py ${{ inputs.validator_id }})
+        cd $PACKAGE_DIRECTORY
+        CONCATANATED_NAME=$(python concat_name.py $VALIDATOR_ID)
         NEW_PEP_PACKAGE_NAME=$(python package_name_normalization.py $CONCATANATED_NAME)
         VALIDATOR_FOLDER_NAME=$(echo $NEW_PEP_PACKAGE_NAME | tr - _)
-        mv ./${{ inputs.package_directory }} ./$VALIDATOR_FOLDER_NAME
+        mv ./$PACKAGE_DIRECTORY ./$VALIDATOR_FOLDER_NAME
         python add_build_prefix.py ./pyproject.toml $NEW_PEP_PACKAGE_NAME $VALIDATOR_FOLDER_NAME
 
     - name: Build & Upload
       shell: bash
+      env:
+        PACKAGE_DIRECTORY: ${{ inputs.package_directory }}
+        GUARDRAILS_TOKEN: ${{ inputs.guardrails_token }}
       run: |
-        cd ${{ inputs.package_directory }}
+        cd $PACKAGE_DIRECTORY
         python -m build
-        twine upload dist/* -u __token__ -p ${{ inputs.guardrails_token }} -r private-repository
-        
+        twine upload dist/* -u __token__ -p $GUARDRAILS_TOKEN -r private-repository
