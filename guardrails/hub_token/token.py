@@ -1,6 +1,4 @@
 import os
-import jwt
-from jwt import ExpiredSignatureError, DecodeError
 from typing import Optional
 
 from guardrails.classes.rc import RC
@@ -42,10 +40,6 @@ def get_jwt_token(rc: RC) -> Optional[str]:
 
     # check for jwt expiration
     if token:
-        try:
-            jwt.decode(token, options={"verify_signature": False, "verify_exp": True})
-        except ExpiredSignatureError:
-            raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
-        except DecodeError:
-            raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
+        from guardrails.hub_token.utils import client_check_token_expiry
+        client_check_token_expiry(token)
     return token
