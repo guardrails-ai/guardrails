@@ -6,7 +6,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -24,7 +26,5 @@ jobs:
       - name: Install dependencies
         run: make full
 
-      - name: Upload to PyPI
-        env:
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: poetry publish --build -u __token__ -p $PYPI_PASSWORD
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
