@@ -5,9 +5,6 @@ from typing import Any, Dict, Optional
 
 import requests
 from guardrails_hub_types import Manifest
-import jwt
-from jwt import ExpiredSignatureError, DecodeError
-
 
 from guardrails.settings import settings
 from guardrails.classes.rc import RC
@@ -51,8 +48,6 @@ class HttpError(Exception):
 
 def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
     try:
-        # For Debugging
-        # headers = { "Authorization": f"Bearer {token}", "x-anonymous-user-id": anonymousUserId, "Cache-Control": "no-cache" }  # noqa
         headers = {
             "Authorization": f"Bearer {token}",
             "x-anonymous-user-id": anonymousUserId,
@@ -93,12 +88,8 @@ def get_jwt_token(rc: RC) -> Optional[str]:
 
     # check for jwt expiration
     if token:
-        try:
-            jwt.decode(token, options={"verify_signature": False, "verify_exp": True})
-        except ExpiredSignatureError:
-            raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
-        except DecodeError:
-            raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
+        from guardrails.hub_token.utils import client_check_token_expiry
+        client_check_token_expiry(token)
     return token
 
 
