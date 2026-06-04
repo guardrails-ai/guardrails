@@ -1,7 +1,6 @@
 # New LiteLLM version has a dependency on madoka which requires g++ to build the wheel
 FROM python:3.13
 
-ARG GUARDRAILS_TOKEN
 ARG GUARDRAILS_TEMPLATE="guard-template.json"
 
 # Set environment variables to avoid writing .pyc files and to unbuffer Python output
@@ -32,7 +31,7 @@ RUN pip install "uvicorn[standard]" --no-cache-dir
 
 RUN pip install "/app/guardrails[api]"
 
-RUN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
+RUN --mount=type=secret,id=GUARDRAILS_TOKEN,env=GUARDRAILS_TOKEN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
 
 # bring in base template
 COPY /server_ci/$GUARDRAILS_TEMPLATE /app/$GUARDRAILS_TEMPLATE
