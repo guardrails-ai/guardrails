@@ -68,10 +68,9 @@ The attacker also unsuccessfully attempted to:
 - Restricting creation of classic Github PATs (i.e. classic tokens cannot access the org)
 - Fine grained Github PATs require approval and an expiration
 - *ALL* commits to any branch on any repository within the org must have a verified signature
+- Worked with PyPI to lift the quarantine and publish a clean release (tracked in [#1473](https://github.com/guardrails-ai/guardrails/issues/1473))
 
 ## What we are doing next
-
-- Working with PyPI to lift the quarantine and publish a clean release (tracking in [#1473](https://github.com/guardrails-ai/guardrails/issues/1473))
 - Publishing a more detailed postmortem in the coming days
 
 ## Contact
