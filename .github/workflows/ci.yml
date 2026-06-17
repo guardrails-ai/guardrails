@@ -154,3 +154,26 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: true
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1
+      - name: Install dependencies and pip-audit
+        run: |
+          python3 -m venv ./.venv
+          source .venv/bin/activate
+          make dev
+          pip install pip-audit
+      - name: Run pip-audit
+        continue-on-error: true
+        run: |
+          source .venv/bin/activate
+          pip-audit --desc on 2>&1 | tee audit-report.txt
+          echo "::warning::See audit-report.txt for dependency vulnerability details"
