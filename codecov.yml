@@ -1,3 +1,0 @@
-ignore:
-  - "guardrails/version.py"
-  - "tests"
