@@ -35,7 +35,7 @@ dependencies = [
     "jsonschema[format-nongpl]>=4.22.0,<5.0.0",
     
     # TODO - drop this!
-    "pip>=22",
+    "pip>=26.1",
 
     "pyjwt>=2.8.0,<3.0.0",
     "opentelemetry-sdk>=1.24.0,<2.0.0",
