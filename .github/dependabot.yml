@@ -1,6 +1,8 @@
 # Managed by scripts/rollout_dependabot_config.py
-# Minor + patch updates group into one weekly PR per ecosystem;
-# major bumps open individually. GitHub Actions are grouped wholesale.
+# Minor + patch version updates group into one weekly PR per ecosystem;
+# major bumps open individually. Security updates are grouped separately
+# (applies-to: security-updates) so vulnerability fixes also collapse into
+# a single PR per ecosystem instead of one PR per advisory.
 version: 2
 
 updates:
@@ -10,6 +12,10 @@ updates:
       interval: "weekly"
     groups:
       github-actions:
+        patterns:
+          - "*"
+      github-actions-security:
+        applies-to: security-updates
         patterns:
           - "*"
   - package-ecosystem: "pip"
@@ -26,6 +32,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      pip-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
   - package-ecosystem: "docker"
     directories:
       - "/server_ci"
@@ -39,3 +49,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
