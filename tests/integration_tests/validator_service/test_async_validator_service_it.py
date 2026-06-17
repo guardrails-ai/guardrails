@@ -5,6 +5,17 @@ from guardrails.validator_base import Validator, register_validator
 from guardrails_ai.types import PassResult
 
 
+def _get_event_loop():
+    # Python 3.13+ raises if there is no current event loop in the main
+    # thread instead of creating one, so create and register one explicitly.
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
+
 @register_validator(name="test/validator1", data_type="string")
 class Validator1(Validator):
     def validate(self, value, metadata):
@@ -109,7 +120,7 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = _get_event_loop()
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},
@@ -180,7 +191,7 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = _get_event_loop()
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},
@@ -251,7 +262,7 @@ class TestValidatorConcurrency:
 
         async_validator_service = AsyncValidatorService()
 
-        loop = asyncio.get_event_loop()
+        loop = _get_event_loop()
         value, metadata = async_validator_service.validate(
             value="value",
             metadata={"order": []},

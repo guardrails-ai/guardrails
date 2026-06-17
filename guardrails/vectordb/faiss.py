@@ -69,7 +69,7 @@ class Faiss(VectorDBBase):
 
     def save(self, path: Optional[str] = None):
         write_path = path if path else self._path
-        faiss.write_index(self._index, write_path)
+        faiss.write_index(self._index, write_path)  # type: ignore
 
     def similarity_search_vector(self, vector: List[float], k: int) -> List[int]:
         import numpy as np
