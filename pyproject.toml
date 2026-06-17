@@ -90,7 +90,7 @@ api = [
     "guardrails-api>=0.4.0,<0.5.0",
 ]
 databricks = [
-    "mlflow>=2.0.1,<4.0.0"
+    "mlflow>=3.11.1,<4.0.0"
 ]
 uv = [
     "uvloop>=0.20.0,<1.0.0"
