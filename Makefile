@@ -21,7 +21,7 @@ test-basic:
 	python -c "import guardrails.version as mversion"
 
 test-cov:
-	pytest tests/ --cov=./guardrails/ --cov-report=xml
+	pytest tests/ --cov=./guardrails/ --cov-report=xml --cov-fail-under=80
 
 view-test-cov:
 	pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
