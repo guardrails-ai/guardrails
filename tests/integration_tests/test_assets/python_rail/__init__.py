@@ -5,8 +5,8 @@ from .validator_parallelism_reask_1 import VALIDATOR_PARALLELISM_REASK_1  # noqa
 from .validator_parallelism_reask_2 import VALIDATOR_PARALLELISM_REASK_2  # noqa: F401
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
-reader = (
-    lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
+reader = lambda filename: (
+    open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
 COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS = reader("compiled_prompt_1.txt")

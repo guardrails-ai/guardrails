@@ -1,4 +1,4 @@
-from asyncio import get_event_loop
+import asyncio
 from asyncio.unix_events import _UnixSelectorEventLoop
 import os
 import pytest
@@ -11,6 +11,17 @@ try:
     import uvloop
 except ImportError:
     uvloop = None
+
+
+def get_event_loop():
+    # Python 3.13+ raises if there is no current event loop in the main
+    # thread instead of creating one, so create and register one explicitly.
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
 
 
 class TestShouldRunSync:

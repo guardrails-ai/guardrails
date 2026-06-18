@@ -27,8 +27,8 @@ from .validated_output_skeleton_reask_1 import VALIDATED_OUTPUT_SKELETON_REASK_1
 from .validated_output_skeleton_reask_2 import VALIDATED_OUTPUT_SKELETON_REASK_2
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
-reader = (
-    lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
+reader = lambda filename: (
+    open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
 # Compiled prompts

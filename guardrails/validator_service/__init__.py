@@ -47,7 +47,15 @@ def get_loop() -> asyncio.AbstractEventLoop:
     if uvloop is not None:
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-    return asyncio.get_event_loop()
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        # Python 3.13+ raises instead of implicitly creating an event loop
+        # when there is no current loop in the main thread. Restore the
+        # pre-3.13 behavior by creating one explicitly.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
 
 
 def validate(
