@@ -30,7 +30,7 @@ dependencies = [
     "pydash>=8.0.6,<9.0.0",
     "langchain-core>=1.4.7,<2.0",
     "requests>=2.34.2,<3.0.0",    
-    "faker>=25.2.0,<38.0.0",
+    "faker>=37.12.0,<38.0.0",
     "jsonref>=1.1.0,<2.0.0",
     "jsonschema[format-nongpl]>=4.26.0,<5.0.0",
     
