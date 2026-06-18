@@ -49,7 +49,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.3",
+    "pytest>=9.1.0",
     "pytest-asyncio>=1.4.0",
     "docformatter>=1.7.8",
     "pytest-cov>=7.1.0",
