@@ -2180,7 +2180,7 @@ description = "Lightweight in-process concurrent programming"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "(platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") and extra == \"llama\""
+markers = "(extra == \"llama\" or extra == \"sql\" or extra == \"api\" or extra == \"databricks\") and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") and (extra == \"llama\" or python_version == \"3.10\")"
 files = [
     {file = "greenlet-3.5.2-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:9df9daae96848508450011d0d86ed7c95f8829a354ce438284a77b24896fd1f8"},
     {file = "greenlet-3.5.2-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:01e32e9d2b1714a2b06184cb3071ff2a2fd9bc7d065e39198ab21f7253dad421"},
@@ -9302,4 +9302,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "c9b40474eec55e8e0b113c93daf76ea0896471804b32aff70a0afcecf76d2d1c"
+content-hash = "8fcafda2cf13418921788fe20019f4a6622b8f86e78ff6d9e652ec5e4cdfc747"
