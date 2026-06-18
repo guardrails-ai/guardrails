@@ -171,6 +171,10 @@ authorized_licenses = [
     "zpl 2.1",
     "mit and python-2.0",
     "apache-2.0 and mit",
+    "bsd-2-clause",
+    "mpl-2.0",
+    "mpl-2.0 and mit",
+    "apache-2.0 or bsd-2-clause",
     "                                 Apache"
 ]
 unauthorized_licenses = [
