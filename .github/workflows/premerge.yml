@@ -1,0 +1,29 @@
+name: Premerge
+
+# Runs the heavier pre-merge gates (notebook execution, CLI compatibility, and
+# the server/Docker build+test) in one place on pull requests. Each job reuses
+# the existing standalone workflow via `workflow_call`, so there is a single
+# source of truth for each gate.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  notebooks:
+    name: Notebook checks
+    uses: ./.github/workflows/examples_check.yml
+    secrets: inherit
+
+  cli-compatibility:
+    name: CLI compatibility
+    uses: ./.github/workflows/cli-compatibility.yml
+    secrets: inherit
+
+  server-ci:
+    name: Server CI
+    uses: ./.github/workflows/server_ci.yml
+    secrets: inherit

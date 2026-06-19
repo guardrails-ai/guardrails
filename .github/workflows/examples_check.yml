@@ -11,6 +11,7 @@ on:
       - guardrails/**
       - pyproject.toml
   workflow_dispatch:  # This enables manual triggering
+  workflow_call:  # Allows this workflow to be reused (e.g. by the Premerge workflow)
 
 jobs:
   execute_notebooks:
