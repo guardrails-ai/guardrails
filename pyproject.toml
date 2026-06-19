@@ -12,7 +12,7 @@ license-files = [
 homepage = "https://www.guardrailsai.com/"
 documentation = "https://www.guardrailsai.com/guardrails/docs"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.10,<3.14"
 
 dependencies = [
     "lxml>=5.0.0,<7.0.0",
@@ -83,11 +83,14 @@ docs-build = [
 ]
 huggingface = [
     "transformers>=4.38.0,<6.0.0",
-    "torch>=2.1.1,<3.0.0; python_version < '3.15'",
+    "torch>=2.1.1,<3.0.0",
     "guardrails-jsonformer>=0.13.1,<1.0.0"
 ]
 api = [
-    "guardrails-api>=0.4.2,<0.5.0",
+    # TEMPORARY: track the guardrails-api branch that raises the litellm cap so this
+    # repo can resolve litellm>=1.84.0 (security) and be verified before 0.4.3 is on
+    # PyPI. Revert to "guardrails-api>=0.4.3,<0.5.0" once that release is published.
+    "guardrails-api @ git+https://github.com/guardrails-ai/guardrails-api.git@fix/bump-litellm-cap",
 ]
 databricks = [
     "mlflow>=3.0.0,<4.0.0"
