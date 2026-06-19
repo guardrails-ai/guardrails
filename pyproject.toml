@@ -87,10 +87,7 @@ huggingface = [
     "guardrails-jsonformer>=0.13.1,<1.0.0"
 ]
 api = [
-    # TEMPORARY: track the guardrails-api branch that raises the litellm cap so this
-    # repo can resolve litellm>=1.84.0 (security) and be verified before 0.4.3 is on
-    # PyPI. Revert to "guardrails-api>=0.4.3,<0.5.0" once that release is published.
-    "guardrails-api @ git+https://github.com/guardrails-ai/guardrails-api.git@fix/bump-litellm-cap",
+    "guardrails-api>=0.4.3,<0.5.0",
 ]
 databricks = [
     "mlflow>=3.0.0,<4.0.0"
