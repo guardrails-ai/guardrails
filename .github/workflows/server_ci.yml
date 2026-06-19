@@ -8,6 +8,7 @@ on:
         - guardrails/**
         - pyproject.toml
     workflow_dispatch:
+    workflow_call:  # Allows this workflow to be reused (e.g. by the Premerge workflow)
 
 jobs:
     build-test-server:

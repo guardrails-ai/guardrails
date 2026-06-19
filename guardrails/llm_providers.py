@@ -548,19 +548,30 @@ def get_llm_ask(
 
     try:
         from transformers import (  # noqa: F401 # type: ignore
-            FlaxPreTrainedModel,
             GenerationMixin,
             PreTrainedModel,
-            TFPreTrainedModel,
         )
+
+        # TFPreTrainedModel and FlaxPreTrainedModel were removed in
+        # transformers v5; import them defensively so we stay compatible
+        # with both 4.x and 5.x.
+        model_base_classes: list = [PreTrainedModel]
+        try:
+            from transformers import TFPreTrainedModel  # type: ignore
+
+            model_base_classes.append(TFPreTrainedModel)
+        except ImportError:
+            pass
+        try:
+            from transformers import FlaxPreTrainedModel  # type: ignore
+
+            model_base_classes.append(FlaxPreTrainedModel)
+        except ImportError:
+            pass
 
         api_self = getattr(llm_api, "__self__", None)
 
-        if (
-            isinstance(api_self, PreTrainedModel)
-            or isinstance(api_self, TFPreTrainedModel)
-            or isinstance(api_self, FlaxPreTrainedModel)
-        ):
+        if isinstance(api_self, tuple(model_base_classes)):
             if (
                 hasattr(llm_api, "__func__")
                 and llm_api.__func__ == GenerationMixin.generate  # type: ignore
