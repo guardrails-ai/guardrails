@@ -77,8 +77,11 @@ runs:
 
     - name: Build & Upload
       shell: bash
+      env:
+        PACKAGE_DIRECTORY: ${{ inputs.package_directory }}
+        GUARDRAILS_TOKEN: ${{ inputs.guardrails_token }}
       run: |
-        cd ${{ inputs.package_directory }}
+        cd $PACKAGE_DIRECTORY
         python -m build
-        twine upload dist/* -u __token__ -p ${{ inputs.guardrails_token }} -r private-repository
+        twine upload dist/* -u __token__ -p $GUARDRAILS_TOKEN -r private-repository
         
