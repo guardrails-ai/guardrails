@@ -12,6 +12,12 @@ from guardrails.settings import settings
 from guardrails.hub.install import install
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.utils.prompt_utils import messages_to_prompt_string
+from guardrails.decorators.tool_guard import (
+    guard_tool,
+    ToolValidationError,
+    ToolGuard,
+    ToolValidationResult,
+)
 
 __all__ = [
     "Guard",
@@ -30,4 +36,8 @@ __all__ = [
     "settings",
     "install",
     "ValidationOutcome",
+    "guard_tool",
+    "ToolValidationError",
+    "ToolGuard",
+    "ToolValidationResult",
 ]
