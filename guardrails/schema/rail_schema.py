@@ -403,6 +403,8 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
 
 
 def rail_file_to_schema(file_path: str) -> ProcessedSchema:
+    if ".." in file_path:
+        raise ValueError("Invalid file path")
     with open(file_path, "r") as f:
         rail_xml = f.read()
     return rail_string_to_schema(rail_xml)

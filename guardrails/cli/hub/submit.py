@@ -26,7 +26,11 @@ def submit(
             filepath = f"./{package_name}.py"
 
         target = os.path.abspath(filepath)
-        with open(target, "r") as validator_file:
+        base_real = os.path.realpath(os.getcwd())
+        target_real = os.path.realpath(target)
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, "r") as validator_file:
             content = validator_file.read()
 
             post_validator_submit(package_name, content)

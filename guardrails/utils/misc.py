@@ -34,7 +34,11 @@ def generate_test_artifacts(
         os.makedirs(artifact_dir)
 
     # Save the rail spec.
-    with open(os.path.join(artifact_dir, f"{on_fail_type}.rail"), "w") as f:
+    base_real = os.path.realpath(artifact_dir)
+    target_real = os.path.realpath(os.path.join(artifact_dir, f"{on_fail_type}.rail"))
+    if os.path.commonpath([base_real, target_real]) != base_real:
+        raise Exception("Invalid file path")
+    with open(target_real, "w") as f:
         f.write(rail_spec)
 
     for i, logs in enumerate(call_log.iterations):
@@ -50,22 +54,36 @@ def generate_test_artifacts(
 
         # Save the compiled prompt.
         compiled_messages = logs.inputs.messages
-        with open(
-            os.path.join(artifact_dir, f"compiled_prompt_{on_fail_type}{ext}.txt"), "w"
-        ) as f:
+        base_real = os.path.realpath(artifact_dir)
+        target_real = os.path.realpath(
+            os.path.join(artifact_dir, f"compiled_prompt_{on_fail_type}{ext}.txt")
+        )
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, "w") as f:
             f.write(str(compiled_messages or ""))
 
         # Save the llm output.
         llm_output = logs.raw_output
-        with open(
-            os.path.join(artifact_dir, f"llm_output_{on_fail_type}{ext}.txt"), "w"
-        ) as f:
+        base_real = os.path.realpath(artifact_dir)
+        target_real = os.path.realpath(
+            os.path.join(artifact_dir, f"llm_output_{on_fail_type}{ext}.txt")
+        )
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, "w") as f:
             f.write(llm_output or "")
 
         # Save the validated response.
         validated_output = logs.guarded_output
+        base_real = os.path.realpath(artifact_dir)
+        target_real = os.path.realpath(
+            os.path.join(artifact_dir, f"validated_response_{on_fail_type}{ext}.py")
+        )
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
         with open(
-            os.path.join(artifact_dir, f"validated_response_{on_fail_type}{ext}.py"),
+            target_real,
             "w",
         ) as f:
             f.write("# ruff: noqa: E501\n")
