@@ -187,8 +187,11 @@ def create_validator(
         }
     )
 
-    target = os.path.abspath(filepath)
-    with open(target, "w") as validator_file:
+    base_real = os.path.realpath(".")
+    target_real = os.path.realpath(filepath)
+    if os.path.commonpath([base_real, target_real]) != base_real:
+        raise Exception("Invalid file path")
+    with open(target_real, "w") as validator_file:
         validator_file.write(template)
         validator_file.close()
 
