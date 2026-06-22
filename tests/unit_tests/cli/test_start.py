@@ -69,7 +69,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, False)
+        mock_start_api.assert_called_once_with("", "", 8000, False, "")
 
     def test_passes_env_override_true_to_new_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -78,7 +78,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env-override"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, True)
+        mock_start_api.assert_called_once_with("", "", 8000, True, "")
 
     def test_warns_and_ignores_env_override_for_old_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.2.9")
@@ -115,7 +115,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env", "custom.env"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("custom.env", "", 8000, False)
+        mock_start_api.assert_called_once_with("custom.env", "", 8000, False, "")
 
     def test_passes_custom_config(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -126,7 +126,7 @@ class TestStart:
         )
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "guardrails.config.py", 8000, False)
+        mock_start_api.assert_called_once_with("", "guardrails.config.py", 8000, False, "")
 
     def test_passes_custom_port(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.3.0")
@@ -135,7 +135,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--port", "9000"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 9000, False)
+        mock_start_api.assert_called_once_with("", "", 9000, False, "")
 
     def test_watch_mode_enables_setting(self, mocker):
         from guardrails.settings import settings
@@ -169,7 +169,7 @@ class TestStart:
         result = runner.invoke(guardrails, ["start", "--env-override"])
 
         assert result.exit_code == 0
-        mock_start_api.assert_called_once_with("", "", 8000, True)
+        mock_start_api.assert_called_once_with("", "", 8000, True, "")
 
     def test_calls_trace_if_enabled(self, mocker):
         self._make_start_api_mock(mocker, "0.3.0")
@@ -201,3 +201,34 @@ class TestStart:
         runner.invoke(guardrails, ["start"])
 
         mock_logger_info.assert_any_call("[INFO]: Starting Guardrails server")
+
+    def test_passes_middleware_to_new_api(self, mocker):
+        mock_start_api = self._make_start_api_mock(mocker, "0.4.0")
+
+        runner = CliRunner()
+        result = runner.invoke(guardrails, ["start", "--middleware", "middleware.py"])
+
+        assert result.exit_code == 0
+        mock_start_api.assert_called_once_with("", "", 8000, False, "middleware.py")
+
+    def test_middleware_not_supported_in_old_api(self, mocker):
+        """middleware parameter was introduced in guardrails-api >= 0.3.0;
+           NOT passed to versions before that."""
+        mock_start_api = self._make_start_api_mock(mocker, "0.2.9")
+
+        runner = CliRunner()
+        result = runner.invoke(guardrails, ["start"])
+
+        assert result.exit_code == 0
+        # Old API only receives 3 positional args (env, config, port)
+        mock_start_api.assert_called_once_with("", "", 8000)
+
+    def test_passes_middleware_to_version_040(self, mocker):
+        """guardrails-api 0.4.0 should receive all 5 params including middleware."""
+        mock_start_api = self._make_start_api_mock(mocker, "0.4.2")
+
+        runner = CliRunner()
+        result = runner.invoke(guardrails, ["start", "--config", "config.py", "--middleware", "mw.py"])
+
+        assert result.exit_code == 0
+        mock_start_api.assert_called_once_with("", "config.py", 8000, False, "mw.py")
