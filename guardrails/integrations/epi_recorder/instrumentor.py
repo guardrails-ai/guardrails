@@ -56,9 +56,21 @@ class EPIInstrumentor:
         self.redact = redact
         self.goal = goal
         self.tags = tags or []
+        self._originals: dict[str, Any] = {}
 
     def instrument(self):
         """Install EPI recording hooks on all Guardrails execution paths."""
+
+        self._originals = {
+            "Guard._execute": Guard._execute,
+            "AsyncGuard._execute": AsyncGuard._execute,
+            "Runner.step": Runner.step,
+            "StreamRunner.step": StreamRunner.step,
+            "AsyncRunner.async_step": AsyncRunner.async_step,
+            "AsyncStreamRunner.async_step": AsyncStreamRunner.async_step,
+            "Runner.call": Runner.call,
+            "AsyncRunner.async_call": AsyncRunner.async_call,
+        }
 
         Guard._execute = self._instrument_guard(Guard._execute)
         AsyncGuard._execute = self._instrument_async_guard(AsyncGuard._execute)
@@ -89,8 +101,21 @@ class EPIInstrumentor:
 
     def uninstrument(self):
         """Restore all original methods and remove hooks."""
-        # Store references to originals before uninstrumenting
-        pass  # In practice, users should re-import guardrails or restart
+        restore_map = [
+            ("Guard._execute", Guard),
+            ("AsyncGuard._execute", AsyncGuard),
+            ("Runner.step", Runner),
+            ("StreamRunner.step", StreamRunner),
+            ("AsyncRunner.async_step", AsyncRunner),
+            ("AsyncStreamRunner.async_step", AsyncStreamRunner),
+            ("Runner.call", Runner),
+            ("AsyncRunner.async_call", AsyncRunner),
+        ]
+        for name, cls in restore_map:
+            if name in self._originals:
+                setattr(cls, name.split(".")[-1], self._originals[name])
+        self._originals = {}
+        logger.info("EPIInstrumentor: uninstrumented")
 
     # ------------------------------------------------------------------
     # Guard execution wrappers
