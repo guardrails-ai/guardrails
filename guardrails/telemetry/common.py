@@ -128,6 +128,8 @@ def redact(value: str) -> str:
         str: The redacted string with all but the last four characters
               replaced by asterisks.
     """
+    if len(value) <= 4:
+        return "*" * len(value)
     redaction_length = len(value) - 4
     stars = "*" * redaction_length
     return f"{stars}{value[-4:]}"
