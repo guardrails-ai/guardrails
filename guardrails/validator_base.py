@@ -157,9 +157,10 @@ class Validator:
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
-        assert self.rail_alias in validators_registry, (
-            f"Validator {self.__class__.__name__} is not registered. "
-        )
+        if self.rail_alias not in validators_registry:
+            raise AssertionError(
+                f"Validator {self.__class__.__name__} is not registered. "
+            )
 
     def _set_on_fail_method(self, on_fail: Callable[[Any, FailResult], Any]):
         """Set the on_fail method for the validator."""
