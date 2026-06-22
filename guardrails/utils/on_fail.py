@@ -7,5 +7,6 @@ ON_FAIL_TYPES = Literal[
 
 def on_fail(fix_type: ON_FAIL_TYPES = "noop"):
     options = get_args(ON_FAIL_TYPES)
-    assert fix_type in options, f"'{fix_type}' is not in {options}"
+    if fix_type not in options:
+        raise AssertionError(f"'{fix_type}' is not in {options}")
     return {"on_fail": fix_type}
