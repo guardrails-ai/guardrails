@@ -48,6 +48,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+epi = ["epi-recorder>=4.2.0"]
 dev = [
     "pytest>=7.4.3",
     "pytest-asyncio>=0.21.1",
