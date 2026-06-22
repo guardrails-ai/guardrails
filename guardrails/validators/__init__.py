@@ -7,6 +7,12 @@ from guardrails.validator_base import (
     ErrorSpan,
 )
 
+from guardrails.validators.url_format import URLFormatValidator
+from guardrails.validators.url_dns_resolver import URLDNSResolver
+from guardrails.validators.url_reachability import URLReachability
+from guardrails.validators.domain_blocklist import DomainBlocklist
+from guardrails.validators.url_risk_scorer import URLRiskScorer
+
 __all__ = [
     "Validator",
     "register_validator",
@@ -14,4 +20,9 @@ __all__ = [
     "PassResult",
     "FailResult",
     "ErrorSpan",
+    "URLFormatValidator",
+    "URLDNSResolver",
+    "URLReachability",
+    "DomainBlocklist",
+    "URLRiskScorer",
 ]
