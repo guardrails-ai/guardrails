@@ -230,14 +230,7 @@ class Call(ArbitraryModel):
     @property
     def raw_outputs(self) -> Stack[str]:
         """The exact outputs from all LLM calls."""
-        return Stack(
-            *[
-                i.outputs.llm_response_info.output
-                if i.outputs.llm_response_info is not None
-                else None
-                for i in self.iterations
-            ]
-        )
+        return Stack(*[i.raw_output for i in self.iterations])
 
     @property
     def parsed_outputs(self) -> Stack[Union[str, List, Dict]]:
