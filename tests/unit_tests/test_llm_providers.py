@@ -525,3 +525,200 @@ def test_chat_prompt():
     # raises when messages are not provided
     with pytest.raises(PromptCallableException):
         chat_prompt(None)
+
+
+# ---------------------------------------------------------------------------
+# MiniMax provider tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def minimax_chat_response():
+    """A minimal mock of openai.types.chat.ChatCompletion for MiniMax."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class MockUsage:
+        completion_tokens: int
+        prompt_tokens: int
+        total_tokens: int
+
+    @dataclass
+    class MockMessage:
+        content: str
+        role: str
+
+    @dataclass
+    class MockChoice:
+        finish_reason: str
+        index: int
+        message: MockMessage
+
+    @dataclass
+    class MockResponse:
+        id: str
+        choices: List[MockChoice]
+        created: int
+        model: str
+        object: str
+        usage: MockUsage
+
+    return MockResponse(
+        id="minimax-test-id",
+        choices=[
+            MockChoice(
+                finish_reason="stop",
+                index=0,
+                message=MockMessage(content="Hello from MiniMax!", role="assistant"),
+            )
+        ],
+        created=0,
+        model="MiniMax-M2.7",
+        object="chat.completion",
+        usage=MockUsage(completion_tokens=10, prompt_tokens=5, total_tokens=15),
+    )
+
+
+def test_minimax_callable_uses_text(mocker, minimax_chat_response):
+    """MiniMaxCallable converts plain text into a user message."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    mock_create = mocker.MagicMock(return_value=minimax_chat_response)
+    mocker.patch(
+        "openai.OpenAI",
+        return_value=mocker.MagicMock(
+            chat=mocker.MagicMock(
+                completions=mocker.MagicMock(create=mock_create)
+            )
+        ),
+    )
+
+    callable_obj = MiniMaxCallable(
+        text="Say hi",
+        model="minimax/MiniMax-M2.7",
+        api_key="test-key",
+        temperature=0.8,
+    )
+    response = callable_obj()
+
+    assert isinstance(response, LLMResponse)
+    assert response.output == "Hello from MiniMax!"
+    assert response.prompt_token_count == 5
+    assert response.response_token_count == 10
+
+
+def test_minimax_callable_strips_prefix(mocker, minimax_chat_response):
+    """The 'minimax/' prefix is stripped before calling the OpenAI SDK."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    mock_create = mocker.MagicMock(return_value=minimax_chat_response)
+    client_mock = mocker.MagicMock(
+        chat=mocker.MagicMock(
+            completions=mocker.MagicMock(create=mock_create)
+        )
+    )
+    mocker.patch("openai.OpenAI", return_value=client_mock)
+
+    MiniMaxCallable(
+        text="Hello",
+        model="minimax/MiniMax-M2.7",
+        api_key="test-key",
+        temperature=0.7,
+    )()
+
+    call_kwargs = mock_create.call_args
+    # The first positional-or-keyword argument is 'model'
+    assert call_kwargs.kwargs["model"] == "MiniMax-M2.7"
+
+
+def test_minimax_callable_temperature_clamped(mocker, minimax_chat_response):
+    """temperature=0 is clamped to 1.0 for MiniMax."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    mock_create = mocker.MagicMock(return_value=minimax_chat_response)
+    mocker.patch(
+        "openai.OpenAI",
+        return_value=mocker.MagicMock(
+            chat=mocker.MagicMock(
+                completions=mocker.MagicMock(create=mock_create)
+            )
+        ),
+    )
+
+    MiniMaxCallable(
+        text="Hello",
+        model="minimax/MiniMax-M2.7",
+        api_key="test-key",
+        temperature=0,
+    )()
+
+    call_kwargs = mock_create.call_args
+    assert call_kwargs.kwargs["temperature"] == 1.0
+
+
+def test_minimax_callable_default_base_url(mocker, minimax_chat_response):
+    """Default base URL points to the international MiniMax endpoint."""
+    from guardrails.llm_providers import MINIMAX_DEFAULT_BASE_URL, MiniMaxCallable
+
+    openai_cls = mocker.patch("openai.OpenAI")
+    openai_cls.return_value.chat.completions.create.return_value = minimax_chat_response
+
+    MiniMaxCallable(
+        text="Hello",
+        model="minimax/MiniMax-M2.7",
+        api_key="test-key",
+        temperature=0.8,
+    )()
+
+    openai_cls.assert_called_once_with(
+        api_key="test-key", base_url=MINIMAX_DEFAULT_BASE_URL
+    )
+
+
+def test_minimax_callable_missing_api_key(mocker):
+    """PromptCallableException is raised when no API key is provided."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    mocker.patch.dict(os.environ, {}, clear=True)
+    # Ensure MINIMAX_API_KEY is not present
+    os.environ.pop("MINIMAX_API_KEY", None)
+
+    callable_obj = MiniMaxCallable(
+        text="Hello",
+        model="minimax/MiniMax-M2.7",
+        temperature=0.8,
+    )
+
+    with pytest.raises(PromptCallableException, match="MINIMAX_API_KEY"):
+        callable_obj()
+
+
+def test_get_llm_ask_returns_minimax_callable_for_minimax_model():
+    """get_llm_ask routes 'minimax/' models to MiniMaxCallable."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        callable_obj = get_llm_ask(None, model="minimax/MiniMax-M2.7")
+
+    assert isinstance(callable_obj, MiniMaxCallable)
+
+
+def test_get_llm_ask_returns_minimax_callable_for_highspeed_model():
+    """get_llm_ask routes 'minimax/MiniMax-M2.7-highspeed' to MiniMaxCallable."""
+    from guardrails.llm_providers import MiniMaxCallable
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        callable_obj = get_llm_ask(None, model="minimax/MiniMax-M2.7-highspeed")
+
+    assert isinstance(callable_obj, MiniMaxCallable)
+
+
+def test_get_async_llm_ask_returns_async_minimax_callable():
+    """get_async_llm_ask routes 'minimax/' models to AsyncMiniMaxCallable."""
+    from guardrails.llm_providers import AsyncMiniMaxCallable
+
+    callable_obj = get_async_llm_ask(None, model="minimax/MiniMax-M2.7")
+
+    assert isinstance(callable_obj, AsyncMiniMaxCallable)
