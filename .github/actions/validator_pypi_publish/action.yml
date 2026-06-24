@@ -19,6 +19,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Deprecation notice
+      shell: bash
+      run: |
+        echo "::warning title=Deprecated action::guardrails-ai/guardrails/.github/actions/validator_pypi_publish is DEPRECATED. It publishes to the private registry (pypi.guardrailsai.com), which is being retired. New validators live in the guardrails-ai/guardrails-hub monorepo and publish to public PyPI as guardrails-ai-<name> via trusted publishing (OIDC). See guardrails-hub/.github/workflows/validators_publish.yml. This action will be removed once the old per-validator repos are archived."
+
     - name: Checkout "Validator" Repository
       uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       with:

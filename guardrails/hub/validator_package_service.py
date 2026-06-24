@@ -24,7 +24,6 @@ from guardrails.cli.hub.utils import (
 )
 from guardrails_hub_types import Manifest
 from guardrails.cli.server.hub_client import get_validator_manifest
-from guardrails.settings import settings
 from guardrails.types.validator_registry import ValidatorRegistry
 
 
@@ -298,10 +297,13 @@ class ValidatorPackageService:
         import_path = ValidatorPackageService.get_import_path_from_validator_id(
             validator_id
         )
+        # import_path is a dotted module path (e.g. "guardrails_ai.detect_pii");
+        # convert it to a filesystem path under site-packages.
+        module_fs_path = import_path.replace(".", os.sep)
 
         relative_path = os.path.join(
             site_packages,
-            import_path,
+            module_fs_path,
             post_install_script,
         )
 
@@ -335,19 +337,25 @@ class ValidatorPackageService:
 
     @staticmethod
     def get_normalized_package_name(validator_id: str):
+        # The public PyPI distribution name for a hub validator is
+        # ``guardrails-ai-<name>`` (e.g. ``guardrails/detect_pii`` ->
+        # ``guardrails-ai-detect-pii``). The hub namespace component of the
+        # validator id is dropped because every guardrails-owned validator now
+        # publishes under the single ``guardrails-ai-*`` dist namespace on
+        # public PyPI. The private ``<org>-grhub-<name>`` registry naming is gone.
         validator_id_parts = validator_id.split("/")
-        concatanated_package_name = (
-            f"{validator_id_parts[0]}-grhub-{validator_id_parts[1]}"
-        )
-        pep_503_package_name = canonicalize_name(concatanated_package_name)
+        validator_name = validator_id_parts[-1]
+        concatenated_package_name = f"guardrails-ai-{validator_name}"
+        pep_503_package_name = canonicalize_name(concatenated_package_name)
         return pep_503_package_name
 
     @staticmethod
     def get_import_path_from_validator_id(validator_id):
-        pep_503_package_name = ValidatorPackageService.get_normalized_package_name(
-            validator_id
-        )
-        return pep_503_package_name.replace("-", "_")
+        # Public import path uses the PEP 420 ``guardrails_ai`` namespace
+        # package: ``guardrails/detect_pii`` -> ``guardrails_ai.detect_pii``.
+        validator_id_parts = validator_id.split("/")
+        validator_name = validator_id_parts[-1].replace("-", "_")
+        return f"guardrails_ai.{validator_name}"
 
     @staticmethod
     def install_hub_module(
@@ -362,13 +370,11 @@ class ValidatorPackageService:
         )
         validator_version = validator_version if validator_version else ""
 
-        guardrails_token = settings.rc.token
         installer = ValidatorPackageService.detect_installer()
 
-        install_flags = [
-            f"--index-url=https://__token__:{guardrails_token}@pypi.guardrailsai.com/simple",
-            "--extra-index-url=https://pypi.org/simple",
-        ]
+        # Validators now publish to public PyPI as ``guardrails-ai-<name>``;
+        # no private index URL or token is required.
+        install_flags = []
 
         if upgrade:
             install_flags.append("--upgrade")
@@ -376,7 +382,7 @@ class ValidatorPackageService:
         if quiet:
             install_flags.append("-q")
 
-        # Install from guardrails hub pypi server with public pypi index as fallback
+        # Install from public PyPI (pip's default index).
 
         try:
             full_package_name = f"{pep_503_package_name}[validators]{validator_version}"

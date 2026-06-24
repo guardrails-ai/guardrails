@@ -8,6 +8,10 @@ from .console import console
 @trace(name="guardrails-cli/hub/list")
 def list():
     """List all installed validators."""
+    from guardrails.cli.hub.deprecation import warn_hub_cli_deprecated
+
+    warn_hub_cli_deprecated(console, pip_hint="pip list")
+
     registry = get_registry()
 
     validators = registry.validators
