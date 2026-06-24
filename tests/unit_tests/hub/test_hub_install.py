@@ -88,7 +88,7 @@ class TestInstall:
             ),
             call(
                 level=5,
-                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
+                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails_ai.id import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 3
@@ -149,7 +149,7 @@ class TestInstall:
             ),
             call(
                 level=5,
-                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
+                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails_ai.id import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 3
@@ -207,7 +207,7 @@ class TestInstall:
             ),
             call(
                 level=5,
-                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
+                msg="✅Successfully installed hub://guardrails/id!\n\nImport validator:\nfrom guardrails_ai.id import TestValidator\n\nGet more info:\nhttps://guardrailsai.com/hub/validator/guardrails/id\n",  # noqa
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 3

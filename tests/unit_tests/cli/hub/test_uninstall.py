@@ -29,7 +29,7 @@ def test_remove_from_hub_inits(mocker):
     expected_calls = [
         call(
             "/site-packages/guardrails/hub/__init__.py",
-            "from guardrails_grhub_test_package import Validator, Helper",
+            "from guardrails_ai.test_package import Validator, Helper",
         ),
     ]
 
@@ -95,5 +95,5 @@ def test_uninstall_hub_module(mocker):
     uninstall_hub_module(manifest_mock)
 
     mock_pip_process.assert_called_once_with(
-        "uninstall", "guardrails-grhub-test-package", flags=["-y"], quiet=True
+        "uninstall", "guardrails-ai-test-package", flags=["-y"], quiet=True
     )

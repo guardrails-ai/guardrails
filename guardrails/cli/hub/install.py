@@ -50,6 +50,16 @@ def install_cli(
             ]
 
         from guardrails.hub.install import install_multiple
+        from guardrails.cli.hub.deprecation import (
+            pip_name_for_uri,
+            warn_hub_cli_deprecated,
+        )
+
+        pip_names = [
+            name for name in (pip_name_for_uri(uri) for uri in package_uris) if name
+        ]
+        pip_hint = "pip install " + " ".join(pip_names) if pip_names else "pip install"
+        warn_hub_cli_deprecated(console, pip_hint=pip_hint)
 
         def confirm():
             return typer.confirm(
