@@ -28,18 +28,31 @@ def has_code_block(
         int: The ending index of the code block.
     """  # noqa
     block_border = "```"
-    block_start_border = f"{block_border}{code_type}"
 
-    block_start_index = string_value.find(block_start_border)
-    if block_start_index != -1:
-        block_end_index = string_value.find(
-            block_border, (block_start_index + len(block_start_border))
-        )
-        return (
-            (True, block_start_index, block_end_index)
-            if block_end_index != -1
-            else (False, None, None)
-        )
+    block_start_index = string_value.find(block_border)
+    while block_start_index != -1:
+        opening_fence = regex.match(r"`{3,}", string_value[block_start_index:])
+        if opening_fence is None:
+            block_start_index = string_value.find(block_border, block_start_index + 1)
+            continue
+
+        opening_fence_len = len(opening_fence.group(0))
+        opening_line_end = string_value.find("\n", block_start_index)
+        if opening_line_end == -1:
+            return False, None, None
+
+        opening_info = string_value[
+            block_start_index + opening_fence_len : opening_line_end
+        ].strip()
+        if not code_type or opening_info.startswith(code_type):
+            block_end_index = string_value.find(block_border, opening_line_end + 1)
+            while block_end_index != -1:
+                closing_fence = regex.match(r"`{3,}", string_value[block_end_index:])
+                if closing_fence and len(closing_fence.group(0)) >= opening_fence_len:
+                    return True, block_start_index, block_end_index
+                block_end_index = string_value.find(block_border, block_end_index + 1)
+
+        block_start_index = string_value.find(block_border, block_start_index + 1)
     return (False, None, None)
 
 
@@ -60,10 +73,10 @@ def get_code_block(
     """  # noqa
     trimmed_input = string_value
 
-    block_border = "```"
-    block_start_border = f"{block_border}{code_type}"
+    opening_fence = regex.match(r"`{3,}", trimmed_input[start:])
+    opening_fence_len = len(opening_fence.group(0)) if opening_fence else 3
 
-    start_index = start + len(block_start_border)
+    start_index = start + opening_fence_len + len(code_type or "")
 
     contents = trimmed_input[start_index:end]
 
