@@ -1,5 +1,7 @@
 # TODO Temp to update once generated class is in
-from typing import Iterator, List
+from typing import Any, Iterator, List, Optional
+
+from pydantic import Field
 
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails_ai.types import FailResult
@@ -8,6 +10,15 @@ from guardrails_ai.types import ValidationSummary as IValidationSummary
 
 
 class ValidationSummary(IValidationSummary, ArbitraryModel):
+    value_before_validation: Optional[Any] = Field(
+        default=None,
+        alias="valueBeforeValidation",
+    )
+    value_after_validation: Optional[Any] = Field(
+        default=None,
+        alias="valueAfterValidation",
+    )
+
     @staticmethod
     def _generate_summaries_from_validator_logs(
         validator_logs: List[ValidatorLogs],
@@ -30,6 +41,8 @@ class ValidationSummary(IValidationSummary, ArbitraryModel):
                 propertyPath=log.property_path,
                 failureReason=failure_reason,
                 errorSpans=error_spans,  # type: ignore
+                valueBeforeValidation=log.value_before_validation,
+                valueAfterValidation=log.value_after_validation,
             )
 
     @staticmethod
