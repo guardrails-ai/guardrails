@@ -191,3 +191,34 @@ with open(
 def test_prune_extra_keys(schema, payload, pruned_payload):
     actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ("false", False),
+        ("False", False),
+        ("FALSE", False),
+        ("0", False),
+        ("no", False),
+        ("off", False),
+        ("true", True),
+        ("True", True),
+        ("1", True),
+        ("yes", True),
+        ("on", True),
+        (True, True),
+        (False, False),
+    ],
+)
+def test_coerce_to_type_boolean_strings(payload, expected):
+    """Boolean string coercion handles common truthy/falsy strings.
+
+    Regression: bool('false') is True in Python (non-empty string), so
+    coerce_to_type('false', BOOLEAN) returned True instead of False.
+    """
+    from guardrails.utils.parsing_utils import coerce_to_type
+    from guardrails.types.simple import SimpleTypes
+
+    result = coerce_to_type(payload, SimpleTypes.BOOLEAN)
+    assert result is expected
