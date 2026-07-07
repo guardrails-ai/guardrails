@@ -243,6 +243,66 @@ def test_gather_reasks():
     assert actual_reasks == expected_reasks
 
 
+def test_gather_reasks_multiple_in_same_list():
+    """Regression test: gather_reasks must not raise IndexError, and must not
+    silently corrupt valid_output, when a single list contains more than one
+    FieldReAsk.
+
+    _gather_reasks_in_list used to delete from `valid_output` at the same
+    index it was iterating over on `original` while both lists started out
+    the same length. Each deletion shrinks `valid_output` by one, so a
+    second (or later) deletion in the same list used a now-stale index,
+    causing an IndexError (or, depending on positions, deleting/keeping the
+    wrong element instead of crashing).
+    """
+    input_dict = {
+        "items": [
+            FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(error_message="bad item 0", fix_value=1)],
+            ),
+            "ok",
+            FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(error_message="bad item 2", fix_value=3)],
+            ),
+        ]
+    }
+
+    actual_reasks, valid_output = gather_reasks(input_dict)
+
+    assert len(actual_reasks) == 2
+    assert actual_reasks[0].path == ["items", 0]
+    assert actual_reasks[1].path == ["items", 2]
+    assert valid_output == {"items": ["ok"]}
+
+
+def test_gather_reasks_all_items_in_list_are_reasks():
+    """Same as above but every item in the list fails, exercising the
+    all-deletions-from-a-top-level-list path.
+    """
+    input_list = [
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(error_message="bad a")],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(error_message="bad b")],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(error_message="bad c")],
+        ),
+    ]
+
+    actual_reasks, valid_output = gather_reasks(input_list)
+
+    assert len(actual_reasks) == 3
+    assert [r.path for r in actual_reasks] == [[0], [1], [2]]
+    assert valid_output == []
+
+
 @pytest.mark.parametrize(
     "input_dict, expected_dict",
     [
