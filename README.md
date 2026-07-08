@@ -161,6 +161,25 @@ raw_output, validated_output, *rest = guard(
 print(validated_output)
 ```
 
+OpenAI-compatible providers can be used by configuring the OpenAI SDK client and passing its callable to Guardrails. For
+example, TokenLab uses the standard `/v1` base URL:
+
+```py
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.tokenlab.sh/v1",
+)
+
+raw_output, validated_output, *rest = guard(
+    llm_api=client.chat.completions.create,
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What kind of pet should I get?"}],
+)
+```
+
 This prints:
 ```
 {
