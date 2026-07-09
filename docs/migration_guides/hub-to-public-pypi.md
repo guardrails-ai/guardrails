@@ -1,6 +1,6 @@
 # Migration guide: Hub install → public PyPI
 
-Guardrails-AI-owned validators have moved from the private Guardrails registry
+As of Guardrails **0.11.0**, Guardrails-AI-owned validators have moved from the private Guardrails registry
 (`pypi.guardrailsai.com`, installed via `guardrails hub install`) to **public
 PyPI**. Each validator is now published as a `guardrails-ai-<name>` distribution
 and imported from the PEP 420 `guardrails_ai` namespace.
