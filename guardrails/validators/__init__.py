@@ -6,6 +6,7 @@ from guardrails.validator_base import (
     register_validator,
     ErrorSpan,
 )
+from guardrails.validators.agent_memory_guard import AgentMemoryGuard
 
 __all__ = [
     "Validator",
@@ -14,4 +15,5 @@ __all__ = [
     "PassResult",
     "FailResult",
     "ErrorSpan",
+    "AgentMemoryGuard",
 ]
