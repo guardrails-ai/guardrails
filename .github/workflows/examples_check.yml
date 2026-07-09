@@ -68,7 +68,7 @@ jobs:
       run: |
         source .venv/bin/activate
         mkdir /tmp/nltk_data;
-        python -m nltk.downloader -d /tmp/nltk_data punkt;
+        python -m nltk.downloader -d /tmp/nltk_data punkt punkt_tab;
     - name: Login to Guardrails
       run: |
         source .venv/bin/activate
