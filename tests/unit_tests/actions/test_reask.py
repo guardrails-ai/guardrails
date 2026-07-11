@@ -117,6 +117,24 @@ def test_sub_reasks_with_fixed_values(input_dict, expected_dict):
     assert sub_reasks_with_fixed_values(input_dict) == expected_dict
 
 
+def test_sub_reasks_with_fixed_values_handles_none_fail_results():
+    """Regression test for #1491: fail_results=None must not crash.
+
+    FieldReAsk.fail_results defaults to None. Accessing fail_results[0]
+    on an empty list raised IndexError, masking the intended "return the
+    ReAsk unchanged" fallback.
+    """
+    reask = FieldReAsk(incorrect_value="bad_value")
+    result = sub_reasks_with_fixed_values(reask)
+    assert isinstance(result, FieldReAsk)
+    assert result == reask
+
+    reask_empty = FieldReAsk(incorrect_value="bad_value", fail_results=[])
+    result_empty = sub_reasks_with_fixed_values(reask_empty)
+    assert isinstance(result_empty, FieldReAsk)
+    assert result_empty == reask_empty
+
+
 def test_gather_reasks():
     """Test that reasks are gathered."""
     input_dict = {
