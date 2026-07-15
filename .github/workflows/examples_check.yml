@@ -58,6 +58,11 @@ jobs:
         # Install extra stuff for notebook runs
         pip install "huggingface_hub[cli]" jupyter nbconvert
         pip install nltk
+
+        # litellm >=1.89 eagerly imports its proxy modules (which require fastapi)
+        # from the core completion() path when tool-calling is used, so notebooks
+        # that pass tools (e.g. json_function_calling_tools, summarizer) need it.
+        pip install fastapi
     - name: Huggingface Hub Login
       run: |
         source .venv/bin/activate
