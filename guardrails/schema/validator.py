@@ -106,8 +106,8 @@ def schema_validation(llm_output: Any, output_schema: Dict[str, Any], **kwargs):
             incorrectValue=llm_output,
             failResults=[
                 FailResult(
-                    fixValue=None,
-                    errorMessage=schema_error,
+                    fix_value=None,
+                    error_message=schema_error,
                 )
             ],
         )

@@ -2389,14 +2389,14 @@ protobuf = ["grpcio-tools (>=1.81.1)"]
 
 [[package]]
 name = "guardrails-ai-types"
-version = "0.4.0"
+version = "0.5.0"
 description = "Offical Guardrails AI Types"
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-    {file = "guardrails_ai_types-0.4.0-py3-none-any.whl", hash = "sha256:f9d218a01e23823d986837a91c38713fbd969d56a4eb2994fc732332e5a0fe3b"},
-    {file = "guardrails_ai_types-0.4.0.tar.gz", hash = "sha256:82bb9802c29c8a5cd85130abec3104cdf3f35c9b5d5d4b98bfaa9329b8080711"},
+    {file = "guardrails_ai_types-0.5.0-py3-none-any.whl", hash = "sha256:cc7db51bbe5b5ee0bdb4c50be98522940774f16f3b979c53bf849f004e2c8574"},
+    {file = "guardrails_ai_types-0.5.0.tar.gz", hash = "sha256:de872718c09c7560ee4b79190f6b10f994983c1c90df1b774c8a4df422fe835f"},
 ]
 
 [package.dependencies]

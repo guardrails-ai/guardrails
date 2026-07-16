@@ -202,8 +202,8 @@ def parse_json_llm_output(
             incorrectValue=output,
             failResults=[
                 FailResult(
-                    fixValue=None,
-                    errorMessage="Output is not parseable as JSON",
+                    fix_value=None,
+                    error_message="Output is not parseable as JSON",
                 )
             ],
         )
