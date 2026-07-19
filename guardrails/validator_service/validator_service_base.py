@@ -1,7 +1,8 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Awaitable, Dict, Optional, Union
+from typing import Any
+from collections.abc import Awaitable
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
@@ -20,21 +21,21 @@ from guardrails.telemetry import trace_validator
 from guardrails.utils.serialization_utils import deserialize, serialize
 from guardrails.validator_base import Validator
 
-ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
+ValidatorResult = ValidationResult | Awaitable[ValidationResult] | None
 
 
 @dataclass
 class ValidatorRun:
     value: Any
-    metadata: Dict
-    on_fail_action: Union[str, OnFailAction]
+    metadata: dict
+    on_fail_action: str | OnFailAction
     validator_logs: ValidatorLogs
 
 
 class ValidatorServiceBase:
     """Base class for validator services."""
 
-    def __init__(self, disable_tracer: Optional[bool] = True):
+    def __init__(self, disable_tracer: bool | None = True):
         self._disable_tracer = disable_tracer
 
     # NOTE: This is avoiding an issue with multiprocessing.
@@ -48,8 +49,8 @@ class ValidatorServiceBase:
         self,
         validator: Validator,
         value: Any,
-        metadata: Optional[Dict],
-        stream: Optional[bool] = False,
+        metadata: dict | None,
+        stream: bool | None = False,
         *,
         validation_session_id: str,
         **kwargs,
@@ -75,7 +76,7 @@ class ValidatorServiceBase:
         result: FailResult,
         value: Any,
         validator: Validator,
-        rechecked_value: Optional[ValidationResult] = None,
+        rechecked_value: ValidationResult | None = None,
     ):
         on_fail_descriptor = validator.on_fail_descriptor
         if on_fail_descriptor == OnFailAction.FIX:
@@ -147,7 +148,7 @@ class ValidatorServiceBase:
         self,
         validator: Validator,
         validator_logs: ValidatorLogs,
-        result: Optional[ValidationResult],
+        result: ValidationResult | None,
     ) -> ValidatorLogs:
         end_time = datetime.now()
         validator_logs.validation_result = result
@@ -160,15 +161,15 @@ class ValidatorServiceBase:
         iteration: Iteration,
         validator: Validator,
         value: Any,
-        metadata: Dict,
+        metadata: dict,
         absolute_property_path: str,
-        stream: Optional[bool] = False,
+        stream: bool | None = False,
         **kwargs,
     ) -> ValidatorRun:
         raise NotImplementedError
 
     # requires at least 2 validators
-    def multi_merge(self, original: str, new_values: list[str]) -> Optional[str]:
+    def multi_merge(self, original: str, new_values: list[str]) -> str | None:
         if len(new_values) == 0:
             return original
         current = new_values.pop()
