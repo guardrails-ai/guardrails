@@ -1,0 +1,14 @@
+# Trivy ignore file for the Dependency Audit gate.
+#
+# Only UNFIXABLE vulnerabilities (no upstream patch available) belong here.
+# `ignore-unfixed: false` is deliberately kept in the workflow so that any
+# FIXABLE HIGH/CRITICAL finding still fails CI.
+
+# CVE-2024-35515 - sqlitedict: arbitrary code execution via insecure
+# deserialization. There is NO patched release: 2.1.0 is the latest version
+# published upstream and the project is effectively unmaintained. sqlitedict
+# is pulled in only transitively by `manifest-ml` (the optional `manifest`
+# extra) and is never used to deserialize untrusted, attacker-controlled
+# data within guardrails. Residual risk is therefore acceptable until an
+# upstream fix or a manifest-ml release that drops the dependency exists.
+CVE-2024-35515
