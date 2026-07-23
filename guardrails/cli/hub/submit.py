@@ -21,6 +21,10 @@ def submit(
 ):
     """Submit a validator to the Guardrails AI team for review and
     publishing."""
+    from guardrails.cli.hub.deprecation import warn_hub_cli_deprecated
+
+    warn_hub_cli_deprecated()
+
     try:
         if not filepath or filepath == "./{package_name}.py":
             filepath = f"./{package_name}.py"

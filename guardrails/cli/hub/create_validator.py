@@ -161,6 +161,10 @@ def create_validator(
     For more complex submissions see here:
     https://github.com/guardrails-ai/validator-template?tab=readme-ov-file#how-to-create-a-guardrails-validator
     """
+    from guardrails.cli.hub.deprecation import warn_hub_cli_deprecated
+
+    warn_hub_cli_deprecated()
+
     disclaimer = """
 
     This utility is intended for creating simple validators.

@@ -62,6 +62,16 @@ def uninstall(
 ):
     """Uninstall a validator from the Hub."""
     from guardrails.hub.validator_package_service import ValidatorPackageService
+    from guardrails.cli.hub.deprecation import (
+        pip_name_for_uri,
+        warn_hub_cli_deprecated,
+    )
+
+    pip_name = pip_name_for_uri(package_uri)
+    warn_hub_cli_deprecated(
+        console,
+        pip_hint=f"pip uninstall {pip_name}" if pip_name else "pip uninstall",
+    )
 
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")

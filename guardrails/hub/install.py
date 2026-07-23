@@ -156,26 +156,31 @@ def install(
     verbose_printer(
         f"✅Successfully installed {validator_id}{installed_version_message}!\n\n"
     )
+    import_path = ValidatorPackageService.get_import_path_from_validator_id(
+        validator_id
+    )
     success_message_cli = Template(
         "[bold]Import validator:[/bold]\n"
-        "from guardrails.hub import ${export}\n\n"
+        "from ${import_path} import ${export}\n\n"
         "[bold]Get more info:[/bold]\n"
         "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,
         export=module_manifest.exports[0],
+        import_path=import_path,
     )
     success_message_logger = Template(
         "✅Successfully installed ${module_name}!\n\n"
         "Import validator:\n"
-        "from guardrails.hub import ${export}\n\n"
+        "from ${import_path} import ${export}\n\n"
         "Get more info:\n"
         "https://guardrailsai.com/hub/validator/${id}\n"
     ).safe_substitute(
         module_name=package_uri,
         id=module_manifest.id,
         export=module_manifest.exports[0],
+        import_path=import_path,
     )
     quiet_printer(success_message_cli)  # type: ignore
     cli_logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore

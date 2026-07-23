@@ -76,7 +76,7 @@ class TestAddToHubInits:
 
         mock_hub_read = mocker.patch.object(hub_init_file, "read")
         mock_hub_read.return_value = (
-            "from guardrails_ai_grhub_id import helper, TestValidator"  # noqa
+            "from guardrails_ai.id import helper, TestValidator"  # noqa
         )
 
         hub_seek_spy = mocker.spy(hub_init_file, "seek")
@@ -149,7 +149,7 @@ class TestAddToHubInits:
         hub_write_calls = [
             call("\n"),
             call(
-                "from guardrails_ai_grhub_id import TestValidator"  # noqa
+                "from guardrails_ai.id import TestValidator"  # noqa
             ),
         ]
         hub_write_spy.assert_has_calls(hub_write_calls)
@@ -354,7 +354,7 @@ class TestRunPostInstall:
         mock_subprocess_check_output.assert_called_once_with(
             [
                 mock_sys_executable,
-                "./site_packages/guardrails_ai_grhub_id/post_install.py",  # noqa
+                "./site_packages/guardrails_ai/id/post_install.py",  # noqa
             ]
         )
 
@@ -416,7 +416,7 @@ class TestValidatorPackageService:
         manifest = cast(Manifest, self.manifest)
         ValidatorPackageService.get_validator_from_manifest(manifest)
 
-        mock_reload_module.assert_called_once_with("guardrails_grhub_id")
+        mock_reload_module.assert_called_once_with("guardrails_ai.id")
 
     def test_get_module_name_valid(self):
         module_name, module_version = ValidatorPackageService.get_validator_id(
@@ -433,10 +433,6 @@ class TestValidatorPackageService:
         mock_installer = mocker.patch(
             "guardrails.hub.validator_package_service.installer_process"
         )
-        mock_settings = mocker.patch(
-            "guardrails.hub.validator_package_service.settings"
-        )
-        mock_settings.rc.token = "mock-token"
         mocker.patch.object(
             ValidatorPackageService, "detect_installer", return_value="pip"
         )
@@ -469,17 +465,13 @@ class TestValidatorPackageService:
         mock_installer = mocker.patch(
             "guardrails.hub.validator_package_service.installer_process"
         )
-        mock_settings = mocker.patch(
-            "guardrails.hub.validator_package_service.settings"
-        )
-        mock_settings.rc.token = "mock-token"
         mocker.patch.object(
             ValidatorPackageService, "detect_installer", return_value="pip"
         )
 
         mock_installer.side_effect = [
-            PipProcessError("install", "guardrails-ai-grhub-id"),
-            "Sucessfully installed guardrails-ai-grhub-id",
+            PipProcessError("install", "guardrails-ai-id"),
+            "Sucessfully installed guardrails-ai-id",
         ]
 
         manifest = Manifest.from_dict(
@@ -504,21 +496,15 @@ class TestValidatorPackageService:
         installer_calls = [
             call(
                 "install",
-                "guardrails-ai-grhub-id[validators]",
-                [
-                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
-                    "--extra-index-url=https://pypi.org/simple",
-                ],
+                "guardrails-ai-id[validators]",
+                [],
                 quiet=False,
                 installer="pip",
             ),
             call(
                 "install",
-                "guardrails-ai-grhub-id",
-                [
-                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
-                    "--extra-index-url=https://pypi.org/simple",
-                ],
+                "guardrails-ai-id",
+                [],
                 quiet=False,
                 installer="pip",
             ),
@@ -529,10 +515,6 @@ class TestValidatorPackageService:
         mock_installer = mocker.patch(
             "guardrails.hub.validator_package_service.installer_process"
         )
-        mock_settings = mocker.patch(
-            "guardrails.hub.validator_package_service.settings"
-        )
-        mock_settings.rc.token = "mock-token"
         mocker.patch.object(
             ValidatorPackageService, "detect_installer", return_value="pip"
         )
@@ -561,11 +543,8 @@ class TestValidatorPackageService:
         installer_calls = [
             call(
                 "install",
-                "guardrails-ai-grhub-id[validators]",
-                [
-                    "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
-                    "--extra-index-url=https://pypi.org/simple",
-                ],
+                "guardrails-ai-id[validators]",
+                [],
                 quiet=False,
                 installer="pip",
             ),
@@ -642,9 +621,9 @@ class TestRegisterValidator:
         assert registry["version"] == 1
         assert "guardrails/detect_pii" in registry["validators"]
         entry = registry["validators"]["guardrails/detect_pii"]
-        assert entry["import_path"] == "guardrails_grhub_detect_pii"
+        assert entry["import_path"] == "guardrails_ai.detect_pii"
         assert entry["exports"] == ["DetectPII"]
-        assert entry["package_name"] == "guardrails-grhub-detect-pii"
+        assert entry["package_name"] == "guardrails-ai-detect-pii"
         assert "installed_at" in entry
 
     def test_appends_to_existing_registry(self, tmp_path, mocker):
@@ -845,10 +824,6 @@ class TestInstallHubModuleWithInstaller:
             "guardrails.hub.validator_package_service.installer_process",
             return_value="Success",
         )
-        mock_settings = mocker.patch(
-            "guardrails.hub.validator_package_service.settings"
-        )
-        mock_settings.rc.token = "mock-token"
         mocker.patch.object(
             ValidatorPackageService,
             "detect_installer",
@@ -859,11 +834,8 @@ class TestInstallHubModuleWithInstaller:
 
         mock_installer.assert_called_once_with(
             "install",
-            "guardrails-grhub-detect-pii[validators]",
-            [
-                "--index-url=https://__token__:mock-token@pypi.guardrailsai.com/simple",
-                "--extra-index-url=https://pypi.org/simple",
-            ],
+            "guardrails-ai-detect-pii[validators]",
+            [],
             quiet=False,
             installer=detected_installer,
         )

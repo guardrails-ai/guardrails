@@ -64,13 +64,13 @@ pip install guardrails-ai
 2. Install a guardrail from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/regex_match
+    pip install guardrails-ai-regex-match
     ```
 3. Create a Guard from the installed guardrail.
 
     ```python
     from guardrails import Guard, OnFailAction
-    from guardrails.hub import RegexMatch
+    from guardrails_ai.regex_match import RegexMatch
 
     guard = Guard().use(
         RegexMatch, regex="\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", on_fail=OnFailAction.EXCEPTION
@@ -91,15 +91,15 @@ pip install guardrails-ai
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check
-    guardrails hub install hub://guardrails/toxic_language
+    pip install guardrails-ai-competitor-check guardrails-ai-toxic-language
     ```
 
     Then, create a Guard from the installed guardrails.
 
     ```python
     from guardrails import Guard, OnFailAction
-    from guardrails.hub import CompetitorCheck, ToxicLanguage
+    from guardrails_ai.competitor_check import CompetitorCheck
+    from guardrails_ai.toxic_language import ToxicLanguage
 
     guard = Guard().use(
         CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
