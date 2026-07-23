@@ -38,3 +38,38 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          if [ -z "$version" ]; then
+            echo "Could not read version from pyproject.toml" >&2
+            exit 1
+          fi
+          echo "version_tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cut GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version_tag="${{ steps.version.outputs.version_tag }}"
+          # Idempotent: workflow_dispatch can be re-run, and the tag may already exist.
+          if gh release view "$version_tag" >/dev/null 2>&1; then
+            echo "Release $version_tag already exists; skipping."
+            exit 0
+          fi
+          # Mark PEP 440 pre-releases (e.g. v0.11.0a1) as GitHub pre-releases.
+          prerelease_flag=""
+          if [[ "$version_tag" =~ (a|b|rc)[0-9]*$ ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          echo "Cutting GitHub Release for $version_tag $prerelease_flag"
+          # --target creates the tag at this commit (this workflow does not tag separately).
+          gh release create "$version_tag" \
+            --title "$version_tag" \
+            --target "$GITHUB_SHA" \
+            --generate-notes \
+            $prerelease_flag
