@@ -24,8 +24,10 @@ to update your token. The token is only required to install validators and run r
 inference. It is not needed for local validation.
 {FIND_NEW_TOKEN}"""
 
-VALIDATOR_HUB_SERVICE = os.getenv(
-    "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
+# ponytail: use metadata service for manifest/template/auth calls to avoid inference rate limits
+VALIDATOR_HUB_METADATA_SERVICE = os.getenv(
+    "GR_VALIDATOR_HUB_METADATA_SERVICE",
+    os.getenv("GR_VALIDATOR_HUB_SERVICE", "https://hub-metadata.guardrailsai.com"),
 )
 validator_manifest_endpoint = Template(
     "validator/${namespace}/${validator_name}/manifest"
@@ -84,7 +86,7 @@ def fetch_module_manifest(
     manifest_path = validator_manifest_endpoint.safe_substitute(
         namespace=namespace, validator_name=validator_name
     )
-    manifest_url = f"{VALIDATOR_HUB_SERVICE}/{manifest_path}"
+    manifest_url = f"{VALIDATOR_HUB_METADATA_SERVICE}/{manifest_path}"
     return fetch(manifest_url, token, anonymousUserId)
 
 
@@ -116,7 +118,7 @@ def fetch_template(template_address: str) -> Dict[str, Any]:
         "/", 1
     )
     template_path = f"guard-templates/{namespace}/{template_name}"
-    template_url = f"{VALIDATOR_HUB_SERVICE}/{template_path}"
+    template_url = f"{VALIDATOR_HUB_METADATA_SERVICE}/{template_path}"
     return fetch(template_url, token, settings.rc.id)
 
 
@@ -165,7 +167,7 @@ def get_validator_manifest(module_name: str):
 def get_auth():
     try:
         token = get_jwt_token(settings.rc)
-        auth_url = f"{VALIDATOR_HUB_SERVICE}/auth"
+        auth_url = f"{VALIDATOR_HUB_METADATA_SERVICE}/auth"
         response = fetch(auth_url, token, settings.rc.id)
         if not response:
             raise AuthenticationError("Failed to authenticate!")
@@ -182,7 +184,7 @@ def get_auth():
 def post_validator_submit(package_name: str, content: str):
     try:
         token = get_jwt_token(settings.rc)
-        submission_url = f"{VALIDATOR_HUB_SERVICE}/validator/submit"
+        submission_url = f"{VALIDATOR_HUB_METADATA_SERVICE}/validator/submit"
 
         headers = {
             "Authorization": f"Bearer {token}",
