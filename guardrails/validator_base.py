@@ -373,7 +373,9 @@ class Validator:
             "Authorization": f"Bearer {hub_jwt_token}",
             "Content-Type": "application/json",
         }
-        req = requests.post(validation_endpoint, data=request_body, headers=headers)
+        req = requests.post(
+            validation_endpoint, data=request_body, headers=headers, timeout=(10, 300)
+        )
         if not req.ok:
             if req.status_code == 401:
                 raise Exception(

@@ -724,3 +724,26 @@ async def test_input_validation_fail_async(
     assert str(excinfo.value) == unstructured_messages_error
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
+
+
+
+def test_hub_inference_request_uses_timeout(mocker):
+    from guardrails.validator_base import Validator
+
+    mock_post = mocker.patch("guardrails.validator_base.requests.post")
+    mock_post.return_value.ok = True
+    mock_post.return_value.json.return_value = {"result": "ok"}
+
+    mocker.patch("guardrails.validator_base.get_jwt_token", return_value="fake-token")
+
+    validator = Validator.__new__(Validator)
+    validator.rail_alias = "test"
+
+    result = validator._hub_inference_request(
+        '{"input": "test"}', "https://example.com/validate"
+    )
+
+    mock_post.assert_called_once()
+    call_kwargs = mock_post.call_args
+    assert call_kwargs.kwargs.get("timeout") == (10, 300)
+
