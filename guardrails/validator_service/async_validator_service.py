@@ -73,6 +73,8 @@ class AsyncValidatorService(ValidatorServiceBase):
         )
 
         if result is None:
+            if not stream:
+                raise RuntimeError(f"Unexpected result type {type(result)}")
             result = PassResult()
         return result
 

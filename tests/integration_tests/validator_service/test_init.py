@@ -5,6 +5,7 @@ import pytest
 
 from guardrails.validator_service import should_run_sync, get_loop
 from guardrails.classes.history import Iteration
+from guardrails.validator_base import Validator, register_validator
 
 
 try:
@@ -162,6 +163,36 @@ class TestValidate:
 
         SequentialValidatorService.__init__.assert_called_once()
         SequentialValidatorService.validate.assert_called_once()
+
+
+@register_validator(name="tests/returns-none", data_type="string")
+class ReturnsNone(Validator):
+    """A malformed validator: _validate() returns neither Pass nor Fail."""
+
+    def _validate(self, value, metadata):
+        return None
+
+
+@pytest.mark.parametrize("run_sync", ["true", "false"])
+def test_non_stream_none_result_errors_in_both_services(monkeypatch, run_sync):
+    # Both validator services must reject an undocumented non-stream result
+    # type rather than one of them promoting it to a pass.
+    monkeypatch.setenv("GUARDRAILS_RUN_SYNC", run_sync)
+
+    from guardrails.validator_service import validate
+
+    iteration = Iteration(
+        call_id="mock_call_id",
+        index=0,
+    )
+
+    with pytest.raises(RuntimeError, match="Unexpected result type"):
+        validate(
+            value="value",
+            metadata={},
+            validator_map={"$": [ReturnsNone()]},
+            iteration=iteration,
+        )
 
 
 @pytest.mark.asyncio
