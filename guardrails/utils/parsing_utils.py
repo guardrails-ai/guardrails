@@ -361,7 +361,7 @@ def coerce_property(
     if properties and isinstance(payload, dict):
         for k, v in properties.items():
             payload_value = payload.get(k)
-            if payload_value:
+            if payload_value is not None:
                 payload[k] = coerce_property(payload_value, v)
 
     ### Object Additional Properties ###
@@ -377,7 +377,7 @@ def coerce_property(
         ]
         for prop in additional_properties:
             payload_value = payload.get(prop)
-            if payload_value:
+            if payload_value is not None:
                 payload[prop] = coerce_property(
                     payload_value, additional_properties_schema
                 )

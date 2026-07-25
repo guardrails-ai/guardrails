@@ -119,3 +119,81 @@ float_schema = {"type": "number"}
 def test_coerce_types(schema, given, expected):
     coerced_payload = coerce_types(given, schema)
     assert coerced_payload == expected
+
+
+class TestCoercePropertyFalsyValues:
+    """Regression tests: coerce_property must process falsy values (0, False,
+    empty string) rather than skipping them."""
+
+    def test_zero_integer_is_coerced(self):
+        """Integer 0 in payload should still be coerced to target type."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "count": {"type": "string"},
+            },
+        }
+        payload = {"count": 0}
+        result = coerce_types(payload, schema)
+        assert result == {"count": "0"}
+
+    def test_false_boolean_is_coerced(self):
+        """Boolean False in payload should still be coerced to target type."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "flag": {"type": "string"},
+            },
+        }
+        payload = {"flag": False}
+        result = coerce_types(payload, schema)
+        assert result == {"flag": "False"}
+
+    def test_empty_string_is_coerced(self):
+        """Empty string in payload should still be coerced to target type."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "integer"},
+            },
+        }
+        # int("") raises ValueError, coerce() returns original value
+        payload = {"name": ""}
+        result = coerce_types(payload, schema)
+        assert result == {"name": ""}
+
+    def test_zero_float_is_coerced(self):
+        """Float 0.0 in payload should still be coerced to target type."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "score": {"type": "string"},
+            },
+        }
+        payload = {"score": 0.0}
+        result = coerce_types(payload, schema)
+        assert result == {"score": "0.0"}
+
+    def test_additional_properties_falsy_values(self):
+        """Falsy values in additional properties should also be coerced."""
+        schema = {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {"type": "string"},
+        }
+        payload = {"count": 0, "flag": False}
+        result = coerce_types(payload, schema)
+        assert result == {"count": "0", "flag": "False"}
+
+    def test_none_is_still_skipped(self):
+        """None values (missing keys) should still be skipped."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "integer"},
+                "age": {"type": "string"},
+            },
+        }
+        payload = {"name": "42"}
+        result = coerce_types(payload, schema)
+        assert result == {"name": 42}
