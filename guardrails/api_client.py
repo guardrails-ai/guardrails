@@ -43,11 +43,7 @@ class GuardrailsApiClient:
         )
 
     async def aupsert_guard(self, guard: Guard) -> Guard:
-        existing_guard: Guard | None = None
-        try:
-            existing_guard = await self.afetch_guard(guard.name)
-        except Exception:
-            pass
+        existing_guard: Guard | None = await self.afetch_guard(guard.name)
 
         if existing_guard:
             response = await self.ahttp_client.put(
@@ -64,11 +60,7 @@ class GuardrailsApiClient:
         return Guard.model_validate(res_body)
 
     def upsert_guard(self, guard: Guard) -> Guard:
-        existing_guard: Guard | None = None
-        try:
-            existing_guard = self.fetch_guard(guard.name)
-        except Exception:
-            pass
+        existing_guard: Guard | None = self.fetch_guard(guard.name)
 
         if existing_guard:
             response = self.http_client.put(
@@ -85,34 +77,26 @@ class GuardrailsApiClient:
         return Guard.model_validate(res_body)
 
     async def afetch_guard(self, guard_name: str) -> Optional[Guard]:
-        try:
-            response = await self.ahttp_client.get(
-                f"/guards?name={guard_name}",
-            )
-            response.raise_for_status()
-            res_body = response.json()
-            first = res_body[0] if res_body and len(res_body) > 0 else None
-            if not first:
-                raise ValueError(f"No guard found for name {guard_name}")
-            return Guard.model_validate(first)
-        except Exception as e:
-            logger.error(f"Error fetching guard {guard_name}: {e}")
+        response = await self.ahttp_client.get(
+            f"/guards?name={guard_name}",
+        )
+        response.raise_for_status()
+        res_body = response.json()
+        first = res_body[0] if res_body and len(res_body) > 0 else None
+        if not first:
             return None
+        return Guard.model_validate(first)
 
     def fetch_guard(self, guard_name: str) -> Optional[Guard]:
-        try:
-            response = self.http_client.get(
-                f"/guards?name={guard_name}",
-            )
-            response.raise_for_status()
-            res_body = response.json()
-            first = res_body[0] if res_body and len(res_body) > 0 else None
-            if not first:
-                raise ValueError(f"No guard found for name {guard_name}")
-            return Guard.model_validate(first)
-        except Exception as e:
-            logger.error(f"Error fetching guard {guard_name}: {e}")
+        response = self.http_client.get(
+            f"/guards?name={guard_name}",
+        )
+        response.raise_for_status()
+        res_body = response.json()
+        first = res_body[0] if res_body and len(res_body) > 0 else None
+        if not first:
             return None
+        return Guard.model_validate(first)
 
     async def adelete_guard(self, guard_name: str) -> Optional[Guard]:
         guard = await self.afetch_guard(guard_name)
@@ -166,6 +150,7 @@ class GuardrailsApiClient:
         except HTTPStatusError as e:
             if e.response.status_code == 400:
                 raise ValidationError(str(e)) from e
+            raise
 
     def validate(
         self,
@@ -203,6 +188,7 @@ class GuardrailsApiClient:
         except HTTPStatusError as e:
             if e.response.status_code == 400:
                 raise ValidationError(str(e)) from e
+            raise
 
     async def astream_validate(
         self,
