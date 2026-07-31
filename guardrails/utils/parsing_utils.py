@@ -327,14 +327,18 @@ def coerce_property(
         possible_values = []
         for sub_schema in one_of:
             possible_values.append(coerce_property(payload, sub_schema))
-            payload = safe_get(list(filter(None, possible_values)), 0, payload)
+            payload = safe_get(
+                [v for v in possible_values if v is not None], 0, payload
+            )
 
     any_of = schema.get("anyOf")
     if any_of:
         possible_values = []
         for sub_schema in any_of:
             possible_values.append(coerce_property(payload, sub_schema))
-            payload = safe_get(list(filter(None, possible_values)), 0, payload)
+            payload = safe_get(
+                [v for v in possible_values if v is not None], 0, payload
+            )
 
     all_of: List[Dict[str, Any]] = schema.get("allOf", [])
     if all_of:
