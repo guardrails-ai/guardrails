@@ -502,17 +502,10 @@ class AsyncGuard(Guard, Generic[OT]):
                         error="The response from the server was empty!",
                     )
                 else:
-                    validated_output = (
-                        cast(OT, validation_output.validated_output)
-                        if validation_output.validated_output
-                        else None
-                    )
-                    yield ValidationOutcome[OT](
-                        call_id=validation_output.call_id,  # type: ignore
-                        raw_llm_output=validation_output.raw_llm_output,  # type: ignore
-                        validatedOutput=validated_output,
-                        validationPassed=(validation_output.validation_passed is True),
-                    )
+                    # issue #1588: use the shared adapter so streaming through
+                    # the server carries validation summaries (and any other
+                    # wire fields) just like the local streaming path.
+                    yield ValidationOutcome[OT].from_interface(validation_output)
             # TODO re-enable this once we have a way to get history
             # from a multi-node server
             # if validation_output:
