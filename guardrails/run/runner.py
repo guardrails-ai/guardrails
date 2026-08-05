@@ -20,10 +20,8 @@ from guardrails.prompt.messages import Messages
 from guardrails.run.utils import messages_source
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
-from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
-from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.parsing_utils import (
     coerce_types,
@@ -71,9 +69,6 @@ class Runner:
     num_reasks: int
     full_schema_reask: bool = False
 
-    # Internal Metrics Collection
-    disable_tracer: Optional[bool] = True
-
     # QUESTION: Are any of these init args actually necessary for initialization?
     # ANSWER: _Maybe_ messages for Prompt initialization
     #   but even that can happen at execution time.
@@ -91,7 +86,6 @@ class Runner:
         output: Optional[str] = None,
         base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
-        disable_tracer: Optional[bool] = True,
         exec_options: Optional[GuardExecutionOptions] = None,
     ):
         # Validation Inputs
@@ -131,15 +125,6 @@ class Runner:
         self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
 
-        # Internal Metrics Collection
-        # Get metrics opt-out from credentials
-        self._disable_tracer = disable_tracer
-
-        # Get the HubTelemetry singleton
-        self._hub_telemetry = HubTelemetry()
-        self._hub_telemetry._enabled = not self._disable_tracer
-
-    @trace(name="/reasks", origin="Runner.__call__")
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -200,7 +185,6 @@ class Runner:
             raise e
         return call_log
 
-    @trace(name="/step", origin="Runner.step")
     @trace_step
     def step(
         self,
@@ -284,7 +268,6 @@ class Runner:
             raise e
         return iteration
 
-    @trace(name="/input_validation", origin="Runner.validate_messages")
     def validate_messages(
         self, call_log: Call, messages: MessageHistory, attempt_number: int
     ) -> None:
@@ -306,7 +289,6 @@ class Runner:
                 metadata=self.metadata,
                 validator_map=self.validation_map,
                 iteration=iteration,
-                disable_tracer=self._disable_tracer,
                 path="messages",
             )
 
@@ -346,7 +328,6 @@ class Runner:
 
         return formatted_messages
 
-    @trace(name="/input_validation", origin="Runner.validate_prompt")
     def validate_prompt(self, call_log: Call, prompt: Prompt, attempt_number: int):
         inputs = Inputs(
             llm_output=prompt.source,
@@ -358,7 +339,6 @@ class Runner:
             metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
-            disable_tracer=self._disable_tracer,
             path="prompt",
         )
 
@@ -374,7 +354,6 @@ class Runner:
             raise ValidationError("Prompt validation failed")
         return Prompt(cast(str, validated_prompt))
 
-    @trace(name="/input_prep", origin="Runner.prepare")
     def prepare(
         self,
         call_log: Call,
@@ -400,7 +379,6 @@ class Runner:
 
         return messages
 
-    @trace(name="/llm_call", origin="Runner.call")
     @trace_call
     def call(
         self,
@@ -414,7 +392,6 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
-
         # If the API supports a base model, pass it in.
         api_fn = api
         if api is not None:
@@ -440,7 +417,6 @@ class Runner:
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
-    @trace(name="/validation", origin="Runner.validate")
     def validate(
         self,
         iteration: Iteration,
@@ -467,7 +443,6 @@ class Runner:
             metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
-            disable_tracer=self._disable_tracer,
             path="$",
             stream=stream,
             **kwargs,

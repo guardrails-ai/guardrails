@@ -13,7 +13,6 @@ from guardrails.logger import set_scope
 from guardrails.run.runner import Runner
 from guardrails.run.utils import messages_source
 from guardrails.schema.validator import schema_validation
-from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.inputs import MessageHistory
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
@@ -40,7 +39,6 @@ class AsyncRunner(Runner):
         output: Optional[str] = None,
         base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
-        disable_tracer: Optional[bool] = True,
         exec_options: Optional[GuardExecutionOptions] = None,
     ):
         super().__init__(
@@ -54,14 +52,12 @@ class AsyncRunner(Runner):
             output=output,
             base_model=base_model,
             full_schema_reask=full_schema_reask,
-            disable_tracer=disable_tracer,
             exec_options=exec_options,
         )
         self.api = api
 
     # TODO: Refactor this to use inheritance and overrides
     # Why are we using a different method here instead of just overriding?
-    @async_trace(name="/reasks", origin="AsyncRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
@@ -125,7 +121,6 @@ class AsyncRunner(Runner):
         return call_log
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="/step", origin="AsyncRunner.async_step")
     @trace_async_step
     async def async_step(
         self,
@@ -209,7 +204,6 @@ class AsyncRunner(Runner):
         return iteration
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="/llm_call", origin="AsyncRunner.async_call")
     @trace_async_call
     async def async_call(
         self,
@@ -242,7 +236,6 @@ class AsyncRunner(Runner):
         return llm_response
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="/validation", origin="AsyncRunner.async_validate")
     async def async_validate(
         self,
         iteration: Iteration,
@@ -269,7 +262,6 @@ class AsyncRunner(Runner):
             metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
-            disable_tracer=self._disable_tracer,
             path="$",
             stream=stream,
             **kwargs,
@@ -282,7 +274,6 @@ class AsyncRunner(Runner):
         return validated_output
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="/input_prep", origin="AsyncRunner.async_prepare")
     async def async_prepare(
         self,
         call_log: Call,
@@ -336,7 +327,6 @@ class AsyncRunner(Runner):
 
         return formatted_messages
 
-    @async_trace(name="/input_validation", origin="AsyncRunner.validate_messages")
     async def validate_messages(
         self, call_log: Call, messages: MessageHistory, attempt_number: int
     ):
@@ -358,7 +348,6 @@ class AsyncRunner(Runner):
                 metadata=self.metadata,
                 validator_map=self.validation_map,
                 iteration=iteration,
-                disable_tracer=self._disable_tracer,
                 path="messages",
             )
 

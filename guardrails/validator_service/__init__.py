@@ -63,7 +63,6 @@ def validate(
     metadata: dict,
     validator_map: ValidatorMap,
     iteration: Iteration,
-    disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
 ):
@@ -72,17 +71,17 @@ def validate(
 
     loop = None
     if should_run_sync():
-        validator_service = SequentialValidatorService(disable_tracer)
+        validator_service = SequentialValidatorService()
     else:
         try:
             loop = get_loop()
-            validator_service = AsyncValidatorService(disable_tracer)
+            validator_service = AsyncValidatorService()
         except RuntimeError:
             warnings.warn(
                 "Could not obtain an event loop."
                 " Falling back to synchronous validation."
             )
-            validator_service = SequentialValidatorService(disable_tracer)
+            validator_service = SequentialValidatorService()
 
     return validator_service.validate(
         value,
@@ -101,13 +100,12 @@ def validate_stream(
     metadata: dict,
     validator_map: ValidatorMap,
     iteration: Iteration,
-    disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
 ) -> Iterator[StreamValidationResult]:
     if path is None:
         path = "$"
-    sequential_validator_service = SequentialValidatorService(disable_tracer)
+    sequential_validator_service = SequentialValidatorService()
     gen = sequential_validator_service.validate_stream(
         value_stream, metadata, validator_map, iteration, path, path, **kwargs
     )
@@ -119,14 +117,13 @@ async def async_validate(
     metadata: dict,
     validator_map: ValidatorMap,
     iteration: Iteration,
-    disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     stream: Optional[bool] = False,
     **kwargs,
 ) -> Tuple[Any, dict]:
     if path is None:
         path = "$"
-    validator_service = AsyncValidatorService(disable_tracer)
+    validator_service = AsyncValidatorService()
     return await validator_service.async_validate(
         value, metadata, validator_map, iteration, path, path, stream, **kwargs
     )

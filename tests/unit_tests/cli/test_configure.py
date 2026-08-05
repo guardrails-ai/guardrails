@@ -1,24 +1,13 @@
 from unittest.mock import call, patch
 
-import pytest
 from tests.unit_tests.mocks.mock_file import MockFile
 
 
-@pytest.mark.parametrize(
-    "expected_token, enable_metrics, clear_token",
-    [
-        ("mock_token", True, False),
-        ("mock_token", False, False),
-        ("", True, True),
-        ("", False, True),
-    ],
-)
-def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
+def test_configure(mocker, runner):
     mock_save_configuration_file = mocker.patch(
         "guardrails.cli.configure.save_configuration_file"
     )
-    mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
-    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
+    mock_logger_log = mocker.patch("guardrails.cli.configure.logger.log")
 
     CLI_COMMAND = ["configure"]
     CLI_COMMAND_ARGS = []
@@ -27,18 +16,10 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
     # Patch sys.stdin with a StringIO object
     from guardrails.cli.guardrails import guardrails
 
-    if enable_metrics:
-        CLI_COMMAND_ARGS.append("y")
-    else:
-        CLI_COMMAND_ARGS.append("n")
-
     # Answer the "Do you wish to use remote inferencing?" confirm prompt.
     # click >=8.4 aborts on EOF at a confirm prompt instead of falling back
     # to the default, so both prompts must receive explicit input.
     CLI_COMMAND_ARGS.append("y")
-
-    if clear_token:
-        CLI_COMMAND.append("--clear-token")
 
     with patch("typer.prompt", side_effect=CLI_COMMAND_INPUTS):
         result = runner.invoke(
@@ -49,20 +30,26 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
 
     assert result.exit_code == 0
 
-    expected_calls = [call("Configuration saved.")]
+    expected_calls = [
+        call(
+            level=35,
+            msg="""
+        Configuration successful.
 
-    if clear_token:
-        expected_calls.append(call("No token provided. Skipping authentication."))
-        assert mock_get_auth.call_count == 0
-    else:
-        expected_calls.append(call("Validating credentials..."))
-        assert mock_get_auth.call_count == 1
+        Get started by installing our RegexMatch validator:
+        https://guardrailsai.com/hub/validator/guardrails_ai/regex_match
 
-    assert mock_logger_info.call_count == 2
-    mock_logger_info.assert_has_calls(expected_calls)
-    mock_save_configuration_file.assert_called_once_with(
-        expected_token, enable_metrics, True
-    )
+        You can install it by running:
+        pip install guardrails-ai-regex-match
+
+        Find more validators at https://guardrailsai.com/hub
+        """,
+        )
+    ]
+
+    assert mock_logger_log.call_count == 1
+    mock_logger_log.assert_has_calls(expected_calls)
+    mock_save_configuration_file.assert_called_once_with(True)
 
 
 def test_save_configuration_file(mocker):
@@ -88,7 +75,7 @@ def test_save_configuration_file(mocker):
 
     from guardrails.cli.configure import save_configuration_file
 
-    save_configuration_file("token", True)
+    save_configuration_file(True)
 
     assert expanduser_mock.called is True
     assert rcexpanduser_mock.called is True
@@ -99,8 +86,6 @@ def test_save_configuration_file(mocker):
     writelines_spy.assert_called_once_with(
         [
             f"id=f49354e0-80c7-4591-81db-cc2f945e5f1e{os.linesep}",
-            f"token=token{os.linesep}",
-            "enable_metrics=true\n",
             "use_remote_inferencing=true",
         ]
     )

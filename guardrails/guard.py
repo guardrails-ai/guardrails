@@ -53,13 +53,11 @@ from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 from guardrails.schema.rail_schema import rail_file_to_schema, rail_string_to_schema
 from guardrails.schema.validator import SchemaValidationError, validate_json_schema
 from guardrails.stores.context import get_call_kwarg, set_call_kwargs, set_guard_name
-from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.simple import SimpleTypes
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.api_utils import extract_serializeable_metadata
-from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.telemetry import (
     trace_guard_execution,
     wrap_with_otel_context,
@@ -165,7 +163,6 @@ class Guard(IGuard, Generic[OT]):
         self._validators: List[Validator] = []
         self._output_type: OutputTypes = OutputTypes.__from_json_schema__(output_schema)
         self._exec_opts: GuardExecutionOptions = GuardExecutionOptions()
-        self._hub_telemetry: HubTelemetry
         self._user_id: Optional[str] = None
         self._allow_metrics_collection: Optional[bool] = None
         self._output_formatter: Optional[BaseFormatter] = None
@@ -211,10 +208,18 @@ class Guard(IGuard, Generic[OT]):
                 Defaults to None, and falls back to waht is
                     set via the `guardrails configure` command.
         """
+        if allow_metrics_collection is not None:
+            warnings.warn(
+                "Hub telemetry has been retired and anonymous metrics are"
+                " no longer collected."
+                "This makes allow_metrics_collection a noop."
+                "To stop seeing this message, "
+                "remove allow_metrics_collection from your calls.",
+                DeprecationWarning,
+            )
         if num_reasks:
             self._set_num_reasks(num_reasks)
         self._load_rc()
-        self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
         # Configure may check if num_reasks is none, but this method still needs to be
@@ -229,25 +234,6 @@ class Guard(IGuard, Generic[OT]):
     def _load_rc(self) -> None:
         rc = RC.load(logger)
         settings.rc = rc
-
-    def _configure_hub_telemtry(
-        self, allow_metrics_collection: Optional[bool] = None
-    ) -> None:
-        allow_metrics_collection = (
-            settings.rc.enable_metrics is True
-            if allow_metrics_collection is None
-            else allow_metrics_collection
-        )
-
-        self._allow_metrics_collection = allow_metrics_collection
-
-        # Initialize Hub Telemetry singleton and get the tracer
-        self._hub_telemetry = HubTelemetry()
-        self._hub_telemetry._enabled = allow_metrics_collection
-
-        if allow_metrics_collection is True:
-            # Get unique id of user from rc file
-            self._user_id = settings.rc.id or ""
 
     def _fill_validator_map(self):
         for ref in self.validators:
@@ -426,9 +412,15 @@ class Guard(IGuard, Generic[OT]):
         guard._base_model = output_class
         if isinstance(output_formatter, str):
             if isinstance(output_class, list):
-                raise Exception("""Root-level arrays are not supported with the 
-                jsonformer argument, but can be used with other json generation methods.
-                Omit the output_formatter argument to use the other methods.""")
+                raise Exception(
+                    """Root-level arrays are not supported with the
+                                jsonformer argument, but can be used with other
+                                json generation methods.
+
+                                Omit the output_formatter argument to
+                                use the other methods.
+                                """
+                )
             output_formatter = get_formatter(
                 output_formatter,
                 schema=output_class.model_json_schema(),  # type: ignore
@@ -643,11 +635,6 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(
-                    not self._allow_metrics_collection
-                    if isinstance(self._allow_metrics_collection, bool)
-                    else None
-                ),
                 exec_options=self._exec_opts,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
@@ -666,17 +653,11 @@ class Guard(IGuard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(
-                    not self._allow_metrics_collection
-                    if isinstance(self._allow_metrics_collection, bool)
-                    else None
-                ),
                 exec_options=self._exec_opts,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
-    @trace(name="/guard_call", origin="Guard.__call__")
     def __call__(
         self,
         llm_api: Optional[Callable] = None,
@@ -705,7 +686,6 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             ValidationOutcome
         """
-
         messages = messages or self._exec_opts.messages or []
 
         if messages is not None and not len(messages):
@@ -728,7 +708,6 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
-    @trace(name="/guard_call", origin="Guard.parse")
     def parse(
         self,
         llm_output: str,
@@ -856,8 +835,9 @@ class Guard(IGuard, Generic[OT]):
         return self
 
     def get_validators(self, on: str) -> List[Validator]:
-        """The read-only counterpart to `Guard.use`. Retrieves the validators
-        applied to the specified property.
+        """The read-only counterpart to `Guard.use`.
+
+        Retrieves the validators applied to the specified property.
 
         Args:
             on: The property for which to return configured validators.
@@ -868,7 +848,6 @@ class Guard(IGuard, Generic[OT]):
             on = "$"
         return self._validator_map.get(on) or []
 
-    @trace(name="/guard_call", origin="Guard.validate")
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
         return self.parse(llm_output=llm_output, *args, **kwargs)
 

@@ -1,46 +1,30 @@
 # New LiteLLM version has a dependency on madoka which requires g++ to build the wheel
 FROM python:3.13
 
-ARG GUARDRAILS_TEMPLATE="guard-template.json"
-
 # Set environment variables to avoid writing .pyc files and to unbuffer Python output
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV LOGLEVEL="DEBUG"
 ENV GUARDRAILS_LOG_LEVEL="DEBUG"
 ENV APP_ENVIRONMENT="production"
-ENV GUARDRAILS_TEMPLATE=$GUARDRAILS_TEMPLATE
 
 WORKDIR /app
 
-# Install Git and necessary dependencies
-RUN apt-get update && \
-    apt-get install -y make git curl gcc jq pipx && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy the entrypoint script
 COPY /server_ci/fastapi-entry.sh /app/fastapi-entry.sh
 COPY ../ /app/guardrails
+COPY /server_ci/requirements.lock /app/requirements.lock
+COPY /server_ci/config.py /app/config.py
 
-# Install guardrails, the guardrails API, and gunicorn
-# openai optional. only used for integration testing
-RUN pip install "uvicorn[standard]" --no-cache-dir
+# Install locked versions of all dependencies
+RUN pip install -r /app/requirements.lock
 
-RUN pip install "/app/guardrails[api]"
+# Install local version of guardrails-ai
+RUN pip install -U "/app/guardrails[api]"
 
-RUN --mount=type=secret,id=GUARDRAILS_TOKEN,env=GUARDRAILS_TOKEN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
-
-# bring in base template
-COPY /server_ci/$GUARDRAILS_TEMPLATE /app/$GUARDRAILS_TEMPLATE
-
-# Install Hub Deps and create config.py
-RUN guardrails create --template /app/$GUARDRAILS_TEMPLATE
-
-
-# RUN cp -r /usr/local/lib/python3.11/site-packages/guardrails/hub/* /app/guardrails/guardrails/hub
 
 # Expose port 8000 for the application
 EXPOSE 8000

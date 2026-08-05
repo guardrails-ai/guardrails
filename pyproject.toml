@@ -1,6 +1,6 @@
 [project]
 name = "guardrails-ai"
-version = "0.11.0"
+version = "0.12.0a0"
 description = "Adding guardrails to large language models."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
@@ -128,9 +128,6 @@ python_classes = ["Test"]
 python_functions = ["test_"]
 python_files = ["test_*.py"]
 testpaths = ["tests"]
-markers = [
-    "no_hub_telemetry_mock"
-]
 
 [pytest]
 log_cli = "True"

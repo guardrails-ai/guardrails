@@ -12,7 +12,6 @@ from guardrails_ai.types import (
 )
 from guardrails.errors import ValidationError
 from guardrails.merge import merge
-from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types import OnFailAction
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk
@@ -34,16 +33,12 @@ class ValidatorRun:
 class ValidatorServiceBase:
     """Base class for validator services."""
 
-    def __init__(self, disable_tracer: Optional[bool] = True):
-        self._disable_tracer = disable_tracer
-
     # NOTE: This is avoiding an issue with multiprocessing.
     #       If we wrap the validate methods at the class level or anytime before
     #       loop.run_in_executor is called, multiprocessing fails with a Pickling error.
     #       This is a well known issue without any real solutions.
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
-    @trace(name="/validator_usage", origin="ValidatorServiceBase.execute_validator")
     def execute_validator(
         self,
         validator: Validator,
