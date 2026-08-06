@@ -658,12 +658,9 @@ class TestStreamValidate:
         ctx.__exit__.return_value = False
         mc.http.stream.return_value = ctx
 
-        with patch.object(
-            IValidationOutcome, "model_validate", side_effect=lambda value: value
-        ):
-            results = list(mc.client.stream_validate(guard))
+        results = list(mc.client.stream_validate(guard))
 
-        assert [result["callId"] for result in results] == ["c1", "c2", "c3"]
+        assert [result.call_id for result in results] == ["c1", "c2", "c3"]
 
     def test_stream_validate_skips_empty_chunks(self):
         mc = make_client()
@@ -775,12 +772,9 @@ class TestStreamValidate:
         async def run():
             return [result async for result in mc.client.astream_validate(guard)]
 
-        with patch.object(
-            IValidationOutcome, "model_validate", side_effect=lambda value: value
-        ):
-            results = asyncio.run(run())
+        results = asyncio.run(run())
 
-        assert [result["callId"] for result in results] == ["c1", "c2", "c3"]
+        assert [result.call_id for result in results] == ["c1", "c2", "c3"]
 
     def test_astream_validate_skips_empty_chunks(self):
         mc = make_client()
