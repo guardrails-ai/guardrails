@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from httpx import HTTPStatusError, Request, Response
+from httpx import AsyncByteStream, HTTPStatusError, Request, Response, SyncByteStream
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.errors import ValidationError
@@ -77,11 +77,28 @@ def make_sse_chunk(data: dict) -> str:
     return f"{json.dumps(data)}\n"
 
 
+class ChunkedSyncStream(SyncByteStream):
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def __iter__(self):
+        return iter(self.chunks)
+
+
+class ChunkedAsyncStream(AsyncByteStream):
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+
+
 def make_stream_ctx(chunks, is_success=True, raise_on_fail=None):
     """Sync context manager mock for http_client.stream()."""
     mock_resp = MagicMock()
     mock_resp.is_success = is_success
-    mock_resp.iter_text.return_value = iter(chunks)
+    mock_resp.iter_lines.return_value = iter(chunks)
     if raise_on_fail:
         mock_resp.raise_for_status.side_effect = raise_on_fail
     ctx = MagicMock()
@@ -99,7 +116,7 @@ def make_async_stream_ctx(chunks, is_success=True, raise_on_fail=None):
 
     mock_resp = MagicMock()
     mock_resp.is_success = is_success
-    mock_resp.aiter_text.return_value = aiter()
+    mock_resp.aiter_lines.return_value = aiter()
     if raise_on_fail:
         mock_resp.raise_for_status.side_effect = raise_on_fail
 
@@ -625,6 +642,29 @@ class TestStreamValidate:
         assert call_args[0] == ("POST", "/guards/guard-id-123/validate")
         assert call_args[1]["json"]["stream"] is True
 
+    def test_stream_validate_uses_complete_lines_across_http_chunks(self):
+        mc = make_client()
+        guard = make_guard()
+        chunks = [
+            b'{"callId":"c1"}\n{"callId":"c2"}\n{"call',
+            b'Id":"c3"}\n',
+        ]
+        response = Response(
+            200,
+            stream=ChunkedSyncStream(chunks),
+        )
+        ctx = MagicMock()
+        ctx.__enter__.return_value = response
+        ctx.__exit__.return_value = False
+        mc.http.stream.return_value = ctx
+
+        with patch.object(
+            IValidationOutcome, "model_validate", side_effect=lambda value: value
+        ):
+            results = list(mc.client.stream_validate(guard))
+
+        assert [result["callId"] for result in results] == ["c1", "c2", "c3"]
+
     def test_stream_validate_skips_empty_chunks(self):
         mc = make_client()
         guard = make_guard()
@@ -718,6 +758,29 @@ class TestStreamValidate:
         call_args = mock_stream.call_args
         assert call_args[0] == ("POST", "/guards/guard-id-123/validate")
         assert call_args[1]["json"]["stream"] is True
+
+    def test_astream_validate_uses_complete_lines_across_http_chunks(self):
+        mc = make_client()
+        guard = make_guard()
+        chunks = [
+            b'{"callId":"c1"}\n{"callId":"c2"}\n{"call',
+            b'Id":"c3"}\n',
+        ]
+        response = Response(200, stream=ChunkedAsyncStream(chunks))
+        ctx = AsyncMock()
+        ctx.__aenter__.return_value = response
+        ctx.__aexit__.return_value = False
+        mc.ahttp.stream = Mock(return_value=ctx)
+
+        async def run():
+            return [result async for result in mc.client.astream_validate(guard)]
+
+        with patch.object(
+            IValidationOutcome, "model_validate", side_effect=lambda value: value
+        ):
+            results = asyncio.run(run())
+
+        assert [result["callId"] for result in results] == ["c1", "c2", "c3"]
 
     def test_astream_validate_skips_empty_chunks(self):
         mc = make_client()
