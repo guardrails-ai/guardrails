@@ -13,12 +13,24 @@ from collections import defaultdict
 from dataclasses import dataclass
 import re
 from string import Template
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 from warnings import warn
 
 import requests
 from guardrails.hub.registry import get_registry
-from langchain_core.runnables import Runnable
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import Runnable
 
 from guardrails.settings import settings
 from guardrails_ai.types import ErrorSpan, PassResult, FailResult, ValidationResult  # noqa
@@ -499,7 +511,7 @@ class Validator:
         self._metadata = metadata
         return self
 
-    def to_runnable(self) -> Runnable:
+    def to_runnable(self) -> "Runnable":
         from guardrails.integrations.langchain.validator_runnable import (
             ValidatorRunnable,
         )

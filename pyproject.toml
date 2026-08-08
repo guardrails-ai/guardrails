@@ -28,7 +28,6 @@ dependencies = [
     "tiktoken>=0.13.0,<1.0.0",
     "litellm>=1.82.5,<2.0.0",
     "pydash>=8.0.0,<9.0.0",
-    "langchain-core>=1.0.0,<2.0",
     "requests>=2.31.0,<3.0.0",
     "faker>=25.2.0,<38.0.0",
     "jsonref>=1.0.0,<2.0.0",
@@ -97,6 +96,9 @@ uv = [
 ]
 llama = [
     "llama-index>=0.14.22,<1.0.0"
+]
+langchain = [
+    "langchain-core>=1.0.0,<2.0"
 ]
 
 [project.scripts]

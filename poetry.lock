@@ -3011,9 +3011,10 @@ files = [
 name = "jsonpatch"
 version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
     {file = "jsonpatch-1.33.tar.gz", hash = "sha256:9fcd4009c41e6d12348b4a0ff2563ba56a2923a7dfee731d004e212e1ee5030c"},
@@ -3255,9 +3256,10 @@ files = [
 name = "langchain-core"
 version = "1.4.8"
 description = "Building applications with LLMs through composability"
-optional = false
+optional = true
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "langchain_core-1.4.8-py3-none-any.whl", hash = "sha256:d84c28b05e3ba8d4271d0827aad5b592ccdaaf986e76768c23503f0a2045e8aa"},
     {file = "langchain_core-1.4.8.tar.gz", hash = "sha256:5bf1f8411077c904182ad8f975943d36adcbf579c4e017b3a118b719229ebf9a"},
@@ -3278,9 +3280,10 @@ uuid-utils = ">=0.12.0,<1.0"
 name = "langchain-protocol"
 version = "0.0.18"
 description = "Python bindings for the LangChain agent streaming protocol"
-optional = false
+optional = true
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "langchain_protocol-0.0.18-py3-none-any.whl", hash = "sha256:70b53a86fbf9cedc863555effe44da192ab02d556ddbf2cf95b8873adcf41b5a"},
     {file = "langchain_protocol-0.0.18.tar.gz", hash = "sha256:ec3e11782f1ed0c9db38e5a9ed01b0e7a0d3fba406faa8aef6594b73c56a63e6"},
@@ -3293,9 +3296,10 @@ typing-extensions = ">=4.13.0,<5.0.0"
 name = "langsmith"
 version = "0.8.18"
 description = "Client library to connect to the LangSmith Observability and Evaluation Platform."
-optional = false
+optional = true
 python-versions = ">=3.10"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "langsmith-0.8.18-py3-none-any.whl", hash = "sha256:3940183349993faef48e6c7d08e4822ee9cefd906b362d0e3c2d650314d2f282"},
     {file = "langsmith-0.8.18.tar.gz", hash = "sha256:32dde9c0e67e053e0fb738921fc8ced768af7b8fa83d7a0e3fd63597cf8776dd"},
@@ -5125,10 +5129,10 @@ typing-extensions = ">=4.5.0"
 name = "orjson"
 version = "3.11.9"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
-optional = false
+optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "platform_python_implementation != \"PyPy\""
+markers = "platform_python_implementation != \"PyPy\" and extra == \"langchain\""
 files = [
     {file = "orjson-3.11.9-cp310-cp310-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:135869ef917b8704ea0a94e01620e0c05021c15c52036e4663baffe75e72f8ce"},
     {file = "orjson-3.11.9-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:115ab5f5f4a0f203cc2a5f0fb09aee503a3f771aa08392949ab5ca230c4fbdbd"},
@@ -6707,9 +6711,10 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<8)"]
 name = "requests-toolbelt"
 version = "1.0.0"
 description = "A utility belt for advanced users of python-requests"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 groups = ["main"]
+markers = "extra == \"dev\" or extra == \"langchain\""
 files = [
     {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
     {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
@@ -8383,9 +8388,10 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 name = "uuid-utils"
 version = "0.16.2"
 description = "Fast, drop-in replacement for Python's uuid module, powered by Rust."
-optional = false
+optional = true
 python-versions = ">=3.10"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "uuid_utils-0.16.2-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:89a627f74cb55aa508809592ab9149806649e4ee37f4bc91b60c7ec10929f0eb"},
     {file = "uuid_utils-0.16.2-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:e92875a315f3cc4fe7a2324c17b3c7ac5e3fd0e24b14fc4deb28370431fe6a2b"},
@@ -8678,9 +8684,10 @@ files = [
 name = "websockets"
 version = "16.0"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
-optional = false
+optional = true
 python-versions = ">=3.10"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "websockets-16.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:04cdd5d2d1dacbad0a7bf36ccbcd3ccd5a30ee188f2560b7a62a30d14107b31a"},
     {file = "websockets-16.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8ff32bb86522a9e5e31439a58addbb0166f0204d64066fb955265c4e214160f0"},
@@ -8872,9 +8879,10 @@ dev = ["pytest", "setuptools"]
 name = "xxhash"
 version = "3.7.0"
 description = "Python binding for xxHash"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
+markers = "extra == \"manifest\" or extra == \"langchain\""
 files = [
     {file = "xxhash-3.7.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:cd8ab85c916a58d5c8656ea15e3ce9df836fe2f120a74c296e01d69fab2614b4"},
     {file = "xxhash-3.7.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:85f5c0e26d945b5bb475e0a3d95193117498130baa7619357bdc7869c2391b5a"},
@@ -9225,9 +9233,10 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 name = "zstandard"
 version = "0.25.0"
 description = "Zstandard bindings for Python"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
+markers = "extra == \"langchain\""
 files = [
     {file = "zstandard-0.25.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e59fdc271772f6686e01e1b3b74537259800f57e24280be3f29c8a0deb1904dd"},
     {file = "zstandard-0.25.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:4d441506e9b372386a5271c64125f72d5df6d2a8e8a2a45a0ae09b03cb781ef7"},
@@ -9340,6 +9349,7 @@ databricks = ["mlflow"]
 dev = ["docformatter", "liccheck", "lxml-stubs", "pre-commit", "pypdfium2", "pyright", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "ruff", "twine"]
 docs-build = ["docspec_python", "pydoc-markdown"]
 huggingface = ["guardrails-jsonformer", "torch", "transformers"]
+langchain = ["langchain-core"]
 llama = ["llama-index"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
@@ -9349,4 +9359,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "b6003a268b3bac0c2ca909f86589c4c899efae6a6da4c0d71a4771e0d8b8b149"
+content-hash = "cdad8c46f0467f04c73c381d2460144f7ad0430b8cf974c32d9771bb99efef28"
