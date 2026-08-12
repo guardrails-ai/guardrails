@@ -23,6 +23,7 @@ with open(
 string_schema = {"type": "string"}
 integer_schema = {"type": "integer"}
 float_schema = {"type": "number"}
+boolean_schema = {"type": "boolean"}
 
 
 @pytest.mark.parametrize(
@@ -37,6 +38,15 @@ float_schema = {"type": "number"}
         (integer_schema, "3", 3),
         (integer_schema, 3.1, 3),
         (float_schema, "3", 3.0),
+        # A boolean the model emitted as a string must be read by its text, not
+        # by truthiness; bool("false") is True, which silently flipped the value
+        (boolean_schema, "false", False),
+        (boolean_schema, "False", False),
+        (boolean_schema, "true", True),
+        (boolean_schema, "0", False),
+        (boolean_schema, False, False),
+        (boolean_schema, True, True),
+        (boolean_schema, "maybe", "maybe"),  # unrecognized: left untouched
         (
             choice_case_json_schema,
             {

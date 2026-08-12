@@ -288,9 +288,20 @@ def coerce_to_type(
             return coerce(payload, list)
         return payload
     elif schema_type == SimpleTypes.BOOLEAN:
-        if not isinstance(payload, bool):
-            return coerce(payload, bool)
-        return payload
+        if isinstance(payload, bool):
+            return payload
+        if isinstance(payload, str):
+            # bool("false") is True (every non-empty string is truthy), so a
+            # boolean the model emitted as a string was always coerced to True.
+            # Interpret the common textual forms instead, and leave anything
+            # unrecognized untouched like the integer and number branches do.
+            normalized = payload.strip().lower()
+            if normalized in ("true", "1"):
+                return True
+            if normalized in ("false", "0"):
+                return False
+            return payload
+        return coerce(payload, bool)
     elif schema_type == SimpleTypes.INTEGER:
         if not isinstance(payload, int):
             val = coerce(payload, int)
