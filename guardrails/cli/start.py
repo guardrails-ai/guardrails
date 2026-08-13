@@ -22,7 +22,7 @@ def api_is_installed() -> bool:
 @guardrails.command()
 def start(
     env: str = typer.Option(
-        default="",
+        default=".env",
         help="An env file to load environment variables from.",
     ),
     config: str = typer.Option(
@@ -39,6 +39,10 @@ def start(
     env_override: bool = typer.Option(
         default=False,
         help="Override existing environment variables with values from the env file.",
+    ),
+    middleware: str = typer.Option(
+        default="",
+        help="A middleware file to apply.",
     ),
 ):
     logger.debug("Checking for prerequisites...")
@@ -70,4 +74,10 @@ def start(
 
         start_api(env, config, port)
     else:
-        start_api(env, config, port, env_override)  # type: ignore
+        start_api(
+            env=env,
+            config=config,
+            port=port,
+            env_override=env_override,
+            middleware=middleware,
+        )  # type: ignore

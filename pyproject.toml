@@ -103,7 +103,7 @@ llama = [
 guardrails = "guardrails.cli:cli"
 
 [build-system]
-requires = ["poetry-core>=2.0.0"]
+requires = ["poetry-core==2.4.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
