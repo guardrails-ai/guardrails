@@ -1,5 +1,5 @@
 #!/bin/bash
-ignore=(chatbot.ipynb translation_with_quality_check.ipynb guardrails_server.ipynb)
+ignore=(bug_free_python_code.ipynb chatbot.ipynb translation_with_quality_check.ipynb guardrails_server.ipynb)
 # Array to store notebook names
 notebook_names="["
 

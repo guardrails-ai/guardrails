@@ -15,7 +15,7 @@ class RC(Serializeable):
     id: Optional[str] = None
     token: Optional[str] = None
     enable_metrics: Optional[bool] = True
-    use_remote_inferencing: Optional[bool] = True
+    use_remote_inferencing: Optional[bool] = False
 
     @staticmethod
     def exists() -> bool:

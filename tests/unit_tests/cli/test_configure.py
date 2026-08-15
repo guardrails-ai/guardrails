@@ -32,6 +32,11 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
     else:
         CLI_COMMAND_ARGS.append("n")
 
+    # Answer the "Do you wish to use remote inferencing?" confirm prompt.
+    # click >=8.4 aborts on EOF at a confirm prompt instead of falling back
+    # to the default, so both prompts must receive explicit input.
+    CLI_COMMAND_ARGS.append("y")
+
     if clear_token:
         CLI_COMMAND.append("--clear-token")
 

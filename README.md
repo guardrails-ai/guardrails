@@ -20,6 +20,7 @@
 </div>
 
 ## News and Updates
+- **[July 6, 2026]** Guardrails validators are moving to standard PyPI packages you install directly with `pip`, and Guardrails is discontinuing its hosted remote inferencing. See [How to Migrate](https://github.com/guardrails-ai/guardrails/issues/1560) for what to do. **Planned cutoff: August 6, 2026.**
 - **[Feb 12, 2025]** We just launched Guardrails Index -- the first of its kind benchmark comparing the performance and latency of 24 guardrails across 6 most common categories! Check out the index at index.guardrailsai.com
 
 ## What is Guardrails?
