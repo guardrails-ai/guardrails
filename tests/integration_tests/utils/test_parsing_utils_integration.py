@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from guardrails.utils.parsing_utils import coerce_types
+from guardrails.utils.parsing_utils import coerce_to_type, coerce_types
 
 
 with open(
@@ -119,3 +119,27 @@ float_schema = {"type": "number"}
 def test_coerce_types(schema, given, expected):
     coerced_payload = coerce_types(given, schema)
     assert coerced_payload == expected
+
+
+@pytest.mark.parametrize(
+    "payload,expected",
+    [
+        ("false", False),
+        ("False", False),
+        ("0", False),
+        ("no", False),
+        ("true", True),
+        ("True", True),
+        ("1", True),
+        ("yes", True),
+        (False, False),
+        (True, True),
+        (0, False),
+        (1, True),
+        ("maybe", True),
+    ],
+)
+def test_coerce_to_type_boolean_strings(payload, expected):
+    from guardrails.types.simple import SimpleTypes
+
+    assert coerce_to_type(payload, SimpleTypes.BOOLEAN) is expected
