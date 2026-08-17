@@ -6,6 +6,8 @@ import toml
 def add_package_name_prefix(
     pyproject_path, pep_503_new_package_name, validator_folder_name
 ):
+    if ".." in pyproject_path:
+        raise Exception("Invalid file path")
     # Read the existing pyproject.toml file
     with open(pyproject_path, "r") as f:
         content = f.read()
