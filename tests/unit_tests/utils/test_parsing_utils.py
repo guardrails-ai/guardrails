@@ -2,6 +2,7 @@ import json
 import pytest
 
 from guardrails.utils.parsing_utils import (
+    coerce_property,
     get_code_block,
     has_code_block,
     prune_extra_keys,
@@ -191,3 +192,30 @@ with open(
 def test_prune_extra_keys(schema, payload, pruned_payload):
     actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload
+
+
+class TestCoercePropertySchemaCompositionFalsyValues:
+    """Regression tests: oneOf/anyOf schema composition in coerce_property must
+    keep a sub-schema's coerced result even when it's falsy (0, 0.0, ""),
+    rather than treating it as "no match" and falling through to a later,
+    non-matching sub-schema.
+    """
+
+    def test_one_of_picks_falsy_int_over_string(self):
+        schema = {"oneOf": [{"type": "integer"}, {"type": "string"}]}
+        result = coerce_property("0", schema)
+        assert result == 0
+        assert isinstance(result, int)
+
+    def test_any_of_picks_falsy_float_over_string(self):
+        schema = {"anyOf": [{"type": "number"}, {"type": "string"}]}
+        result = coerce_property("0.0", schema)
+        assert result == 0.0
+        assert isinstance(result, float)
+
+    def test_one_of_still_falls_through_on_none(self):
+        # A sub-schema that legitimately yields None (SimpleTypes.NULL) must
+        # still be skipped in favor of a later, non-null match.
+        schema = {"oneOf": [{"type": "null"}, {"type": "string"}]}
+        result = coerce_property("hello", schema)
+        assert result == "hello"
