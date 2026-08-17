@@ -238,7 +238,13 @@ def prune_extra_keys(
         wildcards: List[str] = [
             path.split(".*")[0] for path in all_json_paths if ".*" in path
         ]
-        ancestor_is_wildcard = any(w in json_path for w in wildcards)
+        # Match on path segments, not raw substring: `w in json_path` would treat
+        # a non-wildcard sibling whose path is a string-superset of a wildcard
+        # prefix (e.g. `$.ab` vs the wildcard `$.a`) as a wildcard descendant, so
+        # its undeclared keys would never be pruned.
+        ancestor_is_wildcard = any(
+            json_path == w or json_path.startswith(f"{w}.") for w in wildcards
+        )
         actual_keys = list(payload.keys())
         for key in actual_keys:
             child_path = f"{json_path}.{key}"

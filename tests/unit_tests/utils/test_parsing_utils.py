@@ -191,3 +191,19 @@ with open(
 def test_prune_extra_keys(schema, payload, pruned_payload):
     actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload
+
+
+def test_prune_extra_keys_sibling_of_wildcard_is_not_treated_as_wildcard():
+    # `$.a` is a wildcard (additionalProperties) object; `$.ab` is an unrelated
+    # sibling whose path is a string-superset of `$.a`. Its undeclared keys must
+    # still be pruned -- a substring ancestor check wrongly kept them.
+    schema = {
+        "type": "object",
+        "properties": {
+            "a": {"type": "object", "additionalProperties": True},
+            "ab": {"type": "object", "properties": {"known": {"type": "string"}}},
+        },
+    }
+    payload = {"a": {"anything": 1}, "ab": {"known": "x", "extra": "y"}}
+    result = prune_extra_keys(payload, schema)
+    assert result == {"a": {"anything": 1}, "ab": {"known": "x"}}
