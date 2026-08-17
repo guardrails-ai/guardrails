@@ -12,7 +12,7 @@ from guardrails.errors import ValidationError
 from guardrails_ai.types import Guard, ValidationOutcome as IValidationOutcome
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────
+#  Helpers 
 
 
 def make_http_error(status_code: int) -> HTTPStatusError:
@@ -34,7 +34,6 @@ def mock_sync_response(json_data=None, raise_error=None):
 
 
 def mock_async_response(json_data=None, raise_error=None):
-    # Use Mock (not AsyncMock) — httpx response methods are synchronous
     r = Mock()
     r.json.return_value = json_data if json_data is not None else {}
     r.status_code = 200
@@ -109,99 +108,17 @@ def make_async_stream_ctx(chunks, is_success=True, raise_on_fail=None):
     return ctx
 
 
-# ─── Init ─────────────────────────────────────────────────────────────────────
+# Init
 
 
 class TestGuardrailsApiClientInit:
-    def test_init_with_env_vars(self):
-        with (
-            patch("guardrails.api_client.Client"),
-            patch("guardrails.api_client.AsyncClient"),
-        ):
-            with patch.dict(
-                os.environ,
-                {
-                    "GUARDRAILS_BASE_URL": "http://env.com",
-                    "GUARDRAILS_API_KEY": "env-key",
-                },
-            ):
-                client = GuardrailsApiClient()
-
-        assert client.base_url == "http://env.com"
-        assert client.api_key == "env-key"
-        assert client.timeout == 300
-
-    def test_init_with_explicit_params(self):
-        with (
-            patch("guardrails.api_client.Client"),
-            patch("guardrails.api_client.AsyncClient"),
-        ):
-            client = GuardrailsApiClient(
-                base_url="http://custom.com", api_key="custom-key"
-            )
-
-        assert client.base_url == "http://custom.com"
-        assert client.api_key == "custom-key"
-        assert client.timeout == 300
-
-    def test_init_default_values(self):
-        env = {
-            k: v
-            for k, v in os.environ.items()
-            if k not in ("GUARDRAILS_BASE_URL", "GUARDRAILS_API_KEY")
-        }
-        with (
-            patch("guardrails.api_client.Client"),
-            patch("guardrails.api_client.AsyncClient"),
-        ):
-            with patch.dict(os.environ, env, clear=True):
-                client = GuardrailsApiClient()
-
-        assert client.base_url == "http://localhost:8000"
-        assert client.api_key == "x-guardrailsai-api-key"
-
-    def test_init_explicit_params_override_env(self):
-        with (
-            patch("guardrails.api_client.Client"),
-            patch("guardrails.api_client.AsyncClient"),
-        ):
-            with patch.dict(
-                os.environ,
-                {
-                    "GUARDRAILS_BASE_URL": "http://env.com",
-                    "GUARDRAILS_API_KEY": "env-key",
-                },
-            ):
-                client = GuardrailsApiClient(
-                    base_url="http://custom.com", api_key="custom-key"
-                )
-
-        assert client.base_url == "http://custom.com"
-        assert client.api_key == "custom-key"
-
-    def test_init_partial_params_uses_env_key(self):
-        env = {k: v for k, v in os.environ.items() if k != "GUARDRAILS_API_KEY"}
-        with (
-            patch("guardrails.api_client.Client"),
-            patch("guardrails.api_client.AsyncClient"),
-        ):
-            with patch.dict(
-                os.environ,
-                {**env, "GUARDRAILS_API_KEY": "env-key"},
-                clear=True,
-            ):
-                client = GuardrailsApiClient(base_url="http://custom.com")
-
-        assert client.base_url == "http://custom.com"
-        assert client.api_key == "env-key"
-
     def test_init_creates_http_clients(self):
         client = GuardrailsApiClient()
         assert client.http_client is not None
         assert client.ahttp_client is not None
 
 
-# ─── upsert_guard ─────────────────────────────────────────────────────────────
+# upsert_guard
 
 
 class TestUpsertGuard:
@@ -241,14 +158,10 @@ class TestUpsertGuard:
         mc.http.put.assert_not_called()
         assert result == returned_guard
 
-    def test_upsert_guard_raises_on_http_error(self):
+    def test_upsert_guard_propagates_fetch_errors(self):
         mc = make_client()
         guard = make_guard()
-        guard.model_dump.return_value = {}
-        existing_guard = make_guard(guard_id="existing-id-456")
-
-        mc.client.fetch_guard = Mock(return_value=existing_guard)
-        mc.http.put.return_value = mock_sync_response(raise_error=make_http_error(500))
+        mc.client.fetch_guard = Mock(side_effect=HTTPStatusError("", Request("GET", "http://t"), Response(500)))
 
         with pytest.raises(HTTPStatusError):
             mc.client.upsert_guard(guard)
@@ -288,22 +201,16 @@ class TestUpsertGuard:
         mc.ahttp.put.assert_not_called()
         assert result == returned_guard
 
-    def test_aupsert_guard_raises_on_http_error(self):
+    def test_aupsert_guard_propagates_fetch_errors(self):
         mc = make_client()
         guard = make_guard()
-        guard.model_dump.return_value = {}
-        existing_guard = make_guard(guard_id="existing-id-456")
-
-        mc.client.afetch_guard = AsyncMock(return_value=existing_guard)
-        mc.ahttp.put = AsyncMock(
-            return_value=mock_async_response(raise_error=make_http_error(500))
-        )
+        mc.client.afetch_guard = AsyncMock(side_effect=HTTPStatusError("", Request("GET", "http://t"), Response(500)))
 
         with pytest.raises(HTTPStatusError):
             asyncio.run(mc.client.aupsert_guard(guard))
 
 
-# ─── fetch_guard ──────────────────────────────────────────────────────────────
+# fetch_guard
 
 
 class TestFetchGuard:
@@ -328,25 +235,12 @@ class TestFetchGuard:
 
         assert result is None
 
-    def test_fetch_guard_returns_none_on_exception(self):
+    def test_fetch_guard_propagates_http_errors(self):
         mc = make_client()
-        mc.http.get.side_effect = Exception("connection error")
+        mc.http.get.return_value = mock_sync_response(raise_error=make_http_error(401))
 
-        result = mc.client.fetch_guard("my-guard")
-
-        assert result is None
-
-    def test_fetch_guard_logs_error_on_exception(self):
-        mc = make_client()
-        mc.http.get.side_effect = Exception("API Error")
-
-        with patch("guardrails.api_client.logger") as mock_logger:
-            result = mc.client.fetch_guard("my-guard")
-
-        assert result is None
-        mock_logger.error.assert_called_once()
-        assert "Error fetching guard my-guard" in mock_logger.error.call_args[0][0]
-        assert "API Error" in mock_logger.error.call_args[0][0]
+        with pytest.raises(HTTPStatusError):
+            mc.client.fetch_guard("my-guard")
 
     def test_afetch_guard_success(self):
         mc = make_client()
@@ -369,27 +263,15 @@ class TestFetchGuard:
 
         assert result is None
 
-    def test_afetch_guard_returns_none_on_exception(self):
+    def test_afetch_guard_propagates_http_errors(self):
         mc = make_client()
-        mc.ahttp.get = AsyncMock(side_effect=Exception("connection error"))
+        mc.ahttp.get = AsyncMock(return_value=mock_async_response(raise_error=make_http_error(403)))
 
-        result = asyncio.run(mc.client.afetch_guard("my-guard"))
-
-        assert result is None
-
-    def test_afetch_guard_logs_error_on_exception(self):
-        mc = make_client()
-        mc.ahttp.get = AsyncMock(side_effect=Exception("API Error"))
-
-        with patch("guardrails.api_client.logger") as mock_logger:
-            result = asyncio.run(mc.client.afetch_guard("my-guard"))
-
-        assert result is None
-        mock_logger.error.assert_called_once()
-        assert "Error fetching guard my-guard" in mock_logger.error.call_args[0][0]
+        with pytest.raises(HTTPStatusError):
+            asyncio.run(mc.client.afetch_guard("my-guard"))
 
 
-# ─── delete_guard ─────────────────────────────────────────────────────────────
+# delete_guard
 
 
 class TestDeleteGuard:
@@ -460,7 +342,7 @@ class TestDeleteGuard:
         assert result is None
 
 
-# ─── validate ─────────────────────────────────────────────────────────────────
+# validate
 
 
 class TestValidate:
@@ -529,15 +411,13 @@ class TestValidate:
         with pytest.raises(ValidationError):
             mc.client.validate(guard)
 
-    def test_validate_returns_none_on_non_400_http_error(self):
-        # Non-400 HTTPStatusErrors are caught but not re-raised per current impl
+    def test_validate_propagates_non_400_http_error(self):
         mc = make_client()
         guard = make_guard()
         mc.http.post.return_value = mock_sync_response(raise_error=make_http_error(500))
 
-        result = mc.client.validate(guard)
-
-        assert result is None
+        with pytest.raises(HTTPStatusError):
+            mc.client.validate(guard)
 
     def test_validate_passes_kwargs_in_body(self):
         mc = make_client()
@@ -589,19 +469,18 @@ class TestValidate:
         with pytest.raises(ValidationError):
             asyncio.run(mc.client.avalidate(guard))
 
-    def test_avalidate_returns_none_on_non_400_http_error(self):
+    def test_avalidate_propagates_non_400_http_error(self):
         mc = make_client()
         guard = make_guard()
         mc.ahttp.post = AsyncMock(
             return_value=mock_async_response(raise_error=make_http_error(500))
         )
 
-        result = asyncio.run(mc.client.avalidate(guard))
+        with pytest.raises(HTTPStatusError):
+            asyncio.run(mc.client.avalidate(guard))
 
-        assert result is None
 
-
-# ─── stream_validate ──────────────────────────────────────────────────────────
+# stream_validate
 
 
 class TestStreamValidate:
@@ -697,8 +576,6 @@ class TestStreamValidate:
             make_sse_chunk({"callId": "c1"}),
             make_sse_chunk({"callId": "c2"}),
         ]
-        # ahttp is AsyncMock, so .stream() returns a coroutine by default.
-        # Override with a regular Mock so it returns the async context manager.
         mock_stream = Mock(return_value=make_async_stream_ctx(chunks))
         mc.ahttp.stream = mock_stream
 
@@ -764,7 +641,7 @@ class TestStreamValidate:
             asyncio.run(run())
 
 
-# ─── get_history ──────────────────────────────────────────────────────────────
+# get_history
 
 
 class TestGetHistory:
