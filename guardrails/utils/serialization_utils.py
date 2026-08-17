@@ -46,7 +46,7 @@ def deserialize(original: Optional[Any], serialized: Optional[str]) -> Any:
         if isinstance(original, datetime):
             return datetime.fromisoformat(loaded_val)
         elif isinstance(original, set):
-            return set(original)
+            return set(loaded_val)
         elif hasattr(original, "__class__"):
             # TODO: Handle nested classes
             # NOTE: nested pydantic classes already work

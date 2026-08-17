@@ -40,6 +40,16 @@ class TestSerializeAndDeserialize:
         deserialized_data = deserialize(data, serialized_data)
         assert deserialized_data == data
 
+    def test_set(self):
+        data = {1, 2, 3}
+
+        serialized_data = serialize(data)
+        assert set(deserialize(data, serialized_data)) == data
+
+        # deserialize must reconstruct from the serialized payload, not return
+        # the template value passed as `original`.
+        assert deserialize(set(), serialize({4, 5, 6})) == {4, 5, 6}
+
     def test_datetime(self):
         data = datetime(2024, 9, 10, 0, 0, 0)
 
