@@ -17,7 +17,8 @@ def _deref_schema_path(schema: dict, path: Union[list, str]):
     if path[0] == "#":
         # The '#' indicates the root of the chain, so this is a first call.
         # If we're at the root we want to make sure we have our '$defs'.
-        assert "$defs" in schema
+        if "$defs" not in schema:
+            raise AssertionError
         return _deref_schema_path(schema, path[1:])
     if len(path) == 1:
         return schema[path[0]]
@@ -73,7 +74,8 @@ def _jsonschema_to_jsonformer(
                     path,
                     objdefs,
                 )
-                assert path.pop() == subkey
+                if path.pop() != subkey:
+                    raise AssertionError
         elif k == "type" and v == "array":
             result["type"] = "array"
             result["items"] = _jsonschema_to_jsonformer(schema["items"], path, objdefs)
