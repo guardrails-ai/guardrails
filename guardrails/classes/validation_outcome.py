@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Tuple, Union, Generic, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, Generic, cast
 
 from pydantic import Field
 from rich.pretty import pretty_repr
@@ -22,6 +22,15 @@ class ValidationOutcome(IValidationOutcome, Generic[OT]):
     )
     """The summaries of the validation results."""
 
+    raw_response: Optional[Dict[str, Any]] = Field(
+        default=None,
+        alias="rawResponse",
+        description="The raw response from the LLM API."
+        "Contains the full response object for all providers."
+        "For LiteLLM/OpenAI, this includes logprobs, usage, etc.",
+    )
+    """The raw response from the LLM API."""
+
     model_config = {
         "validate_by_alias": True,
         "validate_by_name": True,
@@ -43,6 +52,8 @@ class ValidationOutcome(IValidationOutcome, Generic[OT]):
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error
         output = cast(OT, call.guarded_output)
+        last_llm_response = last_iteration.outputs.llm_response_info
+        raw_response = last_llm_response.raw_response if last_llm_response else None
         return cls(
             callId=call.id,
             rawLlmOutput=call.raw_outputs.last,
@@ -51,6 +62,7 @@ class ValidationOutcome(IValidationOutcome, Generic[OT]):
             validationPassed=validation_passed,
             validationSummaries=validation_summaries,
             error=error,
+            rawResponse=raw_response,
         )
 
     def __iter__(
