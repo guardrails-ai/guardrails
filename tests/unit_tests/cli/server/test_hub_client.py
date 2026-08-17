@@ -70,3 +70,17 @@ def test_get_jwt_token():
         get_jwt_token(RC.from_dict({"token": invalid_jwt}))
 
     assert str(e.value) == TOKEN_INVALID_MESSAGE
+
+
+def test_fetch_uses_timeout(mocker):
+    from guardrails.cli.server.hub_client import fetch
+
+    mock_get = mocker.patch("guardrails.cli.server.hub_client.requests.get")
+    mock_get.return_value.ok = True
+    mock_get.return_value.json.return_value = {"status": "ok"}
+
+    fetch("https://example.com/test", "fake-token", "anon-id")
+
+    mock_get.assert_called_once()
+    call_kwargs = mock_get.call_args
+    assert call_kwargs.kwargs.get("timeout") == (10, 300)

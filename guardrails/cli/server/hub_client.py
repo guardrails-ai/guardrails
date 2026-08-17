@@ -58,7 +58,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
             "x-anonymous-user-id": anonymousUserId,
             "x-guardrails-version": GUARDRAILS_VERSION,
         }
-        req = requests.get(url, headers=headers)
+        req = requests.get(url, headers=headers, timeout=(10, 300))
         body = req.json()
 
         if not req.ok:
@@ -188,7 +188,7 @@ def post_validator_submit(package_name: str, content: str):
             "Authorization": f"Bearer {token}",
         }
         request_body = {"packageName": package_name, "content": content}
-        req = requests.post(submission_url, data=request_body, headers=headers)
+        req = requests.post(submission_url, data=request_body, headers=headers, timeout=(10, 300))
 
         body = req.json()
         if not req.ok:
