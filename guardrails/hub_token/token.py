@@ -32,8 +32,13 @@ class HttpError(Exception):
     message: str
 
 
+# ponytail: separate endpoints for inference vs metadata to avoid rate limit conflicts
 VALIDATOR_HUB_SERVICE = os.getenv(
     "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
+)
+VALIDATOR_HUB_METADATA_SERVICE = os.getenv(
+    "GR_VALIDATOR_HUB_METADATA_SERVICE",
+    os.getenv("GR_VALIDATOR_HUB_SERVICE", "https://hub-metadata.guardrailsai.com"),
 )
 
 
