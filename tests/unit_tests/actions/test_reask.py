@@ -117,6 +117,14 @@ def test_sub_reasks_with_fixed_values(input_dict, expected_dict):
     assert sub_reasks_with_fixed_values(input_dict) == expected_dict
 
 
+def test_sub_reasks_with_fixed_values_none_fail_results():
+    """Test that sub_reasks_with_fixed_values handles FieldReAsk with fail_results=None."""
+    reask = FieldReAsk(incorrect_value="bad_value")
+    result = sub_reasks_with_fixed_values(reask)
+    assert isinstance(result, FieldReAsk)
+    assert result.incorrect_value == "bad_value"
+
+
 def test_gather_reasks():
     """Test that reasks are gathered."""
     input_dict = {
