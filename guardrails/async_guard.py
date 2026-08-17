@@ -31,7 +31,6 @@ from guardrails.llm_providers import get_async_llm_ask, model_is_supported_serve
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import get_call_kwarg, set_call_kwargs
-from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
@@ -322,11 +321,6 @@ class AsyncGuard(Guard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(
-                    not self._allow_metrics_collection
-                    if isinstance(self._allow_metrics_collection, bool)
-                    else None
-                ),
                 exec_options=self._exec_opts,
             )
             # Here we have an async generator
@@ -348,11 +342,6 @@ class AsyncGuard(Guard, Generic[OT]):
                 output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
-                disable_tracer=(
-                    not self._allow_metrics_collection
-                    if isinstance(self._allow_metrics_collection, bool)
-                    else None
-                ),
                 exec_options=self._exec_opts,
             )
             # Why are we using a different method here instead of just overriding?
@@ -361,7 +350,6 @@ class AsyncGuard(Guard, Generic[OT]):
             )
             return ValidationOutcome[OT].from_guard_history(call)
 
-    @async_trace(name="/guard_call", origin="AsyncGuard.__call__")
     async def __call__(
         self,
         llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
@@ -377,8 +365,9 @@ class AsyncGuard(Guard, Generic[OT]):
         Awaitable[ValidationOutcome[OT]],
         AsyncIterator[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output. Pass an async LLM API to
-        return a coroutine.
+        """Call the LLM and validate the output.
+
+        Pass an async LLM API to return a coroutine.
 
         Args:
             llm_api: The LLM API to call
@@ -395,7 +384,6 @@ class AsyncGuard(Guard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-
         # Retrieve messages from the provided arguments or default options
         messages_from_kwargs = kwargs.pop("messages", None)
         messages_from_exec_opts = self._exec_opts.messages
@@ -423,7 +411,6 @@ class AsyncGuard(Guard, Generic[OT]):
             **kwargs,
         )
 
-    @async_trace(name="/guard_call", origin="AsyncGuard.parse")
     async def parse(
         self,
         llm_output: str,
@@ -451,7 +438,6 @@ class AsyncGuard(Guard, Generic[OT]):
             The validated response. This is either a string or a dictionary,
                 determined by the object schema defined in the RAILspec.
         """
-
         final_num_reasks = (
             num_reasks
             if num_reasks is not None
@@ -525,7 +511,6 @@ class AsyncGuard(Guard, Generic[OT]):
         else:
             raise ValueError("AsyncGuard does not have an api client!")
 
-    @async_trace(name="/guard_call", origin="AsyncGuard.validate")
     async def validate(
         self, llm_output: str, *args, **kwargs
     ) -> Awaitable[ValidationOutcome[OT]]:

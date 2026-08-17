@@ -44,10 +44,6 @@ class TestMlFlowInstrumentor:
             "guardrails.integrations.databricks.ml_flow_instrumentor.mlflow.set_experiment"
         )
 
-        from tests.unit_tests.mocks import mock_hub
-
-        mocker.patch("guardrails.hub", return_value=mock_hub)
-
         from guardrails.integrations.databricks import MlFlowInstrumentor
 
         m = MlFlowInstrumentor("mock experiment")
@@ -125,6 +121,8 @@ class TestMlFlowInstrumentor:
         mock_instrument_runner_call.assert_called_once_with(runner_call)
         mock_instrument_async_runner_call.assert_called_once_with(async_runner_call)
 
+        m._uninstrument_validators()
+
     def test__instrument_guard(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
@@ -170,6 +168,8 @@ class TestMlFlowInstrumentor:
         mock_add_guard_attributes.assert_called_once_with(mock_span, [], mock_result)
 
         mock_trace_stream_guard.assert_not_called()
+
+        m._uninstrument_validators()
 
     def test__instrument_guard_stream(self, mocker):
         mock_span = MockSpan()
@@ -218,6 +218,8 @@ class TestMlFlowInstrumentor:
         mock_trace_stream_guard.assert_called_once_with(mock_span, mock_result, [])
 
         mock_add_guard_attributes.assert_not_called()
+
+        m._uninstrument_validators()
 
     @pytest.mark.asyncio
     async def test__instrument_async_guard(self, mocker):
@@ -273,6 +275,8 @@ class TestMlFlowInstrumentor:
 
         mock_trace_async_stream_guard.assert_not_called()
 
+        m._uninstrument_validators()
+
     @pytest.mark.asyncio
     async def test__instrument_async_guard_stream(self, mocker):
         mock_span = MockSpan()
@@ -324,6 +328,8 @@ class TestMlFlowInstrumentor:
 
         mock_add_guard_attributes.assert_not_called()
 
+        m._uninstrument_validators()
+
     def test__instrument_runner_step(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
@@ -362,6 +368,8 @@ class TestMlFlowInstrumentor:
         mock_add_step_attributes.assert_called_once_with(
             mock_span, iteration, mock_runner
         )
+
+        m._uninstrument_validators()
 
     def test__instrument_stream_runner_step(self, mocker):
         mock_span = MockSpan()
@@ -411,6 +419,8 @@ class TestMlFlowInstrumentor:
             mock_span, iteration, mock_runner, call_log=call
         )
 
+        m._uninstrument_validators()
+
     @pytest.mark.asyncio
     async def test__instrument_async_runner_step(self, mocker):
         mock_span = MockSpan()
@@ -453,6 +463,8 @@ class TestMlFlowInstrumentor:
         mock_add_step_attributes.assert_called_once_with(
             mock_span, iteration, mock_runner
         )
+
+        m._uninstrument_validators()
 
     @pytest.mark.asyncio
     async def test__instrument_async_stream_runner_step(self, mocker):
@@ -504,6 +516,8 @@ class TestMlFlowInstrumentor:
             mock_span, iteration, mock_runner, call_log=call
         )
 
+        m._uninstrument_validators()
+
     def test__instrument_runner_call(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
@@ -542,6 +556,8 @@ class TestMlFlowInstrumentor:
         mock_add_call_attributes.assert_called_once_with(
             mock_span, llmResponse, mock_runner
         )
+
+        m._uninstrument_validators()
 
     @pytest.mark.asyncio
     async def test__instrument_async_runner_call(self, mocker):
@@ -586,6 +602,8 @@ class TestMlFlowInstrumentor:
             mock_span, llmResponse, mock_runner
         )
 
+        m._uninstrument_validators()
+
     def test__instrument_validator_validate(self, mocker):
         mock_span = MockSpan()
         mock_start_span = mocker.patch(
@@ -606,11 +624,15 @@ class TestMlFlowInstrumentor:
 
         m = MlFlowInstrumentor("mock experiment")
 
-        wrapped_validate = m._instrument_validator_validate(MockValidator.validate)
+        print(f"BEFORE - MockValidator.validate: {MockValidator.validate}")
+
+        MockValidator.validate = m._instrument_validator_validate(
+            MockValidator.validate
+        )
 
         mock_validator = MockValidator()
 
-        resp = wrapped_validate(mock_validator, True, {})
+        resp = mock_validator.validate(True, {})
 
         mock_start_span.assert_called_once_with(
             name="mock-validator.validate",
@@ -635,6 +657,8 @@ class TestMlFlowInstrumentor:
             validation_session_id="unknown",
         )
 
+        m._uninstrument_validators()
+
     @pytest.mark.asyncio
     async def test__instrument_validator_async_validate(self, mocker):
         mock_span = MockSpan()
@@ -652,13 +676,13 @@ class TestMlFlowInstrumentor:
 
         m = MlFlowInstrumentor("mock experiment")
 
-        wrapped_async_validate = m._instrument_validator_async_validate(
+        MockValidator.async_validate = m._instrument_validator_async_validate(
             MockValidator.async_validate
         )
 
         mock_validator = MockValidator()
 
-        resp = await wrapped_async_validate(mock_validator, True, {})
+        resp = await mock_validator.async_validate(True, {})
 
         mock_start_span.assert_called_once_with(
             name="mock-validator.validate",
@@ -683,3 +707,5 @@ class TestMlFlowInstrumentor:
             init_kwargs={},
             validation_session_id="unknown",
         )
+
+        m._uninstrument_validators()

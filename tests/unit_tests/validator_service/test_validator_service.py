@@ -83,7 +83,7 @@ class TestValidate:
             iteration=iteration,
         )
 
-        vs.SequentialValidatorService.assert_called_once_with(True)
+        vs.SequentialValidatorService.assert_called_once()
         vs.SequentialValidatorService.return_value.validate.assert_called_once_with(
             True,
             {},
@@ -108,7 +108,7 @@ class TestValidate:
             iteration=iteration,
         )
 
-        vs.AsyncValidatorService.assert_called_once_with(True)
+        vs.AsyncValidatorService.assert_called_once()
         vs.AsyncValidatorService.return_value.validate.assert_called_once_with(
             True,
             {},
@@ -137,7 +137,7 @@ class TestValidate:
             "Could not obtain an event loop. Falling back to synchronous validation."
         )
 
-        vs.SequentialValidatorService.assert_called_once_with(True)
+        vs.SequentialValidatorService.assert_called_once()
         vs.SequentialValidatorService.return_value.validate.assert_called_once_with(
             True,
             {},
@@ -161,7 +161,7 @@ async def test_async_validate(mocker):
         iteration=iteration,
     )
 
-    vs.AsyncValidatorService.assert_called_once_with(True)
+    vs.AsyncValidatorService.assert_called_once()
     vs.AsyncValidatorService.return_value.async_validate.assert_called_once_with(
         True, {}, {}, iteration, "$", "$", False
     )

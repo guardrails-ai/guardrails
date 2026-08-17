@@ -631,30 +631,6 @@ class TestSaveGuard:
 class TestConfigureExtended:
     """Extended tests for configure method."""
 
-    def test_configure_with_allow_metrics_collection(self, mocker):
-        """Test configure with allow_metrics_collection parameter."""
-        guard = Guard()
-
-        # Mock the hub telemetry configuration
-        mock_configure = mocker.patch.object(guard, "_configure_hub_telemtry")
-
-        guard.configure(allow_metrics_collection=True)
-
-        mock_configure.assert_called_once()
-        mock_configure.assert_called_with(True)
-
-    def test_configure_with_both_parameters(self, mocker):
-        """Test configure with both num_reasks and allow_metrics_collection."""
-        guard = Guard()
-
-        mock_configure = mocker.patch.object(guard, "_configure_hub_telemtry")
-
-        guard.configure(num_reasks=3, allow_metrics_collection=False)
-
-        assert guard._num_reasks == 3
-        assert guard._allow_metrics_collection is False
-        mock_configure.assert_called_once()
-
     def test_configure_multiple_times(self):
         """Test that configure can be called multiple times."""
         guard = Guard()

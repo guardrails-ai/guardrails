@@ -50,3 +50,4 @@ mlartifacts
 .ruff_cache
 .vscode
 docs/examples/.guardrails/hub_registry.json
+mlflow.db

@@ -2,11 +2,9 @@ import typer
 from importlib.metadata import version
 
 from guardrails.cli.guardrails import guardrails
-from guardrails.cli.hub.utils import installer_process
 from guardrails.cli.logger import logger
-from guardrails.cli.telemetry import trace_if_enabled
 from guardrails.cli.version import version_warnings_if_applicable
-from guardrails.cli.hub.console import console
+from guardrails.cli.console import console
 from guardrails.settings import settings
 
 
@@ -47,8 +45,10 @@ def start(
 ):
     logger.debug("Checking for prerequisites...")
     if not api_is_installed():
-        package_name = "guardrails-api>=0.2.1"
-        installer_process("install", package_name)
+        raise ImportError(
+            "guardrails-api is required for the `guardrails start` command."
+            "Please install it using `pip install guardrails-api`"
+        )
 
     from guardrails_api.cli.start import start as start_api  # type: ignore
 
@@ -62,7 +62,6 @@ def start(
         settings._watch_mode_enabled = True
 
     version_warnings_if_applicable(console)
-    trace_if_enabled("start")
 
     if major == "0" and int(minor) < 3:
         if env_override:
