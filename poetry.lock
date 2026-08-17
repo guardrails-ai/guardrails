@@ -346,6 +346,19 @@ files = [
 ]
 
 [[package]]
+name = "backoff"
+version = "2.2.1"
+description = "Function decoration for backoff and retry"
+optional = true
+python-versions = ">=3.7,<4.0"
+groups = ["main"]
+markers = "extra == \"langfuse\""
+files = [
+    {file = "backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8"},
+    {file = "backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba"},
+]
+
+[[package]]
 name = "backports-asyncio-runner"
 version = "1.2.0"
 description = "Backport of asyncio.Runner, a context manager that controls event loop life cycle."
@@ -3277,6 +3290,29 @@ files = [
 
 [package.dependencies]
 typing-extensions = ">=4.13.0,<5.0.0"
+
+[[package]]
+name = "langfuse"
+version = "4.14.4"
+description = "Langfuse Python SDK - LLM observability/tracing, datasets, experiments, LLM-as-a-judge evaluation, and prompt management"
+optional = true
+python-versions = "<4.0,>=3.10"
+groups = ["main"]
+markers = "extra == \"langfuse\""
+files = [
+    {file = "langfuse-4.14.4-py3-none-any.whl", hash = "sha256:78692a1d4785a8c255bf6ea967e673e1ee30ce078d646e7b5f7ff44549d45cce"},
+    {file = "langfuse-4.14.4.tar.gz", hash = "sha256:48c4bdefc290f61a42881b8048a904ab6b81d37e02496473166836e71ee0ab3a"},
+]
+
+[package.dependencies]
+backoff = ">=1.10.0"
+httpx = ">=0.15.4,<1.0"
+opentelemetry-api = ">=1.33.1,<2"
+opentelemetry-exporter-otlp-proto-http = ">=1.33.1,<2"
+opentelemetry-sdk = ">=1.33.1,<2"
+packaging = ">=23.2,<27.0"
+pydantic = ">=2,<3"
+wrapt = ">=1.14,<3"
 
 [[package]]
 name = "langsmith"
@@ -8760,7 +8796,7 @@ description = "Module for decorators, wrappers and monkey patching."
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"docs-build\" or extra == \"llama\""
+markers = "extra == \"docs-build\" or extra == \"llama\" or extra == \"langfuse\""
 files = [
     {file = "wrapt-2.2.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0f68f478004475d97906686e702ddbddeaf717c0b68ad2794384308f2dc713ae"},
     {file = "wrapt-2.2.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e422b2d647a65d6b080cad5accd09055d3809bdff00c76fba8dca00ca935572a"},
@@ -9329,6 +9365,7 @@ databricks = ["mlflow"]
 dev = ["docformatter", "liccheck", "lxml-stubs", "pre-commit", "pypdfium2", "pyright", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "ruff", "twine"]
 docs-build = ["docspec_python", "pydoc-markdown"]
 huggingface = ["guardrails-jsonformer", "torch", "transformers"]
+langfuse = ["langfuse"]
 llama = ["llama-index"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
@@ -9338,4 +9375,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "b6003a268b3bac0c2ca909f86589c4c899efae6a6da4c0d71a4771e0d8b8b149"
+content-hash = "07193e7e87f0100e99d6c37b0dd33a20aee90d3f1e098cecc4dd9d946f64d88c"

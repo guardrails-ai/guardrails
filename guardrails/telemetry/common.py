@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from pydantic import BaseModel
 from typing import Any, Callable, Dict, Optional, Union, List
 from opentelemetry.baggage import get_baggage
@@ -36,6 +37,10 @@ def serialize(val: Any) -> Optional[str]:
     try:
         if val is None:
             return None
+        if isinstance(val, Enum):
+            # Must precede __dict__: an Enum's __dict__ holds a non-serializable
+            # __objclass__, which would otherwise drop the value entirely.
+            return str(val.value)
         if hasattr(val, "to_dict"):
             return json.dumps(val.to_dict())
         elif isinstance(val, BaseModel):

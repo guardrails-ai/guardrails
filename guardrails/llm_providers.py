@@ -197,6 +197,7 @@ class LiteLLMCallable(PromptCallableBase):
                 **kwargs,
                 "model": model,
             },
+            model_name=model,
             function_call=kwargs.get(
                 "function_call", safe_get(function_calling_tools, 0)
             ),
@@ -245,6 +246,8 @@ class LiteLLMCallable(PromptCallableBase):
 
         trace_llm_call(
             output_messages=[choice.message for choice in response.choices],  # type: ignore
+            # Cost is priced against the served model, not the requested one.
+            model_name=getattr(response, "model", None) or model,
             token_count_completion=completion_tokens,  # type: ignore
             token_count_prompt=prompt_tokens,  # type: ignore
             token_count_total=total_tokens,  # type: ignore
@@ -475,6 +478,7 @@ class ArbitraryCallable(PromptCallableBase):
             invocation_parameters={
                 **kwargs,
             },
+            model_name=kwargs.get("model"),
         )
 
         # Get the response from the callable
@@ -686,6 +690,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         trace_llm_call(
             input_messages=kwargs.get("messages"),
             invocation_parameters={**kwargs},
+            model_name=kwargs.get("model"),
             function_call=kwargs.get(
                 "function_call", safe_get(function_calling_tools, 0)
             ),
@@ -732,6 +737,8 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             total_tokens = (completion_tokens or 0) + (prompt_tokens or 0)
         trace_llm_call(
             output_messages=[choice.message for choice in response.choices],  # type: ignore
+            # Cost is priced against the served model, not the requested one.
+            model_name=getattr(response, "model", None) or kwargs.get("model"),
             token_count_completion=completion_tokens,  # type: ignore
             token_count_prompt=prompt_tokens,  # type: ignore
             token_count_total=total_tokens,  # type: ignore
@@ -855,6 +862,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
             invocation_parameters={
                 **kwargs,
             },
+            model_name=kwargs.get("model"),
         )
 
         output = await self.llm_api(*args, **kwargs)

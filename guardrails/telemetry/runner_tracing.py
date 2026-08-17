@@ -36,6 +36,21 @@ import sys
 if sys.version_info.minor < 10:
     from guardrails.utils.polyfills import anext
 
+
+def add_static_attributes(span: Span, span_type: str):
+    """Set attributes known before the wrapped call runs.
+
+    These are applied at span creation rather than alongside the response
+    attributes so that spans which return early — notably the streaming
+    branch of ``Runner.call`` — are still identifiable by ``type``.
+    """
+    span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
+    span.set_attribute("type", span_type)
+    span.set_attribute("guard.name", get_guard_name())
+    if SpanAttributes is not None:
+        span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
+
+
 #########################################
 ### START Runner.step Instrumentation ###
 #########################################
@@ -86,10 +101,7 @@ def trace_step(fn: Callable[..., Iteration]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
-                if SpanAttributes is not None:
-                    step_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )
+                add_static_attributes(step_span, "guardrails/guard/step")
                 try:
                     response = fn(*args, **kwargs)
                     add_step_attributes(step_span, response, *args, **kwargs)
@@ -117,8 +129,7 @@ def trace_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
-        if SpanAttributes is not None:
-            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
+        add_static_attributes(step_span, "guardrails/guard/step")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
@@ -164,10 +175,7 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
                 name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
-                if SpanAttributes is not None:
-                    step_span.set_attribute(
-                        SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL"
-                    )
+                add_static_attributes(step_span, "guardrails/guard/step")
                 try:
                     response = await fn(*args, **kwargs)
                     add_user_attributes(step_span)
@@ -197,8 +205,7 @@ async def trace_async_stream_step_generator(
         name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
-        if SpanAttributes is not None:
-            step_span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, "GUARDRAIL")
+        add_static_attributes(step_span, "guardrails/guard/step")
         try:
             gen = fn(*args, **kwargs)
             next_exists = True
@@ -287,6 +294,7 @@ def trace_call(fn: Callable[..., LLMResponse]):
                 name="call",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as call_span:
+                add_static_attributes(call_span, "guardrails/guard/step/call")
                 try:
                     response = fn(*args, **kwargs)
                     if isinstance(response, LLMResponse) and (
@@ -317,6 +325,7 @@ def trace_async_call(fn: Callable[..., Awaitable[LLMResponse]]):
                 name="call",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as call_span:
+                add_static_attributes(call_span, "guardrails/guard/step/call")
                 try:
                     response = await fn(*args, **kwargs)
                     add_call_attributes(call_span, response, *args, **kwargs)
