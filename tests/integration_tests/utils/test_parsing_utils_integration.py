@@ -114,6 +114,21 @@ float_schema = {"type": "number"}
                 },
             },
         ),
+        (
+            {"type": "object", "properties": {"count": {"type": "string"}}},
+            {"count": 0},
+            {"count": "0"},
+        ),
+        (
+            {"type": "object", "properties": {"flag": {"type": "string"}}},
+            {"flag": False},
+            {"flag": "False"},
+        ),
+        (
+            {"type": "object", "additionalProperties": {"type": "string"}},
+            {"flag": False},
+            {"flag": "False"},
+        ),
     ],
 )
 def test_coerce_types(schema, given, expected):
