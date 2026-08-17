@@ -937,7 +937,7 @@ class Guard(IGuard, Generic[OT]):
             # return ValidationOutcome[OT].from_guard_history(call_log)
             validated_output = (
                 cast(OT, validation_output.validated_output)
-                if validation_output.validated_output
+                if validation_output.validated_output is not None
                 else None
             )
             return ValidationOutcome[OT](
@@ -975,7 +975,7 @@ class Guard(IGuard, Generic[OT]):
                 else:
                     validated_output = (
                         cast(OT, validation_output.validated_output)
-                        if validation_output.validated_output
+                        if validation_output.validated_output is not None
                         else None
                     )
                     yield ValidationOutcome[OT](
