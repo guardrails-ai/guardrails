@@ -1,8 +1,18 @@
 # Trivy ignore file for the Dependency Audit gate.
 #
-# Only UNFIXABLE vulnerabilities (no upstream patch available) belong here.
+# Two narrow categories belong here, and nothing else:
+#
+#   1. UNFIXABLE - no patched release exists upstream.
+#   2. UNREACHABLE - a patched release exists, but a peer dependency's version
+#      cap makes it unresolvable. Entries in this category MUST name the
+#      blocking constraint so the exception can be retired the moment that
+#      constraint moves.
+#
 # `ignore-unfixed: false` is deliberately kept in the workflow so that any
-# FIXABLE HIGH/CRITICAL finding still fails CI.
+# FIXABLE, reachable HIGH/CRITICAL finding still fails CI.
+#
+# Every entry needs a reason and a removal condition. Re-check them whenever a
+# blocking dependency is bumped.
 
 # CVE-2024-35515 - sqlitedict: arbitrary code execution via insecure
 # deserialization. There is NO patched release: 2.1.0 is the latest version
@@ -12,3 +22,34 @@
 # data within guardrails. Residual risk is therefore acceptable until an
 # upstream fix or a manifest-ml release that drops the dependency exists.
 CVE-2024-35515
+
+# CVE-2026-69247 (GHSA-g6cj-pr64-35w5) - cryptography, HIGH. Category 2:
+# UNREACHABLE, not unfixable.
+#
+# The advisory covers >=44.0.0,<50.0.0 and is first patched in 50.0.0. There is
+# no backport: 49.0.0 is the only 49.x release ever published, so 50.0.0 is the
+# sole fix.
+#
+# BLOCKING CONSTRAINT: mlflow requires `cryptography >=43.0.0,<50`. Every
+# published mlflow 3.x carries that cap (3.13/3.14 cap <49, 3.15.0/3.15.1 cap
+# <50), and pyproject.toml constrains mlflow to >=3.0.0,<4.0.0 with no 4.x
+# released. So no combination of allowed mlflow versions admits cryptography
+# 50.0.0, and `poetry update --lock cryptography` is a no-op.
+#
+# EXPOSURE: cryptography is itself an optional dependency in this lock --
+# `optional = true`, with markers requiring `extra == "dev"` or
+# `extra == "databricks"`. A default `pip install guardrails-ai` does not pull
+# it at all, so no ordinary consumer of the published package is affected. It
+# reaches the lockfile only because poetry resolves one version set spanning
+# every extra.
+#
+# (Note this is also why the finding is Trivy-version dependent: Trivy 0.72
+# skips optional poetry packages and reports this lock clean, while the older
+# binary shipped by trivy-action v0.36.0 includes them and flags it. The entry
+# is kept regardless so the gate's result does not silently depend on which
+# scanner build runs.)
+#
+# REMOVE THIS ENTRY when mlflow publishes a release allowing cryptography
+# >=50.0.0 (or the databricks extra stops depending on mlflow), then run
+# `poetry update --lock cryptography` and confirm 50.0.0 resolves.
+CVE-2026-69247
