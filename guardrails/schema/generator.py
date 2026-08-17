@@ -163,10 +163,12 @@ def gen_array(
     """
     item_schema = schema.get("items", {})
     min_items = schema.get("minItems", 1)
-    max_item = schema.get("maxItem", 2)
+    max_items = schema.get("maxItems", get_max(min_items, 2))
     unique_items = schema.get("uniqueItems", False)
 
-    gen_amount = randint(min_items, max_item)
+    # Guard against minItems > maxItems, which would make randint raise.
+    max_items = get_max(min_items, max_items)
+    gen_amount = randint(min_items, max_items)
 
     array_items = []
     while len(array_items) < gen_amount:

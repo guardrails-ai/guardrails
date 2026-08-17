@@ -1,6 +1,6 @@
 from decimal import Decimal
 import pytest
-from guardrails.schema.generator import gen_num
+from guardrails.schema.generator import gen_array, gen_num
 
 
 @pytest.mark.parametrize(
@@ -29,3 +29,29 @@ def test_gen_num(schema, min, max, multiple, is_int: bool):
     div_result = round(Decimal(result) / Decimal(multiple), 3)
     assert div_result % 1 == 0
     assert isinstance(result, int) is is_int
+
+
+@pytest.mark.parametrize(
+    "schema,min_len,max_len",
+    [
+        # minItems above the old default of 2 used to crash randint(5, 2).
+        ({"type": "array", "items": {"type": "string"}, "minItems": 5}, 5, None),
+        # maxItems was read from the wrong key ("maxItem") and silently ignored.
+        (
+            {
+                "type": "array",
+                "items": {"type": "string"},
+                "minItems": 5,
+                "maxItems": 10,
+            },
+            5,
+            10,
+        ),
+        ({"type": "array", "items": {"type": "integer"}, "maxItems": 1}, 1, 1),
+    ],
+)
+def test_gen_array_respects_item_bounds(schema, min_len, max_len):
+    result = gen_array(schema)
+    assert len(result) >= min_len
+    if max_len is not None:
+        assert len(result) <= max_len
