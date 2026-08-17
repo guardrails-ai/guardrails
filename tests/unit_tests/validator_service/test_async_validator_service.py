@@ -775,19 +775,40 @@ class TestRunValidatorAsync:
         )
 
     @pytest.mark.asyncio
-    async def test_result_is_none(self, mocker):
+    async def test_non_stream_result_is_none_raises(self, mocker):
         mock_validator = MagicMock(spec=Validator)
 
-        validation_result = None
         mock_execute_validator = mocker.patch.object(
-            avs, "execute_validator", return_value=validation_result
+            avs, "execute_validator", return_value=None
+        )
+
+        with pytest.raises(RuntimeError, match="Unexpected result type"):
+            await avs.run_validator_async(
+                validator=mock_validator,
+                value="value",
+                metadata={},
+                stream=False,
+                validation_session_id="mock-session",
+            )
+
+        assert mock_execute_validator.call_count == 1
+        mock_execute_validator.assert_called_once_with(
+            mock_validator, "value", {}, False, validation_session_id="mock-session"
+        )
+
+    @pytest.mark.asyncio
+    async def test_stream_result_is_none_still_passes(self, mocker):
+        mock_validator = MagicMock(spec=Validator)
+
+        mock_execute_validator = mocker.patch.object(
+            avs, "execute_validator", return_value=None
         )
 
         result = await avs.run_validator_async(
             validator=mock_validator,
             value="value",
             metadata={},
-            stream=False,
+            stream=True,
             validation_session_id="mock-session",
         )
 
@@ -795,5 +816,5 @@ class TestRunValidatorAsync:
 
         assert mock_execute_validator.call_count == 1
         mock_execute_validator.assert_called_once_with(
-            mock_validator, "value", {}, False, validation_session_id="mock-session"
+            mock_validator, "value", {}, True, validation_session_id="mock-session"
         )
