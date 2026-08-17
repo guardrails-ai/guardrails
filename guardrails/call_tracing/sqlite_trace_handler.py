@@ -125,15 +125,15 @@ class SQLiteTraceHandler(TracerMixin):
         now = time.time()
         if force or (now - self.last_cleanup > TIME_BETWEEN_CLEANUPS):
             self.last_cleanup = now
-        self.db.execute(
-            """
-            DELETE FROM guard_logs 
-            WHERE id < (
-                SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?  
-            );
-            """,
-            (keep_n,),
-        )
+            self.db.execute(
+                """
+                DELETE FROM guard_logs
+                WHERE id < (
+                    SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?
+                );
+                """,
+                (keep_n,),
+            )
 
     def log(
         self,
