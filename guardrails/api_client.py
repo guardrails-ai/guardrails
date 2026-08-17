@@ -239,11 +239,10 @@ class GuardrailsApiClient:
                 response.raise_for_status()
                 return
 
-            async for raw_chunk in response.aiter_text():
-                str_chunk = raw_chunk.strip()
-                if str_chunk:
-                    str_chunk_data = "".join(str_chunk.split("\n"))
-                    chunk = json.loads(str_chunk_data)
+            async for raw_line in response.aiter_lines():
+                line = raw_line.strip()
+                if line:
+                    chunk = json.loads(line)
                     if chunk.get("error"):
                         raise Exception(chunk.get("error").get("message"))
                     yield IValidationOutcome.model_validate(chunk)
@@ -283,11 +282,10 @@ class GuardrailsApiClient:
                 response.raise_for_status()
                 return
 
-            for raw_chunk in response.iter_text():
-                str_chunk = raw_chunk.strip()
-                if str_chunk:
-                    str_chunk_data = "".join(str_chunk.split("\n"))
-                    chunk = json.loads(str_chunk_data)
+            for raw_line in response.iter_lines():
+                line = raw_line.strip()
+                if line:
+                    chunk = json.loads(line)
                     if chunk.get("error"):
                         raise Exception(chunk.get("error").get("message"))
                     yield IValidationOutcome.model_validate(chunk)
