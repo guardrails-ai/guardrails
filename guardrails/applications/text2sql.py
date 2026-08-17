@@ -142,7 +142,11 @@ class Text2Sql:
                 rail_params["schema_file"] = ""
 
         # Load the rail specification.
-        with open(rail_spec, "r") as f:
+        base_real = os.path.realpath(os.path.dirname(__file__))
+        target_real = os.path.realpath(rail_spec)
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, "r") as f:
             rail_spec_str = f.read()
 
         # Substitute the parameters in the rail specification.
