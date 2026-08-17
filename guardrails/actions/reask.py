@@ -530,15 +530,21 @@ def gather_reasks(
     ) -> None:
         if path is None:
             path = []
+        reask_indices = []
         for idx, item in enumerate(original):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
-                del valid_output[idx]
+                reask_indices.append(idx)
             elif isinstance(item, dict):
                 _gather_reasks_in_dict(item, valid_output[idx], path + [idx])
             elif isinstance(item, list):
                 _gather_reasks_in_list(item, valid_output[idx], path + [idx])
+        # Delete in reverse order so earlier deletions don't shift the
+        # indices of later ones (valid_output is mutated in place while
+        # `original`, which we iterate over, is left untouched).
+        for idx in reversed(reask_indices):
+            del valid_output[idx]
         return
 
     if isinstance(validated_output, Dict):
