@@ -857,3 +857,40 @@ class TestJsonFunctionCallingTool:
         result = guard.json_function_calling_tool(tools=custom_tools)
 
         assert isinstance(result, list)
+
+
+@register_validator("fixappendera", data_type="string")
+class FixAppenderA(Validator):
+    def validate(self, value, metadata):
+        from guardrails_ai.types import FailResult
+
+        return FailResult(error_message="needs A", fix_value=f"{value}A")
+
+
+@register_validator("fixappenderb", data_type="string")
+class FixAppenderB(Validator):
+    def validate(self, value, metadata):
+        from guardrails_ai.types import FailResult
+
+        return FailResult(error_message="needs B", fix_value=f"{value}B")
+
+
+class TestFixingValidatorsCompose:
+    """Regression tests for https://github.com/guardrails-ai/guardrails/issues/1633.
+
+    The async (default) and sequential validator services must agree: fixes
+    from multiple on_fail="fix" validators compose instead of being silently
+    dropped by the three-way merge.
+    """
+
+    @pytest.mark.parametrize("run_sync", ["true", "false"])
+    def test_fixes_compose_in_both_services(self, run_sync, monkeypatch):
+        monkeypatch.setenv("GUARDRAILS_RUN_SYNC", run_sync)
+        guard = Guard().use(
+            FixAppenderA(on_fail="fix"),
+            FixAppenderB(on_fail="fix"),
+        )
+
+        result = guard.validate("x")
+
+        assert result.validated_output == "xAB"
