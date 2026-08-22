@@ -104,20 +104,46 @@ def trace_llm_call(
                         serialize(value),  # type: ignore
                     )
 
-    ser_invocation_parameters = serialize(invocation_parameters)
-    redacted_ser_invocation_parameters = recursive_key_operation(
-        ser_invocation_parameters, redact
-    )
-    reser_invocation_parameters = (
-        json.dumps(redacted_ser_invocation_parameters)
-        if isinstance(redacted_ser_invocation_parameters, dict)
-        or isinstance(redacted_ser_invocation_parameters, list)
-        else redacted_ser_invocation_parameters
-    )
-    if reser_invocation_parameters:
-        current_span.set_attribute(
-            "llm.invocation_parameters", reser_invocation_parameters
-        )
+    # Normalize invocation parameters to a dict so they can be filtered,
+    # redacted, and emitted both as one JSON blob and as per-key attributes
+    # (`llm.invocation_parameters.<name>`, per OpenInference conventions).
+    invocation_params: Optional[Dict[str, Any]] = None
+    if isinstance(invocation_parameters, dict):
+        invocation_params = invocation_parameters
+    else:
+        ser_invocation_parameters = serialize(invocation_parameters)
+        if ser_invocation_parameters is not None:
+            try:
+                parsed = json.loads(ser_invocation_parameters)
+                if isinstance(parsed, dict):
+                    invocation_params = parsed
+            except (json.JSONDecodeError, TypeError):
+                invocation_params = None
+
+    if invocation_params is not None:
+        # Message/prompt payloads are already carried by input.value and
+        # llm.input_messages.*; duplicating them here leaks prompt content
+        # into a field consumers treat as model parameters (issue #1631).
+        payload_param_keys = ("messages", "prompt", "input", "instructions")
+        model_params = {
+            key: value
+            for key, value in invocation_params.items()
+            if key not in payload_param_keys
+        }
+        redacted_model_params = recursive_key_operation(model_params, redact)
+        if redacted_model_params:
+            current_span.set_attribute(
+                "llm.invocation_parameters", json.dumps(redacted_model_params)
+            )
+            for param_name, param_value in redacted_model_params.items():
+                attribute_value = (
+                    json.dumps(param_value)
+                    if isinstance(param_value, (dict, list))
+                    else param_value
+                )
+                current_span.set_attribute(
+                    f"llm.invocation_parameters.{param_name}", attribute_value
+                )
 
     ser_model_name = serialize(model_name)
     if ser_model_name:

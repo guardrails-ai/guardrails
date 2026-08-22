@@ -1,6 +1,7 @@
+import json
 import unittest
+
 from guardrails.telemetry.common import recursive_key_operation, redact
-import ast
 
 
 # Test suite for recursive_key_operation function
@@ -9,7 +10,7 @@ class TestRecursiveKeyOperation(unittest.TestCase):
         data = '{"init_args": [], "init_kwargs": {"model": "gpt-4o-mini", \
             "api_base": "https://api.openai.com/v1", "api_key": "sk-1234"}}'
         result = recursive_key_operation(data, redact)
-        assert ast.literal_eval(result)["init_kwargs"]["api_key"] == "***1234"
+        assert json.loads(result)["init_kwargs"]["api_key"] == "***1234"
 
     def test_dict_kwargs(self):
         data = {
@@ -22,7 +23,16 @@ class TestRecursiveKeyOperation(unittest.TestCase):
             "output": None,
         }
         result = recursive_key_operation(data, redact)
-        assert ast.literal_eval(result["api"])["init_kwargs"]["api_key"] == "***1234"
+        assert json.loads(result["api"])["init_kwargs"]["api_key"] == "***1234"
+
+    def test_json_string_input_returns_json_not_repr(self):
+        # Regression for issue #1631: str-input used to come back as a Python
+        # repr (single quotes), which json.loads consumers could not parse.
+        data = '{"temperature": 0.3, "api_key": "sk-1234", "stream": true}'
+        result = recursive_key_operation(data, redact)
+        parsed = json.loads(result)  # must not raise
+        assert parsed == {"temperature": 0.3, "api_key": "***1234", "stream": True}
+        assert "'" not in result
 
     def test_nomatch(self):
         data = {"somekey": "soemvalue"}
