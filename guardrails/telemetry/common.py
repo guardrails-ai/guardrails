@@ -204,7 +204,10 @@ def recursive_key_operation(
     """
     if isinstance(data, str) and can_convert_to_dict(data):
         data_dict = json.loads(data)
-        data = str(recursive_key_operation(data_dict, operation, keys_to_match))
+        # Re-serialize as JSON so the output remains parseable by JSON
+        # consumers; str() here produced Python reprs with single quotes,
+        # which broke json.loads downstream (see issue #1631).
+        data = json.dumps(recursive_key_operation(data_dict, operation, keys_to_match))
     elif isinstance(data, dict):
         for key, value in data.items():
             if ismatchingkey(key, tuple(keys_to_match)) and isinstance(value, str):
