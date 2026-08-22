@@ -7,12 +7,12 @@ from guardrails.classes.history import Iteration
 from guardrails_ai.types import (
     FailResult,
     PassResult,
+    ReAsk,
     ValidationResult,
 )
 from guardrails.hub_telemetry.hub_tracing import async_trace
 from guardrails.telemetry.validator_tracing import trace_async_validator
 from guardrails.types import ValidatorMap, OnFailAction
-from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_base import Validator
 from guardrails.validator_service.validator_service_base import (
@@ -153,8 +153,64 @@ class AsyncValidatorService(ValidatorServiceBase):
         **kwargs,
     ):
         validators = validator_map.get(reference_property_path, [])
+
+        # Validators whose on_fail action can replace the value make every
+        # verdict depend on the value a validator observes. Run those in
+        # declaration order so each one sees the corrections of the ones
+        # before it, matching SequentialValidatorService semantics; fixes
+        # computed against the original value cannot be reconciled by the
+        # three-way merge when they overlap, and any fix that presupposes
+        # another validator's correction is lost entirely.
+        mutating_actions = (
+            OnFailAction.FIX,
+            OnFailAction.FIX_REASK,
+            OnFailAction.CUSTOM,
+        )
+        has_mutating = any(
+            validator.on_fail_descriptor in mutating_actions for validator in validators
+        )
+
+        if not has_mutating:
+            return await self._run_validators_concurrently(
+                iteration=iteration,
+                validators=validators,
+                value=value,
+                metadata=metadata,
+                absolute_property_path=absolute_property_path,
+                reference_property_path=reference_property_path,
+                stream=stream,
+                **kwargs,
+            )
+
+        for validator in validators:
+            res = await self.run_validator(
+                iteration,
+                validator,
+                value,
+                metadata,
+                absolute_property_path,
+                stream=stream,
+                reference_property_path=reference_property_path,
+                **kwargs,
+            )
+            if isinstance(res.value, (Filter, Refrain, ReAsk)):
+                return res.value, metadata
+            value = res.value
+
+        return value, metadata
+
+    async def _run_validators_concurrently(
+        self,
+        iteration: Iteration,
+        validators: List[Validator],
+        value: Any,
+        metadata: Dict,
+        absolute_property_path: str,
+        reference_property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ):
         coroutines: List[Coroutine[Any, Any, ValidatorRun]] = []
-        validators_logs: List[ValidatorLogs] = []
         for validator in validators:
             coroutines.append(
                 self.run_validator(
@@ -172,7 +228,6 @@ class AsyncValidatorService(ValidatorServiceBase):
         results = await asyncio.gather(*coroutines)
         reasks: List[FieldReAsk] = []
         for res in results:
-            validators_logs.append(res.validator_logs)
             # QUESTION: Do we still want to do this here or handle it during the merge?
             # return early if we have a filter, refrain, or reask
             if isinstance(res.value, (Filter, Refrain)):
@@ -188,22 +243,6 @@ class AsyncValidatorService(ValidatorServiceBase):
                 fail_results.extend(reask.fail_results or [])
             first_reask.fail_results = fail_results
             return first_reask, metadata
-
-        # merge the results
-        fix_values = [
-            res.value
-            for res in results
-            if (
-                isinstance(res.validator_logs.validation_result, FailResult)
-                and (
-                    res.on_fail_action == OnFailAction.FIX
-                    or res.on_fail_action == OnFailAction.FIX_REASK
-                    or res.on_fail_action == OnFailAction.CUSTOM
-                )
-            )
-        ]
-        if len(fix_values) > 0:
-            value = self.merge_results(value, fix_values)
 
         return value, metadata
 

@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, call
 
 from guardrails.actions.filter import Filter
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_service.validator_service_base import ValidatorRun
 import pytest
 
@@ -310,6 +311,11 @@ class TestValidateChildren:
 class TestRunValidators:
     @pytest.mark.asyncio
     async def test_filter_exits_early(self, mocker):
+        noop_validator = MagicMock(spec=Validator)
+        noop_validator.on_fail_descriptor = OnFailAction.NOOP
+        filter_validator = MagicMock(spec=Validator)
+        filter_validator.on_fail_descriptor = OnFailAction.FILTER
+
         mock_run_validator = mocker.patch.object(
             avs,
             "run_validator",
@@ -349,12 +355,7 @@ class TestRunValidators:
 
         value, metadata = await avs.run_validators(
             iteration=iteration,
-            validator_map={
-                "$": [
-                    MagicMock(spec=Validator),
-                    MagicMock(spec=Validator),
-                ]
-            },
+            validator_map={"$": [noop_validator, filter_validator]},
             value=True,
             metadata={},
             absolute_property_path="$",
@@ -368,42 +369,65 @@ class TestRunValidators:
         assert metadata == {}
 
     @pytest.mark.asyncio
-    async def test_calls_merge(self, mocker):
+    async def test_fixing_validators_chain_like_sequential(self, mocker):
+        """Fixing validators must compose instead of merging against stale input.
+
+        Regression test for
+        https://github.com/guardrails-ai/guardrails/issues/1633: each validator
+        observes the corrections applied by the ones before it, matching
+        SequentialValidatorService semantics.
+        """
+        noop_validator = MagicMock(spec=Validator)
+        noop_validator.on_fail_descriptor = OnFailAction.NOOP
+        fix_validator_a = MagicMock(spec=Validator)
+        fix_validator_a.on_fail_descriptor = OnFailAction.FIX
+        fix_validator_b = MagicMock(spec=Validator)
+        fix_validator_b.on_fail_descriptor = OnFailAction.FIX
+
+        def _fail_logs(name, value_before):
+            return ValidatorLogs(
+                registered_name=name,
+                validator_name=name,
+                value_before_validation=value_before,
+                validation_result=FailResult(error_message="mock-error"),
+                property_path="$",
+            )
+
+        async def fake_run_validator(iteration, validator, value, *args, **kwargs):
+            if validator is fix_validator_a:
+                return ValidatorRun(
+                    value=f"{value}A",
+                    metadata={},
+                    on_fail_action=OnFailAction.FIX,
+                    validator_logs=_fail_logs("fix_a", value),
+                )
+            if validator is fix_validator_b:
+                # The second fixing validator must observe the first one's
+                # correction ('xA'), not the original value.
+                assert value == "xA"
+                return ValidatorRun(
+                    value=f"{value}B",
+                    metadata={},
+                    on_fail_action=OnFailAction.FIX,
+                    validator_logs=_fail_logs("fix_b", value),
+                )
+            return ValidatorRun(
+                value=value,
+                metadata={},
+                on_fail_action=OnFailAction.NOOP,
+                validator_logs=ValidatorLogs(
+                    registered_name="noop_validator",
+                    validator_name="noop_validator",
+                    value_before_validation=value,
+                    validation_result=PassResult(),
+                    property_path="$",
+                ),
+            )
+
         mock_run_validator = mocker.patch.object(
-            avs,
-            "run_validator",
-            side_effect=[
-                ValidatorRun(
-                    value="mock-value",
-                    metadata={},
-                    on_fail_action="noop",
-                    validator_logs=ValidatorLogs(
-                        registered_name="noop_validator",
-                        validator_name="noop_validator",
-                        value_before_validation="mock-value",
-                        validation_result=PassResult(),
-                        property_path="$",
-                    ),
-                ),
-                ValidatorRun(
-                    value="mock-fix-value",
-                    metadata={},
-                    on_fail_action="fix",
-                    validator_logs=ValidatorLogs(
-                        registered_name="fix_validator",
-                        validator_name="fix_validator",
-                        value_before_validation="mock-value",
-                        validation_result=FailResult(
-                            error_message="mock-error", fix_value="mock-fix-value"
-                        ),
-                        property_path="$",
-                    ),
-                ),
-            ],
+            avs, "run_validator", side_effect=fake_run_validator
         )
-        mock_merge_results = mocker.patch.object(
-            avs, "merge_results", return_value="mock-fix-value"
-        )
+        mock_merge_results = mocker.patch.object(avs, "merge_results")
 
         iteration = Iteration(
             call_id="mock-call",
@@ -412,22 +436,79 @@ class TestRunValidators:
 
         value, metadata = await avs.run_validators(
             iteration=iteration,
-            validator_map={
-                "$": [
-                    MagicMock(spec=Validator),
-                    MagicMock(spec=Validator),
-                ]
-            },
-            value=True,
+            validator_map={"$": [noop_validator, fix_validator_a, fix_validator_b]},
+            value="x",
             metadata={},
             absolute_property_path="$",
             reference_property_path="$",
         )
 
-        assert mock_run_validator.call_count == 2
-        assert mock_merge_results.call_count == 1
+        assert mock_run_validator.call_count == 3
+        assert mock_merge_results.call_count == 0
 
-        assert value == "mock-fix-value"
+        assert value == "xAB"
+        assert metadata == {}
+
+    @pytest.mark.asyncio
+    async def test_chained_path_returns_reask_early(self, mocker):
+        """In chained mode a reask stops later validators, like sequential."""
+
+        fix_validator = MagicMock(spec=Validator)
+        fix_validator.on_fail_descriptor = OnFailAction.FIX
+        reask_validator = MagicMock(spec=Validator)
+        reask_validator.on_fail_descriptor = OnFailAction.REASK
+        never_run_validator = MagicMock(spec=Validator)
+        never_run_validator.on_fail_descriptor = OnFailAction.NOOP
+
+        async def fake_run_validator(iteration, validator, value, *args, **kwargs):
+            if validator is fix_validator:
+                return ValidatorRun(
+                    value=f"{value}A",
+                    metadata={},
+                    on_fail_action=OnFailAction.FIX,
+                    validator_logs=ValidatorLogs(
+                        registered_name="fix_a",
+                        validator_name="fix_a",
+                        value_before_validation=value,
+                        validation_result=FailResult(error_message="mock-error"),
+                        property_path="$",
+                    ),
+                )
+            if validator is reask_validator:
+                # Must observe the fix that came before it.
+                assert value == "xA"
+                return ValidatorRun(
+                    value=FieldReAsk(incorrect_value=value, error_message="mock-reask"),
+                    metadata={},
+                    on_fail_action=OnFailAction.REASK,
+                    validator_logs=ValidatorLogs(
+                        registered_name="reask_validator",
+                        validator_name="reask_validator",
+                        value_before_validation=value,
+                        validation_result=FailResult(error_message="mock-error"),
+                        property_path="$",
+                    ),
+                )
+            raise AssertionError("validators after a reask must not run")
+
+        mocker.patch.object(avs, "run_validator", side_effect=fake_run_validator)
+
+        iteration = Iteration(
+            call_id="mock-call",
+            index=0,
+        )
+
+        value, metadata = await avs.run_validators(
+            iteration=iteration,
+            validator_map={"$": [fix_validator, reask_validator, never_run_validator]},
+            value="x",
+            metadata={},
+            absolute_property_path="$",
+            reference_property_path="$",
+        )
+
+        assert isinstance(value, FieldReAsk)
+        assert value.incorrect_value == "xA"
         assert metadata == {}
 
     @pytest.mark.asyncio
