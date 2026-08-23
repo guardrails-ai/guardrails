@@ -114,8 +114,53 @@ float_schema = {"type": "number"}
                 },
             },
         ),
+        (
+            {
+                "type": "object",
+                "properties": {
+                    "count": {"type": "string"},
+                    "is_active": {"type": "string"},
+                    "rate": {"type": "number"},
+                    "enabled": {"type": "boolean"},
+                    "empty_str": {"type": "string"},
+                },
+                "additionalProperties": {"type": "string"},
+            },
+            {
+                "count": 0,
+                "is_active": False,
+                "rate": 0,
+                "enabled": 0,
+                "empty_str": "",
+                "extra_zero": 0,
+            },
+            {
+                "count": "0",
+                "is_active": "False",
+                "rate": 0.0,
+                "enabled": False,
+                "empty_str": "",
+                "extra_zero": "0",
+            },
+        ),
+        (
+            {
+                "type": "object",
+                "properties": {
+                    "union_val": {
+                        "oneOf": [
+                            {"type": "integer"},
+                            {"type": "string"},
+                        ]
+                    }
+                },
+            },
+            {"union_val": 0},
+            {"union_val": 0},
+        ),
     ],
 )
 def test_coerce_types(schema, given, expected):
     coerced_payload = coerce_types(given, schema)
     assert coerced_payload == expected
+
