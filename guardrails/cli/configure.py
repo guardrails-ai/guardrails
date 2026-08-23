@@ -26,6 +26,11 @@ def save_configuration_file(
 ) -> None:
     if token is None:
         token = DEFAULT_TOKEN
+    else:
+        token = token.strip()
+        if len(token) >= 2 and token[0] == token[-1] and token[0] in ('"', "'"):
+            token = token[1:-1].strip()
+
     if enable_metrics is None:
         enable_metrics = DEFAULT_ENABLE_METRICS
     if use_remote_inferencing is None:
@@ -33,6 +38,7 @@ def save_configuration_file(
 
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
+    os.makedirs(os.path.dirname(guardrails_rc), exist_ok=True)
     with open(guardrails_rc, "w", encoding="utf-8") as rc_file:
         lines = [
             f"id={str(uuid.uuid4())}{os.linesep}",
@@ -48,10 +54,14 @@ def save_configuration_file(
 
 def _get_default_token() -> str:
     """Get the default token from the configuration file."""
-    file_token = settings.rc.token
-    if file_token is None:
+    try:
+        file_token = settings.rc.token
+        if file_token is None:
+            return ""
+        return str(file_token).strip()
+    except Exception:
         return ""
-    return file_token
+
 
 
 @guardrails.command()
