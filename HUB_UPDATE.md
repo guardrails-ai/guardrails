@@ -1,4 +1,4 @@
-**tl;dr**: Guardrails validators are moving to standard PyPI packages you install directly with `pip`, and Guardrails is discontinuing its hosted remote inferencing. See **How to Migrate** for what to do. **Hard cutoff: August 6, 2026.**
+**tl;dr**: Guardrails validators are moving to standard PyPI packages you install directly with `pip`, and Guardrails is discontinuing its hosted remote inferencing. See **How to Migrate** for what to do. **Hard cutoff: August 25, 2026.**
 
 # Why
 The Guardrails Hub has been the standard way to install AI guardrails for LLM engineers since 2024. With `guardrails hub install`, you could pull down dozens of validators to secure your agent inputs and outputs.
@@ -11,7 +11,7 @@ However, the drawbacks now outweigh these benefits. The main feedback we've hear
 
 Moving to plain PyPI packages makes Guardrails easier to install, maintain, iterate on, and contribute to.
 
-# What happens on August 6, 2026 (hard cutoff)
+# What happens on August 25, 2026 (hard cutoff)
 On this date, two things are shut down:
 
 1. **`guardrails hub install` and the private validator registry (`pypi.guardrailsai.com`).** After this, validators install **only** from public PyPI (`pip install guardrails-ai-<name>`). Existing `guardrails hub install …` commands, and anything else relying on the private registry, will stop working.
@@ -39,7 +39,7 @@ Update your imports to the `guardrails_ai` namespace. The **registered validator
 ```
 
 ## 2. Move off hosted remote inference
-Some validators (e.g. `detect_pii`, `toxic_language`, `competitor_check`, `nsfw_text`) could run their models on Guardrails' hosted inference servers, which are shut down on August 6, 2026 (see the cutoff above). You have two options:
+Some validators (e.g. `detect_pii`, `toxic_language`, `competitor_check`, `nsfw_text`) could run their models on Guardrails' hosted inference servers, which are shut down on August 25, 2026 (see the cutoff above). You have two options:
 
 1. **Run the model locally** — pass `use_local=True` when constructing the validator (the model loads/downloads on your machine):
    ```python
