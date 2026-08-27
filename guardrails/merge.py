@@ -68,7 +68,8 @@ def merge(
                     else:
                         # Recompute invariant and advance source
                         if len(invariant) > len(target_text):
-                            assert invariant[: len(target_text)] == target_text
+                            if not invariant[: len(target_text)] == target_text:
+                                raise AssertionError
                             source = (source_status, invariant[len(target_text) :])  # type: ignore
                             composed_text.append(target_text)
                             invariant = ""
@@ -112,7 +113,8 @@ def merge(
                         # Recompute invariant and advance source
                         # invariant = invariant[:len(source_text)]
                         if len(invariant) > len(source_text):
-                            assert invariant[: len(source_text)] == source_text
+                            if not invariant[: len(source_text)] == source_text:
+                                raise AssertionError()
                             target = (target_status, invariant[len(source_text) :])  # type: ignore
                             composed_text.append(source_text)
                             invariant = ""

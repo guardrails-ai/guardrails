@@ -166,7 +166,8 @@ class SQLiteTraceHandler(TracerMixin):
         self._truncate()
 
     def log_validator(self, vlog: ValidatorLogs):
-        assert not self.readonly
+        if self.readonly:
+            raise AssertionError
         maybe_outcome = (
             str(vlog.validation_result.outcome)
             if (
