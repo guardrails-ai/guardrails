@@ -2,6 +2,7 @@ import json
 import pytest
 
 from guardrails.utils.parsing_utils import (
+    extract_json_from_ouput,
     get_code_block,
     has_code_block,
     prune_extra_keys,
@@ -79,6 +80,19 @@ def test_get_code_block(llm_ouput, expected_output, code_type):
     actual_output = get_code_block(llm_ouput, start, end, code_type)
 
     assert actual_output == expected_output
+
+
+def test_extract_json_from_longer_code_fence():
+    llm_output = '''````json
+{
+    "answer": "Use ``` when showing markdown fences"
+}
+````'''
+
+    parsed_output, error = extract_json_from_ouput(llm_output)
+
+    assert error is None
+    assert parsed_output == {"answer": "Use ``` when showing markdown fences"}
 
 
 with open(
