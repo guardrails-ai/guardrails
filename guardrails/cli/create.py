@@ -95,6 +95,8 @@ def create_command(
         console.print(formatted)
         console.print("\n")
     else:
+        if ".." in filepath:
+            raise Exception("Invalid file path")
         with open(filepath, "wt") as fout:
             fout.write(new_config_file)
         console.print(f"Saved configuration to {filepath}")

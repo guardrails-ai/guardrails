@@ -34,6 +34,8 @@ def validate(
     # Result is a dictionary, log it to a file
     print(result)
 
+    if ".." in out:
+        raise Exception("Invalid file path")
     with open(out, "w") as f:
         json.dump(result, f)
         f.write("\n")

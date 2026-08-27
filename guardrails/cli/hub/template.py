@@ -9,8 +9,12 @@ def get_template(template_name: str) -> tuple[dict, str]:
     if template_name.endswith(".json"):
         template_file_name = template_name
         try:
+            base_real = os.path.realpath(os.getcwd())
             file_path = os.path.join(os.getcwd(), template_name)
-            with open(file_path, "r") as fin:
+            target_real = os.path.realpath(file_path)
+            if os.path.commonpath([base_real, target_real]) != base_real:
+                raise Exception("Invalid file path")
+            with open(target_real, "r") as fin:
                 return json.load(fin), template_file_name
         except FileNotFoundError:
             raise FileNotFoundError(f"Template file {template_name} not found.")
