@@ -114,6 +114,68 @@ class TestTelemetry:
             "/validator_usage",
         ]
 
+    def test_call_span_is_typed_when_streaming(self, mocker):
+        """Runner.call returns early for streaming responses, so `type` has to
+        be set at span creation or the span is unidentifiable downstream."""
+        exporter = self._patch_private_exporter(mocker)
+
+        from guardrails.telemetry import default_otel_collector_tracer
+        from guardrails import Guard
+
+        default_otel_collector_tracer()
+
+        guard = Guard(name="streaming-telemetry-guard")
+        guard.configure(allow_metrics_collection=False)
+
+        list(
+            guard(
+                lambda *args, **kwargs: iter(["hello", " world"]),
+                messages=[{"role": "user", "content": "hi"}],
+                stream=True,
+            )
+        )
+
+        call_spans = [s for s in exporter.get_finished_spans() if s.name == "call"]
+
+        assert len(call_spans) == 1
+        assert call_spans[0].attributes.get("type") == "guardrails/guard/step/call"
+
+    def test_call_span_records_model_name(self, mocker):
+        """Langfuse and other consumers price cost off llm.model_name."""
+        exporter = self._patch_private_exporter(mocker)
+
+        from guardrails.telemetry import default_otel_collector_tracer
+        from guardrails import Guard
+
+        default_otel_collector_tracer()
+
+        guard = Guard(name="model-name-telemetry-guard")
+        guard.configure(allow_metrics_collection=False)
+
+        guard(
+            lambda *args, **kwargs: "hello world",
+            messages=[{"role": "user", "content": "hi"}],
+            model="gpt-4o-mini",
+        )
+
+        call_spans = [s for s in exporter.get_finished_spans() if s.name == "call"]
+
+        assert len(call_spans) == 1
+        assert call_spans[0].attributes.get("llm.model_name") == "gpt-4o-mini"
+
+    @staticmethod
+    def _patch_private_exporter(mocker) -> InMemorySpanExporter:
+        exporter = InMemorySpanExporter()
+        mocker.patch(
+            "guardrails.telemetry.default_otel_collector_tracer_mod.OTLPSpanExporter",
+            return_value=exporter,
+        )
+        mocker.patch(
+            "guardrails.telemetry.default_otel_collector_tracer_mod.BatchSpanProcessor",
+            return_value=SimpleSpanProcessor(exporter),
+        )
+        return exporter
+
     @pytest.mark.no_hub_telemetry_mock
     def test_no_cross_contamination(self, mocker):
         private_exporter = InMemorySpanExporter()
