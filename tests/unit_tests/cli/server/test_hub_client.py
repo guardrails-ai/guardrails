@@ -12,6 +12,7 @@ from guardrails.cli.server.hub_client import (
     InvalidTokenError,
     ExpiredTokenError,
     get_jwt_token,
+    VALIDATOR_HUB_METADATA_SERVICE,
 )
 
 
@@ -70,3 +71,7 @@ def test_get_jwt_token():
         get_jwt_token(RC.from_dict({"token": invalid_jwt}))
 
     assert str(e.value) == TOKEN_INVALID_MESSAGE
+
+
+def test_metadata_service_endpoint_default():
+    assert VALIDATOR_HUB_METADATA_SERVICE == "https://hub-metadata.guardrailsai.com"
