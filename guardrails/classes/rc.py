@@ -65,14 +65,6 @@ class RC(Serializeable):
 
                 rc_file.close()
 
-                # backfill no_metrics, handle defaults
-                # We missed this comment in the 0.5.0 release
-                # Making it a TODO for 0.6.0
-                # TODO: remove in 0.6.0
-                no_metrics_val = config.pop("no_metrics", None)
-                if no_metrics_val is not None and config.get("enable_metrics") is None:
-                    config["enable_metrics"] = not no_metrics_val
-
                 rc = cls.from_dict(config)
                 return rc
 

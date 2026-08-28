@@ -7,7 +7,6 @@ import asyncio
 from contextvars import Context, ContextVar
 from functools import partial
 import inspect
-import importlib
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -17,19 +16,15 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from warnings import warn
 
 import requests
-from guardrails.hub.registry import get_registry
 from langchain_core.runnables import Runnable
 
 from guardrails.settings import settings
 from guardrails_ai.types import ErrorSpan, PassResult, FailResult, ValidationResult  # noqa
 from guardrails.constants import hub
-from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
-from guardrails.hub_telemetry.hub_tracing import trace
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.tokenization_utils import (
     postproc_splits,
 )
@@ -104,10 +99,6 @@ class Validator:
         on_fail: Optional[Union[Callable[[Any, FailResult], Any], OnFailAction]] = None,
         **kwargs,
     ):
-        self._disable_telemetry = settings.rc.enable_metrics is not True
-        if not self._disable_telemetry:
-            self._hub_telemetry = HubTelemetry(enabled=settings.rc.enable_metrics)
-
         self.use_local = kwargs.get("use_local", None)
         self.validation_endpoint = kwargs.get("validation_endpoint", None)
         # NOTE: I think this is an evergreen check
@@ -123,12 +114,6 @@ class Validator:
         if self.use_local is None:
             self.use_local = not remote_inference.get_use_remote_inference(settings.rc)
 
-        if not self.validation_endpoint:
-            validator_id = self.rail_alias.split("/")[-1]
-            submission_url = (
-                f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
-            )
-            self.validation_endpoint = submission_url
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
 
         # chunking function returns empty list or list of 2 chunks
@@ -226,7 +211,6 @@ class Validator:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.validate, value, metadata)
 
-    @trace(name="/validator_inference", origin="Validator._inference")
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the
         validation call.
@@ -273,10 +257,11 @@ class Validator:
         context: Optional[Context] = None,
         **kwargs,
     ) -> Optional[ValidationResult]:
-        """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
-        than the validator's chunking strategy, it will be accumulated until it
-        reaches the desired size. In the meantime, the validator will return
-        None.
+        """Validates a chunk emitted by an LLM.
+
+        If the LLM chunk is smaller than the validator's chunking
+        strategy, it will be accumulated until it reaches the desired
+        size. In the meantime, the validator will return None.
 
         If the LLM chunk is larger than the validator's chunking
         strategy, it will split it into validator-sized chunks and
@@ -350,7 +335,11 @@ class Validator:
         return await loop.run_in_executor(None, validate_stream_partial)
 
     def _hub_inference_request(
-        self, request_body: Union[dict, str], validation_endpoint: str
+        self,
+        request_body: Union[dict, str],
+        validation_endpoint: str,
+        *,
+        headers: Optional[dict[str, str]] = None,
     ) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation
         model. This request is authed through the hub and rerouted to a hosted
@@ -368,21 +357,10 @@ class Validator:
         Returns:
             Any: Post request response from the ML based validation model.
         """
-        hub_jwt_token = get_jwt_token(settings.rc)
-        headers = {
-            "Authorization": f"Bearer {hub_jwt_token}",
-            "Content-Type": "application/json",
-        }
         req = requests.post(validation_endpoint, data=request_body, headers=headers)
         if not req.ok:
-            if req.status_code == 401:
-                raise Exception(
-                    "401: Remote Inference Unauthorized. Please run "
-                    "`guardrails configure`. You can find a new"
-                    " token at https://guardrailsai.com/hub/keys"
-                )
-            else:
-                logging.error(req.status_code)
+            logging.error(req.status_code)
+            req.raise_for_status()
 
         return req.json()
 
@@ -414,7 +392,6 @@ class Validator:
     # TODO: Is this still used anywhere?
     def to_xml_attrib(self):
         """Convert the validator to an XML attribute."""
-
         if not len(self._kwargs):
             return self.rail_alias
 
@@ -567,16 +544,6 @@ def register_validator(
     return decorator
 
 
-def try_to_import_from_hub(validator_key: str):
-    try:
-        hub_registry = get_registry()
-        validator_entry = hub_registry.validators.get(validator_key)
-        if validator_entry and validator_entry.import_path:
-            importlib.import_module(validator_entry.import_path)
-    except (ImportError, KeyError):
-        logger.error("Could not import from hub. Validators may not work properly.")
-
-
 # TODO: Move this to validator_utils.py
 def get_validator_class(name: Optional[str]) -> Optional[Type[Validator]]:
     if not name:
@@ -585,9 +552,6 @@ def get_validator_class(name: Optional[str]) -> Optional[Type[Validator]]:
     validator_key = name.replace(hub, "") if is_hub_validator else name
 
     registration = validators_registry.get(validator_key)
-    if not registration:
-        try_to_import_from_hub(validator_key)
-        registration = validators_registry.get(validator_key)
 
     if not registration:
         warn(f"Validator with id {name} was not found in the registry!  Ignoring...")

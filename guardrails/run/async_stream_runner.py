@@ -21,7 +21,6 @@ from guardrails.logger import set_scope
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.telemetry import trace_async_stream_step
-from guardrails.hub_telemetry.hub_tracing import async_trace_stream
 from guardrails.types import OnFailAction
 from guardrails_ai.types import (
     PassResult,
@@ -34,7 +33,6 @@ if sys.version_info.minor < 10:
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
-    # @async_trace_stream(name="/reasks", origin="AsyncStreamRunner.async_run")
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> AsyncIterator[ValidationOutcome]:
@@ -62,7 +60,6 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         async for call in result:
             yield call
 
-    @async_trace_stream(name="/step", origin="AsyncStreamRunner.async_step")
     @trace_async_stream_step
     async def async_step(
         self,
@@ -140,7 +137,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         context.run(stream_context_vars.set, context_vars)
 
         if self.output_type == OutputTypes.STRING:
-            validator_service = AsyncValidatorService(self.disable_tracer)
+            validator_service = AsyncValidatorService()
 
             next_exists = True
             while next_exists:

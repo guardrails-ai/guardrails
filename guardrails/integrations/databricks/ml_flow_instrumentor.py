@@ -1,6 +1,7 @@
 from functools import wraps
 import inspect
 import sys
+import copy
 from typing import (
     Any,
     AsyncIterator,
@@ -14,7 +15,7 @@ from typing import (
 from guardrails import Guard, AsyncGuard, settings
 from guardrails_ai.types import ValidationResult
 from guardrails.run import Runner, StreamRunner, AsyncRunner, AsyncStreamRunner
-from guardrails.validator_base import Validator
+from guardrails.validator_base import Validator, validators_registry
 from guardrails.version import GUARDRAILS_VERSION
 from guardrails.telemetry.guard_tracing import (
     add_guard_attributes,
@@ -50,6 +51,7 @@ class MlFlowInstrumentor:
 
     def __init__(self, experiment_name: str):
         self.experiment_name = experiment_name
+        self._backup_registry = copy.deepcopy(validators_registry)
         # Disable legacy OTEL tracing to avoid duplicate spans
         settings.disable_tracing = True
 
@@ -89,12 +91,8 @@ class MlFlowInstrumentor:
         )
         setattr(AsyncRunner, "async_call", wrapped_async_runner_call)
 
-        import guardrails
-
-        validators = guardrails.hub.__dir__()  # type: ignore
-
-        for validator_name in validators:
-            export = getattr(guardrails.hub, validator_name)  # type: ignore
+        for validator_name in validators_registry:
+            export = validators_registry.get(validator_name)  # type: ignore
             if isinstance(export, type) and issubclass(export, Validator):
                 wrapped_validator_validate = self._instrument_validator_validate(
                     export.validate
@@ -106,7 +104,7 @@ class MlFlowInstrumentor:
                 )
                 setattr(export, "async_validate", wrapped_validator_async_validate)
 
-                setattr(guardrails.hub, validator_name, export)  # type: ignore
+                validators_registry[validator_name] = export
 
     def _instrument_guard(
         self,
@@ -502,3 +500,9 @@ class MlFlowInstrumentor:
                     raise e
 
         return trace_async_validator_wrapper
+
+    def _uninstrument_validators(self):
+        for validator_name in validators_registry:
+            backup = self._backup_registry.get(validator_name)
+            if backup:
+                validators_registry[validator_name] = backup

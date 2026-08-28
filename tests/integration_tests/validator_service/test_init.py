@@ -80,7 +80,6 @@ class TestValidate:
 
         from guardrails.validator_service import validate, SequentialValidatorService
 
-        mocker.spy(SequentialValidatorService, "__init__")
         mocker.spy(SequentialValidatorService, "validate")
 
         iteration = Iteration(
@@ -97,7 +96,6 @@ class TestValidate:
 
         assert value == "value"
         assert metadata == {}
-        SequentialValidatorService.__init__.assert_called_once()
         SequentialValidatorService.validate.assert_called_once()
 
         if GUARDRAILS_RUN_SYNC_bak is not None:
@@ -108,7 +106,6 @@ class TestValidate:
     def test_async(self, mocker):
         from guardrails.validator_service import validate, AsyncValidatorService
 
-        mocker.spy(AsyncValidatorService, "__init__")
         mocker.spy(AsyncValidatorService, "validate")
 
         iteration = Iteration(
@@ -125,13 +122,11 @@ class TestValidate:
 
         assert value == "value"
         assert metadata == {}
-        AsyncValidatorService.__init__.assert_called_once()
         AsyncValidatorService.validate.assert_called_once()
 
     def test_sync_busy_loop(self, mocker):
         from guardrails.validator_service import validate, SequentialValidatorService
 
-        mocker.spy(SequentialValidatorService, "__init__")
         mocker.spy(SequentialValidatorService, "validate")
 
         iteration = Iteration(
@@ -160,7 +155,6 @@ class TestValidate:
 
         loop.run_until_complete(callback())
 
-        SequentialValidatorService.__init__.assert_called_once()
         SequentialValidatorService.validate.assert_called_once()
 
 
@@ -168,7 +162,6 @@ class TestValidate:
 async def test_async_validate(mocker):
     from guardrails.validator_service import async_validate, AsyncValidatorService
 
-    mocker.spy(AsyncValidatorService, "__init__")
     mocker.spy(AsyncValidatorService, "async_validate")
 
     iteration = Iteration(
@@ -185,5 +178,4 @@ async def test_async_validate(mocker):
 
     assert value == "value"
     assert metadata == {}
-    AsyncValidatorService.__init__.assert_called_once()
     AsyncValidatorService.async_validate.assert_called_once()

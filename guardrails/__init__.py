@@ -9,7 +9,6 @@ from guardrails.utils import constants, docs_utils
 from guardrails.types.on_fail import OnFailAction
 from guardrails.validator_base import Validator, register_validator
 from guardrails.settings import settings
-from guardrails.hub.install import install
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.utils.prompt_utils import messages_to_prompt_string
 
@@ -28,6 +27,5 @@ __all__ = [
     "Instructions",
     "Messages",
     "settings",
-    "install",
     "ValidationOutcome",
 ]

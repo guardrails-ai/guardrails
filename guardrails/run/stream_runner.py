@@ -8,7 +8,6 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.run.runner import Runner
-from guardrails.hub_telemetry.hub_tracing import trace_stream
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,
@@ -28,7 +27,6 @@ class StreamRunner(Runner):
     similar.
     """
 
-    @trace_stream(name="/reasks", origin="StreamRunner.__call__")
     def __call__(
         self, call_log: Call, prompt_params: Optional[Dict] = {}
     ) -> Iterator[ValidationOutcome[OT]]:
@@ -41,7 +39,6 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
-
         prompt_params = prompt_params or {}
 
         (
@@ -62,7 +59,6 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
-    @trace_stream(name="/step", origin="StreamRunner.step")
     @trace_stream_step
     def step(
         self,
@@ -151,7 +147,6 @@ class StreamRunner(Runner):
                 self.metadata,
                 self.validation_map,
                 iteration,
-                self._disable_tracer,
                 "$",
                 validate_subschema=True,
             )

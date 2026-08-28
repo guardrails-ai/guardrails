@@ -11,7 +11,6 @@ class TestStart:
         mocker.patch("guardrails.cli.start.api_is_installed", return_value=True)
         mocker.patch("guardrails.cli.start.version", return_value=api_version)
         mocker.patch("guardrails.cli.start.version_warnings_if_applicable")
-        mocker.patch("guardrails.cli.start.trace_if_enabled")
 
         mock_start_api = MagicMock()
         mocker.patch.dict(
@@ -24,12 +23,10 @@ class TestStart:
         )
         return mock_start_api
 
-    def test_installs_guardrails_api_if_not_present(self, mocker):
+    def test_raises_ImportError_guardrails_api_if_not_present(self, mocker):
         mocker.patch("guardrails.cli.start.api_is_installed", return_value=False)
-        mock_installer = mocker.patch("guardrails.cli.start.installer_process")
         mocker.patch("guardrails.cli.start.version", return_value="0.3.0")
         mocker.patch("guardrails.cli.start.version_warnings_if_applicable")
-        mocker.patch("guardrails.cli.start.trace_if_enabled")
         mocker.patch.dict(
             "sys.modules",
             {
@@ -40,18 +37,9 @@ class TestStart:
         )
 
         runner = CliRunner()
-        runner.invoke(guardrails, ["start"])
+        result = runner.invoke(guardrails, ["start"])
 
-        mock_installer.assert_called_once_with("install", "guardrails-api>=0.2.1")
-
-    def test_skips_install_when_guardrails_api_already_present(self, mocker):
-        mock_installer = mocker.patch("guardrails.cli.start.installer_process")
-        self._make_start_api_mock(mocker, "0.3.0")
-
-        runner = CliRunner()
-        runner.invoke(guardrails, ["start"])
-
-        mock_installer.assert_not_called()
+        assert result.exit_code == 1
 
     def test_calls_start_api_without_env_override_for_old_api(self, mocker):
         mock_start_api = self._make_start_api_mock(mocker, "0.2.9")
@@ -187,17 +175,8 @@ class TestStart:
             env=".env", config="", port=8000, env_override=True, middleware=""
         )
 
-    def test_calls_trace_if_enabled(self, mocker):
-        self._make_start_api_mock(mocker, "0.3.0")
-        mock_trace = mocker.patch("guardrails.cli.start.trace_if_enabled")
-
-        runner = CliRunner()
-        runner.invoke(guardrails, ["start"])
-
-        mock_trace.assert_called_once_with("start")
-
     def test_calls_version_warnings(self, mocker):
-        from guardrails.cli.hub.console import console
+        from guardrails.cli.console import console
 
         self._make_start_api_mock(mocker, "0.3.0")
         mock_version_warnings = mocker.patch(

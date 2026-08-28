@@ -16,7 +16,7 @@ class MockValidator(Validator):
 
 class TestRunValidators:
     def test_sends_validation_session_id_to_run_validator_sync(self, mocker):
-        val_svc = SequentialValidatorService(disable_tracer=True)
+        val_svc = SequentialValidatorService()
 
         validation_result = FailResult(  # type: ignore
             error_message="error",  # type: ignore
