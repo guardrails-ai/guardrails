@@ -84,23 +84,26 @@ def extract_json_from_ouput(
     except json.decoder.JSONDecodeError:
         pass
 
-    # Find and extract json from code blocks
+    # Find and extract json from code blocks.
+    # Security: when multiple code blocks exist, take the LAST one (the judge's
+    # own verdict), not the first. A model-under-test that embeds JSON in its
+    # output can hijack the verdict when the judge references that output in an
+    # early code block. The judge's authoritative verdict appears last.
     extracted_code_block = output
-    has_json_block, json_start, json_end = has_code_block(output, "json")
-    if has_json_block and json_start is not None and json_end is not None:
-        extracted_code_block = get_code_block(output, json_start, json_end, "json")
+    json_blocks = _find_all_code_blocks(output, "json")
+    if not json_blocks:
+        json_blocks = _find_all_code_blocks(output)
+    if json_blocks:
+        # Take the LAST code block (the judge's verdict, not injected content).
+        last_start, last_end = json_blocks[-1]
+        lang = "json" if _find_all_code_blocks(output, "json") else None
+        extracted_code_block = get_code_block(output, last_start, last_end, lang)
     else:
-        has_block, block_start, block_end = has_code_block(output)
-        if has_block and block_start is not None and block_end is not None:
-            extracted_code_block = get_code_block(output, block_start, block_end)
-        else:
-            json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
-            json_groups = json_pattern.findall(output)
-            json_start, json_end = output.find("{"), output.rfind("}")
-            if len(json_groups) > 0 and len(json_groups[0]) == (
-                json_end - json_start + 1
-            ):
-                extracted_code_block = json_groups[0]
+        json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
+        json_groups = json_pattern.findall(output)
+        if len(json_groups) > 0:
+            # Take the LAST complete JSON object, not the first.
+            extracted_code_block = json_groups[-1]
 
     # Treat the output as a JSON string, and load it into a dict.
     error = None
@@ -110,6 +113,28 @@ def extract_json_from_ouput(
         output_as_dict = None
         error = e
     return output_as_dict, error
+
+
+def _find_all_code_blocks(output: str, lang: str = None) -> list:
+    """Find all code blocks of the given language (or any if lang=None).
+    Returns a list of (start, end) tuples for the content between the fences.
+    """
+    blocks = []
+    marker = f"```{lang}" if lang else "```"
+    search_from = 0
+    while True:
+        start = output.find(marker, search_from)
+        if start == -1:
+            break
+        content_start = output.find("\n", start) + 1
+        if content_start == 0:
+            break
+        end = output.find("```", content_start)
+        if end == -1:
+            break
+        blocks.append((content_start, end))
+        search_from = end + 3
+    return blocks
 
 
 ### Streaming Fragment Parsing ###
