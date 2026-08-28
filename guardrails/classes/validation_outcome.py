@@ -53,6 +53,31 @@ class ValidationOutcome(IValidationOutcome, Generic[OT]):
             error=error,
         )
 
+    @classmethod
+    def from_interface(
+        cls, i_validation_outcome: IValidationOutcome
+    ) -> "ValidationOutcome[OT]":
+        """Create a ValidationOutcome from a wire-level IValidationOutcome.
+
+        Single shared adapter for the server-call paths (issue #1588): the
+        interface payload is dumped and re-validated instead of hand-copied
+        field-by-field, so fields present on the wire object (validation
+        summaries, reask, error, and anything added later) are carried over
+        by construction.
+        """
+        data = i_validation_outcome.model_dump(by_alias=True)
+        # Use the local ValidationSummary subclass, and preserve the
+        # pre-existing server-path semantics: validation_passed is coerced
+        # to a strict bool and falsy validated output collapses to None.
+        data["validationSummaries"] = [
+            ValidationSummary(**summary.model_dump())
+            for summary in (i_validation_outcome.validation_summaries or [])
+        ]
+        data["validationPassed"] = i_validation_outcome.validation_passed is True
+        if not i_validation_outcome.validated_output:
+            data["validatedOutput"] = None
+        return cls.model_validate(data)
+
     def __iter__(
         self,
     ) -> Iterator[

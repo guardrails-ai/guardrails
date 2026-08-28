@@ -916,37 +916,24 @@ class Guard(IGuard, Generic[OT]):
                     except ValidationError:
                         pass
 
-            validation_summaries = validation_output.validation_summaries or []
-            validation_summaries = [
-                ValidationSummary(**v.model_dump()) for v in validation_summaries
-            ]
-            if not validation_summaries:
-                call_log: Call = safe_get(
-                    [c for c in self.history if c.id == validation_output.call_id], 0
-                )
-                if call_log and call_log.iterations.last:
-                    validator_logs = call_log.iterations.last.validator_logs
-                    validation_summaries = (
-                        ValidationSummary.from_validator_logs_only_fails(validator_logs)
-                    )
-
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
             # and the api we can re-enable this.
             # return ValidationOutcome[OT].from_guard_history(call_log)
-            validated_output = (
-                cast(OT, validation_output.validated_output)
-                if validation_output.validated_output
-                else None
-            )
-            return ValidationOutcome[OT](
-                call_id=validation_output.call_id,  # type: ignore
-                rawLlmOutput=validation_output.raw_llm_output,
-                validatedOutput=validated_output,
-                validationPassed=(validation_output.validation_passed is True),
-                validationSummaries=validation_summaries,
-            )
+            # issue #1588: re-hydrate via the shared adapter instead of
+            # hand-copying fields so nothing on the wire object is dropped.
+            outcome = ValidationOutcome[OT].from_interface(validation_output)
+            if not outcome.validation_summaries:
+                call_log: Call = safe_get(
+                    [c for c in self.history if c.id == validation_output.call_id], 0
+                )
+                if call_log and call_log.iterations.last:
+                    validator_logs = call_log.iterations.last.validator_logs
+                    outcome.validation_summaries = (
+                        ValidationSummary.from_validator_logs_only_fails(validator_logs)
+                    )
+            return outcome
         else:
             raise ValueError("Guard does not have an api client!")
 
@@ -973,17 +960,10 @@ class Guard(IGuard, Generic[OT]):
                         error="The response from the server was empty!",
                     )
                 else:
-                    validated_output = (
-                        cast(OT, validation_output.validated_output)
-                        if validation_output.validated_output
-                        else None
-                    )
-                    yield ValidationOutcome[OT](
-                        call_id=validation_output.call_id,  # type: ignore
-                        rawLlmOutput=validation_output.raw_llm_output,
-                        validatedOutput=validated_output,
-                        validationPassed=(validation_output.validation_passed is True),
-                    )
+                    # issue #1588: use the shared adapter so streaming through
+                    # the server carries validation summaries (and any other
+                    # wire fields) just like the local streaming path.
+                    yield ValidationOutcome[OT].from_interface(validation_output)
 
             if os.environ.get("GUARD_HISTORY_ENABLED", "true").lower() == "true":
                 if validation_output:
