@@ -7,6 +7,14 @@ from guardrails.validator_base import (
     ErrorSpan,
 )
 
+from guardrails.validators.url_validators import (
+    IsValidURL,
+    IsValidEmail,
+    IsValidDomain,
+    IsValidIPAddress,
+    URLCategorization,
+)
+
 __all__ = [
     "Validator",
     "register_validator",
@@ -14,4 +22,9 @@ __all__ = [
     "PassResult",
     "FailResult",
     "ErrorSpan",
+    "IsValidURL",
+    "IsValidEmail",
+    "IsValidDomain",
+    "IsValidIPAddress",
+    "URLCategorization",
 ]
