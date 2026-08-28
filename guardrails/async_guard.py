@@ -504,7 +504,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 else:
                     validated_output = (
                         cast(OT, validation_output.validated_output)
-                        if validation_output.validated_output
+                        if validation_output.validated_output is not None
                         else None
                     )
                     yield ValidationOutcome[OT](
