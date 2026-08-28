@@ -104,20 +104,39 @@ def trace_llm_call(
                         serialize(value),  # type: ignore
                     )
 
+    invocation_params: Optional[Dict[str, Any]] = None
     ser_invocation_parameters = serialize(invocation_parameters)
-    redacted_ser_invocation_parameters = recursive_key_operation(
-        ser_invocation_parameters, redact
-    )
-    reser_invocation_parameters = (
-        json.dumps(redacted_ser_invocation_parameters)
-        if isinstance(redacted_ser_invocation_parameters, dict)
-        or isinstance(redacted_ser_invocation_parameters, list)
-        else redacted_ser_invocation_parameters
-    )
-    if reser_invocation_parameters:
-        current_span.set_attribute(
-            "llm.invocation_parameters", reser_invocation_parameters
-        )
+    if ser_invocation_parameters is not None:
+        try:
+            parsed_invocation_parameters = json.loads(ser_invocation_parameters)
+            if isinstance(parsed_invocation_parameters, dict):
+                invocation_params = parsed_invocation_parameters
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    if invocation_params is not None:
+        payload_param_keys = ("messages", "prompt", "input", "instructions")
+        model_params = {
+            key: value
+            for key, value in invocation_params.items()
+            if key not in payload_param_keys
+        }
+        redacted_model_params = recursive_key_operation(model_params, redact)
+        if isinstance(redacted_model_params, dict) and redacted_model_params:
+            current_span.set_attribute(
+                "llm.invocation_parameters", json.dumps(redacted_model_params)
+            )
+            for param_name, param_value in redacted_model_params.items():
+                if param_value is None:
+                    continue
+                attribute_value = (
+                    json.dumps(param_value)
+                    if isinstance(param_value, (dict, list))
+                    else param_value
+                )
+                current_span.set_attribute(
+                    f"llm.invocation_parameters.{param_name}", attribute_value
+                )
 
     ser_model_name = serialize(model_name)
     if ser_model_name:
