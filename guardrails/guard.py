@@ -4,6 +4,7 @@ import os
 import uuid
 from builtins import id as object_id
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -17,7 +18,9 @@ from typing import (
     Iterable,
 )
 import warnings
-from langchain_core.runnables import Runnable
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import Runnable
 
 from guardrails_ai.types import (
     Guard as IGuard,
@@ -1067,7 +1070,7 @@ class Guard(IGuard, Generic[OT]):
             )
             raise e
 
-    def to_runnable(self) -> Runnable:
+    def to_runnable(self) -> "Runnable":
         """Convert a Guard to a LangChain Runnable."""
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 

@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, Dict, Optional, TypeVar, Union, cast
 import json
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
-from guardrails.classes.input_type import InputType
 from guardrails.classes.output_type import OT
+
+InputType = TypeVar("InputType", str, BaseMessage)
 
 
 class BaseRunnable(Runnable):
