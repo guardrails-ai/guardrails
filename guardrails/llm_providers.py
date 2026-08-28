@@ -249,10 +249,14 @@ class LiteLLMCallable(PromptCallableBase):
             token_count_prompt=prompt_tokens,  # type: ignore
             token_count_total=total_tokens,  # type: ignore
         )
+        raw_response = None
+        if hasattr(response, "model_dump"):
+            raw_response = response.model_dump()
         return LLMResponse(
             output=output,  # type: ignore
             prompt_token_count=prompt_tokens,  # type: ignore
             response_token_count=completion_tokens,  # type: ignore
+            raw_response=raw_response,
         )
 
 
@@ -736,10 +740,14 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             token_count_prompt=prompt_tokens,  # type: ignore
             token_count_total=total_tokens,  # type: ignore
         )
+        raw_response = None
+        if hasattr(response, "model_dump"):
+            raw_response = response.model_dump()
         return LLMResponse(
             output=output,  # type: ignore
             prompt_token_count=prompt_tokens,  # type: ignore
             response_token_count=completion_tokens,  # type: ignore
+            raw_response=raw_response,
         )
 
 

@@ -66,6 +66,13 @@ class LLMResponse(ArbitraryModel):
         alias="asyncStreamOutput",
         description="An async stream of output from the LLM.",
     )
+    raw_response: Optional[Dict[str, Any]] = Field(
+        default=None,
+        alias="rawResponse",
+        description="The raw response from the LLM API."
+        "Contains the full response object for all providers."
+        "For LiteLLM/OpenAI, this includes logprobs, usage, etc.",
+    )
 
     @field_serializer("stream_output")
     def serialize_stream_output(
