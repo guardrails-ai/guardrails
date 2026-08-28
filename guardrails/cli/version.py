@@ -16,7 +16,9 @@ def version_warnings_if_applicable(console: Console):
     current_version = get_guardrails_version()
 
     with contextlib.suppress(Exception):
-        res = requests.get(f"https://pypi.org/pypi/{GUARDRAILS_PACKAGE_NAME}/json")
+        res = requests.get(
+            f"https://pypi.org/pypi/{GUARDRAILS_PACKAGE_NAME}/json", timeout=(5, 10)
+        )
         version_info = res.json()
         info = version_info.get("info", {})
         latest_version = info.get("version")
