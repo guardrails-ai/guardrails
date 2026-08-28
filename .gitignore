@@ -49,4 +49,6 @@ mlartifacts
 .pytest_cache
 .ruff_cache
 .vscode
-docs/examples/.guardrails/hub_registry.json
+docs/examples/.guardrails/hub_registry.jsoncredentials.sh
+
+credentials.sh
