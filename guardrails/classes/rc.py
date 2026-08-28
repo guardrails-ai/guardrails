@@ -78,3 +78,14 @@ class RC(Serializeable):
 
         except FileNotFoundError:
             return cls.from_dict({})  # type: ignore
+        except (PermissionError, UnicodeDecodeError, OSError) as e:
+            logger.warning(
+                f"Could not read .guardrailsrc file: {e}. Using default configuration."
+            )
+            return cls.from_dict({})  # type: ignore
+        except Exception as e:
+            logger.warning(
+                f"Unexpected error loading .guardrailsrc: {e}. Using default configuration."
+            )
+            return cls.from_dict({})  # type: ignore
+
