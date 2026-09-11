@@ -1,8 +1,32 @@
 import pytest
+from guardrails.merge import merge
 from guardrails.validator_service import SequentialValidatorService
 
 
 validator_service = SequentialValidatorService()
+
+
+def test_merge_does_not_raise_on_short_diff():
+    """Regression: `merge` raised IndexError when an intermediate
+    PRESERVED chunk had been sliced down to "" earlier in the loop.
+    diff_main("", x) returns a single insertion chunk instead of the
+    2-element diff the (unguarded) branch assumed, the same shape a
+    sibling branch a few lines below already guards against.
+
+    base="ab", source="b", target="baa" is a minimal reproduction found
+    by fuzzing `merge` with random single/double-character edits of a
+    common base -- streamed validator output under concurrent fixes.
+    """
+    result = merge(source="b", target="baa", base="ab")
+    assert isinstance(result, str)
+
+
+def test_multi_merge_does_not_raise_on_short_diff():
+    """Same defect, reached through the public multi_merge path that
+    validator services actually call to reconcile two validators' fixes
+    to the same streamed value."""
+    result = validator_service.multi_merge("ab", ["baa", "b"])
+    assert isinstance(result, str)
 
 
 @pytest.mark.parametrize(
