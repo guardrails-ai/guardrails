@@ -44,7 +44,12 @@ def merge(
                 advance = True
                 composed_text.append(target_text)
                 tempdiff = DIFFER.diff_main(target_text, source_text)
-                _, invariant = tempdiff[1]
+                # target_text can already have been sliced down to "" by an
+                # earlier iteration of the loop below (a PRESERVED chunk
+                # whose full length was consumed), and diff_main("", x)
+                # returns a single insertion chunk rather than a 2-part
+                # diff, same as the mirrored branch below guards for.
+                _, invariant = tempdiff[1] if len(tempdiff) > 1 else tempdiff[0]
                 # _, (_, invariant) = DIFFER.diff_main(target_text, source_text)
                 prev_target_text = target[1]
                 target = next(diff2, None)  # type: ignore
