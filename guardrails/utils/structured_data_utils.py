@@ -36,8 +36,11 @@ def set_additional_properties_false_iteratively(schema):
             if "default" in current:
                 logger.warn("Property default is not supported. Marking field Required")
                 current.pop("default")  # the api does not like these set
-            for prop in current.values():
-                stack.append(prop)
+            for key, prop in current.items():
+                if key in {"properties", "$defs"} and isinstance(prop, dict):
+                    stack.extend(prop.values())
+                else:
+                    stack.append(prop)
         elif isinstance(current, list):
             for prop in current:
                 stack.append(prop)
