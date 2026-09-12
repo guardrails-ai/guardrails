@@ -1,5 +1,8 @@
-from pydantic import BaseModel, Field
+from jsonschema import Draft202012Validator
+from pydantic import BaseModel, Field, create_model
 from typing import List
+
+import pytest
 
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 
@@ -7,6 +10,7 @@ from guardrails.utils.structured_data_utils import (
     json_function_calling_tool,
     schema_to_tool,
     output_format_json_schema,
+    set_additional_properties_false_iteratively,
 )
 
 
@@ -231,3 +235,58 @@ def test_output_format_json_schema():
             "strict": True,
         },
     }
+
+
+@pytest.mark.parametrize(
+    "field_name", ["minimum", "maximum", "default", "properties", "required", "type"]
+)
+def test_output_format_json_schema_preserves_keyword_field_names(field_name):
+    model = create_model(
+        "Payload", **{field_name: (int, Field(default=1, ge=0, le=10))}
+    )
+
+    schema = output_format_json_schema(model)["json_schema"]["schema"]
+
+    assert set(schema["properties"]) == {field_name}
+    assert schema["required"] == [field_name]
+    assert schema["additionalProperties"] is False
+    assert schema["properties"][field_name] == {
+        "title": field_name.title(),
+        "type": "integer",
+    }
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate({field_name: 5})
+
+
+@pytest.mark.parametrize("model_name", ["minimum", "maximum", "default", "properties"])
+def test_output_format_json_schema_preserves_keyword_definition_names(model_name):
+    nested_model = create_model(model_name, value=(int, Field(default=1, ge=0, le=10)))
+    model = create_model("Payload", entry=(nested_model, ...))
+
+    schema = output_format_json_schema(model)["json_schema"]["schema"]
+
+    assert set(schema["$defs"]) == {model_name}
+    assert schema["$defs"][model_name] == {
+        "title": model_name,
+        "type": "object",
+        "properties": {"value": {"title": "Value", "type": "integer"}},
+        "required": ["value"],
+        "additionalProperties": False,
+    }
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate({"entry": {"value": 5}})
+
+
+def test_set_additional_properties_preserves_non_schema_definition_values():
+    schema = {
+        "type": "object",
+        "properties": {"$defs": {"type": "string"}},
+        "examples": [{"$defs": "literal"}],
+    }
+    Draft202012Validator.check_schema(schema)
+
+    set_additional_properties_false_iteratively(schema)
+
+    assert schema["examples"] == [{"$defs": "literal"}]
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(schema["examples"][0])
