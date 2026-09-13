@@ -377,15 +377,15 @@ testing = ["jaraco.test", "pytest (!=8.0.*)", "pytest (>=6,!=8.1.*)", "pytest-ch
 
 [[package]]
 name = "banks"
-version = "2.4.3"
+version = "2.5.1"
 description = "A prompt programming language"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
 markers = "extra == \"llama\""
 files = [
-    {file = "banks-2.4.3-py3-none-any.whl", hash = "sha256:b79830628db08550d8b9c2d9ad0ffd9437cee1105040dcb8fe0241cc50ac55f4"},
-    {file = "banks-2.4.3.tar.gz", hash = "sha256:07ae40dd08577857830428ba77ead477fe62fbb13e26d567635b880c88f50e81"},
+    {file = "banks-2.5.1-py3-none-any.whl", hash = "sha256:b7c91365626bab4b46197d24ce04cd69540730ed669a50a399f240318ba3dcfb"},
+    {file = "banks-2.5.1.tar.gz", hash = "sha256:a7ca5c250b605ae90cfd6e4ca5dd6ce2ee377d5d59021b6feba44e345910026d"},
 ]
 
 [package.dependencies]
@@ -395,6 +395,7 @@ griffe = "*"
 jinja2 = "*"
 platformdirs = "*"
 pydantic = "*"
+typing-extensions = {version = "*", markers = "python_version < \"3.11\""}
 
 [package.extras]
 all = ["litellm", "redis"]
