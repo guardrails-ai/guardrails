@@ -570,7 +570,7 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
             copy[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(copy, FieldReAsk):
         fail_results = copy.fail_results or []
-        first_fail_result = fail_results[0]
+        first_fail_result = fail_results[0] if fail_results else None
 
         fix_value = first_fail_result.fix_value if first_fail_result else None
         # TODO handle multiple fail results
