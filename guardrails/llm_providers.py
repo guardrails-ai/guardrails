@@ -146,7 +146,7 @@ class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
         text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
+        model: Optional[str] = None,
         messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
@@ -166,6 +166,10 @@ class LiteLLMCallable(PromptCallableBase):
         )
         ```
         """
+        if model is None:
+            raise PromptCallableException(
+                "`model` is required for LiteLLM calls. Provide a model explicitly."
+            )
         try:
             from litellm import completion  # type: ignore
         except ImportError as e:
