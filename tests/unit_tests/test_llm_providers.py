@@ -307,12 +307,27 @@ def test_litellm_callable(mocker):
     from guardrails.llm_providers import LiteLLMCallable
 
     litellm_callable = LiteLLMCallable()
-    response = litellm_callable("Hello")
+    response = litellm_callable("Hello", model="test-model")
 
     assert isinstance(response, LLMResponse) is True
     assert response.output == "Hello there!"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_litellm_callable_requires_model(mocker):
+    completion = mocker.patch("litellm.completion")
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    with pytest.raises(PromptCallableException, match="`model` is required"):
+        LiteLLMCallable()("Hello")
+
+    completion.assert_not_called()
 
 
 class ReturnTempCallable(Callable):
