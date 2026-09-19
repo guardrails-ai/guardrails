@@ -238,7 +238,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                             callId=call_log.id,
                             rawLlmOutput=fragment,
                             validatedOutput=current,
-                            validationPassed=True,
+                            validationPassed=validation_passed,
                         )
                         fragment = ""
                         validation_progress = {}
