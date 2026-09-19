@@ -38,20 +38,90 @@ def parse_on_fail_handlers(element: _Element) -> Dict[str, OnFailAction]:
     return on_fail_handlers
 
 
+def _match_on_fail_handler(
+    on_fail_handlers: Dict[str, OnFailAction],
+    rail_alias: str,
+) -> Tuple[Optional[OnFailAction], Optional[str]]:
+    """Finds a matching on-fail handler for a validator's rail_alias.
+
+    Returns (OnFailAction, matched_key) if found, otherwise (None, None).
+    """
+    alias = rail_alias.strip()
+    if alias.startswith("hub://"):
+        alias = alias[len("hub://") :]
+
+    candidates: List[str] = [
+        alias.replace("/", "_"),
+        alias.replace("/", "-"),
+        alias,
+        alias.replace("/", "_").replace("-", "_"),
+        alias.replace("/", "-").replace("_", "-"),
+    ]
+
+    if "/" in alias:
+        short_name = alias.split("/")[-1]
+        candidates.extend(
+            [
+                short_name,
+                short_name.replace("-", "_"),
+                short_name.replace("_", "-"),
+            ]
+        )
+    else:
+        candidates.extend(
+            [
+                alias.replace("-", "_"),
+                alias.replace("_", "-"),
+            ]
+        )
+
+    # Case-insensitive map of original keys
+    lookup = {k.lower(): (k, v) for k, v in on_fail_handlers.items()}
+
+    for candidate in candidates:
+        candidate_lower = candidate.lower()
+        if candidate_lower in lookup:
+            original_key, action = lookup[candidate_lower]
+            return action, original_key
+
+    return None, None
+
+
 def get_validators(element: _Element) -> List[Validator]:
     validators_string: str = xml_to_string(element.attrib.get("validators", "")) or ""
+    if not validators_string.strip():
+        return []
+
     validator_specs = split_on(validators_string, ";")
     on_fail_handlers = parse_on_fail_handlers(element)
     validators: List[Validator] = []
+    matched_handler_keys = set()
+
     for v in validator_specs:
         validator: Validator = get_validator(v)
         if not validator:
             continue
-        on_fail = on_fail_handlers.get(
-            validator.rail_alias.replace("/", "_"), OnFailAction.NOOP
+        on_fail, matched_key = _match_on_fail_handler(
+            on_fail_handlers, validator.rail_alias
         )
-        validator.on_fail_descriptor = on_fail
+        if on_fail is not None:
+            validator.on_fail_descriptor = on_fail
+            if matched_key:
+                matched_handler_keys.add(matched_key)
+        else:
+            validator.on_fail_descriptor = OnFailAction.NOOP
         validators.append(validator)
+
+    unmatched_handlers = set(on_fail_handlers.keys()) - matched_handler_keys
+    if unmatched_handlers:
+        unmatched_str = ", ".join(f"'on-fail-{k}'" for k in sorted(unmatched_handlers))
+        available_validators = ", ".join(v.rail_alias for v in validators)
+        raise ValueError(
+            f"Unrecognized on-fail handler(s) {unmatched_str} on element "
+            f"<{element.tag}>. "
+            f"Does not match any declared validator: [{available_validators}]."
+        )
+
     return validators
 
 
