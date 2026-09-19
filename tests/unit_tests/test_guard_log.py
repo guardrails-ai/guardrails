@@ -110,3 +110,34 @@ def _write_to_logs_a_bunch(count: int, delay: float):
             "",
         )
         time.sleep(delay)
+
+
+def test_truncate_is_throttled(tmp_path, mocker):
+    from guardrails.call_tracing import sqlite_trace_handler as sth
+
+    handler = sth.SQLiteTraceHandler(tmp_path / "trace.db", read_mode=False)
+    handler.db = mocker.MagicMock()
+
+    handler._truncate()
+    handler.db.execute.assert_not_called()
+
+    handler.last_cleanup -= sth.TIME_BETWEEN_CLEANUPS + 1
+    handler._truncate()
+    assert handler.db.execute.call_count == 1
+
+    handler._truncate()
+    assert handler.db.execute.call_count == 1
+
+    handler._truncate(force=True)
+    assert handler.db.execute.call_count == 2
+
+
+def test_truncate_keeps_newest_rows(tmp_path):
+    from guardrails.call_tracing import sqlite_trace_handler as sth
+
+    handler = sth.SQLiteTraceHandler(tmp_path / "trace.db", read_mode=False)
+    for i in range(10):
+        handler.log(f"g{i}", 0.0, 1.0, "pre", "post", None)
+    handler._truncate(force=True, keep_n=3)
+    rows = handler.db.execute("SELECT guard_name FROM guard_logs").fetchall()
+    assert len(rows) == 4
