@@ -7,6 +7,7 @@ from guardrails_ai.types import Validator as ValidatorReference
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.schema.rail_schema import (
     rail_file_to_schema,
+    rail_string_to_schema,
     json_schema_to_rail_output,
 )
 from guardrails.classes.output_type import OutputTypes
@@ -90,6 +91,33 @@ class TestRailToJsonSchema:
                 choices=["crossbow", "machine gun"], on_fail=OnFailAction.REASK
             )
         ]
+
+    def test_on_fail_hyphen_underscore_matching(self):
+        rail_spec = """
+<rail version="0.1">
+<output>
+    <string name="name" validators="two-words" on-fail-two_words="fix" />
+</output>
+</rail>
+"""
+        schema = rail_string_to_schema(rail_spec)
+        assert len(schema.validators) == 1
+        assert schema.validators[0].on_fail == OnFailAction.FIX
+
+    def test_unmatched_on_fail_raises_value_error(self):
+        rail_spec = """
+<rail version="0.1">
+<output>
+    <string name="name" validators="two-words" on-fail-nonexistent="fix" />
+</output>
+</rail>
+"""
+        with pytest.raises(ValueError) as exc_info:
+            rail_string_to_schema(rail_spec)
+        assert (
+            "Unrecognized on-fail handler(s) 'on-fail-nonexistent' on element <string>"
+            in str(exc_info.value)
+        )
 
 
 ### ReConstructed RAIL Specs for Prompting ###

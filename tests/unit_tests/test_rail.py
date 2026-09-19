@@ -222,3 +222,70 @@ def test_rail_with_messages():
             "    It should not be longer than 1-2 sentences.",
         },
     ]
+
+
+def test_rail_on_fail_matching():
+    from tests.integration_tests.test_assets.validators import TwoWords  # noqa: F401
+    from tests.integration_tests.test_assets.validators.detect_pii import (  # noqa: F401
+        MockDetectPII,
+    )
+    from guardrails.validator_base import OnFailAction
+
+    # Test kebab-case and snake-case alias matching
+    spec_kebab = """
+<rail version="0.1">
+<output>
+    <string name="text" validators="two-words" on-fail-two-words="fix" />
+</output>
+</rail>
+"""
+    schema = rail_string_to_schema(spec_kebab)
+    assert schema.validators[0].on_fail == OnFailAction.FIX
+
+    spec_snake = """
+<rail version="0.1">
+<output>
+    <string name="text" validators="two-words" on-fail-two_words="reask" />
+</output>
+</rail>
+"""
+    schema = rail_string_to_schema(spec_snake)
+    assert schema.validators[0].on_fail == OnFailAction.REASK
+
+    # Test namespaced hub validator with short name and full name
+    for attr, expected_action in [
+        ('on-fail-detect-pii="fix"', OnFailAction.FIX),
+        ('on-fail-detect_pii="reask"', OnFailAction.REASK),
+        ('on-fail-guardrails-detect-pii="filter"', OnFailAction.FILTER),
+        ('on-fail-guardrails_detect_pii="refrain"', OnFailAction.REFRAIN),
+    ]:
+        spec_hub = f"""
+<rail version="0.1">
+<output>
+    <string name="text" validators="guardrails/detect_pii: ['email']" {attr} />
+</output>
+</rail>
+"""
+        schema = rail_string_to_schema(spec_hub)
+        assert schema.validators[0].on_fail == expected_action
+
+
+def test_rail_on_fail_unrecognized_raises_error():
+    import pytest
+    from tests.integration_tests.test_assets.validators import TwoWords  # noqa: F401
+
+    spec_typo = """
+<rail version="0.1">
+<output>
+    <string name="text" validators="two-words" on-fail-two-wrd="fix" />
+</output>
+</rail>
+"""
+    with pytest.raises(ValueError) as exc_info:
+        rail_string_to_schema(spec_typo)
+
+    assert (
+        "Unrecognized on-fail handler(s) 'on-fail-two-wrd' on element <string>"
+        in str(exc_info.value)
+    )
+    assert "Does not match any declared validator: [two-words]" in str(exc_info.value)
