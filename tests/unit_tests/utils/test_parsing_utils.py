@@ -4,6 +4,7 @@ import pytest
 from guardrails.utils.parsing_utils import (
     get_code_block,
     has_code_block,
+    parse_fragment,
     prune_extra_keys,
 )
 
@@ -191,3 +192,32 @@ with open(
 def test_prune_extra_keys(schema, payload, pruned_payload):
     actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload
+
+
+def test_parse_fragment_ignores_braces_inside_strings():
+    parsed, error = parse_fragment('{"a": "hello {world"')
+    assert error is None
+    assert parsed == {"a": "hello {world"}
+
+
+def test_parse_fragment_ignores_brackets_inside_strings():
+    parsed, error = parse_fragment('{"a": "["')
+    assert error is None
+    assert parsed == {"a": "["}
+
+
+def test_parse_fragment_handles_escaped_quotes_in_strings():
+    parsed, error = parse_fragment('{"a": "he said \\"hi\\""')
+    assert error is None
+    assert parsed == {"a": 'he said "hi"'}
+
+
+def test_parse_fragment_still_completes_missing_containers():
+    parsed, error = parse_fragment('{"a": [1, 2]')
+    assert error is None
+    assert parsed == {"a": [1, 2]}
+
+
+def test_parse_fragment_returns_error_for_unrecoverable_fragment():
+    _parsed, error = parse_fragment('{"a": ')
+    assert error is not None

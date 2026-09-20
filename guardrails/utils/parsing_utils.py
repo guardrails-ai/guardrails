@@ -144,10 +144,23 @@ def parse_fragment(fragment: str) -> Tuple[Union[str, List, Dict], Optional[str]
     # Complete the JSON fragment to handle missing brackets
     # Stack to keep track of opening brackets
     stack = []
+    in_string = False
+    escaped = False
 
     # Process each character in the string
     for char in fragment:
-        if char in "{[":
+        # Brackets inside a string literal are data, not structure, so skip them.
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "{[":
             # Push opening brackets onto the stack
             stack.append(char)
         elif char in "}]":
