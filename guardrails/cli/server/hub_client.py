@@ -5,14 +5,17 @@ from typing import Any, Dict, Optional
 
 import requests
 from guardrails_hub_types import Manifest
-import jwt
-from jwt import ExpiredSignatureError, DecodeError
 
 
 from guardrails.settings import settings
 from guardrails.classes.rc import RC
 from guardrails.cli.logger import logger
 from guardrails.version import GUARDRAILS_VERSION
+from guardrails.hub_token.utils import (
+    TokenExpiredError as HubTokenExpiredError,
+    TokenInvalidError as HubTokenInvalidError,
+    client_check_token_expiry,
+)
 
 FIND_NEW_TOKEN = "You can find a new token at https://guardrailsai.com/hub/keys"
 
@@ -94,10 +97,10 @@ def get_jwt_token(rc: RC) -> Optional[str]:
     # check for jwt expiration
     if token:
         try:
-            jwt.decode(token, options={"verify_signature": False, "verify_exp": True})
-        except ExpiredSignatureError:
+            client_check_token_expiry(token)
+        except HubTokenExpiredError:
             raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
-        except DecodeError:
+        except HubTokenInvalidError:
             raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
     return token
 
