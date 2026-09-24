@@ -33,6 +33,25 @@ POETRY_CHUNKS = [
     ", he's always THERE.",
 ]
 
+# Only the second sentence fails LowerCase.
+MIXED_CASE_CHUNKS = [
+    "all lower ",
+    "case here. ",
+    "but THIS one ",
+    "is SHOUTING. ",
+    "back to lower ",
+    "case again. ",
+]
+
+LOWER_CASE_CHUNKS = [
+    "all lower ",
+    "case here. ",
+    "still lower ",
+    "case here. ",
+    "and lower ",
+    "case again. ",
+]
+
 
 @register_validator(name="minsentencelength", data_type=["string", "list"])
 class MinSentenceLengthValidator(Validator):
@@ -235,3 +254,58 @@ SAN Francisco's hills, his HOME.
 Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
     )
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_reports_a_failed_chunk(mocker):
+    """Once a chunk fails validation, the streamed outcomes must say so.
+
+    This mirrors the sync StreamRunner, which passes `call_log.status` through
+    to every outcome it yields.
+    """
+    mocker.patch(
+        "litellm.acompletion",
+        return_value=Response(MIXED_CASE_CHUNKS),
+    )
+
+    guard = gd.AsyncGuard().use(LowerCase(on_fail=OnFailAction.NOOP))
+    gen = await guard(
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        temperature=0,
+        stream=True,
+        messages=[{"role": "user", "content": "Say something."}],
+    )
+
+    outcomes = [(res.raw_llm_output, res.validation_passed) async for res in gen]
+
+    assert outcomes == [
+        ("all lower case here. ", True),
+        ("but THIS one is SHOUTING. ", False),
+        ("back to lower case again. ", False),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_reports_passing_chunks(mocker):
+    mocker.patch(
+        "litellm.acompletion",
+        return_value=Response(LOWER_CASE_CHUNKS),
+    )
+
+    guard = gd.AsyncGuard().use(LowerCase(on_fail=OnFailAction.NOOP))
+    gen = await guard(
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        temperature=0,
+        stream=True,
+        messages=[{"role": "user", "content": "Say something."}],
+    )
+
+    outcomes = [(res.raw_llm_output, res.validation_passed) async for res in gen]
+
+    assert outcomes == [
+        ("all lower case here. ", True),
+        ("still lower case here. ", True),
+        ("and lower case again. ", True),
+    ]
