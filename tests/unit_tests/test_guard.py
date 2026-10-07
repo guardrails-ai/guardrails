@@ -652,8 +652,9 @@ class TestConfigureExtended:
         guard.configure(num_reasks=3, allow_metrics_collection=False)
 
         assert guard._num_reasks == 3
-        assert guard._allow_metrics_collection is False
-        mock_configure.assert_called_once()
+        # _configure_hub_telemtry is mocked, so it never sets
+        # _allow_metrics_collection; assert the value passed to it instead.
+        mock_configure.assert_called_once_with(False)
 
     def test_configure_multiple_times(self):
         """Test that configure can be called multiple times."""
