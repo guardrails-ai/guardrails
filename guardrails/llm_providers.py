@@ -146,7 +146,7 @@ class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
         text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4o-mini",
         messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
@@ -159,7 +159,7 @@ class LiteLLMCallable(PromptCallableBase):
 
         raw_llm_response, validated_response = guard(
             completion,
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             prompt_params={...},
             temperature=...,
             ...
@@ -647,7 +647,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
 
         raw_llm_response, validated_response = guard(
             completion,
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             prompt_params={...},
             temperature=...,
             ...
