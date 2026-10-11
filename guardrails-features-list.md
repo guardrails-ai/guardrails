@@ -197,12 +197,11 @@ Comprehensive list of all user-impacting features and functionalities in the Gua
 12. JSON Schema Response Format - Generate OpenAI strict JSON mode compatible schemas
 13. JSON Mode - Native JSON mode for models supporting it
 14. Strict JSON Mode - Strict schema enforcement for models supporting it
-15. Constrained Decoding - Support for JSONFormer and other constrained decoding
-16. Function/Tool Calling - Use native function calling where supported
-17. Schema Compilation - Automatic compilation of output schema to XML for prompts
-18. JSON Schema Validation - Full JSON Schema compliance checking
-19. Schema Pruning - Removal of extra properties not specified in schema
-20. JSON Schema Generation - Convert Pydantic to JSON Schema
+15. Function/Tool Calling - Use native function calling where supported
+16. Schema Compilation - Automatic compilation of output schema to XML for prompts
+17. JSON Schema Validation - Full JSON Schema compliance checking
+18. Schema Pruning - Removal of extra properties not specified in schema
+19. JSON Schema Generation - Convert Pydantic to JSON Schema
 
 ---
 

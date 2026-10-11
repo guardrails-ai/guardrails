@@ -122,8 +122,7 @@ def for_pydantic(cls,
                  reask_messages: Optional[List[Dict]] = None,
                  messages: Optional[List[Dict]] = None,
                  name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 output_formatter: Optional[Union[str, BaseFormatter]] = None)
+                 description: Optional[str] = None)
 ```
 
 Create a Guard instance using a Pydantic model to specify the output
@@ -137,7 +136,6 @@ schema.
 - `reask_messages` _List[Dict], optional_ - A list of messages to use during reasks. Defaults to None.
 - `name` _str, optional_ - A unique name for this Guard. Defaults to `gr-` + the object id.
 - `description` _str, optional_ - A description for this Guard. Defaults to None.
-- `output_formatter` _str | Formatter, optional_ - 'none' (default), 'jsonformer', or a Guardrails Formatter.
 
 #### for\_string
 
@@ -353,8 +351,7 @@ def for_pydantic(cls,
                  messages: Optional[List[Dict]] = None,
                  reask_messages: Optional[List[Dict]] = None,
                  name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 output_formatter: Optional[Union[str, BaseFormatter]] = None)
+                 description: Optional[str] = None)
 ```
 
 #### for\_string

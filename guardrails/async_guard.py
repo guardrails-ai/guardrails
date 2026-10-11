@@ -26,7 +26,6 @@ from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
-from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
@@ -89,7 +88,6 @@ class AsyncGuard(Guard, Generic[OT]):
         reask_messages: Optional[List[Dict]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         guard = super().for_pydantic(
             output_class,
@@ -97,7 +95,6 @@ class AsyncGuard(Guard, Generic[OT]):
             reask_messages=reask_messages,
             name=name,
             description=description,
-            output_formatter=output_formatter,
         )
         if guard._output_type == OutputTypes.LIST:
             return cast(AsyncGuard[List], guard)
@@ -304,9 +301,6 @@ class AsyncGuard(Guard, Generic[OT]):
 
         if llm_api is not None or kwargs.get("model") is not None:
             api = get_async_llm_ask(llm_api, *args, **kwargs)  # type: ignore
-
-        if self._output_formatter is not None:
-            api = self._output_formatter.wrap_async_callable(api)  # type: ignore
 
         if kwargs.get("stream", False):
             runner = AsyncStreamRunner(
