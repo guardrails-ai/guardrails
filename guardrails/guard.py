@@ -41,7 +41,6 @@ from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
-from guardrails.formatters import BaseFormatter, get_formatter
 from guardrails.llm_providers import (
     get_llm_ask,
     model_is_supported_server_side,
@@ -168,7 +167,6 @@ class Guard(IGuard, Generic[OT]):
         self._hub_telemetry: HubTelemetry
         self._user_id: Optional[str] = None
         self._allow_metrics_collection: Optional[bool] = None
-        self._output_formatter: Optional[BaseFormatter] = None
         self._api_key: Optional[str] = api_key
         self._base_url: Optional[str] = base_url
         self._api_client: Optional[GuardrailsApiClient] = GuardrailsApiClient(
@@ -389,7 +387,6 @@ class Guard(IGuard, Generic[OT]):
         messages: Optional[List[Dict]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         """Create a Guard instance using a Pydantic model to specify the output
         schema.
@@ -401,7 +398,6 @@ class Guard(IGuard, Generic[OT]):
             reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
-            output_formatter (str | Formatter, optional): 'none' (default), 'jsonformer', or a Guardrails Formatter.
         """  # noqa
 
         schema = pydantic_model_to_schema(output_class)
@@ -424,16 +420,6 @@ class Guard(IGuard, Generic[OT]):
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
         guard._base_model = output_class
-        if isinstance(output_formatter, str):
-            if isinstance(output_class, list):
-                raise Exception("""Root-level arrays are not supported with the 
-                jsonformer argument, but can be used with other json generation methods.
-                Omit the output_formatter argument to use the other methods.""")
-            output_formatter = get_formatter(
-                output_formatter,
-                schema=output_class.model_json_schema(),  # type: ignore
-            )
-        guard._output_formatter = output_formatter
         guard._fill_validators()
         return guard
 
@@ -622,10 +608,6 @@ class Guard(IGuard, Generic[OT]):
 
         if llm_api is not None or kwargs.get("model") is not None:
             api = get_llm_ask(llm_api, *args, **kwargs)
-
-        if self._output_formatter is not None:
-            # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
-            api = self._output_formatter.wrap_callable(api)  # type: ignore
 
         # Check whether stream is set
         if kwargs.get("stream", False):
