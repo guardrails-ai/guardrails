@@ -211,7 +211,7 @@ class Guard(IGuard, Generic[OT]):
                 Defaults to None, and falls back to waht is
                     set via the `guardrails configure` command.
         """
-        if num_reasks:
+        if num_reasks is not None:
             self._set_num_reasks(num_reasks)
         self._load_rc()
         self._configure_hub_telemtry(allow_metrics_collection)
