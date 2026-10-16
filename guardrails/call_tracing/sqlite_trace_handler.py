@@ -227,7 +227,7 @@ class SQLiteTraceHandler(TracerMixin):
         while True:
             for row in cursor:
                 last_entry = GuardTraceEntry(**row)
-                last_idx = last_entry.id
+                last_idx = max(last_idx, last_entry.id)
                 yield last_entry
             if not follow:
                 return
