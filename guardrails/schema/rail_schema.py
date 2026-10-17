@@ -48,7 +48,7 @@ def get_validators(element: _Element) -> List[Validator]:
         if not validator:
             continue
         on_fail = on_fail_handlers.get(
-            validator.rail_alias.replace("/", "_"), OnFailAction.NOOP
+            validator.rail_alias.replace("/", "_"), OnFailAction.EXCEPTION
         )
         validator.on_fail_descriptor = on_fail
         validators.append(validator)
