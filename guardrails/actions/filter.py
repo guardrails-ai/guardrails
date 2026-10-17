@@ -15,7 +15,7 @@ def apply_filters(value: Any) -> Any:
         filtered_list = []
         for item in value:
             filtered_item = apply_filters(item)
-            if filtered_item is not None:
+            if not isinstance(item, Filter):
                 filtered_list.append(filtered_item)
 
         return filtered_list
@@ -30,7 +30,7 @@ def apply_filters(value: Any) -> Any:
         for k, v in value.items():
             # Should we omit the key or just the value?
             filtered_value = apply_filters(v)
-            if filtered_value is not None:
+            if not isinstance(v, Filter):
                 filtered_dict[k] = filtered_value
 
         return filtered_dict
