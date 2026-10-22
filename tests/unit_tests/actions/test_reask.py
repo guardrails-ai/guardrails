@@ -365,6 +365,42 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
     assert prune_obj_for_reasking(input_dict) == expected_dict
 
 
+@pytest.mark.parametrize("use_full_schema", [True, False])
+def test_get_reask_setup_for_a_whole_output_reask(use_full_schema):
+    """A validator on the whole output ("$") fails the root itself. The ReAsk
+    for the root has no path, and the reask prompt must still carry the error
+    messages: under a full-schema reask the parsed response holds only the
+    incorrect value, so the ReAsk itself is what tells the LLM what to correct.
+    """
+    output_schema = {
+        "type": "object",
+        "properties": {
+            "city": {"type": "string"},
+            "country": {"type": "string"},
+        },
+        "required": ["city", "country"],
+    }
+    parsed = {"city": "Paris", "country": "Italy"}
+    root_reask = FieldReAsk(
+        incorrect_value=parsed,
+        fail_results=[FailResult(error_message="Paris is in France.")],
+    )
+
+    _, reask_messages = get_reask_setup(
+        OutputTypes.DICT,
+        output_schema,
+        validation_map={},
+        reasks=[root_reask],
+        parsing_response=parsed,
+        validation_response=root_reask,
+        use_full_schema=use_full_schema,
+    )
+
+    prompt = reask_messages.source[1]["content"].source
+    assert '"incorrect_value"' in prompt
+    assert "Paris is in France." in prompt
+
+
 @pytest.mark.parametrize(
     "example_rail, expected_rail, reasks, original_response, validation_response, json_example, expected_reask_json",  # noqa
     [
