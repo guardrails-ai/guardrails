@@ -724,3 +724,41 @@ async def test_input_validation_fail_async(
     assert str(excinfo.value) == unstructured_messages_error
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
+
+
+@register_validator("mycustomcityincountry", data_type="object")
+def city_in_country(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+    if value.get("city") == "Paris" and value.get("country") != "France":
+        return FailResult(error_message="Paris is in France.")
+    return PassResult()
+
+
+class CityAndCountry(BaseModel):
+    city: str
+    country: str
+
+
+def test_reask_on_whole_output_validator():
+    """A validator on the whole output ("$") can reask, and the reask
+    prompt tells the LLM why the output failed."""
+    calls = []
+
+    def custom_llm(messages, *args, **kwargs):
+        calls.append(messages)
+        country = "Italy" if len(calls) == 1 else "France"
+        return json.dumps({"city": "Paris", "country": country})
+
+    guard = Guard.for_pydantic(CityAndCountry).use(
+        city_in_country(on_fail=OnFailAction.REASK), on="$"
+    )
+
+    outcome = guard(
+        custom_llm,
+        messages=[{"role": "user", "content": "Name a city and its country."}],
+        num_reasks=1,
+    )
+
+    assert len(calls) == 2
+    assert "Paris is in France." in calls[1][-1]["content"]
+    assert outcome.validation_passed is True
+    assert outcome.validated_output == {"city": "Paris", "country": "France"}

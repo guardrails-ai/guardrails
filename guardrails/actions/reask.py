@@ -363,6 +363,11 @@ def get_reask_setup_for_json(
             reask_value = validation_response if use_xml else parsing_response
             # Don't prune the tree if we're reasking with pydantic model
             # (and openai function calling)
+            # A validator on the whole output replaces the root with a ReAsk,
+            # which the parsed response does not carry. Give the ReAsk itself,
+            # so that the LLM sees the error messages.
+            if isinstance(validation_response, FieldReAsk):
+                reask_value = validation_response
         else:
             # Prune out the individual fields that did not fail validation.
             # Only reask for field that did fail.
@@ -382,8 +387,10 @@ def get_reask_setup_for_json(
                 constants["high_level_json_reask_prompt"] + suffix
             )
 
+        # A validator on the whole output ("$") fails the root itself,
+        # and a ReAsk for the root has no path.
         error_messages = {
-            ".".join(str(p) for p in r.path): "; ".join(  # type: ignore
+            ".".join(str(p) for p in r.path or []): "; ".join(
                 f.error_message for f in r.fail_results or []
             )
             for r in reasks
