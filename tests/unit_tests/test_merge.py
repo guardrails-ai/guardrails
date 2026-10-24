@@ -17,16 +17,19 @@ def test_merge_does_not_raise_on_short_diff():
     by fuzzing `merge` with random single/double-character edits of a
     common base -- streamed validator output under concurrent fixes.
     """
-    result = merge(source="b", target="baa", base="ab")
-    assert isinstance(result, str)
+    # Against base "ab", source deletes the leading "a" and target inserts "ba"
+    # at that same position (and drops the trailing "b"). The two edits touch
+    # the same spot, so the merge keeps neither side's change and returns "".
+    # The point of the test is that this overlap no longer raises.
+    assert merge(source="b", target="baa", base="ab") == ""
 
 
 def test_multi_merge_does_not_raise_on_short_diff():
     """Same defect, reached through the public multi_merge path that
     validator services actually call to reconcile two validators' fixes
     to the same streamed value."""
-    result = validator_service.multi_merge("ab", ["baa", "b"])
-    assert isinstance(result, str)
+    # multi_merge pops "b" and then "baa", so this is merge("b", "baa", "ab").
+    assert validator_service.multi_merge("ab", ["baa", "b"]) == ""
 
 
 @pytest.mark.parametrize(
