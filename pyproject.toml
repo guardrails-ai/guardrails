@@ -12,7 +12,7 @@ license-files = [
 homepage = "https://www.guardrailsai.com/"
 documentation = "https://www.guardrailsai.com/guardrails/docs"
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 
 dependencies = [
     "lxml>=5.0.0,<7.0.0",
@@ -26,7 +26,7 @@ dependencies = [
     "typing-extensions>=4.8.0,<5.0.0",
     "python-dateutil>=2.8.2,<3.0.0",
     "tiktoken>=0.13.0,<1.0.0",
-    "litellm>=1.82.5,<2.0.0",
+    "litellm>=1.89.7,<1.104.0",
     "pydash>=8.0.0,<9.0.0",
     "langchain-core>=1.0.0,<2.0",
     "requests>=2.31.0,<3.0.0",
@@ -37,7 +37,7 @@ dependencies = [
     # TODO - drop this!
     "pip>=26.1.2",
 
-    "pyjwt>=2.4.0,<3.0.0",
+    "pyjwt>=2.15.0,<3.0.0",
     "opentelemetry-sdk>=1.24.0,<2.0.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.24.0,<2.0.0",
     "opentelemetry-exporter-otlp-proto-http>=1.24.0,<2.0.0",
