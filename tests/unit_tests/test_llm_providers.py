@@ -54,6 +54,27 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
     assert response.response_token_count is None
 
 
+@pytest.mark.asyncio
+async def test_async_arbitrary_callable_streams_async_iterator():
+    async def chunks():
+        yield "Hello"
+        yield " world"
+
+    async def llm(*, messages=None, stream=False, **kwargs):
+        return chunks()
+
+    arbitrary_callable = AsyncArbitraryCallable(
+        llm, messages=[{"role": "user", "content": "Hello"}]
+    )
+    response = await arbitrary_callable(stream=True)
+
+    assert isinstance(response, LLMResponse)
+    assert response.output == ""
+    assert response.async_stream_output is not None
+    received = [chunk async for chunk in response.async_stream_output]
+    assert received == ["Hello", " world"]
+
+
 @pytest.fixture(scope="module")
 def openai_chat_mock():
     from openai.types import CompletionUsage

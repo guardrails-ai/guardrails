@@ -859,13 +859,13 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         output = await self.llm_api(*args, **kwargs)
         if kwargs.get("stream", False):
-            # If stream is defined and set to True,
-            # the callable returns a generator object
+            # If stream is defined and set to True, the callable returns an
+            # async iterable, matching the synchronous implementation. Wrappers
+            # that expose the stream via completion_stream keep working.
+            stream_output = getattr(output, "completion_stream", output)
             return LLMResponse(
                 output="",
-                # FIXME: Why is this different from the synchronous streaming implementation?  ## noqa: E501
-                # This shouldn't be necessary: https://docs.litellm.ai/docs/completion/stream#async-streaming
-                asyncStreamOutput=output.completion_stream,
+                asyncStreamOutput=stream_output,
             )
 
         trace_operation(output_mime_type="application/json", output_value=output)
