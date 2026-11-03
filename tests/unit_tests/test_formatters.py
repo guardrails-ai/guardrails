@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
@@ -35,3 +35,36 @@ def test_nested_schema_conversion():
     assert out["properties"]["best_dog"]["properties"]["name"]["type"] == "string"
     assert out["properties"]["good_dogs"]["type"] == "array"
     assert out["properties"]["good_dogs"]["items"]["type"] == "object"
+
+
+def test_object_schema_without_properties():
+    class UserProfile(BaseModel):
+        username: str
+        metadata: Dict[str, Any]
+
+    out = _jsonschema_to_jsonformer(UserProfile.model_json_schema())
+    assert out["properties"]["username"]["type"] == "string"
+    metadata = out["properties"]["metadata"]
+    assert metadata["type"] == "object"
+    assert metadata["properties"] == {}
+    assert metadata["additionalProperties"] is True
+
+
+def test_nested_dict_schema_without_properties():
+    class Nested(BaseModel):
+        config: Dict[str, Dict[str, Any]]
+
+    out = _jsonschema_to_jsonformer(Nested.model_json_schema())
+    config = out["properties"]["config"]
+    assert config["type"] == "object"
+    assert config["properties"] == {}
+    assert config["additionalProperties"]["type"] == "object"
+
+
+def test_direct_object_schema_without_properties():
+    out = _jsonschema_to_jsonformer(
+        {"type": "object", "additionalProperties": {"type": "string"}}
+    )
+    assert out["type"] == "object"
+    assert out["properties"] == {}
+    assert out["additionalProperties"] == {"type": "string"}
