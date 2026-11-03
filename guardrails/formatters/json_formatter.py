@@ -66,7 +66,7 @@ def _jsonschema_to_jsonformer(
         elif k == "type" and v == "object":
             result["type"] = "object"
             result["properties"] = dict()
-            for subkey, subvalue in schema["properties"].items():  # Must be present.
+            for subkey, subvalue in schema.get("properties", {}).items():
                 path.append(subkey)
                 result["properties"][subkey] = _jsonschema_to_jsonformer(
                     subvalue,
