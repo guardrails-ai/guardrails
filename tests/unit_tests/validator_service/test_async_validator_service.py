@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call
 
 from guardrails.actions.filter import Filter
 from guardrails.validator_service.validator_service_base import ValidatorRun
@@ -7,8 +7,11 @@ import pytest
 
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.validator_base import OnFailAction, Validator
+from guardrails.validator_base import OnFailAction, Validator, register_validator
 from guardrails.validator_service.async_validator_service import AsyncValidatorService
+from guardrails.validator_service.sequential_validator_service import (
+    SequentialValidatorService,
+)
 from guardrails_ai.types import FailResult, PassResult
 
 
@@ -45,7 +48,10 @@ def test_validate(mocker):
 class TestAsyncValidate:
     @pytest.mark.asyncio
     async def test_with_dictionary(self, mocker):
-        validate_children_mock = mocker.patch.object(avs, "validate_children")
+        validate_children_mock = mocker.patch.object(
+            avs, "validate_children", new_callable=AsyncMock
+        )
+        validate_children_mock.return_value = ({"a": 1}, {})
 
         run_validators_mock = mocker.patch.object(
             avs, "run_validators", return_value=("run_validators_mock", {"async": True})
@@ -82,7 +88,10 @@ class TestAsyncValidate:
 
     @pytest.mark.asyncio
     async def test_with_list(self, mocker):
-        validate_children_mock = mocker.patch.object(avs, "validate_children")
+        validate_children_mock = mocker.patch.object(
+            avs, "validate_children", new_callable=AsyncMock
+        )
+        validate_children_mock.return_value = (["a"], {})
 
         run_validators_mock = mocker.patch.object(
             avs, "run_validators", return_value=("run_validators_mock", {"async": True})
@@ -797,3 +806,146 @@ class TestRunValidatorAsync:
         mock_execute_validator.assert_called_once_with(
             mock_validator, "value", {}, False, validation_session_id="mock-session"
         )
+
+
+@register_validator(name="test/derive-evidence", data_type="string")
+class DeriveEvidence(Validator):
+    def _validate(self, value, metadata):
+        return PassResult(metadata={**metadata, "evidence": value.upper()})
+
+
+@register_validator(name="test/inspect-evidence", data_type="all")
+class InspectEvidence(Validator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.received_metadata = None
+
+    def _validate(self, value, metadata):
+        self.received_metadata = dict(metadata)
+        return PassResult()
+
+
+@register_validator(name="test/derive-fail-evidence", data_type="string")
+class DeriveFailEvidence(Validator):
+    def _validate(self, value, metadata):
+        return FailResult(
+            error_message="derived",
+            metadata={**metadata, "evidence": value.upper()},
+        )
+
+
+@register_validator(name="test/omit-metadata", data_type="string")
+class OmitMetadata(Validator):
+    def _validate(self, value, metadata):
+        return PassResult()
+
+
+@register_validator(name="test/clear-metadata", data_type="string")
+class ClearMetadata(Validator):
+    def _validate(self, value, metadata):
+        return PassResult(metadata={})
+
+
+@register_validator(name="test/tag-first", data_type="string")
+class TagFirst(Validator):
+    def _validate(self, value, metadata):
+        return PassResult(metadata={**metadata, "first": value})
+
+
+@register_validator(name="test/tag-second", data_type="string")
+class TagSecond(Validator):
+    def _validate(self, value, metadata):
+        return PassResult(metadata={**metadata, "second": value})
+
+
+class TestAsyncMetadataPropagation:
+    @pytest.mark.asyncio
+    async def test_child_pass_result_metadata_reaches_parent_and_return(self):
+        parent = InspectEvidence()
+        validator_map = {
+            "$.answer": [DeriveEvidence()],
+            "$": [parent],
+        }
+        iteration = Iteration(call_id="metadata-propagation", index=0)
+        value, metadata = await avs.async_validate(
+            {"answer": "verified"},
+            {"request": "example"},
+            validator_map,
+            iteration,
+            "$",
+            "$",
+        )
+
+        expected = {"request": "example", "evidence": "VERIFIED"}
+        assert parent.received_metadata == expected
+        assert metadata == expected
+        assert value == {"answer": "verified"}
+
+        sync_parent = InspectEvidence()
+        sync_value, sync_metadata = SequentialValidatorService().validate(
+            {"answer": "verified"},
+            {"request": "example"},
+            {"$.answer": [DeriveEvidence()], "$": [sync_parent]},
+            Iteration(call_id="metadata-propagation-sync", index=0),
+            "$",
+            "$",
+        )
+        assert sync_parent.received_metadata == expected
+        assert sync_metadata == expected
+        assert sync_value == {"answer": "verified"}
+
+    @pytest.mark.asyncio
+    async def test_child_fail_result_metadata_reaches_parent_and_return(self):
+        parent = InspectEvidence()
+        child = DeriveFailEvidence(on_fail=OnFailAction.NOOP)
+        value, metadata = await avs.async_validate(
+            {"answer": "verified"},
+            {"request": "example"},
+            {"$.answer": [child], "$": [parent]},
+            Iteration(call_id="metadata-fail", index=0),
+            "$",
+            "$",
+        )
+
+        expected = {"request": "example", "evidence": "VERIFIED"}
+        assert parent.received_metadata == expected
+        assert metadata == expected
+        assert value == {"answer": "verified"}
+
+    @pytest.mark.asyncio
+    async def test_none_metadata_keeps_original_empty_dict_replaces(self):
+        _, omitted = await avs.async_validate(
+            "value",
+            {"request": "example"},
+            {"$": [OmitMetadata()]},
+            Iteration(call_id="metadata-none", index=0),
+            "$",
+            "$",
+        )
+        assert omitted == {"request": "example"}
+
+        _, cleared = await avs.async_validate(
+            "value",
+            {"request": "example"},
+            {"$": [ClearMetadata()]},
+            Iteration(call_id="metadata-empty", index=0),
+            "$",
+            "$",
+        )
+        assert cleared == {}
+
+    @pytest.mark.asyncio
+    async def test_concurrent_children_merge_result_metadata(self):
+        _, metadata = await avs.async_validate(
+            {"first": "alpha", "second": "beta"},
+            {"request": "example"},
+            {"$.first": [TagFirst()], "$.second": [TagSecond()], "$": []},
+            Iteration(call_id="metadata-children", index=0),
+            "$",
+            "$",
+        )
+        assert metadata == {
+            "request": "example",
+            "first": "alpha",
+            "second": "beta",
+        }
