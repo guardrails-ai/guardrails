@@ -134,6 +134,9 @@ class AsyncValidatorService(ValidatorServiceBase):
 
         validator_logs.value_after_validation = value
 
+        if result.metadata is not None:
+            metadata = result.metadata
+
         return ValidatorRun(
             value=value,
             metadata=metadata,
@@ -173,6 +176,9 @@ class AsyncValidatorService(ValidatorServiceBase):
         reasks: List[FieldReAsk] = []
         for res in results:
             validators_logs.append(res.validator_logs)
+            validation_result = res.validator_logs.validation_result
+            if validation_result and validation_result.metadata is not None:
+                metadata = validation_result.metadata
             # QUESTION: Do we still want to do this here or handle it during the merge?
             # return early if we have a filter, refrain, or reask
             if isinstance(res.value, (Filter, Refrain)):
@@ -305,7 +311,7 @@ class AsyncValidatorService(ValidatorServiceBase):
         child_ref_path = reference_path.replace(".*", "")
         # Validate children first
         if isinstance(value, List) or isinstance(value, Dict):
-            await self.validate_children(
+            value, metadata = await self.validate_children(
                 value,
                 metadata,
                 validator_map,
