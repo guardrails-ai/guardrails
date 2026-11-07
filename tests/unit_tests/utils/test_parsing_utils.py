@@ -2,10 +2,12 @@ import json
 import pytest
 
 from guardrails.utils.parsing_utils import (
+    coerce_to_type,
     get_code_block,
     has_code_block,
     prune_extra_keys,
 )
+from guardrails.types.simple import SimpleTypes
 
 json_code_block = """
 ```json
@@ -191,3 +193,40 @@ with open(
 def test_prune_extra_keys(schema, payload, pruned_payload):
     actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload
+
+
+@pytest.mark.parametrize(
+    "payload,expected",
+    [
+        # String false values should return False
+        ("false", False),
+        ("0", False),
+        ("no", False),
+        ("off", False),
+        ("False", False),
+        ("FALSE", False),
+        ("  false  ", False),
+        # String true values should return True
+        ("true", True),
+        ("1", True),
+        ("yes", True),
+        ("on", True),
+        ("True", True),
+        ("TRUE", True),
+        ("  true  ", True),
+        # Boolean values should pass through
+        (True, True),
+        (False, False),
+        # Other strings should use Python's bool() (truthy)
+        ("anything", True),
+        ("", False),
+        # Numbers: 0 is falsy, non-zero is truthy
+        (0, False),
+        (1, True),
+        (0.0, False),
+        (1.0, True),
+    ],
+)
+def test_coerce_to_type_boolean(payload, expected):
+    actual = coerce_to_type(payload, SimpleTypes.BOOLEAN)
+    assert actual == expected
