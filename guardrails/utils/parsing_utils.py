@@ -289,6 +289,12 @@ def coerce_to_type(
         return payload
     elif schema_type == SimpleTypes.BOOLEAN:
         if not isinstance(payload, bool):
+            if isinstance(payload, str):
+                lower = payload.strip().lower()
+                if lower in ("false", "0", "no", "off"):
+                    return False
+                if lower in ("true", "1", "yes", "on"):
+                    return True
             return coerce(payload, bool)
         return payload
     elif schema_type == SimpleTypes.INTEGER:
