@@ -72,7 +72,7 @@ def start(
                 "  'env_override' will be ignored."
             )
 
-        start_api(env, config, port)
+        start_api(env=env, config=config, port=port)
     else:
         start_api(
             env=env,
