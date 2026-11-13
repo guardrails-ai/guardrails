@@ -318,7 +318,9 @@ def coerce_property(
     payload: Union[str, List[Any], Dict[str, Any], Any], schema: Dict[str, Any]
 ) -> Union[str, List[Any], Dict[str, Any]]:
     schema_type = schema.get("type")
-    if schema_type:
+    # An array of types has no single coercion target. Preserve its value for
+    # schema validation instead of passing the array to the scalar coercer.
+    if schema_type and not isinstance(schema_type, list):
         payload = coerce_to_type(payload, schema_type)
 
     ### Schema Composition ###
