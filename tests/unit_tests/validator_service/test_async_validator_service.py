@@ -306,6 +306,33 @@ class TestValidateChildren:
             "mock-shared-metadata": "shared-metadata-2",
         }
 
+    @pytest.mark.asyncio
+    async def test_with_dictionary_empty_string_key(self, mocker):
+        mock_async_validate = mocker.patch.object(
+            avs,
+            "async_validate",
+            side_effect=[("mock-child-value", {})],
+        )
+
+        iteration = Iteration(
+            call_id="mock-call",
+            index=0,
+        )
+
+        value, metadata = await avs.validate_children(
+            value={"": "mock-child"},
+            metadata={},
+            validator_map={},
+            iteration=iteration,
+            abs_parent_path="$",
+            ref_parent_path="$",
+        )
+
+        mock_async_validate.assert_called_once_with(
+            "mock-child", {}, {}, iteration, "$.", "$.", stream=False
+        )
+        assert value == {"": "mock-child-value"}
+
 
 class TestRunValidators:
     @pytest.mark.asyncio
