@@ -221,7 +221,7 @@ class AsyncValidatorService(ValidatorServiceBase):
         async def validate_child(
             child_value: Any, *, key: Optional[str] = None, index: Optional[int] = None
         ):
-            child_key = key or index
+            child_key = key if key is not None else index
             abs_child_path = f"{abs_parent_path}.{child_key}"
             ref_child_path = ref_parent_path
             if key is not None:
