@@ -234,6 +234,7 @@ class GuardrailsApiClient:
                 "stream": True,
                 **kwargs,
             },
+            headers=headers,
         ) as response:
             if not response.is_success:
                 response.raise_for_status()
@@ -278,6 +279,7 @@ class GuardrailsApiClient:
                 "stream": True,
                 **kwargs,
             },
+            headers=headers,
         ) as response:
             if not response.is_success:
                 response.raise_for_status()
