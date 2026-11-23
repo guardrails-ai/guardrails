@@ -231,7 +231,7 @@ class LiteLLMCallable(PromptCallableBase):
                 try:
                     choice = response.choices[0]  # type: ignore
                     output = choice.message.tool_calls[-1].function.arguments  # type: ignore
-                except AttributeError as ae_tools:
+                except (AttributeError, TypeError, IndexError) as ae_tools:
                     raise ValueError(
                         "No message content or function"
                         " call arguments returned from OpenAI"
@@ -719,7 +719,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 try:
                     choice = response.choices[0]  # type: ignore
                     output = choice.message.tool_calls[-1].function.arguments  # type: ignore
-                except AttributeError as ae_tools:
+                except (AttributeError, TypeError, IndexError) as ae_tools:
                     raise ValueError(
                         "No message content or function"
                         " call arguments returned from OpenAI"

@@ -439,6 +439,57 @@ def test_get_llm_ask_litellm():
     assert isinstance(prompt_callable, LiteLLMCallable)
 
 
+def _litellm_response_without_output(tool_calls):
+    # e.g. a content-filtered completion: no content, no function/tool calls
+    message = MagicMock(content=None, function_call=None, tool_calls=tool_calls)
+    return MagicMock(
+        choices=[MagicMock(message=message, finish_reason="content_filter")]
+    )
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+@pytest.mark.parametrize("tool_calls", [None, []])
+def test_litellm_callable_without_content_or_tool_calls(mocker, tool_calls):
+    mocker.patch(
+        "litellm.completion",
+        return_value=_litellm_response_without_output(tool_calls),
+    )
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    with pytest.raises(
+        PromptCallableException,
+        match="No message content or function call arguments returned",
+    ):
+        LiteLLMCallable()("Hello", messages=[{"role": "user", "content": "Hello"}])
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool_calls", [None, []])
+async def test_async_litellm_callable_without_content_or_tool_calls(mocker, tool_calls):
+    mocker.patch(
+        "litellm.acompletion",
+        return_value=_litellm_response_without_output(tool_calls),
+    )
+
+    from guardrails.llm_providers import AsyncLiteLLMCallable
+
+    with pytest.raises(
+        PromptCallableException,
+        match="No message content or function call arguments returned",
+    ):
+        await AsyncLiteLLMCallable()(
+            "Hello", messages=[{"role": "user", "content": "Hello"}]
+        )
+
+
 def test_get_llm_ask_custom_llm():
     from guardrails.llm_providers import ArbitraryCallable
 
