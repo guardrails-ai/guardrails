@@ -687,6 +687,37 @@ class TestStreamValidate:
             list(mc.client.stream_validate(guard))
 
         mc.http.stream.assert_called_once()
+        headers = mc.http.stream.call_args[1]["headers"]
+        assert headers["x-openai-api-key"] == "env-oai-key"
+
+    def test_stream_validate_sends_openai_key_header(self):
+        mc = make_client()
+        guard = make_guard()
+        mc.http.stream.return_value = make_stream_ctx([])
+
+        list(mc.client.stream_validate(guard, openai_api_key="oai-key"))
+
+        headers = mc.http.stream.call_args[1]["headers"]
+        assert headers["x-openai-api-key"] == "oai-key"
+
+    def test_astream_validate_sends_openai_key_header(self):
+        mc = make_client()
+        guard = make_guard()
+        mock_stream = Mock(return_value=make_async_stream_ctx([]))
+        mc.ahttp.stream = mock_stream
+
+        async def run():
+            return [
+                r
+                async for r in mc.client.astream_validate(
+                    guard, openai_api_key="oai-key"
+                )
+            ]
+
+        asyncio.run(run())
+
+        headers = mock_stream.call_args[1]["headers"]
+        assert headers["x-openai-api-key"] == "oai-key"
 
     def test_astream_validate_yields_outcomes(self):
         mc = make_client()
