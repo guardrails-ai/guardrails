@@ -35,6 +35,17 @@ def test_get_value_from_path(path: str, expected_value: Any):
     assert actual_value == expected_value
 
 
+def test_get_value_from_path_preserves_falsy_values():
+    """Only an absent key triggers the numeric-key fallback, not a falsy value."""
+    falsy_object = {"0": 0, "items": {"0": False}, "empty": ""}
+
+    assert get_value_from_path(falsy_object, "$.0") == 0
+    assert get_value_from_path(falsy_object, "$.items.0") is False
+    assert get_value_from_path(falsy_object, "$.empty") == ""
+    # A genuinely missing index still resolves to None.
+    assert get_value_from_path(reader_object, "$.d.d2.4") is None
+
+
 @pytest.mark.parametrize(
     "existing_value,path,write_value,expected_value",
     [

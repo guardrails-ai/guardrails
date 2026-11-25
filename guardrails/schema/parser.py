@@ -6,6 +6,9 @@ from guardrails.utils.safe_get import safe_get
 
 
 ### Reading and Writing Payloads by JSON Path ###
+_MISSING = object()
+
+
 def get_value_from_path(
     object: Optional[Union[str, List[Any], Dict[Any, Any]]], property_path: str
 ) -> Any:
@@ -21,14 +24,15 @@ def get_value_from_path(
 
     value = object
     for elem in path_elems:
-        obj_value = safe_get(value, elem)
-        if not obj_value and elem.isnumeric():
-            # value was empty but the key may be an array index
-            value = safe_get(value, int(elem))
+        obj_value = safe_get(value, elem, _MISSING)
+        if obj_value is _MISSING and elem.isnumeric():
+            # The string key is absent; the key may be an integer array index.
+            # Only absence triggers this retry: 0/False/"" are real values.
+            value = safe_get(value, int(elem), _MISSING)
         else:
             value = obj_value
 
-    return value
+    return None if value is _MISSING else value
 
 
 def fill_list(desired_length: int, array: list):
