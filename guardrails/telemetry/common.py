@@ -204,7 +204,7 @@ def recursive_key_operation(
     """
     if isinstance(data, str) and can_convert_to_dict(data):
         data_dict = json.loads(data)
-        data = str(recursive_key_operation(data_dict, operation, keys_to_match))
+        data = json.dumps(recursive_key_operation(data_dict, operation, keys_to_match))
     elif isinstance(data, dict):
         for key, value in data.items():
             if ismatchingkey(key, tuple(keys_to_match)) and isinstance(value, str):
